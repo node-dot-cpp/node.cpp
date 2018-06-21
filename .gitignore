@@ -1,0 +1,6 @@
+
+build/.vs
+build/x64
+build/Release
+build/Debug
+*.vcproj.user
