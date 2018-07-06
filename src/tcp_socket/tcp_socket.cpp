@@ -359,20 +359,20 @@ uint8_t internal_connect_for_address(Ip4 peerIp, Port peerPort, SOCKET sock)
 }
 
 static
-bool internal_tcp_accept(SOCKET& outSock, Ip4& ip, Port& port, SOCKET sock)
+SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
 {
 	NODECPP_TRACE("internal_tcp_accept() on sock {}", sock);
 	struct sockaddr_in sa;
 	socklen_t sz = sizeof(struct sockaddr_in);
 	memset(&sa, 0, sz);
 
-	outSock = accept(sock, (struct sockaddr *)&sa, &sz);
+	SOCKET outSock = accept(sock, (struct sockaddr *)&sa, &sz);
 	if (INVALID_SOCKET == outSock)
 	{
 		int error = getSockError();
 		NODECPP_TRACE("accept() on sock {} failed; error {}", error);
 
-		return false;
+		return INVALID_SOCKET;
 	}
 
 	
@@ -383,9 +383,9 @@ bool internal_tcp_accept(SOCKET& outSock, Ip4& ip, Port& port, SOCKET sock)
 	if (!internal_async_socket(outSock))
 	{
 		internal_close(outSock);
-		return false;
+		return INVALID_SOCKET;
 	}
-	return true;
+	return outSock;
 }
 
 static
@@ -557,9 +557,8 @@ void NetSocketManager::destroy(size_t id)
 	//	
 	//	if(force)
 	internal_linger_zero_socket(entry.osSocket);
-	internal_close(entry.osSocket);
-
-	releaseEntry(entry.index);
+	
+	pendingCloseEvents.emplace_back(entry.osSocket, false);
 }
 
 void NetSocketManager::end(size_t id)
@@ -656,7 +655,11 @@ bool NetSocketManager::addAccepted(net::Socket* ptr, SOCKET sock)
 
 	size_t ix = addEntry(ptr);
 	if (ix == 0)
+	{
+		NODECPP_TRACE("Couldn't allocate new StreamSocket, closing {}", sock);
+		internal_close(sock);
 		return false; // TODO
+	}
 
 	auto& entry = getEntry(ix);
 	entry.osSocket = sock;
@@ -708,17 +711,16 @@ void NetSocketManager::getPendingEvent()
 	// if there is an issue with a socket, we may need to close it,
 	// and push an event here to notify autom later.
 
-	while (!pendingErrorEvents.empty())
+	for (auto& current : pendingCloseEvents)
 	{
-		size_t id = pendingErrorEvents.back();
-		pendingErrorEvents.pop_back();
-		auto& entry = getEntry(id);
+		auto& entry = getEntry(current.first);
 		if (entry.isValid())
 		{
-			internal_getsockopt_so_error(entry.osSocket);
-			makeErrorEventAndClose(entry);
+			entry.getPtr()->emitClose(current.second);
 		}
+		releaseEntry(current.first);
 	}
+	pendingCloseEvents.clear();
 }
 
 
@@ -762,11 +764,9 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
 					{
 						current.remoteEnded = true;
 						current.ptr->emitEnd();
-						if (current.localEnded)
+						if (current.localEnded && current.writeBuffer.empty())
 						{
-							net::Socket* ptr = current.ptr;
-							releaseEntry(current.index);
-							ptr->emitClose(false);
+							pendingCloseEvents.emplace_back(current.index, false);
 							continue;
 						}
 					}
@@ -837,7 +837,7 @@ void NetSocketManager::processWriteEvent(NetSocketEntry& current)
 		uint8_t res = internal_send_packet(current.writeBuffer.begin(), current.writeBuffer.size(), current.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
-			//			pendingErrorEvents.push_back(current.index);
+			//			pendingCloseEvents.push_back(current.index);
 			makeErrorEventAndClose(current);
 		}
 		else if (sentSize == current.writeBuffer.size())
@@ -845,6 +845,8 @@ void NetSocketManager::processWriteEvent(NetSocketEntry& current)
 //			current.writeEvents = false;
 			current.writeBuffer.clear();
 			current.ptr->emitDrain();
+			if (current.localEnded && current.remoteEnded) 
+				pendingCloseEvents.emplace_back(current.index, false);
 		}
 		else
 		{
@@ -881,7 +883,8 @@ size_t NetSocketManager::addEntry(net::Socket* ptr)
 
 void NetSocketManager::releaseEntry(size_t id)
 {
-	internal_close(ioSockets[id].osSocket);
+	if(ioSockets[id].osSocket != INVALID_SOCKET)
+		internal_close(ioSockets[id].osSocket);
 	ioSockets[id] = NetSocketEntry(id);
 }
 
@@ -917,10 +920,8 @@ std::pair<bool, Buffer> NetSocketManager::getPacketBytes(Buffer& buff, SOCKET so
 
 void NetSocketManager::makeErrorEventAndClose(NetSocketEntry& entry)
 {
-	net::Socket* ptr = entry.ptr;
-	releaseEntry(entry.index);
-	ptr->emitError();
-	ptr->emitClose(true);
+	entry.getPtr()->emitError();
+	pendingCloseEvents.emplace_back(entry.index, true);
 }
 
 NetServerManager::NetServerManager()
@@ -980,9 +981,7 @@ void NetServerManager::close(size_t id)
 		return;
 	}
 
-	entry.getPtr()->emitClose(false);
-	releaseEntry(entry.index);
-//	entry = NetServerEntry(entry.index);
+	pendingCloseEvents.emplace_back(entry.index, false);
 }
 
 size_t NetServerManager::getPollFdSetSize() const
@@ -1024,17 +1023,16 @@ void NetServerManager::getPendingEvent()
 	// if there is an issue with a socket, we may need to close it,
 	// and push an event here to notify later.
 
-	while (!pendingErrorEvents.empty())
+	for (auto& current : pendingCloseEvents)
 	{
-		size_t id = pendingErrorEvents.back();
-		pendingErrorEvents.pop_back();
-		auto& entry = getEntry(id);
+		auto& entry = getEntry(current.first);
 		if (entry.isValid())
 		{
-			internal_getsockopt_so_error(entry.osSocket);
-			makeErrorEventAndClose(entry);
+			entry.getPtr()->emitClose(current.second);
 		}
+		releaseEntry(current.first);
 	}
+	pendingCloseEvents.clear();
 }
 
 
@@ -1070,24 +1068,20 @@ void NetServerManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
 
 void NetServerManager::processAcceptEvent(NetServerEntry& entry)
 {
-	SOCKET newSock;
 	Ip4 remoteIp;
 	Port remotePort;
 
-	if (!internal_tcp_accept(newSock, remoteIp, remotePort, entry.osSocket))
+	SocketRiia newSock(internal_tcp_accept(remoteIp, remotePort, entry.osSocket));
+	if (!newSock)
 		return;
 
 	std::unique_ptr<net::Socket> ptr(entry.getPtr()->makeSocket());
 	auto& man = getFrameWork().getNetSocket();
 
-	bool ok = man.addAccepted(ptr.get(), newSock);
+	bool ok = man.addAccepted(ptr.get(), newSock.release());
 
 	if (!ok)
-	{
-		NODECPP_TRACE("Couldn't allocate new StreamSocket, closing");
-		internal_close(newSock);
 		return;
-	}
 
 	entry.getPtr()->emitConnection(std::move(ptr));
 
@@ -1118,7 +1112,8 @@ size_t NetServerManager::addEntry(net::Server* ptr)
 
 void NetServerManager::releaseEntry(size_t id)
 {
-	internal_close(ioSockets[id].osSocket);
+	if(ioSockets[id].osSocket != INVALID_SOCKET)
+		internal_close(ioSockets[id].osSocket);
 
 	ioSockets[id] = NetServerEntry(id);
 }
@@ -1137,8 +1132,6 @@ const NetServerEntry& NetServerManager::getEntry(size_t id) const
 
 void NetServerManager::makeErrorEventAndClose(NetServerEntry& entry)
 {
-	net::Server* ptr = entry.getPtr();
-	releaseEntry(entry.index);
-
-	ptr->emitError();
+	entry.getPtr()->emitError();
+	pendingCloseEvents.emplace_back(entry.index, true);
 }

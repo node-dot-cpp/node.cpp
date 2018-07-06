@@ -112,6 +112,7 @@ namespace nodecpp {
 		}
 
 		size_t size() const { return _size; }
+		bool empty() const { return _size == 0; }
 		size_t capacity() const { return _capacity; }
 		uint8_t* begin() { return _data.get(); }
 		const uint8_t* begin() const { return _data.get(); }

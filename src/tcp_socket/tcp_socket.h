@@ -118,7 +118,7 @@ public:
 class NetSocketManager {
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetSocketEntry> ioSockets; // TODO: improve
-	std::vector<size_t> pendingErrorEvents;
+	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
 
 	std::string family = "IPv4";
 	
@@ -189,7 +189,7 @@ class NetServerManager
 {
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetServerEntry> ioSockets; // TODO: improve
-	std::vector<size_t> pendingErrorEvents;
+	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
 
 	std::string family = "IPv4";
 

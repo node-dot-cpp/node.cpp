@@ -49,7 +49,13 @@ FrameWork& getFrameWork() { return framework; }
 
 static constexpr uint64_t TimeOutNever = static_cast<uint64_t>(-1);
 
-void pollPhase(uint64_t nextTimeoutAt, std::vector<int>& queue);
+struct EvQueues
+{
+	std::vector<int> events;
+};
+
+void pollPhase(uint64_t nextTimeoutAt, EvQueues& evs);
+void pendingCloseEvents();
 
 
 #endif //FRAMEWORK_H
