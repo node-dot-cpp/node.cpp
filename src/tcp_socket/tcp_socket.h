@@ -154,7 +154,6 @@ public:
 	size_t addEntry(net::Socket* ptr);
 	bool addAccepted(net::Socket* ptr, SOCKET sock);
 
-	void releaseEntry(size_t id);
 private:
 	NetSocketEntry& getEntry(size_t id);
 	const NetSocketEntry& getEntry(size_t id) const;
@@ -169,6 +168,7 @@ public:
 	size_t index;
 	net::Server* ptr = nullptr;
 	SOCKET osSocket = INVALID_SOCKET;
+	short fdEvents = 0;
 
 	NetServerEntry(size_t index) :index(index) {}
 	NetServerEntry(size_t index, net::Server* ptr) :index(index), ptr(ptr) {}
@@ -210,7 +210,6 @@ private:
 	void processAcceptEvent(NetServerEntry& entry);
 public:
 	size_t addEntry(net::Server* ptr);
-	void releaseEntry(size_t id);
 private:
 	NetServerEntry& getEntry(size_t id);
 	const NetServerEntry& getEntry(size_t id) const;

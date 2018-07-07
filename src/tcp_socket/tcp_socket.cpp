@@ -572,6 +572,8 @@ void NetSocketManager::end(size_t id)
 	
 	entry.localEnded = true;
 	internal_shutdown_send(entry.osSocket);
+	if (entry.writeBuffer.empty() && entry.remoteEnded)
+		pendingCloseEvents.emplace_back(entry.index, false);
 }
 
 void NetSocketManager::setKeepAlive(size_t id, bool enable)
@@ -716,9 +718,11 @@ void NetSocketManager::getPendingEvent()
 		auto& entry = getEntry(current.first);
 		if (entry.isValid())
 		{
+			if (entry.osSocket != INVALID_SOCKET)
+				internal_close(entry.osSocket);
 			entry.getPtr()->emitClose(current.second);
 		}
-		releaseEntry(current.first);
+		entry = NetSocketEntry(current.first);
 	}
 	pendingCloseEvents.clear();
 }
@@ -881,15 +885,6 @@ size_t NetSocketManager::addEntry(net::Socket* ptr)
 	return ix;
 }
 
-void NetSocketManager::releaseEntry(size_t id)
-{
-	if(ioSockets[id].osSocket != INVALID_SOCKET)
-		internal_close(ioSockets[id].osSocket);
-	ioSockets[id] = NetSocketEntry(id);
-}
-
-
-
 NetSocketEntry& NetSocketManager::getEntry(size_t id)
 {
 	return ioSockets.at(id);
@@ -1028,9 +1023,12 @@ void NetServerManager::getPendingEvent()
 		auto& entry = getEntry(current.first);
 		if (entry.isValid())
 		{
+			if (entry.osSocket != INVALID_SOCKET)
+				internal_close(entry.osSocket);
 			entry.getPtr()->emitClose(current.second);
 		}
-		releaseEntry(current.first);
+		entry = NetServerEntry(current.first);
+
 	}
 	pendingCloseEvents.clear();
 }
@@ -1108,14 +1106,6 @@ size_t NetServerManager::addEntry(net::Server* ptr)
 	size_t ix = ioSockets.size();
 	ioSockets.emplace_back(ix, ptr);
 	return ix;
-}
-
-void NetServerManager::releaseEntry(size_t id)
-{
-	if(ioSockets[id].osSocket != INVALID_SOCKET)
-		internal_close(ioSockets[id].osSocket);
-
-	ioSockets[id] = NetServerEntry(id);
 }
 
 NetServerEntry& NetServerManager::getEntry(size_t id)
