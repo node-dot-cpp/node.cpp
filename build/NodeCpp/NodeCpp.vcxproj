@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\framework.cpp" />
+    <ClCompile Include="..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\src\loop.cpp" />
     <ClCompile Include="..\..\src\net.cpp" />
     <ClCompile Include="..\..\src\tcp_socket\tcp_socket.cpp" />
@@ -28,7 +28,7 @@
     <ClInclude Include="..\..\include\nodecpp\common.h" />
     <ClInclude Include="..\..\include\nodecpp\loop.h" />
     <ClInclude Include="..\..\include\nodecpp\net.h" />
-    <ClInclude Include="..\..\src\framework.h" />
+    <ClInclude Include="..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\src\tcp_socket\tcp_socket.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

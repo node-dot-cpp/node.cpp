@@ -27,7 +27,7 @@
 
 #include "tcp_socket.h"
 #include "../../include/nodecpp/common.h"
-#include "../framework.h"
+#include "../infrastructure.h"
 
 
 #ifdef _MSC_VER
@@ -1074,7 +1074,7 @@ void NetServerManager::processAcceptEvent(NetServerEntry& entry)
 		return;
 
 	std::unique_ptr<net::Socket> ptr(entry.getPtr()->makeSocket());
-	auto& man = getFrameWork().getNetSocket();
+	auto& man = getInfra().getNetSocket();
 
 	bool ok = man.addAccepted(ptr.get(), newSock.release());
 

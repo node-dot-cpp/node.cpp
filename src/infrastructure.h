@@ -26,12 +26,12 @@
 * -------------------------------------------------------------------------------*/
 
 
-#ifndef FRAMEWORK_H
-#define FRAMEWORK_H
+#ifndef INFRASTRUCTURE_H
+#define INFRASTRUCTURE_H
 
 #include "tcp_socket/tcp_socket.h"
 
-class FrameWork
+class Infrastructure
 {
 	NetSocketManager netSocket;
 	NetServerManager netServer;
@@ -42,10 +42,10 @@ public:
 	NetServerManager& getNetServer() { return netServer; }
 };
 
-extern thread_local FrameWork framework;
+extern thread_local Infrastructure infra;
 
 inline
-FrameWork& getFrameWork() { return framework; }
+Infrastructure& getInfra() { return infra; }
 
 static constexpr uint64_t TimeOutNever = static_cast<uint64_t>(-1);
 
@@ -58,4 +58,4 @@ void pollPhase(uint64_t nextTimeoutAt, EvQueues& evs);
 void pendingCloseEvents();
 
 
-#endif //FRAMEWORK_H
+#endif //INFRASTRUCTURE_H
