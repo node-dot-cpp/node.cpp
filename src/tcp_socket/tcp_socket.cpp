@@ -281,7 +281,7 @@ SOCKET internal_make_tcp_socket()
 static
 bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self)
 {
-	int res = bind(sock, (struct sockaddr *)(&sa_self), sizeof(struct sockaddr_in));
+	int res = ::bind(sock, (struct sockaddr *)(&sa_self), sizeof(struct sockaddr_in));
 	if (0 != res)
 	{
 		int error = getSockError();
@@ -570,10 +570,18 @@ void NetSocketManager::end(size_t id)
 		return;
 	}
 	
-	entry.localEnded = true;
-	internal_shutdown_send(entry.osSocket);
-	if (entry.writeBuffer.empty() && entry.remoteEnded)
-		pendingCloseEvents.emplace_back(entry.index, false);
+	if (entry.writeBuffer.empty())
+	{
+		entry.localEnded = true;
+		internal_shutdown_send(entry.osSocket);
+		if (entry.remoteEnded)
+			pendingCloseEvents.emplace_back(entry.index, false);
+	}
+	else
+		entry.pendingLocalEnd = true;
+
+
+
 }
 
 void NetSocketManager::setKeepAlive(size_t id, bool enable)
@@ -615,7 +623,7 @@ bool NetSocketManager::write(size_t id, const uint8_t* data, uint32_t size)
 		return true;
 	}
 
-	if (entry.localEnded)
+	if (entry.localEnded || entry.pendingLocalEnd)
 	{
 		NODECPP_TRACE("StreamSocket {} already ended", id);
 		return true;
@@ -700,7 +708,7 @@ void NetSocketManager::setPollFdSet(pollfd* begin, const pollfd* end) const
 
 			if(!current.remoteEnded && !current.paused)
 				begin[i].events |= POLLIN;
-			if (current.connecting || current.writeBuffer.size() != 0)
+			if (current.connecting || !current.writeBuffer.empty())
 				begin[i].events |= POLLOUT;
 		}
 		else
@@ -768,7 +776,7 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
 					{
 						current.remoteEnded = true;
 						current.ptr->emitEnd();
-						if (current.localEnded && current.writeBuffer.empty())
+						if (current.localEnded)
 						{
 							pendingCloseEvents.emplace_back(current.index, false);
 							continue;
@@ -834,7 +842,7 @@ void NetSocketManager::processWriteEvent(NetSocketEntry& current)
 		else
 			makeErrorEventAndClose(current);
 	}
-	else if (current.writeBuffer.size() != 0)
+	else if (!current.writeBuffer.empty())
 	{
 //		assert(current.writeBuffer.size() != 0);
 		size_t sentSize = 0;
@@ -848,9 +856,18 @@ void NetSocketManager::processWriteEvent(NetSocketEntry& current)
 		{
 //			current.writeEvents = false;
 			current.writeBuffer.clear();
+			if (current.pendingLocalEnd)
+			{
+				internal_shutdown_send(current.osSocket);
+				current.pendingLocalEnd = false;
+				current.localEnded = true;
+
+				if (current.remoteEnded)
+					pendingCloseEvents.emplace_back(current.index, false);
+
+			}
+				
 			current.ptr->emitDrain();
-			if (current.localEnded && current.remoteEnded) 
-				pendingCloseEvents.emplace_back(current.index, false);
 		}
 		else
 		{

@@ -47,5 +47,8 @@
     <ClInclude Include="..\..\src\infrastructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\nodecpp\event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

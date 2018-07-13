@@ -29,7 +29,7 @@
 #define NET_H
 
 #include "common.h"
-#include <cassert>
+#include "event.h"
 
 namespace nodecpp {
 
@@ -88,14 +88,14 @@ namespace nodecpp {
 				_size += sz;
 			}
 			else {
-				size_t cp = std::max(sz, MIN_BUFFER);
+				size_t cp = std::max(sz + _size, MIN_BUFFER);
 				std::unique_ptr<uint8_t> tmp(static_cast<uint8_t*>(malloc(cp)));
 
 
 				memcpy(tmp.get(), _data.get(), _size);
 				memcpy(tmp.get() + _size, dt, sz);
 
-				_size += sz;
+				_size = sz + _size;
 				_capacity = cp;
 				_data = std::move(tmp);
 			}
@@ -144,7 +144,9 @@ namespace nodecpp {
 		};
 
 
-		class Socket {
+		class Socket :EventEmitter<event::Close>, EventEmitter<event::Connect> ,
+			EventEmitter<event::Data> , EventEmitter<event::Drain> ,
+			EventEmitter<event::End>, EventEmitter<event::Error> {
 			size_t id = 0;
 			Address _local;
 			Address _remote;
@@ -159,9 +161,18 @@ namespace nodecpp {
 		public:
 			Socket() {}
 
+			Socket(const Socket&) = delete;
+			Socket& operator=(const Socket&) = delete;
+
+			Socket(Socket&&) = default;
+			Socket& operator=(Socket&&) = default;
+
+			virtual ~Socket() {}
+
 			void emitClose(bool hadError) {
 				state = DESTROYED;
 				this->id = 0;
+				EventEmitter<event::Close>::emit(hadError);
 				onClose(hadError);
 			}
 
@@ -173,15 +184,18 @@ namespace nodecpp {
 
 			void emitConnect() {
 				state = CONNECTED;
+				EventEmitter<event::Connect>::emit();
 				onConnect();
 			}
 
 			void emitData(Buffer buffer) {
 				_bytesRead += buffer.size();
-				onData(std::move(buffer));
+				EventEmitter<event::Data>::emit(std::ref(buffer));
+				onData(buffer);
 			}
 
 			void emitDrain() {
+				EventEmitter<event::Drain>::emit();
 				onDrain();
 			}
 
@@ -198,7 +212,7 @@ namespace nodecpp {
 
 			virtual void onClose(bool hadError) {}
 			virtual void onConnect() {}
-			virtual void onData(Buffer buffer) {}
+			virtual void onData(Buffer& buffer) {}
 			virtual void onDrain() {}
 			virtual void onEnd() {}
 			virtual void onError() {}
@@ -210,6 +224,10 @@ namespace nodecpp {
 			size_t bytesWritten() const { return _bytesWritten; }
 
 			void connect(uint16_t port, const char* ip);
+			void connect(uint16_t port, const char* ip, std::function<void()> cb) {
+				once<event::Connect>(std::move(cb));
+				connect(port, ip);
+			}
 
 			bool connecting() const { return state == CONNECTING; }
 			void destroy();
@@ -231,6 +249,23 @@ namespace nodecpp {
 			Socket& setKeepAlive(bool enable = false);
 
 			bool write(const uint8_t* data, uint32_t size);
+			bool write(const uint8_t* data, uint32_t size, std::function<void()> cb) {
+				bool b = write(data, size);
+				if(!b)
+					once<event::Drain>(std::move(cb));
+
+				return b;
+			}
+
+			template<class EV>
+			void on(typename EV::callback cb) {
+				EventEmitter<EV>::on(std::move(cb));
+			}
+
+			template<class EV>
+			void once(typename EV::callback cb) {
+				EventEmitter<EV>::once(std::move(cb));
+			}
 		};
 
 		class Server {
@@ -242,6 +277,7 @@ namespace nodecpp {
 
 		public:
 			Server() {}
+			virtual ~Server() {}
 
 			void emitClose(bool hadError) {
 				state = CLOSED;
@@ -295,6 +331,12 @@ namespace nodecpp {
 			return cli;
 		}
 
+		template<class T>
+		T* createConnection(uint16_t port, const char* host, std::function<void()> cb) {
+			auto cli = new T();
+			cli->connect(port, host, std::move(cb));
+			return cli;
+		}
 
 	} //namespace net
 } //namespace nodecpp

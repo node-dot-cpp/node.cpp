@@ -90,10 +90,11 @@ public:
 	bool connecting = false;
 	bool remoteEnded = false;
 	bool localEnded = false;
+	bool pendingLocalEnd = false;
 	bool paused = false;
 
-	Buffer writeBuffer = Buffer(1024);
-	Buffer recvBuffer = Buffer(1024);
+	Buffer writeBuffer = Buffer(64 * 1024);
+	Buffer recvBuffer = Buffer(64 * 1024);
 
 	SOCKET osSocket = INVALID_SOCKET;
 
