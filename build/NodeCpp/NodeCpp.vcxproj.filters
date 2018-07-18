@@ -50,5 +50,8 @@
     <ClInclude Include="..\..\include\nodecpp\event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\nodecpp\error.h">
+      <Filter>Header Files\nodecpp</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -159,9 +159,10 @@ public:
 	void onClose(bool hadError) override {
 		print("onClose!\n");
 	}
-	void onConnection(unique_ptr<net::Socket> socket) override {
+	void onConnection(net::Socket* socket) override {
 		print("onConnection!\n");
-		socks.push_back(std::move(socket));
+		unref();
+		socks.emplace_back(socket);
 	}
 	void onListening() override {
 		print("onListening!\n");
@@ -170,8 +171,8 @@ public:
 	void onError() override {
 		print("onError!\n");
 	}
-	std::unique_ptr<net::Socket> makeSocket() override {
-		return std::unique_ptr<net::Socket>(new MyServerSocket(this));
+	MyServerSocket* makeSocket() override {
+		return new MyServerSocket(this);
 	}
 
 	void closeMe(MyServerSocket* ptr) {

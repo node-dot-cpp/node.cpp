@@ -27,6 +27,7 @@
 
 #include "tcp_socket.h"
 #include "../../include/nodecpp/common.h"
+#include "../../include/nodecpp/error.h"
 #include "../infrastructure.h"
 
 
@@ -595,7 +596,7 @@ void NetSocketManager::setKeepAlive(size_t id, bool enable)
 
 	if (!internal_socket_keep_alive(entry.osSocket, enable))
 	{
-		makeErrorEventAndClose(entry);
+		makeAsyncErrorEventAndClose(entry);
 	}
 }
 
@@ -610,7 +611,7 @@ void NetSocketManager::setNoDelay(size_t id, bool noDelay)
 
 	if (!internal_tcp_no_delay_socket(entry.osSocket, noDelay))
 	{
-		makeErrorEventAndClose(entry);
+		makeAsyncErrorEventAndClose(entry);
 	}
 }
 
@@ -635,7 +636,7 @@ bool NetSocketManager::write(size_t id, const uint8_t* data, uint32_t size)
 		uint8_t res = internal_send_packet(data, size, entry.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
-			makeErrorEventAndClose(entry);
+			makeAsyncErrorEventAndClose(entry);
 			return false;
 		}
 		else if (sentSize == size)
@@ -692,10 +693,11 @@ size_t NetSocketManager::getPollFdSetSize() const
  * Avoid to have to write it all over again every time
  * 
  */
-void NetSocketManager::setPollFdSet(pollfd* begin, const pollfd* end) const
+bool NetSocketManager::setPollFdSet(pollfd* begin, const pollfd* end) const
 {
 	size_t sz = end - begin;
 	assert(sz >= ioSockets.size());
+	bool anyRefed = false;
 	
 	for (size_t i = 0; i != sz; ++i)
 	{
@@ -703,6 +705,9 @@ void NetSocketManager::setPollFdSet(pollfd* begin, const pollfd* end) const
 		{
 			const auto& current = ioSockets[i];
 			NODECPP_ASSERT(current.osSocket != INVALID_SOCKET);
+
+			anyRefed = anyRefed || current.refed;
+
 			begin[i].fd = current.osSocket;
 			begin[i].events = 0;
 
@@ -714,9 +719,10 @@ void NetSocketManager::setPollFdSet(pollfd* begin, const pollfd* end) const
 		else
 			begin[i].fd = INVALID_SOCKET;
 	}
+	return anyRefed;
 }
 
-void NetSocketManager::getPendingEvent()
+void NetSocketManager::getPendingEvent(EvQueue& evs)
 {
 	// if there is an issue with a socket, we may need to close it,
 	// and push an event here to notify autom later.
@@ -728,7 +734,8 @@ void NetSocketManager::getPendingEvent()
 		{
 			if (entry.osSocket != INVALID_SOCKET)
 				internal_close(entry.osSocket);
-			entry.getPtr()->emitClose(current.second);
+
+			evs.push_back(std::bind(&net::Socket::emitClose, entry.getPtr(), current.second));
 		}
 		entry = NetSocketEntry(current.first);
 	}
@@ -736,7 +743,7 @@ void NetSocketManager::getPendingEvent()
 }
 
 
-void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
+void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs)
 {
 	assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
 	for (size_t i = 0; i != ioSockets.size(); ++i)
@@ -748,7 +755,7 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
 			{
 				NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
 				internal_getsockopt_so_error(current.osSocket);
-				makeErrorEventAndClose(current);
+				makeErrorEventAndClose(current, evs);
 			}
 			else {
 				/*
@@ -765,7 +772,7 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
 					if (!current.paused)
 					{
 						NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
-						processReadEvent(current);
+						processReadEvent(current, evs);
 					}
 				}
 				else if ((begin[i].revents & POLLHUP) != 0)
@@ -775,7 +782,8 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
 					if (!current.remoteEnded)
 					{
 						current.remoteEnded = true;
-						current.ptr->emitEnd();
+//						entry.ptr->emitEnd();
+						evs.push_back(std::bind(&net::Socket::emitEnd, current.getPtr()));
 						if (current.localEnded)
 						{
 							pendingCloseEvents.emplace_back(current.index, false);
@@ -787,46 +795,49 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
 				if ((begin[i].revents & POLLOUT) != 0)
 				{
 					NODECPP_TRACE("POLLOUT event at {}", begin[i].fd);
-					processWriteEvent(current);
+					processWriteEvent(current, evs);
 				}
 			}
 			//else if (begin[i].revents != 0)
 			//{
 			//	NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
-			//	internal_getsockopt_so_error(current.osSocket);
-			//	makeErrorEventAndClose(current);
+			//	internal_getsockopt_so_error(entry.osSocket);
+			//	makeErrorEventAndClose(entry);
 			//}
 		}
 	}
 }
 
-void NetSocketManager::processReadEvent(NetSocketEntry& current)
+void NetSocketManager::processReadEvent(NetSocketEntry& entry, EvQueue& evs)
 {
-	auto res = getPacketBytes(current.recvBuffer, current.osSocket);
+	auto res = getPacketBytes(entry.recvBuffer, entry.osSocket);
 	if (res.first)
 	{
 		if (res.second.size() != 0)
 		{
-			current.ptr->emitData(std::move(res.second));
+//			entry.ptr->emitData(std::move(res.second));
+
+			evs.push_back(std::bind(&net::Socket::emitData, entry.getPtr(), std::ref(storeBuffer(std::move(res.second)))));
 		}
-		else if (!current.remoteEnded)
+		else if (!entry.remoteEnded)
 		{
-			current.remoteEnded = true;
-			current.ptr->emitEnd();
+			entry.remoteEnded = true;
+//			entry.ptr->emitEnd();
+			evs.push_back(std::bind(&net::Socket::emitEnd, entry.getPtr()));
 		}
 		else
 		{
-			NODECPP_TRACE("Unexpected read on socket {}, already shutdown", current.osSocket);
+			NODECPP_TRACE("Unexpected read on socket {}, already shutdown", entry.osSocket);
 		}
 	}
 	else
 	{
-		internal_getsockopt_so_error(current.osSocket);
-		return makeErrorEventAndClose(current);
+		internal_getsockopt_so_error(entry.osSocket);
+		return makeErrorEventAndClose(entry, evs);
 	}
 }
 
-void NetSocketManager::processWriteEvent(NetSocketEntry& current)
+void NetSocketManager::processWriteEvent(NetSocketEntry& current, EvQueue& evs)
 {
 	if (current.connecting)
 	{
@@ -837,24 +848,26 @@ void NetSocketManager::processWriteEvent(NetSocketEntry& current)
 #else
 		bool success = internal_getsockopt_so_error(current.osSocket);
 #endif					
-		if (success)
-			current.ptr->emitConnect();
+		if (success) {
+//			entry.ptr->emitConnect();
+			evs.push_back(std::bind(&net::Socket::emitConnect, current.getPtr()));
+		}
 		else
-			makeErrorEventAndClose(current);
+			makeErrorEventAndClose(current, evs);
 	}
 	else if (!current.writeBuffer.empty())
 	{
-//		assert(current.writeBuffer.size() != 0);
+//		assert(entry.writeBuffer.size() != 0);
 		size_t sentSize = 0;
 		uint8_t res = internal_send_packet(current.writeBuffer.begin(), current.writeBuffer.size(), current.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
-			//			pendingCloseEvents.push_back(current.index);
-			makeErrorEventAndClose(current);
+			//			pendingCloseEvents.push_back(entry.id);
+			makeErrorEventAndClose(current, evs);
 		}
 		else if (sentSize == current.writeBuffer.size())
 		{
-//			current.writeEvents = false;
+//			entry.writeEvents = false;
 			current.writeBuffer.clear();
 			if (current.pendingLocalEnd)
 			{
@@ -867,12 +880,13 @@ void NetSocketManager::processWriteEvent(NetSocketEntry& current)
 
 			}
 				
-			current.ptr->emitDrain();
+//			entry.ptr->emitDrain();
+			evs.push_back(std::bind(&net::Socket::emitDrain, current.getPtr()));
 		}
 		else
 		{
 			NODECPP_ASSERT(sentSize < current.writeBuffer.size());
-//			current.writeEvents = true;
+//			entry.writeEvents = true;
 			current.writeBuffer.popFront(sentSize);
 		}
 	}
@@ -930,11 +944,17 @@ std::pair<bool, Buffer> NetSocketManager::getPacketBytes(Buffer& buff, SOCKET so
 }
 
 
-void NetSocketManager::makeErrorEventAndClose(NetSocketEntry& entry)
+void NetSocketManager::makeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs)
 {
-	entry.getPtr()->emitError();
+	evs.push_back(std::bind(&net::Socket::emitError, entry.getPtr()));
 	pendingCloseEvents.emplace_back(entry.index, true);
 }
+
+void NetSocketManager::makeAsyncErrorEventAndClose(NetSocketEntry& entry)
+{
+	//TODO
+}
+
 
 NetServerManager::NetServerManager()
 {
@@ -952,34 +972,31 @@ void NetServerManager::listen(net::Server* ptr, uint16_t port, const char* ip, i
 	SocketRiia s(internal_make_tcp_socket());
 	if (!s)
 	{
-		ptr->emitError();
-		return;
+		throw Error();
 	}
 
 	if (!internal_bind_socket(s.get(), myIp, myPort))
 	{
-		ptr->emitError();
-		return;
+		throw Error();
 	}
 
 	if (!internal_listen_tcp_socket(s.get()))
 	{
-		ptr->emitError();
-		return;
+		throw Error();
 	}
 
 	size_t id = addEntry(ptr);
 	if (id == 0)
 	{
 		NODECPP_TRACE("Failed to addEntry at NetServerManager::listen");
-		ptr->emitError();
-		return;
+		throw Error();
 	}
 
 	auto& entry = getEntry(id);
 	entry.osSocket = s.release();
 
 	net::Address addr;
+
 	ptr->emitListening(id, std::move(addr));
 }
 
@@ -1007,10 +1024,11 @@ size_t NetServerManager::getPollFdSetSize() const
 * Avoid to have to write it all over again every time
 *
 */
-void NetServerManager::setPollFdSet(pollfd* begin, const pollfd* end) const
+bool NetServerManager::setPollFdSet(pollfd* begin, const pollfd* end) const
 {
 	size_t sz = end - begin;
 	assert(sz >= ioSockets.size());
+	bool anyRefed = false;
 
 	for (size_t i = 0; i != sz; ++i)
 	{
@@ -1018,6 +1036,9 @@ void NetServerManager::setPollFdSet(pollfd* begin, const pollfd* end) const
 		{
 			const auto& current = ioSockets[i];
 			NODECPP_ASSERT(current.osSocket != INVALID_SOCKET);
+
+			anyRefed = anyRefed || current.refed;
+
 			begin[i].fd = current.osSocket;
 			begin[i].events = 0;
 
@@ -1028,9 +1049,11 @@ void NetServerManager::setPollFdSet(pollfd* begin, const pollfd* end) const
 		else
 			begin[i].fd = INVALID_SOCKET;
 	}
+
+	return anyRefed;
 }
 
-void NetServerManager::getPendingEvent()
+void NetServerManager::getPendingEvent(EvQueue& evs)
 {
 	// if there is an issue with a socket, we may need to close it,
 	// and push an event here to notify later.
@@ -1042,7 +1065,8 @@ void NetServerManager::getPendingEvent()
 		{
 			if (entry.osSocket != INVALID_SOCKET)
 				internal_close(entry.osSocket);
-			entry.getPtr()->emitClose(current.second);
+//			entry.getPtr()->emitClose(entry.second);
+			evs.push_back(std::bind(&net::Server::emitClose, entry.getPtr(), current.second));
 		}
 		entry = NetServerEntry(current.first);
 
@@ -1051,7 +1075,7 @@ void NetServerManager::getPendingEvent()
 }
 
 
-void NetServerManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
+void NetServerManager::checkPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs)
 {
 	assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
 	for (size_t i = 0; i != ioSockets.size(); ++i)
@@ -1063,25 +1087,25 @@ void NetServerManager::checkPollFdSet(const pollfd* begin, const pollfd* end)
 			{
 				NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
 				internal_getsockopt_so_error(current.osSocket);
-				makeErrorEventAndClose(current);
+				makeErrorEventAndClose(current, evs);
 			}
 			else if ((begin[i].revents & POLLIN) != 0)
 			{
 				NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
-				processAcceptEvent(current);
+				processAcceptEvent(current, evs);
 			}
 			else if (begin[i].revents != 0)
 			{
 				NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
 				internal_getsockopt_so_error(current.osSocket);
-				makeErrorEventAndClose(current);
+				makeErrorEventAndClose(current, evs);
 			}
 		}
 	}
 }
 
 
-void NetServerManager::processAcceptEvent(NetServerEntry& entry)
+void NetServerManager::processAcceptEvent(NetServerEntry& entry, EvQueue& evs)
 {
 	Ip4 remoteIp;
 	Port remotePort;
@@ -1090,15 +1114,16 @@ void NetServerManager::processAcceptEvent(NetServerEntry& entry)
 	if (!newSock)
 		return;
 
-	std::unique_ptr<net::Socket> ptr(entry.getPtr()->makeSocket());
+	net::Socket* ptr = entry.getPtr()->makeSocket();
 	auto& man = getInfra().getNetSocket();
 
-	bool ok = man.addAccepted(ptr.get(), newSock.release());
+	bool ok = man.addAccepted(ptr, newSock.release());
 
 	if (!ok)
 		return;
 
-	entry.getPtr()->emitConnection(std::move(ptr));
+//	entry.getPtr()->emitConnection(ptr);
+	evs.push_back(std::bind(&net::Server::emitConnection, entry.getPtr(), ptr));
 
 	return;
 }
@@ -1137,8 +1162,8 @@ const NetServerEntry& NetServerManager::getEntry(size_t id) const
 
 
 
-void NetServerManager::makeErrorEventAndClose(NetServerEntry& entry)
+void NetServerManager::makeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs)
 {
-	entry.getPtr()->emitError();
+	evs.push_back(std::bind(&net::Server::emitError, entry.getPtr()));
 	pendingCloseEvents.emplace_back(entry.index, true);
 }

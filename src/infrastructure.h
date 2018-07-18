@@ -49,13 +49,11 @@ Infrastructure& getInfra() { return infra; }
 
 static constexpr uint64_t TimeOutNever = static_cast<uint64_t>(-1);
 
-struct EvQueues
-{
-	std::vector<int> events;
-};
+using EvQueue = std::vector<std::function<void()>>;
 
-void pollPhase(uint64_t nextTimeoutAt, EvQueues& evs);
-void pendingCloseEvents();
+bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs);
+void pendingCloseEvents(EvQueue& evs);
 
+void fireEvents(EvQueue& evs);
 
 #endif //INFRASTRUCTURE_H

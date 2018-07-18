@@ -179,7 +179,7 @@ namespace nodecpp {
 			Socket(Socket&&) = default;
 			Socket& operator=(Socket&&) = default;
 
-			virtual ~Socket() {}
+			virtual ~Socket() { if (state == CONNECTING || state == CONNECTED) destroy(); }
 
 			void emitClose(bool hadError) {
 				state = DESTROYED;
@@ -202,7 +202,7 @@ namespace nodecpp {
 				onConnect();
 			}
 
-			void emitData(Buffer buffer) {
+			void emitData(Buffer& buffer) {
 				_bytesRead += buffer.size();
 //				EventEmitter<event::Data>::emit(std::ref(buffer));
 				eData.emit(std::ref(buffer));
@@ -329,11 +329,13 @@ namespace nodecpp {
 			const std::string& remoteFamily() const { return _remote.family; }
 			uint16_t remotePort() const { return _remote.port; }
 
+			void ref();
 			void resume();
 
 			Socket& setNoDelay(bool noDelay = true);
 			Socket& setKeepAlive(bool enable = false);
 
+			void unref();
 			bool write(const uint8_t* data, uint32_t size);
 			bool write(const uint8_t* data, uint32_t size, std::function<void()> cb) {
 				bool b = write(data, size);
@@ -462,11 +464,12 @@ namespace nodecpp {
 			}*/
 		};
 
-		class Server {
+		class Server :EventEmitter<event::Close>, EventEmitter<event::Connection>,
+			EventEmitter<event::Listening>, EventEmitter<event::Error> {
 			Address localAddress;
 			uint16_t localPort = 0;
 
-			size_t index = 0;
+			size_t id = 0;
 			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
 
 		public:
@@ -475,40 +478,64 @@ namespace nodecpp {
 
 			void emitClose(bool hadError) {
 				state = CLOSED;
-				index = 0;
-				localAddress = Address();
+				id = 0;
+				EventEmitter<event::Close>::emit(hadError);
 				onClose(hadError);
 			}
 
-			void emitConnection(std::unique_ptr<Socket> socket) {
-				onConnection(std::move(socket));
+			void emitConnection(Socket* socket) {
+				EventEmitter<event::Connection>::emit(socket);
+				onConnection(socket);
 			}
 
 			void emitListening(size_t id, Address addr) {
-				index = id;
+				this->id = id;
 				localAddress = std::move(addr);
 				state = LISTENING;
+				EventEmitter<event::Listening>::emit();
 				onListening();
 			}
 
 			void emitError() {
+				EventEmitter<event::Error>::emit();
 				onError();
 			}
 
 
 			virtual void onClose(bool hadError) {}
-			virtual void onConnection(std::unique_ptr<Socket> socket) {}
+			virtual void onConnection(Socket* socket) {}
 			virtual void onListening() {}
 			virtual void onError() {}
 
-			virtual std::unique_ptr<Socket> makeSocket() {
-				return std::unique_ptr<Socket>(new Socket());
+			virtual Socket* makeSocket() {
+				return new Socket();
 			}
 
 			const Address& address() const { return localAddress; }
 			void close();
+			void close(std::function<void(bool)> cb) {
+				once<event::Close>(std::move(cb));
+				close();
+			}
+
 			void listen(uint16_t port, const char* ip, int backlog);
+			void listen(uint16_t port, const char* ip, int backlog, std::function<void()> cb) {
+				once<event::Listening>(std::move(cb));
+				listen(port, ip, backlog);
+			}
 			bool listening() const { return state == LISTENING; }
+			void ref();
+			void unref();
+
+			template<class EV>
+			void on(typename EV::callback cb) {
+				EventEmitter<EV>::on(std::move(cb));
+			}
+
+			template<class EV>
+			void once(typename EV::callback cb) {
+				EventEmitter<EV>::once(std::move(cb));
+			}
 
 		};
 
@@ -516,6 +543,12 @@ namespace nodecpp {
 		template<class T>
 		T* createServer() {
 			return new T();
+		}
+		template<class T>
+		T* createServer(std::function<void()> cb) {
+			auto svr = new T();
+			svr->on<event::Connect>(cb);
+			return svr;
 		}
 
 		template<class T>

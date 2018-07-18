@@ -33,6 +33,7 @@
 namespace nodecpp
 {
 	class Buffer;
+	namespace net { class Socket; }
 
 
 	struct event
@@ -102,6 +103,20 @@ namespace nodecpp
 			static constexpr type_t type = error;
 		};
 		static constexpr Error error = Error();
+
+
+		struct Connection
+		{
+			using callback = std::function<void(net::Socket*)>;
+			const char* name = "connection";
+		};
+
+		struct Listening
+		{
+			using callback = std::function<void()>;
+			const char* name = "listening";
+		};
+
 	};
 
 	/*

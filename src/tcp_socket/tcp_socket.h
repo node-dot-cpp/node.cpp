@@ -43,6 +43,8 @@ const SOCKET INVALID_SOCKET = -1;
 struct pollfd;
 #endif
 
+using EvQueue = std::vector<std::function<void()>>;
+
 class Ip4
 {
 	uint32_t ip = -1;
@@ -92,6 +94,7 @@ public:
 	bool localEnded = false;
 	bool pendingLocalEnd = false;
 	bool paused = false;
+	bool refed = true;
 
 	Buffer writeBuffer = Buffer(64 * 1024);
 	Buffer recvBuffer = Buffer(64 * 1024);
@@ -120,6 +123,7 @@ class NetSocketManager {
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetSocketEntry> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
+	std::vector<Buffer> bufferStore; // TODO: improve
 
 	std::string family = "IPv4";
 	
@@ -135,20 +139,29 @@ public:
 
 	size_t bufferSize(size_t id) { return getEntry(id).writeBuffer.size(); }
 
+	void ref(size_t id) { getEntry(id).refed = true; }
 	void setKeepAlive(size_t id, bool enable);
 	void setNoDelay(size_t id, bool noDelay);
+	void unref(size_t id) { getEntry(id).refed = false; }
 	bool write(size_t id, const uint8_t* data, uint32_t size);
 
+	Buffer& storeBuffer(Buffer buff) {
+		bufferStore.push_back(std::move(buff));
+		return bufferStore.back();
+	}
+	void clearBufferStore() {
+		bufferStore.clear();
+	}
 
 	// to help with 'poll'
 	size_t getPollFdSetSize() const;
-	void setPollFdSet(pollfd* begin, const pollfd* end) const;
-	void getPendingEvent();
-	void checkPollFdSet(const pollfd* begin, const pollfd* end);
+	bool setPollFdSet(pollfd* begin, const pollfd* end) const;
+	void getPendingEvent(EvQueue& evs);
+	void checkPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
 
 private:
-	void processReadEvent(NetSocketEntry& current);
-	void processWriteEvent(NetSocketEntry& current);
+	void processReadEvent(NetSocketEntry& current, EvQueue& evs);
+	void processWriteEvent(NetSocketEntry& current, EvQueue& evs);
 
 	std::pair<bool, Buffer> getPacketBytes(Buffer& buff, SOCKET sock);
 public:
@@ -159,7 +172,8 @@ private:
 	NetSocketEntry& getEntry(size_t id);
 	const NetSocketEntry& getEntry(size_t id) const;
 
-	void makeErrorEventAndClose(NetSocketEntry& entry);
+	void makeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs);
+	void makeAsyncErrorEventAndClose(NetSocketEntry& entry);
 };
 
 
@@ -168,6 +182,7 @@ class NetServerEntry {
 public:
 	size_t index;
 	net::Server* ptr = nullptr;
+	bool refed = true;
 	SOCKET osSocket = INVALID_SOCKET;
 	short fdEvents = 0;
 
@@ -198,24 +213,27 @@ public:
 	static const size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetServerManager();
 
-	void listen(net::Server* ptr, uint16_t port, const char* ip, int backlog);
 	void close(size_t id);
+	void listen(net::Server* ptr, uint16_t port, const char* ip, int backlog);
+
+	void ref(size_t id) { getEntry(id).refed = true; }
+	void unref(size_t id) { getEntry(id).refed = false; }
 
 	// to help with 'poll'
 	size_t getPollFdSetSize() const;
-	void setPollFdSet(pollfd* begin, const pollfd* end) const;
-	void getPendingEvent();
-	void checkPollFdSet(const pollfd* begin, const pollfd* end);
+	bool setPollFdSet(pollfd* begin, const pollfd* end) const;
+	void getPendingEvent(EvQueue& evs);
+	void checkPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
 
 private:
-	void processAcceptEvent(NetServerEntry& entry);
+	void processAcceptEvent(NetServerEntry& entry, EvQueue& evs);
 public:
 	size_t addEntry(net::Server* ptr);
 private:
 	NetServerEntry& getEntry(size_t id);
 	const NetServerEntry& getEntry(size_t id) const;
 
-	void makeErrorEventAndClose(NetServerEntry& entry);
+	void makeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs);
 };
 
 

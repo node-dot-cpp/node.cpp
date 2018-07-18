@@ -25,20 +25,17 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef LOOP_H
-#define LOOP_H
+#ifndef ERROR_H
+#define ERROR_H
 
-#include "common.h"
-#include <functional>
+#include <exception>
 
-namespace nodecpp {
-
-	void setInmediate(std::function<void()> cb);
-	void runLoop();
+namespace nodecpp
+{
+	class Error :public std::exception {};
 
 
 }
 
 
-
-#endif //LOOP_H
+#endif //ERROR_H
