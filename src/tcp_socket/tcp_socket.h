@@ -43,7 +43,28 @@ const SOCKET INVALID_SOCKET = -1;
 struct pollfd;
 #endif
 
-using EvQueue = std::vector<std::function<void()>>;
+class EvQueue
+{
+	std::list<std::function<void()>> evQueue;
+public:
+	template<class M, class T, class... Args>
+	void add(M T::* pm, T* inst, Args... args)
+	{
+		auto b = std::bind(pm, inst, args...);
+		evQueue.push_back(std::move(b));
+	}
+
+	void emit()
+	{
+		//TODO: verify if exceptions may reach here from user code
+		for (auto& current : evQueue)
+		{
+			current();
+		}
+		evQueue.clear();
+	}
+};
+
 
 class Ip4
 {

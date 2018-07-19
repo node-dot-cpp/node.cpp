@@ -735,7 +735,7 @@ void NetSocketManager::getPendingEvent(EvQueue& evs)
 			if (entry.osSocket != INVALID_SOCKET)
 				internal_close(entry.osSocket);
 
-			evs.push_back(std::bind(&net::Socket::emitClose, entry.getPtr(), current.second));
+			evs.add(&net::Socket::emitClose, entry.getPtr(), current.second);
 		}
 		entry = NetSocketEntry(current.first);
 	}
@@ -783,7 +783,7 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end, Ev
 					{
 						current.remoteEnded = true;
 //						entry.ptr->emitEnd();
-						evs.push_back(std::bind(&net::Socket::emitEnd, current.getPtr()));
+						evs.add(&net::Socket::emitEnd, current.getPtr());
 						if (current.localEnded)
 						{
 							pendingCloseEvents.emplace_back(current.index, false);
@@ -817,13 +817,13 @@ void NetSocketManager::processReadEvent(NetSocketEntry& entry, EvQueue& evs)
 		{
 //			entry.ptr->emitData(std::move(res.second));
 
-			evs.push_back(std::bind(&net::Socket::emitData, entry.getPtr(), std::ref(storeBuffer(std::move(res.second)))));
+			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(storeBuffer(std::move(res.second))));
 		}
 		else if (!entry.remoteEnded)
 		{
 			entry.remoteEnded = true;
 //			entry.ptr->emitEnd();
-			evs.push_back(std::bind(&net::Socket::emitEnd, entry.getPtr()));
+			evs.add(&net::Socket::emitEnd, entry.getPtr());
 		}
 		else
 		{
@@ -850,7 +850,7 @@ void NetSocketManager::processWriteEvent(NetSocketEntry& current, EvQueue& evs)
 #endif					
 		if (success) {
 //			entry.ptr->emitConnect();
-			evs.push_back(std::bind(&net::Socket::emitConnect, current.getPtr()));
+			evs.add(&net::Socket::emitConnect, current.getPtr());
 		}
 		else
 			makeErrorEventAndClose(current, evs);
@@ -881,7 +881,7 @@ void NetSocketManager::processWriteEvent(NetSocketEntry& current, EvQueue& evs)
 			}
 				
 //			entry.ptr->emitDrain();
-			evs.push_back(std::bind(&net::Socket::emitDrain, current.getPtr()));
+			evs.add(&net::Socket::emitDrain, current.getPtr());
 		}
 		else
 		{
@@ -946,7 +946,7 @@ std::pair<bool, Buffer> NetSocketManager::getPacketBytes(Buffer& buff, SOCKET so
 
 void NetSocketManager::makeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs)
 {
-	evs.push_back(std::bind(&net::Socket::emitError, entry.getPtr()));
+	evs.add(&net::Socket::emitError, entry.getPtr());
 	pendingCloseEvents.emplace_back(entry.index, true);
 }
 
@@ -1066,7 +1066,7 @@ void NetServerManager::getPendingEvent(EvQueue& evs)
 			if (entry.osSocket != INVALID_SOCKET)
 				internal_close(entry.osSocket);
 //			entry.getPtr()->emitClose(entry.second);
-			evs.push_back(std::bind(&net::Server::emitClose, entry.getPtr(), current.second));
+			evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
 		}
 		entry = NetServerEntry(current.first);
 
@@ -1123,7 +1123,7 @@ void NetServerManager::processAcceptEvent(NetServerEntry& entry, EvQueue& evs)
 		return;
 
 //	entry.getPtr()->emitConnection(ptr);
-	evs.push_back(std::bind(&net::Server::emitConnection, entry.getPtr(), ptr));
+	evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
 
 	return;
 }
@@ -1164,6 +1164,6 @@ const NetServerEntry& NetServerManager::getEntry(size_t id) const
 
 void NetServerManager::makeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs)
 {
-	evs.push_back(std::bind(&net::Server::emitError, entry.getPtr()));
+	evs.add(&net::Server::emitError, entry.getPtr());
 	pendingCloseEvents.emplace_back(entry.index, true);
 }

@@ -34,6 +34,7 @@
 namespace nodecpp {
 
 	void setInmediate(std::function<void()> cb);
+	void setTimeout(std::function<void()> cb, int32_t ms);
 	void runLoop();
 
 
