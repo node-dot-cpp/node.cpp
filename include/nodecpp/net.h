@@ -144,9 +144,21 @@ namespace nodecpp {
 		};
 
 
-		class Socket :EventEmitter<event::Close>, EventEmitter<event::Connect> ,
+		class Socket /*:EventEmitter<event::Close>, EventEmitter<event::Connect> ,
 			EventEmitter<event::Data> , EventEmitter<event::Drain> ,
-			EventEmitter<event::End>, EventEmitter<event::Error> {
+			EventEmitter<event::End>, EventEmitter<event::Error>*/ {
+			EventEmitter<event::Close> eClose;
+			EventEmitter<event::Connect> eConnect;
+			EventEmitter<event::Data> eData;
+			EventEmitter<event::Drain> eDrain;
+			EventEmitter<event::End> eEnd;
+			EventEmitter<event::Error> eError;
+
+			size_t recvSize = 0;
+			size_t sentSize = 0;
+			std::unique_ptr<uint8_t> ptr;
+			size_t size = 64 * 1024;
+
 			size_t id = 0;
 			Address _local;
 			Address _remote;
@@ -172,7 +184,8 @@ namespace nodecpp {
 			void emitClose(bool hadError) {
 				state = DESTROYED;
 				this->id = 0;
-				EventEmitter<event::Close>::emit(hadError);
+//				EventEmitter<event::Close>::emit(hadError);
+				eClose.emit(hadError);
 				onClose(hadError);
 			}
 
@@ -184,18 +197,21 @@ namespace nodecpp {
 
 			void emitConnect() {
 				state = CONNECTED;
-				EventEmitter<event::Connect>::emit();
+//				EventEmitter<event::Connect>::emit();
+				eConnect.emit();
 				onConnect();
 			}
 
 			void emitData(Buffer buffer) {
 				_bytesRead += buffer.size();
-				EventEmitter<event::Data>::emit(std::ref(buffer));
+//				EventEmitter<event::Data>::emit(std::ref(buffer));
+				eData.emit(std::ref(buffer));
 				onData(buffer);
 			}
 
 			void emitDrain() {
-				EventEmitter<event::Drain>::emit();
+//				EventEmitter<event::Drain>::emit();
+				eDrain.emit();
 				onDrain();
 			}
 
@@ -210,12 +226,82 @@ namespace nodecpp {
 			}
 
 
-			virtual void onClose(bool hadError) {}
+/*			virtual void onClose(bool hadError) {}
 			virtual void onConnect() {}
 			virtual void onData(Buffer& buffer) {}
 			virtual void onDrain() {}
 			virtual void onEnd() {}
-			virtual void onError() {}
+			virtual void onError() {}*/
+
+			virtual void onClose(bool hadError) {
+				fmt::print("onClose!\n");
+			}
+
+			virtual void onConnect() {
+				fmt::print("onConnect!\n");
+				ptr.reset(static_cast<uint8_t*>(malloc(size)));
+
+				bool ok = true;
+				while (ok) {
+					ok = write(ptr.get(), size);
+					sentSize += size;
+				}
+			}
+
+			virtual void onData(Buffer& buffer) {
+				fmt::print("onData!\n");
+				recvSize += buffer.size();
+
+				if (recvSize >= sentSize)
+					end();
+			}
+
+			virtual void onDrain() {
+				fmt::print("onDrain!\n");
+			}
+
+			virtual void onEnd() {
+				fmt::print("onEnd!\n");
+			}
+
+			virtual void onError() {
+				fmt::print("onError!\n");
+			}
+
+			void didClose(bool hadError) {
+				fmt::print("onClose!\n");
+			}
+
+			void didConnect() {
+				fmt::print("onConnect!\n");
+				ptr.reset(static_cast<uint8_t*>(malloc(size)));
+
+				bool ok = true;
+				while (ok) {
+					ok = write(ptr.get(), size, [] { fmt::print("onDrain!\n"); });
+					sentSize += size;
+				}
+			}
+
+			void didData(Buffer& buffer) {
+				fmt::print("onData!\n");
+				recvSize += buffer.size();
+
+				if (recvSize >= sentSize)
+					end();
+			}
+
+			//void didDrain() {
+			//	print("onDrain!\n");
+			//}
+
+			void didEnd() {
+				fmt::print("onEnd!\n");
+			}
+
+			void didError() {
+				fmt::print("onError!\n");
+			}
 
 			const Address& address() const { return _local; }
 
@@ -257,15 +343,123 @@ namespace nodecpp {
 				return b;
 			}
 
+
+
+			void on( std::string name, event::Close::callback cb) {
+				static_assert( !std::is_same< event::Close::callback, event::Connect::callback >::value );
+				static_assert( !std::is_same< event::Close::callback, event::Data::callback >::value );
+				static_assert( !std::is_same< event::Close::callback, event::Drain::callback >::value );
+				static_assert( !std::is_same< event::Close::callback, event::End::callback >::value );
+				static_assert( !std::is_same< event::Close::callback, event::Error::callback >::value );
+				assert( name == event::Close::name );
+				eClose.on(std::move(cb));
+			}
+			void on( std::string name, event::Data::callback cb) {
+				static_assert( !std::is_same< event::Data::callback, event::Close::callback >::value );
+				static_assert( !std::is_same< event::Data::callback, event::Connect::callback >::value );
+				static_assert( !std::is_same< event::Data::callback, event::Drain::callback >::value );
+				static_assert( !std::is_same< event::Data::callback, event::End::callback >::value );
+				static_assert( !std::is_same< event::Data::callback, event::Error::callback >::value );
+				assert( name == event::Data::name );
+				eData.on(std::move(cb));
+			}
+			void on( std::string name, event::Connect::callback cb) {
+				static_assert( !std::is_same< event::Connect::callback, event::Close::callback >::value );
+				static_assert( !std::is_same< event::Connect::callback, event::Data::callback >::value );
+				static_assert( std::is_same< event::Connect::callback, event::Drain::callback >::value );
+				static_assert( std::is_same< event::Connect::callback, event::End::callback >::value );
+				static_assert( std::is_same< event::Connect::callback, event::Error::callback >::value );
+				if ( name == event::Drain::name )
+					eDrain.on(std::move(cb));
+				else if ( name == event::Connect::name )
+					eConnect.on(std::move(cb));
+				else if ( name == event::End::name )
+					eEnd.on(std::move(cb));
+				else if ( name == event::Error::name )
+					eError.on(std::move(cb));
+			}
+
+			void once( std::string name, event::Close::callback cb) {
+				static_assert( !std::is_same< event::Close::callback, event::Connect::callback >::value );
+				static_assert( !std::is_same< event::Close::callback, event::Data::callback >::value );
+				static_assert( !std::is_same< event::Close::callback, event::Drain::callback >::value );
+				static_assert( !std::is_same< event::Close::callback, event::End::callback >::value );
+				static_assert( !std::is_same< event::Close::callback, event::Error::callback >::value );
+				assert( name == event::Close::name );
+				eClose.once(std::move(cb));
+			}
+			void once( std::string name, event::Data::callback cb) {
+				static_assert( !std::is_same< event::Data::callback, event::Close::callback >::value );
+				static_assert( !std::is_same< event::Data::callback, event::Connect::callback >::value );
+				static_assert( !std::is_same< event::Data::callback, event::Drain::callback >::value );
+				static_assert( !std::is_same< event::Data::callback, event::End::callback >::value );
+				static_assert( !std::is_same< event::Data::callback, event::Error::callback >::value );
+				assert( name == event::Data::name );
+				eData.once(std::move(cb));
+			}
+			void once( std::string name, event::Connect::callback cb) {
+				static_assert( !std::is_same< event::Connect::callback, event::Close::callback >::value );
+				static_assert( !std::is_same< event::Connect::callback, event::Data::callback >::value );
+				static_assert( std::is_same< event::Connect::callback, event::Drain::callback >::value );
+				static_assert( std::is_same< event::Connect::callback, event::End::callback >::value );
+				static_assert( std::is_same< event::Connect::callback, event::Error::callback >::value );
+				if ( name == event::Drain::name )
+					eDrain.once(std::move(cb));
+				else if ( name == event::Connect::name )
+					eConnect.once(std::move(cb));
+				else if ( name == event::End::name )
+					eEnd.once(std::move(cb));
+				else if ( name == event::Error::name )
+					eError.once(std::move(cb));
+			}
+
+			template<class EV>
+			void on( typename EV, typename EV::callback cb) {
+				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Data) ) { eData.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.on(std::move(cb)); }
+			}
+
+			template<class EV>
+			void once( typename EV, typename EV::callback cb) {
+				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Data) ) { eData.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.once(std::move(cb)); }
+			}
+
 			template<class EV>
 			void on(typename EV::callback cb) {
-				EventEmitter<EV>::on(std::move(cb));
+				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Data) ) { eData.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.on(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.on(std::move(cb)); }
 			}
 
 			template<class EV>
 			void once(typename EV::callback cb) {
-				EventEmitter<EV>::once(std::move(cb));
+				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Data) ) { eData.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.once(std::move(cb)); }
+				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.once(std::move(cb)); }
 			}
+/*			template<class EV>
+			void on(typename EV::callback cb) {
+				EventEmitter<EV>::once(std::move(cb));
+
+			template<class EV>
+			void once(typename EV::callback cb) {
+				EventEmitter<EV>::once(std::move(cb));
+			}*/
 		};
 
 		class Server {

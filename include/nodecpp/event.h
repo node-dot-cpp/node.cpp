@@ -34,44 +34,75 @@ namespace nodecpp
 {
 	class Buffer;
 
-	namespace event
+
+	struct event
 	{
+		enum class EventType { Close, Connect, Data, Drain, End, Error };
+
 		struct Close
 		{
 			using callback = std::function<void(bool)>;
-			const char* name = "close";
+			static constexpr const char* name = "close";
+//			using type_t = EventType;
+//			static constexpr type_t type = EventType::Close;
+			using type_t = enum Close_{ close = EventType::Close };
+			static constexpr type_t type = close;
 		};
+		static constexpr Close close = Close();
 
 		struct Connect
 		{
 			using callback = std::function<void()>;
-			const char* name = "connect";
+			static constexpr const char* name = "connect";
+			using type_t = enum Connect_ { connect = EventType::Connect };
+			static constexpr type_t type = connect;
 		};
+		static constexpr Connect connect = Connect();
 
 		struct Data
 		{
 			using callback = std::function<void(Buffer&)>;
-			const char* name = "data";
+			static constexpr const char* name = "data";
+//			using type_t = EventType;
+//			static constexpr type_t type = EventType::Data;
+			using type_t = enum Data_{ data = EventType::Data };
+			static constexpr type_t type = data;
 		};
+		static constexpr Data data = Data();
 
 		struct Drain
 		{
 			using callback = std::function<void()>;
-			const char* name = "drain";
+			static constexpr const char* name = "drain";
+//			using type_t = EventType;
+//			static constexpr type_t type = EventType::Drain;
+			using type_t = enum Drain_{ drain = EventType::Drain };
+			static constexpr type_t type = drain;
 		};
+		static constexpr Drain drain = Drain();
 
 		struct End
 		{
 			using callback = std::function<void()>;
-			const char* name = "end";
+			static constexpr const char* name = "end";
+//			using type_t = EventType;
+//			static constexpr type_t type = EventType::End;
+			using type_t = enum End_{ end = EventType::End };
+			static constexpr type_t type = end;
 		};
+		static constexpr End end = End();
 
 		struct Error
 		{
 			using callback = std::function<void(/*TODO*/)>;
-			const char* name = "error";
+			static constexpr const char* name = "error";
+//			using type_t = EventType;
+//			static constexpr type_t type = EventType::Error;
+			using type_t = enum Error_{ error = EventType::Error };
+			static constexpr type_t type = error;
 		};
-	}
+		static constexpr Error error = Error();
+	};
 
 	/*
 		Two important things:
