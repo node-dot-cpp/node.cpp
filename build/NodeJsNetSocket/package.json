@@ -1,0 +1,9 @@
+{
+  "name": "node-js-net-socket",
+  "version": "0.0.0",
+  "description": "NodeJsNetSocket",
+  "main": "app.js",
+  "author": {
+    "name": "Marcos"
+  }
+}

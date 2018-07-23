@@ -50,8 +50,9 @@ public:
 	template<class M, class T, class... Args>
 	void add(M T::* pm, T* inst, Args... args)
 	{
-		auto b = std::bind(pm, inst, args...);
-		evQueue.push_back(std::move(b));
+		//auto b = std::bind(pm, inst, args...);
+		//evQueue.push_back(std::move(b));
+		(inst->*pm)(args...);
 	}
 
 	void emit()
@@ -115,6 +116,8 @@ public:
 	bool localEnded = false;
 	bool pendingLocalEnd = false;
 	bool paused = false;
+	bool allowHalfOpen = true;
+
 	bool refed = true;
 
 	Buffer writeBuffer = Buffer(64 * 1024);
@@ -173,7 +176,9 @@ public:
 	void clearBufferStore() {
 		bufferStore.clear();
 	}
-
+	
+	
+public:
 	// to help with 'poll'
 	size_t getPollFdSetSize() const;
 	bool setPollFdSet(pollfd* begin, const pollfd* end) const;
@@ -182,6 +187,7 @@ public:
 
 private:
 	void processReadEvent(NetSocketEntry& current, EvQueue& evs);
+	void processRemoteEnded(NetSocketEntry& current, EvQueue& evs);
 	void processWriteEvent(NetSocketEntry& current, EvQueue& evs);
 
 	std::pair<bool, Buffer> getPacketBytes(Buffer& buff, SOCKET sock);

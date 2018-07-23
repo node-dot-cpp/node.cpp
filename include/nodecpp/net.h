@@ -216,12 +216,14 @@ namespace nodecpp {
 			}
 
 			void emitEnd() {
+				EventEmitter<event::End>::emit();
 				onEnd();
 			}
 
 			void emitError() {
 				state = DESTROYED;
 				this->id = 0;
+				EventEmitter<event::Error>::emit();
 				onError();
 			}
 

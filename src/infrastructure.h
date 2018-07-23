@@ -32,8 +32,19 @@
 #include "tcp_socket/tcp_socket.h"
 
 using EvVector = std::vector<std::function<void()>>;
+void fireEvents(EvVector& evs);
 
-
+/*
+	Timeouts, as simple as they are clear examples of ownership issues.
+	'setTimeout()' will return a 'Timeout' object, that user may or maynot store.
+	If the user doesn't store it, timeout will fire normally, and after that all 
+	resources will be discarded.
+	But if user keeps a living reference, then she may call 'refresh' to reschedule,
+	so resources may not be discarded until user discards her reference.
+*/
+class TimeoutManager
+{
+};
 
 class Infrastructure
 {
@@ -46,7 +57,7 @@ public:
 	NetSocketManager& getNetSocket() { return netSocket; }
 	NetServerManager& getNetServer() { return netServer; }
 	void setInmediate(std::function<void()> cb) { inmediateQueue.push_back(std::move(cb)); }
-	EvVector& getInmediates() { return inmediateQueue; }
+	void callInmediates() { fireEvents(inmediateQueue); }
 };
 
 extern thread_local Infrastructure infra;
@@ -62,6 +73,5 @@ static constexpr uint64_t TimeOutNever = static_cast<uint64_t>(-1);
 bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs);
 void pendingCloseEvents(EvQueue& evs);
 
-void fireEvents(EvVector& evs);
 
 #endif //INFRASTRUCTURE_H

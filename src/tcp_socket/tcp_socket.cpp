@@ -526,18 +526,18 @@ size_t NetSocketManager::connect(net::Socket* ptr, const char* ip, uint16_t port
 
 	SocketRiia s(internal_make_tcp_socket());
 	if (!s)
-		return 0; //TODO
+		throw Error();
 
 	uint8_t st = internal_connect_for_address(peerIp, peerPort, s.get());
 
 	if (st != COMMLAYER_RET_PENDING && st != COMMLAYER_RET_OK)
-		return 0; //TODO
+		throw Error();
 
 	size_t id = addEntry(ptr);
 	if (id == 0)
 	{
 		NODECPP_TRACE("Failed to add entry on NetSocketManager::connect");
-		return 0;
+		throw Error();
 	}
 
 	auto& entry = getEntry(id);
@@ -553,13 +553,13 @@ void NetSocketManager::destroy(size_t id)
 	if (!entry.isValid())
 	{
 		NODECPP_TRACE("Unexpected id {} on NetSocketManager::destroy", id);
-		return;
+		throw Error();
 	}
 	//	
 	//	if(force)
 	internal_linger_zero_socket(entry.osSocket);
 	
-	pendingCloseEvents.emplace_back(entry.osSocket, false);
+	pendingCloseEvents.emplace_back(entry.index, false);
 }
 
 void NetSocketManager::end(size_t id)
@@ -568,7 +568,7 @@ void NetSocketManager::end(size_t id)
 	if (!entry.isValid())
 	{
 		NODECPP_TRACE("Unexpected id {} on NetSocketManager::end", id);
-		return;
+		throw Error();
 	}
 	
 	if (entry.writeBuffer.empty())
@@ -591,7 +591,7 @@ void NetSocketManager::setKeepAlive(size_t id, bool enable)
 	if (!entry.isValid())
 	{
 		NODECPP_TRACE("Unexpected id {} on NetSocketManager::setKeepAlive", id);
-		return;
+		throw Error();
 	}
 
 	if (!internal_socket_keep_alive(entry.osSocket, enable))
@@ -606,7 +606,7 @@ void NetSocketManager::setNoDelay(size_t id, bool noDelay)
 	if (!entry.isValid())
 	{
 		NODECPP_TRACE("Unexpected id {} on NetSocketManager::setNoDelay", id);
-		return;
+		throw Error();
 	}
 
 	if (!internal_tcp_no_delay_socket(entry.osSocket, noDelay))
@@ -621,13 +621,14 @@ bool NetSocketManager::write(size_t id, const uint8_t* data, uint32_t size)
 	if (!entry.isValid())
 	{
 		NODECPP_TRACE("Unexpected StreamSocket {} on sendStreamSegment", id);
-		return true;
+		throw Error();
 	}
 
 	if (entry.localEnded || entry.pendingLocalEnd)
 	{
 		NODECPP_TRACE("StreamSocket {} already ended", id);
-		return true;
+		makeAsyncErrorEventAndClose(entry);
+		return false;
 	}
 
 	if (entry.writeBuffer.size() == 0)
@@ -761,7 +762,7 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end, Ev
 				/*
 					on Windows when the other end sends a FIN,
 					POLLHUP goes up, if we still have data pending to read
-					both POLLHUP and POLLIN go up. POLLHUP continues to be up
+					both POLLHUP and POLLIN are up. POLLHUP continues to be up
 					for the socket as long as the socket lives.
 					on Linux, when remote end sends a FIN, we get a zero size read
 					after all pending data is read.
@@ -778,18 +779,7 @@ void NetSocketManager::checkPollFdSet(const pollfd* begin, const pollfd* end, Ev
 				else if ((begin[i].revents & POLLHUP) != 0)
 				{
 					NODECPP_TRACE("POLLHUP event at {}", begin[i].fd);
-
-					if (!current.remoteEnded)
-					{
-						current.remoteEnded = true;
-//						entry.ptr->emitEnd();
-						evs.add(&net::Socket::emitEnd, current.getPtr());
-						if (current.localEnded)
-						{
-							pendingCloseEvents.emplace_back(current.index, false);
-							continue;
-						}
-					}
+					processRemoteEnded(current, evs);
 				}
 				
 				if ((begin[i].revents & POLLOUT) != 0)
@@ -819,15 +809,9 @@ void NetSocketManager::processReadEvent(NetSocketEntry& entry, EvQueue& evs)
 
 			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(storeBuffer(std::move(res.second))));
 		}
-		else if (!entry.remoteEnded)
+		else //if (!entry.remoteEnded)
 		{
-			entry.remoteEnded = true;
-//			entry.ptr->emitEnd();
-			evs.add(&net::Socket::emitEnd, entry.getPtr());
-		}
-		else
-		{
-			NODECPP_TRACE("Unexpected read on socket {}, already shutdown", entry.osSocket);
+			processRemoteEnded(entry, evs);
 		}
 	}
 	else
@@ -835,6 +819,34 @@ void NetSocketManager::processReadEvent(NetSocketEntry& entry, EvQueue& evs)
 		internal_getsockopt_so_error(entry.osSocket);
 		return makeErrorEventAndClose(entry, evs);
 	}
+}
+
+void NetSocketManager::processRemoteEnded(NetSocketEntry& entry, EvQueue& evs)
+{
+	if (!entry.remoteEnded)
+	{
+		entry.remoteEnded = true;
+		evs.add(&net::Socket::emitEnd, entry.getPtr());
+		if (entry.localEnded)
+		{
+			pendingCloseEvents.emplace_back(entry.index, false);
+		}
+		else if (!entry.allowHalfOpen && !entry.pendingLocalEnd)
+		{
+			if (!entry.writeBuffer.empty())
+				entry.pendingLocalEnd = true;
+			else
+			{
+				internal_shutdown_send(entry.osSocket);
+				entry.localEnded = true;
+			}
+		}
+	}
+	else
+	{
+		NODECPP_TRACE("Unexpected end on socket {}, already ended", entry.osSocket);
+	}
+
 }
 
 void NetSocketManager::processWriteEvent(NetSocketEntry& current, EvQueue& evs)
