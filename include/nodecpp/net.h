@@ -419,26 +419,6 @@ namespace nodecpp {
 					eError.once(std::move(cb));
 			}
 
-/*			template<class EV>
-			void on( typename EV, typename EV::callback cb) {
-				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Data) ) { eData.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.on(std::move(cb)); }
-			}
-
-			template<class EV>
-			void once( typename EV, typename EV::callback cb) {
-				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Data) ) { eData.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.once(std::move(cb)); }
-			}*/
-
 			template<class EV>
 			void on( typename EV, typename EV::callback cb) {
 				if constexpr ( std::is_same< EV, event::Close >::value ) { eClose.on(std::move(cb)); }
