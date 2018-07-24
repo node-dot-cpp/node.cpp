@@ -71,12 +71,17 @@ class MySocketLambda :public net::Socket {
 public:
 	MySocketLambda() {
 		//preset handlers
-		on(event::close, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
+//		on(event::close, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
+//		on(event::close, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
+		on(event::close, [this](bool b) { this->didClose(b); });
+
 //		on<event::Connect>(std::bind(&MySocketLambda::didConnect, this));
 //		on<event::Data>(std::bind(&MySocket2::didData, this, std::placeholders::_1));
 //		on<event::Drain>(std::bind(&MySocketLambda::didDrain, this));
-		on(event::end, std::bind(&MySocketLambda::didEnd, this));
-		on(event::error, std::bind(&MySocketLambda::didError, this));
+//		on(event::end, std::bind(&MySocketLambda::didEnd, this));
+		on(event::end, [this]() { this->didEnd(); });
+//		on(event::error, std::bind(&MySocketLambda::didError, this));
+		on(event::error, [this]() { this->didError(); });
 	}
 
 	void didClose(bool hadError) {
