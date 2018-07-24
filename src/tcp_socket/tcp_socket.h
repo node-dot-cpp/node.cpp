@@ -148,6 +148,7 @@ class NetSocketManager {
 	std::vector<NetSocketEntry> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
 	std::vector<Buffer> bufferStore; // TODO: improve
+	std::vector<Error> errorStore;
 
 	std::string family = "IPv4";
 	
@@ -169,12 +170,20 @@ public:
 	void unref(size_t id) { getEntry(id).refed = false; }
 	bool write(size_t id, const uint8_t* data, uint32_t size);
 
+	//TODO quick workaround until definitive life managment is in place
 	Buffer& storeBuffer(Buffer buff) {
 		bufferStore.push_back(std::move(buff));
 		return bufferStore.back();
 	}
-	void clearBufferStore() {
+
+	Error& storeError(Error err) {
+		errorStore.push_back(std::move(err));
+		return errorStore.back();
+	}
+
+	void clearStores() {
 		bufferStore.clear();
+		errorStore.clear();
 	}
 	
 	
@@ -233,6 +242,7 @@ class NetServerManager
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetServerEntry> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
+	std::vector<Error> errorStore;
 
 	std::string family = "IPv4";
 
@@ -245,6 +255,17 @@ public:
 
 	void ref(size_t id) { getEntry(id).refed = true; }
 	void unref(size_t id) { getEntry(id).refed = false; }
+
+
+	//TODO quick workaround until definitive life managment is in place
+	Error& storeError(Error err) {
+		errorStore.push_back(std::move(err));
+		return errorStore.back();
+	}
+
+	void clearStores() {
+		errorStore.clear();
+	}
 
 	// to help with 'poll'
 	size_t getPollFdSetSize() const;

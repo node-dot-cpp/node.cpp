@@ -56,7 +56,7 @@ public:
 		print("onEnd!\n");
 	}
 
-	void onError() override {
+	void onError(Error&) override {
 		print("onError!\n");
 	}
 };
@@ -81,7 +81,7 @@ public:
 //		on(event::end, std::bind(&MySocketLambda::didEnd, this));
 		on(event::end, [this]() { this->didEnd(); });
 //		on(event::error, std::bind(&MySocketLambda::didError, this));
-		on(event::error, [this]() { this->didError(); });
+		on(event::error, [this](Error&) { this->didError(); });
 	}
 
 	void didClose(bool hadError) {
@@ -214,7 +214,7 @@ public:
 		socket->on(event::close, [this](bool b) { this->didClose(b); });
 		socket->on(event::data, [this](Buffer& buffer) { this->didData(buffer); });
 		socket->on(event::end, [this]() { this->didEnd(); });
-		socket->on(event::error, [this]() { this->didError(); });
+		socket->on(event::error, [this](Error&) { this->didError(); });
 	}
 
 	void didClose(bool hadError);
@@ -246,7 +246,7 @@ public:
 	MyServerMember() :server(new net::Server()) {}
 
 	void listen(uint16_t port, const char* ip, int backlog) {
-		server->on(event::error, []() { print("onError!\n"); });
+		server->on(event::error, [](Error&) { print("onError!\n"); });
 		server->on(event::close, [](bool b) { print("onClose!\n"); });
 		server->on(event::connection, [this](net::Socket* socket) {
 			print("onConnection!\n");

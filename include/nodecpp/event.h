@@ -30,6 +30,8 @@
 #include <functional>
 #include <vector>
 
+#include "error.h"
+
 namespace nodecpp
 {
 	class Buffer;
@@ -75,7 +77,7 @@ namespace nodecpp
 
 		struct Error
 		{
-			using callback = std::function<void(/*TODO*/)>;
+			using callback = std::function<void(nodecpp::Error&)>;
 			static constexpr const char* name = "error";
 		};
 		static constexpr Error error = Error();

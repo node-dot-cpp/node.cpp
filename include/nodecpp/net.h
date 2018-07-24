@@ -221,12 +221,12 @@ namespace nodecpp {
 				onEnd();
 			}
 
-			void emitError() {
+			void emitError(Error& err) {
 				state = DESTROYED;
 				this->id = 0;
 				//EventEmitter<event::Error>::emit();
-				eError.emit();
-				onError();
+				eError.emit(err);
+				onError(err);
 			}
 
 
@@ -235,7 +235,7 @@ namespace nodecpp {
 			virtual void onData(Buffer& buffer) {}
 			virtual void onDrain() {}
 			virtual void onEnd() {}
-			virtual void onError() {}
+			virtual void onError(Error& err) {}
 /*
 			virtual void onClose(bool hadError) {
 				fmt::print("onClose!\n");
@@ -369,20 +369,29 @@ namespace nodecpp {
 				assert( name == event::Data::name );
 				eData.on(std::move(cb));
 			}
+			void on(std::string name, event::Error::callback cb) {
+				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Connect::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Drain::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::End::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Data::callback >::value);
+				assert(name == event::Error::name);
+				eError.on(std::move(cb));
+			}
 			void on( std::string name, event::Connect::callback cb) {
 				static_assert( !std::is_same< event::Connect::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Data::callback >::value );
+				static_assert( !std::is_same< event::Connect::callback, event::Error::callback >::value);
 				static_assert( std::is_same< event::Connect::callback, event::Drain::callback >::value );
 				static_assert( std::is_same< event::Connect::callback, event::End::callback >::value );
-				static_assert( std::is_same< event::Connect::callback, event::Error::callback >::value );
-				if ( name == event::Drain::name )
+				if (name == event::Drain::name)
 					eDrain.on(std::move(cb));
-				else if ( name == event::Connect::name )
+				else if (name == event::Connect::name)
 					eConnect.on(std::move(cb));
-				else if ( name == event::End::name )
+				else if (name == event::End::name)
 					eEnd.on(std::move(cb));
-				else if ( name == event::Error::name )
-					eError.on(std::move(cb));
+				else
+					assert(false);
 			}
 
 			void once( std::string name, event::Close::callback cb) {
@@ -403,20 +412,29 @@ namespace nodecpp {
 				assert( name == event::Data::name );
 				eData.once(std::move(cb));
 			}
+			void once(std::string name, event::Error::callback cb) {
+				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Connect::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Drain::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::End::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Data::callback >::value);
+				assert(name == event::Error::name);
+				eError.once(std::move(cb));
+			}
 			void once( std::string name, event::Connect::callback cb) {
 				static_assert( !std::is_same< event::Connect::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Data::callback >::value );
+				static_assert( !std::is_same< event::Connect::callback, event::Error::callback >::value);
 				static_assert( std::is_same< event::Connect::callback, event::Drain::callback >::value );
 				static_assert( std::is_same< event::Connect::callback, event::End::callback >::value );
-				static_assert( std::is_same< event::Connect::callback, event::Error::callback >::value );
-				if ( name == event::Drain::name )
+				if (name == event::Drain::name)
 					eDrain.once(std::move(cb));
-				else if ( name == event::Connect::name )
+				else if (name == event::Connect::name)
 					eConnect.once(std::move(cb));
-				else if ( name == event::End::name )
+				else if (name == event::End::name)
 					eEnd.once(std::move(cb));
-				else if ( name == event::Error::name )
-					eError.once(std::move(cb));
+				else
+					assert(false);
 			}
 
 			template<class EV>
@@ -427,6 +445,7 @@ namespace nodecpp {
 				else if constexpr ( std::is_same< EV, event::Drain >::value ) { eDrain.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::End >::value ) { eEnd.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Error >::value ) { eError.on(std::move(cb)); }
+				else assert(false);
 			}
 
 			template<class EV>
@@ -437,6 +456,7 @@ namespace nodecpp {
 				else if constexpr ( std::is_same< EV, event::Drain >::value ) { eDrain.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::End >::value ) { eEnd.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Error >::value ) { eError.once(std::move(cb)); }
+				else assert(false);
 			}
 		};
 
@@ -478,16 +498,16 @@ namespace nodecpp {
 				onListening();
 			}
 
-			void emitError() {
-				eError.emit();
-				onError();
+			void emitError(Error& err) {
+				eError.emit(err);
+				onError(err);
 			}
 
 
 			virtual void onClose(bool hadError) {}
 			virtual void onConnection(Socket* socket) {}
 			virtual void onListening() {}
-			virtual void onError() {}
+			virtual void onError(Error& err) {}
 
 			virtual Socket* makeSocket() {
 				return new Socket();
@@ -535,16 +555,20 @@ namespace nodecpp {
 				eConnection.on(std::move(cb));
 			}
 
+			void on(std::string name, event::Error::callback cb) {
+				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Connection::callback >::value);
+				assert(name == event::Error::name);
+				eError.on(std::move(cb));
+			}
+
 			void on(std::string name, event::Listening::callback cb) {
 				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
-				static_assert(std::is_same< event::Listening::callback, event::Error::callback >::value);
-				if (name == event::Listening::name)
-					eListening.on(std::move(cb));
-				else if (name == event::Error::name)
-					eError.on(std::move(cb));
-				else
-					assert(false);
+				static_assert(!std::is_same< event::Listening::callback, event::Error::callback >::value);
+				assert(name == event::Listening::name);
+				eListening.on(std::move(cb));
 			}
 
 			void once(std::string name, event::Close::callback cb) {
@@ -563,16 +587,20 @@ namespace nodecpp {
 				eConnection.once(std::move(cb));
 			}
 
+			void once(std::string name, event::Error::callback cb) {
+				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Connection::callback >::value);
+				assert(name == event::Error::name);
+				eError.once(std::move(cb));
+			}
+
 			void once(std::string name, event::Listening::callback cb) {
 				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
-				static_assert(std::is_same< event::Listening::callback, event::Error::callback >::value);
-				if (name == event::Listening::name)
-					eListening.once(std::move(cb));
-				else if (name == event::Error::name)
-					eError.once(std::move(cb));
-				else
-					assert(false);
+				static_assert(!std::is_same< event::Listening::callback, event::Error::callback >::value);
+				assert(name == event::Listening::name);
+				eListening.once(std::move(cb));
 			}
 
 

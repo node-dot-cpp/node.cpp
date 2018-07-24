@@ -67,7 +67,7 @@ bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs)
 	int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
 
 #ifdef _MSC_VER
-	int retval = WSAPoll(fds.get(), fds_sz, timeoutToUse);
+	int retval = WSAPoll(fds.get(), static_cast<ULONG>(fds_sz), timeoutToUse);
 #else
 	int retval = poll(fds.get(), fds_sz, timeoutToUse);
 #endif

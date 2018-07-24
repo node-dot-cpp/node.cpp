@@ -54,6 +54,9 @@ void nodecpp::runLoop()
 
 		pendingCloseEvents(queue);
 		queue.emit();
+		getInfra().getNetSocket().clearStores();
+		getInfra().getNetServer().clearStores();
+
 	}
 }
 

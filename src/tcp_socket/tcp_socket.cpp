@@ -413,10 +413,10 @@ bool internal_getsockopt_so_error(SOCKET sock)
 }
 
 static
-uint8_t internal_send_packet(const uint8_t* data, uint32_t size, SOCKET sock, size_t& sentSize)
+uint8_t internal_send_packet(const uint8_t* data, size_t size, SOCKET sock, size_t& sentSize)
 {
 	const char* ptr = reinterpret_cast<const char*>(data); //windows uses char*, linux void*
-	ssize_t bytes_sent = sendto(sock, ptr, size, 0, nullptr, 0);
+	ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
 
 	if (bytes_sent < 0)
 	{
@@ -459,7 +459,7 @@ uint8_t internal_get_packet_bytes2(SOCKET sock, uint8_t* buff, size_t buffSz, si
 	
 	NODECPP_ASSERT(buff);
 	NODECPP_ASSERT(buffSz != 0);
-	ssize_t ret = recvfrom(sock, (char*)buff, buffSz, 0, (struct sockaddr *)(&sa_other), &fromlen);
+	ssize_t ret = recvfrom(sock, (char*)buff, (int)buffSz, 0, (struct sockaddr *)(&sa_other), &fromlen);
 
 	if (ret < 0)
 	{
@@ -958,7 +958,7 @@ std::pair<bool, Buffer> NetSocketManager::getPacketBytes(Buffer& buff, SOCKET so
 
 void NetSocketManager::makeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs)
 {
-	evs.add(&net::Socket::emitError, entry.getPtr());
+	evs.add(&net::Socket::emitError, entry.getPtr(), storeError(Error()));
 	pendingCloseEvents.emplace_back(entry.index, true);
 }
 
@@ -1176,6 +1176,6 @@ const NetServerEntry& NetServerManager::getEntry(size_t id) const
 
 void NetServerManager::makeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs)
 {
-	evs.add(&net::Server::emitError, entry.getPtr());
+	evs.add(&net::Server::emitError, entry.getPtr(), storeError(Error()));
 	pendingCloseEvents.emplace_back(entry.index, true);
 }
