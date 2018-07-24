@@ -315,7 +315,7 @@ namespace nodecpp {
 
 			void connect(uint16_t port, const char* ip);
 			void connect(uint16_t port, const char* ip, std::function<void()> cb) {
-				once<event::Connect>(std::move(cb));
+				once(event::connect, std::move(cb));
 				connect(port, ip);
 			}
 
@@ -344,7 +344,7 @@ namespace nodecpp {
 			bool write(const uint8_t* data, uint32_t size, std::function<void()> cb) {
 				bool b = write(data, size);
 				if(!b)
-					once<event::Drain>(std::move(cb));
+					once(event::drain, std::move(cb));
 
 				return b;
 			}
@@ -438,34 +438,6 @@ namespace nodecpp {
 				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.once(std::move(cb)); }
 				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.once(std::move(cb)); }
 			}
-
-			template<class EV>
-			void on(typename EV::callback cb) {
-				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Data) ) { eData.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.on(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.on(std::move(cb)); }
-			}
-
-			template<class EV>
-			void once(typename EV::callback cb) {
-				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Data) ) { eData.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.once(std::move(cb)); }
-				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.once(std::move(cb)); }
-			}
-/*			template<class EV>
-			void on(typename EV::callback cb) {
-				EventEmitter<EV>::once(std::move(cb));
-
-			template<class EV>
-			void once(typename EV::callback cb) {
-				EventEmitter<EV>::once(std::move(cb));
-			}*/
 		};
 
 		class Server :EventEmitter<event::Close>, EventEmitter<event::Connection>,

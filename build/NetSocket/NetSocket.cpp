@@ -71,12 +71,12 @@ class MySocketLambda :public net::Socket {
 public:
 	MySocketLambda() {
 		//preset handlers
-		on<event::Close>(std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
+		on(event::close, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
 //		on<event::Connect>(std::bind(&MySocketLambda::didConnect, this));
 //		on<event::Data>(std::bind(&MySocket2::didData, this, std::placeholders::_1));
 //		on<event::Drain>(std::bind(&MySocketLambda::didDrain, this));
-		on<event::End>(std::bind(&MySocketLambda::didEnd, this));
-		on<event::Error>(std::bind(&MySocketLambda::didError, this));
+		on(event::end, std::bind(&MySocketLambda::didEnd, this));
+		on(event::error, std::bind(&MySocketLambda::didError, this));
 	}
 
 	void didClose(bool hadError) {
@@ -201,17 +201,17 @@ int main()
 //	MySocketLambda* cli = net::createConnection<MySocketLambda>(2000, "127.0.0.1", [&cli] {cli->didConnect(); });
 	MySocketLambda* cli = new MySocketLambda();
 
-	cli->on<event::Data>([&cli](Buffer& buffer) { cli->didData(buffer); });
+	cli->on(event::data, [&cli](Buffer& buffer) { cli->didData(buffer); });
 
-	cli->once<event::Connect>([&cli]() { fmt::print( "welcome lambda-based solution [1]!\n" ); });
+//	cli->once<event::Connect>([&cli]() { fmt::print( "welcome lambda-based solution [1]!\n" ); });
 	cli->once(event::connect, [&cli]() { fmt::print( "welcome lambda-based solution [2]!\n" ); });
 	cli->once(event::Connect::name, [&cli]() { fmt::print( "welcome lambda-based solution [3]!\n" ); });
-	cli->once("connect", [&cli]() { fmt::print( "welcome lambda-based solution [4]!\n" ); });
+	cli->once("connect", [&cli]() { fmt::print( "welcome lambda-based solution [3.1]!\n" ); });
 
-	cli->once<event::Close>([&cli](bool) { fmt::print( "close lambda-based solution [1]!\n" ); return true; });
+//	cli->once<event::Close>([&cli](bool) { fmt::print( "close lambda-based solution [1]!\n" ); return true; });
 	cli->once(event::close, [&cli](bool) { fmt::print( "close lambda-based solution [2]!\n" ); return true; });
 	cli->once(event::Close::name, [&cli](bool) { fmt::print( "close lambda-based solution [3]!\n" ); return true; });
-	cli->once("close", [&cli](bool) { fmt::print( "close lambda-based solution [4]!\n" ); return true; });
+	cli->once("close", [&cli](bool) { fmt::print( "close lambda-based solution [3.1]!\n" ); return true; });
 
 	cli->connect(2000, "127.0.0.1", [&cli] {cli->didConnect(); });
 
