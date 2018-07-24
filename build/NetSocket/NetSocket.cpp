@@ -15,7 +15,7 @@ using namespace fmt;
 
 class MyServer;
 
-#if 0
+
 class MySocket :public net::Socket {
 	size_t recvSize = 0;
 	size_t sentSize = 0;
@@ -114,7 +114,7 @@ public:
 		print("onError!\n");
 	}
 };
-#endif
+
 
 class MyServerSocket :public net::Socket {
 	size_t count = 0;
@@ -194,12 +194,15 @@ void MyServerSocket::onClose(bool hadError) {
 
 int main()
 {
-	auto srv = net::createServer<MyServer>();
+	MyServer* srv = new MyServer();
 	srv->listen(2000, "127.0.0.1", 5);
 
 //	auto cli2 = net::createConnection<MySocket>(2000, "127.0.0.1");
-	net::Socket* cli = net::createConnection<net::Socket>(2000, "127.0.0.1", [&cli] {cli->didConnect(); });
+//	MySocketLambda* cli = net::createConnection<MySocketLambda>(2000, "127.0.0.1", [&cli] {cli->didConnect(); });
+	MySocketLambda* cli = new MySocketLambda();
+
 	cli->on<event::Data>([&cli](Buffer& buffer) { cli->didData(buffer); });
+
 	cli->once<event::Connect>([&cli]() { fmt::print( "welcome lambda-based solution [1]!\n" ); });
 	cli->once(event::connect, [&cli]() { fmt::print( "welcome lambda-based solution [2]!\n" ); });
 	cli->once(event::Connect::name, [&cli]() { fmt::print( "welcome lambda-based solution [3]!\n" ); });
@@ -209,6 +212,8 @@ int main()
 	cli->once(event::close, [&cli](bool) { fmt::print( "close lambda-based solution [2]!\n" ); return true; });
 	cli->once(event::Close::name, [&cli](bool) { fmt::print( "close lambda-based solution [3]!\n" ); return true; });
 	cli->once("close", [&cli](bool) { fmt::print( "close lambda-based solution [4]!\n" ); return true; });
+
+	cli->connect(2000, "127.0.0.1", [&cli] {cli->didConnect(); });
 
 	runLoop();
 

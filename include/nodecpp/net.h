@@ -154,10 +154,10 @@ namespace nodecpp {
 			EventEmitter<event::End> eEnd;
 			EventEmitter<event::Error> eError;
 
-			size_t recvSize = 0;
-			size_t sentSize = 0;
-			std::unique_ptr<uint8_t> ptr;
-			size_t size = 64 * 1024;
+			//size_t recvSize = 0;
+			//size_t sentSize = 0;
+			//std::unique_ptr<uint8_t> ptr;
+			//size_t size = 64 * 1024;
 
 			size_t id = 0;
 			Address _local;
@@ -216,25 +216,27 @@ namespace nodecpp {
 			}
 
 			void emitEnd() {
-				EventEmitter<event::End>::emit();
+				//EventEmitter<event::End>::emit();
+				eEnd.emit();
 				onEnd();
 			}
 
 			void emitError() {
 				state = DESTROYED;
 				this->id = 0;
-				EventEmitter<event::Error>::emit();
+				//EventEmitter<event::Error>::emit();
+				eError.emit();
 				onError();
 			}
 
 
-/*			virtual void onClose(bool hadError) {}
+			virtual void onClose(bool hadError) {}
 			virtual void onConnect() {}
 			virtual void onData(Buffer& buffer) {}
 			virtual void onDrain() {}
 			virtual void onEnd() {}
-			virtual void onError() {}*/
-
+			virtual void onError() {}
+/*
 			virtual void onClose(bool hadError) {
 				fmt::print("onClose!\n");
 			}
@@ -304,7 +306,7 @@ namespace nodecpp {
 			void didError() {
 				fmt::print("onError!\n");
 			}
-
+			*/
 			const Address& address() const { return _local; }
 
 			size_t bufferSize() const;
@@ -542,30 +544,30 @@ namespace nodecpp {
 		};
 
 		//TODO don't use naked pointers, think
-		template<class T>
-		T* createServer() {
-			return new T();
-		}
-		template<class T>
-		T* createServer(std::function<void()> cb) {
-			auto svr = new T();
-			svr->on<event::Connect>(cb);
-			return svr;
-		}
+		//template<class T>
+		//T* createServer() {
+		//	return new T();
+		//}
+		//template<class T>
+		//T* createServer(std::function<void()> cb) {
+		//	auto svr = new T();
+		//	svr->on<event::Connect>(cb);
+		//	return svr;
+		//}
 
-		template<class T>
-		T* createConnection(uint16_t port, const char* host) {
-			auto cli = new T();
-			cli->connect(port, host);
-			return cli;
-		}
+		//template<class T>
+		//T* createConnection(uint16_t port, const char* host) {
+		//	auto cli = new T();
+		//	cli->connect(port, host);
+		//	return cli;
+		//}
 
-		template<class T>
-		T* createConnection(uint16_t port, const char* host, std::function<void()> cb) {
-			auto cli = new T();
-			cli->connect(port, host, std::move(cb));
-			return cli;
-		}
+		//template<class T>
+		//T* createConnection(uint16_t port, const char* host, std::function<void()> cb) {
+		//	auto cli = new T();
+		//	cli->connect(port, host, std::move(cb));
+		//	return cli;
+		//}
 
 	} //namespace net
 } //namespace nodecpp
