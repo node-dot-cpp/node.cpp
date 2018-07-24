@@ -419,7 +419,7 @@ namespace nodecpp {
 					eError.once(std::move(cb));
 			}
 
-			template<class EV>
+/*			template<class EV>
 			void on( typename EV, typename EV::callback cb) {
 				if constexpr ( (int)(EV::type) == (int)(event::EventType::Close) ) { eClose.on(std::move(cb)); }
 				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Connect) ) { eConnect.on(std::move(cb)); }
@@ -437,6 +437,26 @@ namespace nodecpp {
 				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Drain) ) { eDrain.once(std::move(cb)); }
 				else if constexpr ( (int)(EV::type) == (int)(event::EventType::End) ) { eEnd.once(std::move(cb)); }
 				else if constexpr ( (int)(EV::type) == (int)(event::EventType::Error) ) { eError.once(std::move(cb)); }
+			}*/
+
+			template<class EV>
+			void on( typename EV, typename EV::callback cb) {
+				if constexpr ( std::is_same< EV, event::Close >::value ) { eClose.on(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Connect >::value ) { eConnect.on(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Data >::value ) { eData.on(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Drain >::value ) { eDrain.on(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::End >::value ) { eEnd.on(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Error >::value ) { eError.on(std::move(cb)); }
+			}
+
+			template<class EV>
+			void once( typename EV, typename EV::callback cb) {
+				if constexpr ( std::is_same< EV, event::Close >::value ) { eClose.once(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Connect >::value ) { eConnect.once(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Data >::value ) { eData.once(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Drain >::value ) { eDrain.once(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::End >::value ) { eEnd.once(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Error >::value ) { eError.once(std::move(cb)); }
 			}
 		};
 
