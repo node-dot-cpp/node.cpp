@@ -120,7 +120,7 @@ public:
 	}
 };
 
-
+/*
 class MyServerSocket :public net::Socket {
 	size_t count = 0;
 	MyServer* server = nullptr;
@@ -161,6 +161,8 @@ public:
 class MyServer :public net::Server {
 	list<unique_ptr<net::Socket>> socks;
 public:
+
+
 	void onClose(bool hadError) override {
 		print("onClose!\n");
 	}
@@ -188,6 +190,7 @@ public:
 			}
 		}
 	}
+
 };
 
 inline
@@ -196,11 +199,91 @@ void MyServerSocket::onClose(bool hadError) {
 	if (server)
 		server->closeMe(this);
 }
+*/
+class MyServerMember;
+
+class MyServerSocketMember {
+	unique_ptr<net::Socket> socket;
+	size_t count = 0;
+	MyServerMember* server = nullptr;
+
+public:
+	MyServerSocketMember(net::Socket* socket, MyServerMember* server) 
+		:socket(socket), server(server)
+	{
+		socket->on(event::close, [this](bool b) { this->didClose(b); });
+		socket->on(event::data, [this](Buffer& buffer) { this->didData(buffer); });
+		socket->on(event::end, [this]() { this->didEnd(); });
+		socket->on(event::error, [this]() { this->didError(); });
+	}
+
+	void didClose(bool hadError);
+
+	void didData(Buffer& buffer) {
+		print("onData!\n");
+		++count;
+		socket->write(buffer.begin(), buffer.size());
+	}
+
+	void didEnd() {
+		print("onEnd!\n");
+		const char buff[] = "goodbye!";
+		socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+		socket->end();
+	}
+
+	void didError() {
+		print("onError!\n");
+	}
+};
+
+class MyServerMember 
+{
+	unique_ptr<net::Server> server;
+	list<unique_ptr<MyServerSocketMember>> socks;
+public:
+
+	MyServerMember() :server(new net::Server()) {}
+
+	void listen(uint16_t port, const char* ip, int backlog) {
+		server->on(event::error, []() { print("onError!\n"); });
+		server->on(event::close, [](bool b) { print("onClose!\n"); });
+		server->on(event::connection, [this](net::Socket* socket) {
+			print("onConnection!\n");
+			this->server->unref();
+			socks.emplace_back(new MyServerSocketMember(socket, this));
+		});
+		server->listen(port, ip, backlog, []() { print("onListening!\n"); });
+	}
+	//MyServerSocket* makeSocket() override {
+	//	return new MyServerSocket(server.get());
+	//}
+
+	void closeMe(MyServerSocketMember* ptr) {
+		for (auto it = socks.begin(); it != socks.end(); ++it) {
+			if (it->get() == ptr) {
+				socks.erase(it);
+				return;
+			}
+		}
+	}
+};
+
+inline
+void MyServerSocketMember::didClose(bool hadError) {
+	print("onClose!\n");
+	if (server)
+		server->closeMe(this);
+}
+
 
 int main()
 {
-	MyServer* srv = new MyServer();
-	srv->listen(2000, "127.0.0.1", 5);
+	//MyServer* srv = new MyServer();
+	//srv->listen(2000, "127.0.0.1", 5);
+
+	MyServerMember srv;
+	srv.listen(2000, "127.0.0.1", 5);
 
 //	auto cli2 = net::createConnection<MySocket>(2000, "127.0.0.1");
 //	MySocketLambda* cli = net::createConnection<MySocketLambda>(2000, "127.0.0.1", [&cli] {cli->didConnect(); });

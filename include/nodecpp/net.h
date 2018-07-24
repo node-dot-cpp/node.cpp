@@ -184,9 +184,9 @@ namespace nodecpp {
 			void emitClose(bool hadError) {
 				state = DESTROYED;
 				this->id = 0;
-//				EventEmitter<event::Close>::emit(hadError);
-				eClose.emit(hadError);
+				//handler may release, put virtual onClose first.
 				onClose(hadError);
+				eClose.emit(hadError);
 			}
 
 			// not in node.js
@@ -440,8 +440,14 @@ namespace nodecpp {
 			}
 		};
 
-		class Server :EventEmitter<event::Close>, EventEmitter<event::Connection>,
-			EventEmitter<event::Listening>, EventEmitter<event::Error> {
+		class Server /*:EventEmitter<event::Close>, EventEmitter<event::Connection>,
+			EventEmitter<event::Listening>, EventEmitter<event::Error> */
+		{
+			EventEmitter<event::Close> eClose;
+			EventEmitter<event::Connection> eConnection;
+			EventEmitter<event::Listening> eListening;
+			EventEmitter<event::Error> eError;
+
 			Address localAddress;
 			uint16_t localPort = 0;
 
@@ -455,12 +461,12 @@ namespace nodecpp {
 			void emitClose(bool hadError) {
 				state = CLOSED;
 				id = 0;
-				EventEmitter<event::Close>::emit(hadError);
+				eClose.emit(hadError);
 				onClose(hadError);
 			}
 
 			void emitConnection(Socket* socket) {
-				EventEmitter<event::Connection>::emit(socket);
+				eConnection.emit(socket);
 				onConnection(socket);
 			}
 
@@ -468,12 +474,12 @@ namespace nodecpp {
 				this->id = id;
 				localAddress = std::move(addr);
 				state = LISTENING;
-				EventEmitter<event::Listening>::emit();
+				eListening.emit();
 				onListening();
 			}
 
 			void emitError() {
-				EventEmitter<event::Error>::emit();
+				eError.emit();
 				onError();
 			}
 
@@ -490,28 +496,104 @@ namespace nodecpp {
 			const Address& address() const { return localAddress; }
 			void close();
 			void close(std::function<void(bool)> cb) {
-				once<event::Close>(std::move(cb));
+				once(event::close, std::move(cb));
 				close();
 			}
 
 			void listen(uint16_t port, const char* ip, int backlog);
 			void listen(uint16_t port, const char* ip, int backlog, std::function<void()> cb) {
-				once<event::Listening>(std::move(cb));
+				once(event::listening, std::move(cb));
 				listen(port, ip, backlog);
 			}
 			bool listening() const { return state == LISTENING; }
 			void ref();
 			void unref();
 
+			//template<class EV>
+			//void on(typename EV::callback cb) {
+			//	EventEmitter<EV>::on(std::move(cb));
+			//}
+
+			//template<class EV>
+			//void once(typename EV::callback cb) {
+			//	EventEmitter<EV>::once(std::move(cb));
+			//}
+
+			void on(std::string name, event::Close::callback cb) {
+				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
+				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Close::callback, event::Error::callback >::value);
+				assert(name == event::Close::name);
+				eClose.on(std::move(cb));
+			}
+
+			void on(std::string name, event::Connection::callback cb) {
+				static_assert(!std::is_same< event::Connection::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Connection::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Connection::callback, event::Error::callback >::value);
+				assert(name == event::Connection::name);
+				eConnection.on(std::move(cb));
+			}
+
+			void on(std::string name, event::Listening::callback cb) {
+				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
+				static_assert(std::is_same< event::Listening::callback, event::Error::callback >::value);
+				if (name == event::Listening::name)
+					eListening.on(std::move(cb));
+				else if (name == event::Error::name)
+					eError.on(std::move(cb));
+				else
+					assert(false);
+			}
+
+			void once(std::string name, event::Close::callback cb) {
+				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
+				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Close::callback, event::Error::callback >::value);
+				assert(name == event::Close::name);
+				eClose.once(std::move(cb));
+			}
+
+			void once(std::string name, event::Connection::callback cb) {
+				static_assert(!std::is_same< event::Connection::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Connection::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Connection::callback, event::Error::callback >::value);
+				assert(name == event::Connection::name);
+				eConnection.once(std::move(cb));
+			}
+
+			void once(std::string name, event::Listening::callback cb) {
+				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
+				static_assert(std::is_same< event::Listening::callback, event::Error::callback >::value);
+				if (name == event::Listening::name)
+					eListening.once(std::move(cb));
+				else if (name == event::Error::name)
+					eError.once(std::move(cb));
+				else
+					assert(false);
+			}
+
+
 			template<class EV>
-			void on(typename EV::callback cb) {
-				EventEmitter<EV>::on(std::move(cb));
+			void on(typename EV, typename EV::callback cb) {
+				if constexpr (std::is_same< EV, event::Close >::value) { eClose.on(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.on(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.on(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Error >::value) { eError.on(std::move(cb)); }
+				else assert(false);
 			}
 
 			template<class EV>
-			void once(typename EV::callback cb) {
-				EventEmitter<EV>::once(std::move(cb));
+			void once(typename EV, typename EV::callback cb) {
+				if constexpr (std::is_same< EV, event::Close >::value) { eClose.once(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.once(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.once(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Error >::value) { eError.once(std::move(cb)); }
+				else assert(false);
 			}
+
 
 		};
 

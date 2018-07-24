@@ -84,14 +84,16 @@ namespace nodecpp
 		struct Connection
 		{
 			using callback = std::function<void(net::Socket*)>;
-			const char* name = "connection";
+			static constexpr const char* name = "connection";
 		};
+		static constexpr Connection connection = Connection();
 
 		struct Listening
 		{
 			using callback = std::function<void()>;
-			const char* name = "listening";
+			static constexpr const char* name = "listening";
 		};
+		static constexpr Listening listening = Listening();
 
 	};
 
