@@ -204,7 +204,7 @@ namespace nodecpp {
 
 			void emitData(Buffer& buffer) {
 				_bytesRead += buffer.size();
-//				EventEmitter<event::Data>::emit(std::ref(buffer));
+//				EventEmitter<event::Data>::emit(std::appRef(buffer));
 				eData.emit(std::ref(buffer));
 				onData(buffer);
 			}
@@ -247,7 +247,7 @@ namespace nodecpp {
 
 				bool ok = true;
 				while (ok) {
-					ok = write(ptr.get(), size);
+					ok = appWrite(ptr.get(), size);
 					sentSize += size;
 				}
 			}
@@ -257,7 +257,7 @@ namespace nodecpp {
 				recvSize += buffer.size();
 
 				if (recvSize >= sentSize)
-					end();
+					appEnd();
 			}
 
 			virtual void onDrain() {
@@ -282,7 +282,7 @@ namespace nodecpp {
 
 				bool ok = true;
 				while (ok) {
-					ok = write(ptr.get(), size, [] { fmt::print("onDrain!\n"); });
+					ok = appWrite(ptr.get(), size, [] { fmt::print("onDrain!\n"); });
 					sentSize += size;
 				}
 			}
@@ -292,7 +292,7 @@ namespace nodecpp {
 				recvSize += buffer.size();
 
 				if (recvSize >= sentSize)
-					end();
+					appEnd();
 			}
 
 			//void didDrain() {
@@ -640,14 +640,14 @@ namespace nodecpp {
 		//template<class T>
 		//T* createConnection(uint16_t port, const char* host) {
 		//	auto cli = new T();
-		//	cli->connect(port, host);
+		//	cli->appConnect(port, host);
 		//	return cli;
 		//}
 
 		//template<class T>
 		//T* createConnection(uint16_t port, const char* host, std::function<void()> cb) {
 		//	auto cli = new T();
-		//	cli->connect(port, host, std::move(cb));
+		//	cli->appConnect(port, host, std::move(cb));
 		//	return cli;
 		//}
 

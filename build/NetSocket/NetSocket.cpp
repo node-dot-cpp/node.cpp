@@ -71,14 +71,14 @@ class MySocketLambda :public net::Socket {
 public:
 	MySocketLambda() {
 		//preset handlers
-//		on(event::close, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
-//		on(event::close, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
+//		on(event::appClose, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
+//		on(event::appClose, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
 		on(event::close, [this](bool b) { this->didClose(b); });
 
 //		on<event::Connect>(std::bind(&MySocketLambda::didConnect, this));
 //		on<event::Data>(std::bind(&MySocket2::didData, this, std::placeholders::_1));
 //		on<event::Drain>(std::bind(&MySocketLambda::didDrain, this));
-//		on(event::end, std::bind(&MySocketLambda::didEnd, this));
+//		on(event::appEnd, std::bind(&MySocketLambda::didEnd, this));
 		on(event::end, [this]() { this->didEnd(); });
 //		on(event::error, std::bind(&MySocketLambda::didError, this));
 		on(event::error, [this](Error&) { this->didError(); });
@@ -137,7 +137,7 @@ public:
 	void onData(Buffer& buffer) override {
 		print("onData!\n");
 		++count;
-		write(buffer.begin(), buffer.size());
+		appWrite(buffer.begin(), buffer.size());
 	}
 
 	void onDrain() override {
@@ -147,8 +147,8 @@ public:
 	void onEnd() override {
 		print("onEnd!\n");
 		const char buff[] = "goodbye!";
-		write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
-		end();
+		appWrite(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+		appEnd();
 	}
 
 	void onError() override {
@@ -168,7 +168,7 @@ public:
 	}
 	void onConnection(net::Socket* socket) override {
 		print("onConnection!\n");
-		unref();
+		appUnref();
 		socks.emplace_back(socket);
 	}
 	void onListening() override {
@@ -183,7 +183,7 @@ public:
 	}
 
 	void closeMe(MyServerSocket* ptr) {
-		for (auto it = socks.begin(); it != socks.end(); ++it) {
+		for (auto it = socks.begin(); it != socks.appEnd(); ++it) {
 			if (it->get() == ptr) {
 				socks.erase(it);
 				return;
@@ -280,7 +280,7 @@ void MyServerSocketMember::didClose(bool hadError) {
 int main()
 {
 	//MyServer* srv = new MyServer();
-	//srv->listen(2000, "127.0.0.1", 5);
+	//srv->appListen(2000, "127.0.0.1", 5);
 
 	MyServerMember srv;
 	srv.listen(2000, "127.0.0.1", 5);
@@ -296,7 +296,7 @@ int main()
 	cli->once(event::Connect::name, [&cli]() { fmt::print( "welcome lambda-based solution [3]!\n" ); });
 	cli->once("connect", [&cli]() { fmt::print( "welcome lambda-based solution [3.1]!\n" ); });
 
-//	cli->once<event::Close>([&cli](bool) { fmt::print( "close lambda-based solution [1]!\n" ); return true; });
+//	cli->once<event::Close>([&cli](bool) { fmt::print( "appClose lambda-based solution [1]!\n" ); return true; });
 	cli->once(event::close, [&cli](bool) { fmt::print( "close lambda-based solution [2]!\n" ); return true; });
 	cli->once(event::Close::name, [&cli](bool) { fmt::print( "close lambda-based solution [3]!\n" ); return true; });
 	cli->once("close", [&cli](bool) { fmt::print( "close lambda-based solution [3.1]!\n" ); return true; });

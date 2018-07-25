@@ -50,8 +50,11 @@ public:
 	template<class M, class T, class... Args>
 	void add(M T::* pm, T* inst, Args... args)
 	{
+		//code to call events async
 		//auto b = std::bind(pm, inst, args...);
 		//evQueue.push_back(std::move(b));
+
+		//code to call events sync 
 		(inst->*pm)(args...);
 	}
 
@@ -142,6 +145,19 @@ public:
 	}
 };
 
+/* 
+	NetSocketManager is accesed from two 'sides'
+	Methods prepended with 'app' are to be used from user code.
+	They can throw Error back to user code, but events and callback may
+	only be issued delayed
+	
+	Methods prepended with infra are to called by the event loop itself.
+	They can't throw. 
+	Events can be pushed onto the evQueue or delayed
+
+	Each method 'kind' must be isolated and can't call the other.
+*/
+
 
 class NetSocketManager {
 	//mb: ioSockets[0] is always reserved and invalid.
@@ -156,32 +172,34 @@ public:
 	static const size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetSocketManager();
 	
-	size_t connect(net::Socket* ptr, const char* ip, uint16_t port);
-	void destroy(size_t id);
-	void end(size_t id);
-	void pause(size_t id) { getEntry(id).paused = true; }
-	void resume(size_t id) { getEntry(id).paused = false; }
+	size_t appConnect(net::Socket* ptr, const char* ip, uint16_t port);
+	void appDestroy(size_t id);
+	void appEnd(size_t id);
+	void appPause(size_t id) { appGetEntry(id).paused = true; }
+	void appResume(size_t id) { appGetEntry(id).paused = false; }
 
-	size_t bufferSize(size_t id) { return getEntry(id).writeBuffer.size(); }
+	size_t appBufferSize(size_t id) { return appGetEntry(id).writeBuffer.size(); }
 
-	void ref(size_t id) { getEntry(id).refed = true; }
-	void setKeepAlive(size_t id, bool enable);
-	void setNoDelay(size_t id, bool noDelay);
-	void unref(size_t id) { getEntry(id).refed = false; }
-	bool write(size_t id, const uint8_t* data, uint32_t size);
+	void appRef(size_t id) { appGetEntry(id).refed = true; }
+	void appSetKeepAlive(size_t id, bool enable);
+	void appSetNoDelay(size_t id, bool noDelay);
+	void appUnref(size_t id) { appGetEntry(id).refed = false; }
+	bool appWrite(size_t id, const uint8_t* data, uint32_t size);
+
+	bool infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& evs);
 
 	//TODO quick workaround until definitive life managment is in place
-	Buffer& storeBuffer(Buffer buff) {
+	Buffer& infraStoreBuffer(Buffer buff) {
 		bufferStore.push_back(std::move(buff));
 		return bufferStore.back();
 	}
 
-	Error& storeError(Error err) {
+	Error& infraStoreError(Error err) {
 		errorStore.push_back(std::move(err));
 		return errorStore.back();
 	}
 
-	void clearStores() {
+	void infraClearStores() {
 		bufferStore.clear();
 		errorStore.clear();
 	}
@@ -189,27 +207,25 @@ public:
 	
 public:
 	// to help with 'poll'
-	size_t getPollFdSetSize() const;
-	bool setPollFdSet(pollfd* begin, const pollfd* end) const;
-	void getPendingEvent(EvQueue& evs);
-	void checkPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
+	size_t infraGetPollFdSetSize() const;
+	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const;
+	void infraGetPendingEvent(EvQueue& evs);
+	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
 
 private:
-	void processReadEvent(NetSocketEntry& current, EvQueue& evs);
-	void processRemoteEnded(NetSocketEntry& current, EvQueue& evs);
-	void processWriteEvent(NetSocketEntry& current, EvQueue& evs);
+	void infraProcessReadEvent(NetSocketEntry& current, EvQueue& evs);
+	void infraProcessRemoteEnded(NetSocketEntry& current, EvQueue& evs);
+	void infraProcessWriteEvent(NetSocketEntry& current, EvQueue& evs);
 
-	std::pair<bool, Buffer> getPacketBytes(Buffer& buff, SOCKET sock);
-public:
-	size_t addEntry(net::Socket* ptr);
-	bool addAccepted(net::Socket* ptr, SOCKET sock);
+	std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
 
 private:
-	NetSocketEntry& getEntry(size_t id);
-	const NetSocketEntry& getEntry(size_t id) const;
+	size_t addEntry(net::Socket* ptr);//app-infra neutral
+	NetSocketEntry& appGetEntry(size_t id);
+	const NetSocketEntry& appGetEntry(size_t id) const;
 
-	void makeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs);
-	void makeAsyncErrorEventAndClose(NetSocketEntry& entry);
+	void infraMakeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs);
+	void appMakeAsyncErrorEventAndClose(NetSocketEntry& entry);
 };
 
 
@@ -250,38 +266,37 @@ public:
 	static const size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetServerManager();
 
-	void close(size_t id);
-	void listen(net::Server* ptr, uint16_t port, const char* ip, int backlog);
+	void appClose(size_t id);
+	void appListen(net::Server* ptr, uint16_t port, const char* ip, int backlog);
 
-	void ref(size_t id) { getEntry(id).refed = true; }
-	void unref(size_t id) { getEntry(id).refed = false; }
+	void appRef(size_t id) { appGetEntry(id).refed = true; }
+	void appUnref(size_t id) { appGetEntry(id).refed = false; }
 
 
 	//TODO quick workaround until definitive life managment is in place
-	Error& storeError(Error err) {
+	Error& infraStoreError(Error err) {
 		errorStore.push_back(std::move(err));
 		return errorStore.back();
 	}
 
-	void clearStores() {
+	void infraClearStores() {
 		errorStore.clear();
 	}
 
 	// to help with 'poll'
-	size_t getPollFdSetSize() const;
-	bool setPollFdSet(pollfd* begin, const pollfd* end) const;
-	void getPendingEvent(EvQueue& evs);
-	void checkPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
+	size_t infraGetPollFdSetSize() const;
+	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const;
+	void infraGetPendingEvent(EvQueue& evs);
+	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
 
 private:
-	void processAcceptEvent(NetServerEntry& entry, EvQueue& evs);
-public:
+	void infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& evs);
+
 	size_t addEntry(net::Server* ptr);
-private:
-	NetServerEntry& getEntry(size_t id);
-	const NetServerEntry& getEntry(size_t id) const;
+	NetServerEntry& appGetEntry(size_t id);
+	const NetServerEntry& appGetEntry(size_t id) const;
 
-	void makeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs);
+	void infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs);
 };
 
 

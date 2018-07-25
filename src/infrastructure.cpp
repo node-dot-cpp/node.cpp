@@ -55,11 +55,11 @@ bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs)
 	
 	pollfd* fds_begin = fds.get();
 	pollfd* fds_end = fds_begin + NetSocketManager::MAX_SOCKETS;
-	bool anySck = getInfra().getNetSocket().setPollFdSet(fds_begin, fds_end);
+	bool anySck = getInfra().getNetSocket().infraSetPollFdSet(fds_begin, fds_end);
 
 	fds_begin = fds_end;
 	fds_end += NetServerManager::MAX_SOCKETS;
-	bool anySvr = getInfra().getNetServer().setPollFdSet(fds_begin, fds_end);
+	bool anySvr = getInfra().getNetServer().infraSetPollFdSet(fds_begin, fds_end);
 
 	if (!anySck && !anySvr)
 		return false;
@@ -98,11 +98,11 @@ bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs)
 	{
 		fds_begin = fds.get();
 		fds_end = fds_begin + NetSocketManager::MAX_SOCKETS;
-		getInfra().getNetSocket().checkPollFdSet(fds_begin, fds_end, evs);
+		getInfra().getNetSocket().infraCheckPollFdSet(fds_begin, fds_end, evs);
 
 		fds_begin = fds_end;
 		fds_end += NetServerManager::MAX_SOCKETS;
-		getInfra().getNetServer().checkPollFdSet(fds_begin, fds_end, evs);
+		getInfra().getNetServer().infraCheckPollFdSet(fds_begin, fds_end, evs);
 
 		//if (queue.empty())
 		//{
@@ -121,8 +121,8 @@ bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs)
 
 void pendingCloseEvents(EvQueue& evs)
 {
-	getInfra().getNetSocket().getPendingEvent(evs);
-	getInfra().getNetServer().getPendingEvent(evs);
+	getInfra().getNetSocket().infraGetPendingEvent(evs);
+	getInfra().getNetServer().infraGetPendingEvent(evs);
 }
 
 void fireEvents(EvVector& evs)

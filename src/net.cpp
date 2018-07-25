@@ -39,51 +39,51 @@ using namespace nodecpp::net;
 void Socket::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
-	id = getInfra().getNetSocket().connect(this, ip, port);
+	id = getInfra().getNetSocket().appConnect(this, ip, port);
 }
 
-void Socket::destroy() { getInfra().getNetSocket().destroy(id); }
-void Socket::end() { getInfra().getNetSocket().end(id); }
+void Socket::destroy() { getInfra().getNetSocket().appDestroy(id); }
+void Socket::end() { getInfra().getNetSocket().appEnd(id); }
 
-void Socket::pause() { getInfra().getNetSocket().pause(id); }
-void Socket::ref() { getInfra().getNetSocket().ref(id); }
+void Socket::pause() { getInfra().getNetSocket().appPause(id); }
+void Socket::ref() { getInfra().getNetSocket().appRef(id); }
 
-void Socket::resume() { getInfra().getNetSocket().resume(id); }
-void Socket::unref() { getInfra().getNetSocket().unref(id); }
+void Socket::resume() { getInfra().getNetSocket().appResume(id); }
+void Socket::unref() { getInfra().getNetSocket().appUnref(id); }
 
-size_t Socket::bufferSize() const { return getInfra().getNetSocket().bufferSize(id); }
+size_t Socket::bufferSize() const { return getInfra().getNetSocket().appBufferSize(id); }
 
 
 Socket& Socket::setNoDelay(bool noDelay)
 { 
-	getInfra().getNetSocket().setNoDelay(id, noDelay);
+	getInfra().getNetSocket().appSetNoDelay(id, noDelay);
 	return *this;
 }
 
 Socket& Socket::setKeepAlive(bool enable)
 {
-	getInfra().getNetSocket().setKeepAlive(id, enable);
+	getInfra().getNetSocket().appSetKeepAlive(id, enable);
 	return *this;
 }
 
 bool Socket::write(const uint8_t* data, uint32_t size)
 {
 	_bytesWritten += size;
-	return getInfra().getNetSocket().write(id, data, size);
+	return getInfra().getNetSocket().appWrite(id, data, size);
 }
 
-void Server::ref() { getInfra().getNetServer().ref(id); }
-void Server::unref() { getInfra().getNetServer().unref(id); }
+void Server::ref() { getInfra().getNetServer().appRef(id); }
+void Server::unref() { getInfra().getNetServer().appUnref(id); }
 
 void Server::close()
 {
-	getInfra().getNetServer().close(id);
+	getInfra().getNetServer().appClose(id);
 }
 
 
 void Server::listen(uint16_t port, const char* ip, int backlog)
 {
-	getInfra().getNetServer().listen(this, port, ip, backlog);
+	getInfra().getNetServer().appListen(this, port, ip, backlog);
 }
 
 
