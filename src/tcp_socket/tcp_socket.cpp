@@ -662,15 +662,13 @@ bool NetSocketManager::infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& 
 	if (ix == 0)
 	{
 		NODECPP_TRACE("Couldn't allocate new StreamSocket, closing {}", s.get());
-		return false; // TODO
+		return false;
 	}
 
 	auto& entry = appGetEntry(ix);
 	entry.osSocket = s.release();
 
 	evs.add(&net::Socket::emitAccepted, ptr, ix);
-	//ptr->emitAccepted(ix);//TODO
-	//entry.state = 
 
 	return true;
 }
@@ -716,22 +714,25 @@ bool NetSocketManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 	return anyRefed;
 }
 
-void NetSocketManager::infraGetPendingEvent(EvQueue& evs)
+void NetSocketManager::infraGetCloseEvent(EvQueue& evs)
 {
 	// if there is an issue with a socket, we may need to appClose it,
 	// and push an event here to notify autom later.
 
 	for (auto& current : pendingCloseEvents)
 	{
-		auto& entry = appGetEntry(current.first);//TODO
-		if (entry.isValid())
+		if (current.first < ioSockets.size())
 		{
-			if (entry.osSocket != INVALID_SOCKET)
-				internal_close(entry.osSocket);
+			auto& entry = ioSockets[current.first];
+			if (entry.isValid())
+			{
+				if (entry.osSocket != INVALID_SOCKET)
+					internal_close(entry.osSocket);
 
-			evs.add(&net::Socket::emitClose, entry.getPtr(), current.second);
+				evs.add(&net::Socket::emitClose, entry.getPtr(), current.second);
+			}
+			entry = NetSocketEntry(current.first);
 		}
-		entry = NetSocketEntry(current.first);
 	}
 	pendingCloseEvents.clear();
 }
@@ -1002,7 +1003,7 @@ void NetServerManager::appListen(net::Server* ptr, uint16_t port, const char* ip
 
 	net::Address addr;
 
-	ptr->emitListening(id, std::move(addr));//TODO make async
+	pendingEvents.add(id, &net::Server::emitListening, ptr, id, std::move(addr));
 }
 
 
@@ -1026,7 +1027,7 @@ size_t NetServerManager::infraGetPollFdSetSize() const
 /*
 * TODO: for performace reasons, the poll data should be cached inside NetSocketManager
 * and updated at the same time that StreamSocketEntry.
-* Avoid to have to appWrite it all over again every time
+* Avoid to have to write it all over again every time
 *
 */
 bool NetServerManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
@@ -1058,23 +1059,27 @@ bool NetServerManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 	return anyRefed;
 }
 
-void NetServerManager::infraGetPendingEvent(EvQueue& evs)
+void NetServerManager::infraGetCloseEvents(EvQueue& evs)
 {
 	// if there is an issue with a socket, we may need to appClose it,
 	// and push an event here to notify later.
 
 	for (auto& current : pendingCloseEvents)
 	{
-		auto& entry = appGetEntry(current.first);//TODO
-		if (entry.isValid())
+		//first remove any pending event for this socket
+		pendingEvents.remove(current.first);
+		if (current.first < ioSockets.size())
 		{
-			if (entry.osSocket != INVALID_SOCKET)
-				internal_close(entry.osSocket);
-//			entry.getPtr()->emitClose(entry.second);
-			evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
+			auto& entry = ioSockets[current.first];
+			if (entry.isValid())
+			{
+				if (entry.osSocket != INVALID_SOCKET)
+					internal_close(entry.osSocket);
+				//			entry.getPtr()->emitClose(entry.second);
+				evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
+			}
+			entry = NetServerEntry(current.first);
 		}
-		entry = NetServerEntry(current.first);
-
 	}
 	pendingCloseEvents.clear();
 }
@@ -1169,6 +1174,6 @@ const NetServerEntry& NetServerManager::appGetEntry(size_t id) const
 
 void NetServerManager::infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs)
 {
-	evs.add(&net::Server::emitError, entry.getPtr(), infraStoreError(Error()));
+	evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 	pendingCloseEvents.emplace_back(entry.index, true);
 }

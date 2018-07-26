@@ -119,17 +119,3 @@ bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs)
 	}
 }
 
-void pendingCloseEvents(EvQueue& evs)
-{
-	getInfra().getNetSocket().infraGetPendingEvent(evs);
-	getInfra().getNetServer().infraGetPendingEvent(evs);
-}
-
-void fireEvents(EvVector& evs)
-{
-	for (auto& current : evs)
-	{
-		current();
-	}
-
-}

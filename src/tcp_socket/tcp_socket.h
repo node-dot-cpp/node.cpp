@@ -45,17 +45,27 @@ struct pollfd;
 
 class EvQueue
 {
-	std::list<std::function<void()>> evQueue;
+	std::vector<std::function<void()>> evQueue;
+
+	static constexpr bool ASYNC = false;
 public:
 	template<class M, class T, class... Args>
 	void add(M T::* pm, T* inst, Args... args)
 	{
 		//code to call events async
-		//auto b = std::bind(pm, inst, args...);
-		//evQueue.push_back(std::move(b));
+		std::function<void()> ev = std::bind(pm, inst, args...);
+		if (ASYNC)
+			evQueue.push_back(std::move(ev));
+		else
+			emit(ev);
+	}
 
-		//code to call events sync 
-		(inst->*pm)(args...);
+	void add(std::function<void()> ev)
+	{
+		if (ASYNC)
+			evQueue.push_back(std::move(ev));
+		else
+			emit(ev);
 	}
 
 	void emit()
@@ -63,9 +73,63 @@ public:
 		//TODO: verify if exceptions may reach here from user code
 		for (auto& current : evQueue)
 		{
-			current();
+			emit(current);
 		}
 		evQueue.clear();
+	}
+
+	void emit(std::function<void()>& ev)
+	{
+		//TODO wrapper so we don't let exceptions out of ev handler
+		try
+		{
+			ev();
+		}
+		catch (...)
+		{
+			NODECPP_TRACE("!!! Exception out of user handler !!!");
+		}
+
+	}
+};
+
+/*
+	Pending events need some special treatment,
+	If a socket is closed, we must discard any pending event
+	for such socket
+*/
+class PendingEvQueue
+{
+	std::list<std::pair<size_t, std::function<void()>>> evQueue;
+public:
+	template<class M, class T, class... Args>
+	void add(size_t ix, M T::* pm, T* inst, Args... args)
+	{
+		//code to call events async
+		auto b = std::bind(pm, inst, args...);
+		evQueue.emplace_back(ix, std::move(b));
+	}
+
+	void toQueue(EvQueue& ev)
+	{
+		for (auto& current : evQueue)
+		{
+			ev.add(std::move(current.second));
+		}
+		evQueue.clear();
+	}
+
+	void remove(size_t ix)
+	{
+		auto it = evQueue.begin();
+		auto itEnd = evQueue.end();
+		while (it != itEnd)
+		{
+			if (ix == it->first)
+				it = evQueue.erase(it);
+			else
+				++it;
+		}
 	}
 };
 
@@ -209,7 +273,7 @@ public:
 	// to help with 'poll'
 	size_t infraGetPollFdSetSize() const;
 	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const;
-	void infraGetPendingEvent(EvQueue& evs);
+	void infraGetCloseEvent(EvQueue& evs);
 	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
 
 private:
@@ -258,6 +322,7 @@ class NetServerManager
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetServerEntry> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
+	PendingEvQueue pendingEvents;
 	std::vector<Error> errorStore;
 
 	std::string family = "IPv4";
@@ -286,7 +351,8 @@ public:
 	// to help with 'poll'
 	size_t infraGetPollFdSetSize() const;
 	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const;
-	void infraGetPendingEvent(EvQueue& evs);
+	void infraGetCloseEvents(EvQueue& evs);
+	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
 
 private:

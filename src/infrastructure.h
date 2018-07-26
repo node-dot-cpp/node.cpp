@@ -31,8 +31,6 @@
 
 #include "tcp_socket/tcp_socket.h"
 
-using EvVector = std::vector<std::function<void()>>;
-void fireEvents(EvVector& evs);
 
 /*
 	Timeouts, as simple as they are clear examples of ownership issues.
@@ -50,14 +48,14 @@ class Infrastructure
 {
 	NetSocketManager netSocket;
 	NetServerManager netServer;
-	EvVector inmediateQueue;
+	EvQueue inmediateQueue;
 public:
 	bool running = true;
 	uint64_t nextTimeoutAt = 0;
 	NetSocketManager& getNetSocket() { return netSocket; }
 	NetServerManager& getNetServer() { return netServer; }
-	void setInmediate(std::function<void()> cb) { inmediateQueue.push_back(std::move(cb)); }
-	void callInmediates() { fireEvents(inmediateQueue); }
+	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
+	void callInmediates() { inmediateQueue.emit(); }
 };
 
 extern thread_local Infrastructure infra;
@@ -71,7 +69,6 @@ static constexpr uint64_t TimeOutNever = static_cast<uint64_t>(-1);
 
 
 bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs);
-void pendingCloseEvents(EvQueue& evs);
 
 
 #endif //INFRASTRUCTURE_H

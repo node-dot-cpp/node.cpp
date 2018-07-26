@@ -46,13 +46,17 @@ void nodecpp::runLoop()
 	{
 
 		EvQueue queue;
+		getInfra().getNetServer().infraGetPendingEvents(queue);
+
+
 		if(!pollPhase(ctx.nextTimeoutAt, queue))
 			break;
 
 		queue.emit();
 		ctx.callInmediates();
 
-		pendingCloseEvents(queue);
+		getInfra().getNetSocket().infraGetCloseEvent(queue);
+		getInfra().getNetServer().infraGetCloseEvents(queue);
 		queue.emit();
 		getInfra().getNetSocket().infraClearStores();
 		getInfra().getNetServer().infraClearStores();
