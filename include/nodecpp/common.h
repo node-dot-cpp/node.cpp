@@ -46,14 +46,51 @@
 #include <cassert>
 #include "../../3rdparty/fmt/include/fmt/format.h"
 
-template< typename... ARGS >
-void nodecppTrace(const char* formatStr, const ARGS& ... args) {
-	fmt::print(stderr, formatStr, args...);
-}
+#include "trace.h"
+#include "assert.h"
+#include "mallocator.h"
 
-#define NODECPP_TRACE(formatStr, ...) (nodecppTrace(formatStr "\n", __VA_ARGS__))
 
-#define NODECPP_ASSERT(cond,...) (assert(cond))
+template<class T>
+using GlobalObjectAllocator = Mallocator<T>;
+
+class NodeBase
+{
+public:
+	NodeBase() {}
+	virtual void main() = 0;
+};
+
+class NodeFactoryBase
+{
+public:
+	NodeFactoryBase() {}
+	virtual NodeBase* create() = 0;
+};
+
+void registerFactory( const char* name, NodeFactoryBase* factory );
+
+template<class NodeT>
+class NodeRegistrator
+{
+public:
+	NodeRegistrator( const char* name )
+	{
+		//NODECPP_TRACE( "NodeRegistrator(\"%s\");", name );
+		class NodeFactory : public NodeFactoryBase
+		{
+		public:
+			NodeFactory() {}
+			virtual NodeBase* create() override
+			{
+				return new NodeT;
+			}
+		};
+		NodeFactory* factory = new NodeFactory;
+		registerFactory( name, reinterpret_cast<NodeFactory*>(factory) );
+	}
+};
+
 
 
 #endif //COMMON_H
