@@ -541,8 +541,10 @@ size_t NetSocketManager::appConnect(net::Socket* ptr, const char* ip, uint16_t p
 	}
 
 	auto& entry = appGetEntry(id);
+	NODECPP_ASSERT(entry.state == NetSocketEntry::Uninitialized);
 	entry.osSocket = s.release();
-	entry.connecting = true;
+	entry.state = NetSocketEntry::Connecting;
+//	entry.connecting = true;
 
 	return id;
 }
@@ -558,8 +560,9 @@ void NetSocketManager::appDestroy(size_t id)
 	//	
 	//	if(force)
 	internal_linger_zero_socket(entry.osSocket);
-	
-	pendingCloseEvents.emplace_back(entry.index, false);
+	//entry.state = NetSocketEntry::Closing;
+	//pendingCloseEvents.emplace_back(entry.index, false);
+	closeSocket(entry);
 }
 
 void NetSocketManager::appEnd(size_t id)
@@ -570,16 +573,28 @@ void NetSocketManager::appEnd(size_t id)
 		NODECPP_TRACE("Unexpected id {} on NetSocketManager::end", id);
 		throw Error();
 	}
+
+//	NODECPP_ASSERT(entry.state == NetSocketEntry::Connected);
 	
 	if (entry.writeBuffer.empty())
 	{
-		entry.localEnded = true;
+//		entry.localEnded = true;
 		internal_shutdown_send(entry.osSocket);
 		if (entry.remoteEnded)
-			pendingCloseEvents.emplace_back(entry.index, false);
+		{
+			//entry.state = NetSocketEntry::Closing;
+			//pendingCloseEvents.emplace_back(entry.index, false);
+			closeSocket(entry);
+		}
+		else
+			entry.state = NetSocketEntry::LocalEnded;
+
 	}
 	else
-		entry.pendingLocalEnd = true;
+	{
+		entry.state = NetSocketEntry::LocalEnding;
+//		entry.pendingLocalEnd = true;
+	}
 }
 
 void NetSocketManager::appSetKeepAlive(size_t id, bool enable)
@@ -593,7 +608,7 @@ void NetSocketManager::appSetKeepAlive(size_t id, bool enable)
 
 	if (!internal_socket_keep_alive(entry.osSocket, enable))
 	{
-		appMakeAsyncErrorEventAndClose(entry);
+		errorCloseSocket(entry, storeError(Error()));
 	}
 }
 
@@ -608,7 +623,7 @@ void NetSocketManager::appSetNoDelay(size_t id, bool noDelay)
 
 	if (!internal_tcp_no_delay_socket(entry.osSocket, noDelay))
 	{
-		appMakeAsyncErrorEventAndClose(entry);
+		errorCloseSocket(entry, storeError(Error()));
 	}
 }
 
@@ -621,10 +636,10 @@ bool NetSocketManager::appWrite(size_t id, const uint8_t* data, uint32_t size)
 		throw Error();
 	}
 
-	if (entry.localEnded || entry.pendingLocalEnd)
+	if (entry.state == NetSocketEntry::LocalEnding || entry.state == NetSocketEntry::LocalEnded)
 	{
 		NODECPP_TRACE("StreamSocket {} already ended", id);
-		appMakeAsyncErrorEventAndClose(entry);
+		errorCloseSocket(entry, storeError(Error()));
 		return false;
 	}
 
@@ -634,7 +649,7 @@ bool NetSocketManager::appWrite(size_t id, const uint8_t* data, uint32_t size)
 		uint8_t res = internal_send_packet(data, size, entry.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
-			appMakeAsyncErrorEventAndClose(entry);
+			errorCloseSocket(entry, storeError(Error()));
 			return false;
 		}
 		else if (sentSize == size)
@@ -667,6 +682,7 @@ bool NetSocketManager::infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& 
 
 	auto& entry = appGetEntry(ix);
 	entry.osSocket = s.release();
+	entry.state = NetSocketEntry::Connected;
 
 	evs.add(&net::Socket::emitAccepted, ptr, ix);
 
@@ -705,7 +721,7 @@ bool NetSocketManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 
 			if(!current.remoteEnded && !current.paused)
 				begin[i].events |= POLLIN;
-			if (current.connecting || !current.writeBuffer.empty())
+			if (current.state == NetSocketEntry::Connecting || !current.writeBuffer.empty())
 				begin[i].events |= POLLOUT;
 		}
 		else
@@ -726,10 +742,20 @@ void NetSocketManager::infraGetCloseEvent(EvQueue& evs)
 			auto& entry = ioSockets[current.first];
 			if (entry.isValid())
 			{
+				bool err = entry.state == NetSocketEntry::ErrorClosing;
 				if (entry.osSocket != INVALID_SOCKET)
-					internal_close(entry.osSocket);
+				{
+					if(err) // if error closing, then discard all buffers
+						internal_linger_zero_socket(entry.osSocket);
 
-				evs.add(&net::Socket::emitClose, entry.getPtr(), current.second);
+					internal_close(entry.osSocket);
+				}
+
+				if (err) //if error closing, then first error event
+					evs.add(std::move(current.second));
+
+				evs.add(&net::Socket::emitClose, entry.getPtr(), err);
+				entry.state = NetSocketEntry::Closed;
 			}
 			entry = NetSocketEntry(current.first);
 		}
@@ -750,7 +776,7 @@ void NetSocketManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* en
 			{
 				NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
 				internal_getsockopt_so_error(current.osSocket);
-				infraMakeErrorEventAndClose(current, evs);
+				errorCloseSocket(current, storeError(Error()));
 			}
 			else {
 				/*
@@ -786,7 +812,7 @@ void NetSocketManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* en
 			//{
 			//	NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
 			//	internal_getsockopt_so_error(entry.osSocket);
-			//	infraMakeErrorEventAndClose(entry);
+			//	errorCloseSocket(entry);
 			//}
 		}
 	}
@@ -811,7 +837,7 @@ void NetSocketManager::infraProcessReadEvent(NetSocketEntry& entry, EvQueue& evs
 	else
 	{
 		internal_getsockopt_so_error(entry.osSocket);
-		return infraMakeErrorEventAndClose(entry, evs);
+		return errorCloseSocket(entry, storeError(Error()));
 	}
 }
 
@@ -821,18 +847,23 @@ void NetSocketManager::infraProcessRemoteEnded(NetSocketEntry& entry, EvQueue& e
 	{
 		entry.remoteEnded = true;
 		evs.add(&net::Socket::emitEnd, entry.getPtr());
-		if (entry.localEnded)
+		if (entry.state == NetSocketEntry::LocalEnded)
 		{
-			pendingCloseEvents.emplace_back(entry.index, false);
+			//pendingCloseEvents.emplace_back(entry.index, false);
+			closeSocket(entry);
 		}
-		else if (!entry.allowHalfOpen && !entry.pendingLocalEnd)
+		else if (!entry.allowHalfOpen && entry.state != NetSocketEntry::LocalEnding)
 		{
 			if (!entry.writeBuffer.empty())
-				entry.pendingLocalEnd = true;
+			{
+//				entry.pendingLocalEnd = true;
+				entry.state = NetSocketEntry::LocalEnding;
+			}
 			else
 			{
 				internal_shutdown_send(entry.osSocket);
-				entry.localEnded = true;
+				entry.state = NetSocketEntry::LocalEnded;
+//				entry.localEnded = true;
 			}
 		}
 	}
@@ -845,21 +876,26 @@ void NetSocketManager::infraProcessRemoteEnded(NetSocketEntry& entry, EvQueue& e
 
 void NetSocketManager::infraProcessWriteEvent(NetSocketEntry& current, EvQueue& evs)
 {
-	if (current.connecting)
+//	if (current.connecting)
+	if(current.state == NetSocketEntry::Connecting)
 	{
-		current.connecting = false;
+//		current.connecting = false;
 
 #if defined _MSC_VER || defined __MINGW32__
 		bool success = true;
 #else
 		bool success = internal_getsockopt_so_error(current.osSocket);
 #endif					
-		if (success) {
+		if (success)
+		{
 //			entry.ptr->emitConnect();
+			current.state = NetSocketEntry::Connected;
 			evs.add(&net::Socket::emitConnect, current.getPtr());
 		}
 		else
-			infraMakeErrorEventAndClose(current, evs);
+		{
+			errorCloseSocket(current, storeError(Error()));
+		}
 	}
 	else if (!current.writeBuffer.empty())
 	{
@@ -869,21 +905,26 @@ void NetSocketManager::infraProcessWriteEvent(NetSocketEntry& current, EvQueue& 
 		if (res == COMMLAYER_RET_FAILED)
 		{
 			//			pendingCloseEvents.push_back(entry.id);
-			infraMakeErrorEventAndClose(current, evs);
+			errorCloseSocket(current, storeError(Error()));
 		}
 		else if (sentSize == current.writeBuffer.size())
 		{
 //			entry.writeEvents = false;
 			current.writeBuffer.clear();
-			if (current.pendingLocalEnd)
+			if (current.state == NetSocketEntry::LocalEnding)
 			{
 				internal_shutdown_send(current.osSocket);
-				current.pendingLocalEnd = false;
-				current.localEnded = true;
+				//current.pendingLocalEnd = false;
+				//current.localEnded = true;
 
 				if (current.remoteEnded)
-					pendingCloseEvents.emplace_back(current.index, false);
-
+				{
+					//current.state = NetSocketEntry::Closing;
+					//pendingCloseEvents.emplace_back(current.index, false);
+					closeSocket(current);
+				}
+				else
+					current.state = NetSocketEntry::LocalEnded;
 			}
 				
 //			entry.ptr->emitDrain();
@@ -949,16 +990,20 @@ std::pair<bool, Buffer> NetSocketManager::infraGetPacketBytes(Buffer& buff, SOCK
 	return make_pair(true, std::move(res));
 }
 
-
-void NetSocketManager::infraMakeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs)
+void NetSocketManager::closeSocket(NetSocketEntry& entry)
 {
-	evs.add(&net::Socket::emitError, entry.getPtr(), infraStoreError(Error()));
-	pendingCloseEvents.emplace_back(entry.index, true);
+	entry.state = NetSocketEntry::Closing;
+
+//	evs.add(&net::Socket::emitError, entry.getPtr(), storeError(Error()));
+	pendingCloseEvents.emplace_back(entry.index, std::function<void()>());
 }
 
-void NetSocketManager::appMakeAsyncErrorEventAndClose(NetSocketEntry& entry)
+void NetSocketManager::errorCloseSocket(NetSocketEntry& entry, Error& err)
 {
-	//TODO
+	entry.state = NetSocketEntry::ErrorClosing;
+
+	std::function<void()> ev = std::bind(&net::Socket::emitError, entry.getPtr(), std::ref(err));
+	pendingCloseEvents.emplace_back(entry.index, std::move(ev));
 }
 
 
@@ -1061,7 +1106,7 @@ bool NetServerManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 
 void NetServerManager::infraGetCloseEvents(EvQueue& evs)
 {
-	// if there is an issue with a socket, we may need to appClose it,
+	// if there is an issue with a socket, we may need to close it,
 	// and push an event here to notify later.
 
 	for (auto& current : pendingCloseEvents)

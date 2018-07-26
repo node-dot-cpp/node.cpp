@@ -175,13 +175,16 @@ bool isNetInitialized();
 class NetSocketEntry {
 public:
 	size_t index;
+	enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
+	state = Uninitialized;
+
 
 	net::Socket* ptr = nullptr;
 
-	bool connecting = false;
+//	bool connecting = false;
 	bool remoteEnded = false;
-	bool localEnded = false;
-	bool pendingLocalEnd = false;
+	//bool localEnded = false;
+	//bool pendingLocalEnd = false;
 	bool paused = false;
 	bool allowHalfOpen = true;
 
@@ -222,11 +225,10 @@ public:
 	Each method 'kind' must be isolated and can't call the other.
 */
 
-
 class NetSocketManager {
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetSocketEntry> ioSockets; // TODO: improve
-	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
+	std::vector<std::pair<size_t, std::function<void()>>> pendingCloseEvents;
 	std::vector<Buffer> bufferStore; // TODO: improve
 	std::vector<Error> errorStore;
 
@@ -258,7 +260,7 @@ public:
 		return bufferStore.back();
 	}
 
-	Error& infraStoreError(Error err) {
+	Error& storeError(Error err) { //app-infra neutral
 		errorStore.push_back(std::move(err));
 		return errorStore.back();
 	}
@@ -288,8 +290,8 @@ private:
 	NetSocketEntry& appGetEntry(size_t id);
 	const NetSocketEntry& appGetEntry(size_t id) const;
 
-	void infraMakeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs);
-	void appMakeAsyncErrorEventAndClose(NetSocketEntry& entry);
+	void closeSocket(NetSocketEntry& entry);//app-infra neutral
+	void errorCloseSocket(NetSocketEntry& entry, Error& err);//app-infra neutral
 };
 
 
