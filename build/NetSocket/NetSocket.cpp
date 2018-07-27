@@ -5,6 +5,8 @@
 #include "../../3rdparty/fmt/include/fmt/format.h"
 #include "../../include/nodecpp/net.h"
 #include "../../include/nodecpp/loop.h"
+#include "../../include/nodecpp/timeout.h"
+
 
 #include <functional>
 
@@ -67,9 +69,12 @@ class MySocketLambda :public net::Socket {
 	size_t sentSize = 0;
 	std::unique_ptr<uint8_t> ptr;
 	size_t size = 64 * 1024;
+	Timeout timeout;
 
 public:
 	MySocketLambda() {
+
+		timeout = setTimeout([] {print("***********"); }, 10000);
 		//preset handlers
 //		on(event::appClose, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
 //		on(event::appClose, std::bind(&MySocketLambda::didClose, this, std::placeholders::_1));
@@ -90,7 +95,12 @@ public:
 
 	void didConnect() {
 		print("onConnect!\n");
+		clearTimeout(timeout);
+
+
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
+
+		setInmediate([] {print("onInmediate!\n"); });
 
 		bool ok = true;
 		while (ok) {
@@ -272,6 +282,7 @@ public:
 inline
 void MyServerSocketMember::didClose(bool hadError) {
 	print("onClose!\n");
+	setTimeout([] {print("onTimeout!\n"); }, 2000);
 	if (server)
 		server->closeMe(this);
 }

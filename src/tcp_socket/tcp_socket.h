@@ -31,6 +31,7 @@
 
 #include "../../include/nodecpp/common.h"
 #include "../../include/nodecpp/net.h"
+#include "../ev_queue.h"
 
 using namespace nodecpp;
 
@@ -43,55 +44,6 @@ const SOCKET INVALID_SOCKET = -1;
 struct pollfd;
 #endif
 
-class EvQueue
-{
-	std::vector<std::function<void()>> evQueue;
-
-	static constexpr bool ASYNC = false;
-public:
-	template<class M, class T, class... Args>
-	void add(M T::* pm, T* inst, Args... args)
-	{
-		//code to call events async
-		std::function<void()> ev = std::bind(pm, inst, args...);
-		if (ASYNC)
-			evQueue.push_back(std::move(ev));
-		else
-			emit(ev);
-	}
-
-	void add(std::function<void()> ev)
-	{
-		if (ASYNC)
-			evQueue.push_back(std::move(ev));
-		else
-			emit(ev);
-	}
-
-	void emit()
-	{
-		//TODO: verify if exceptions may reach here from user code
-		for (auto& current : evQueue)
-		{
-			emit(current);
-		}
-		evQueue.clear();
-	}
-
-	void emit(std::function<void()>& ev)
-	{
-		//TODO wrapper so we don't let exceptions out of ev handler
-		try
-		{
-			ev();
-		}
-		catch (...)
-		{
-			NODECPP_TRACE("!!! Exception out of user handler !!!");
-		}
-
-	}
-};
 
 /*
 	Pending events need some special treatment,

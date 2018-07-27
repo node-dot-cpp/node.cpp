@@ -25,22 +25,69 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef LOOP_H
-#define LOOP_H
 
-#include "common.h"
+#ifndef EV_QUEUE_H
+#define EV_QUEUE_H
+
+#include <vector>
 #include <functional>
 
-namespace nodecpp {
+#include "../include/nodecpp/common.h"
 
 
+class EvQueue
+{
+	std::vector<std::function<void()>> evQueue;
 
-	void setInmediate(std::function<void()> cb);
-	void runLoop();
+	static constexpr bool DBG_SYNC = false;//for easier debug only
+public:
+	bool empty() const noexcept { return evQueue.empty(); }
+
+	template<class M, class T, class... Args>
+	void add(M T::* pm, T* inst, Args... args)
+	{
+		//code to call events async
+		std::function<void()> ev = std::bind(pm, inst, args...);
+		if (DBG_SYNC)
+			emit(ev);
+		else
+			evQueue.push_back(std::move(ev));
+	}
+
+	void add(std::function<void()> ev)
+	{
+		if (DBG_SYNC)
+			emit(ev);
+		else
+			evQueue.push_back(std::move(ev));
+	}
+
+	void emit() noexcept
+	{
+		//TODO: verify if exceptions may reach here from user code
+		for (auto& current : evQueue)
+		{
+			emit(current);
+		}
+		evQueue.clear();
+	}
+
+	static
+	void emit(std::function<void()>& ev) noexcept
+	{
+		//TODO wrapper so we don't let exceptions out of ev handler
+		try
+		{
+			ev();
+		}
+		catch (...)
+		{
+			NODECPP_TRACE("!!! Exception out of user handler !!!");
+		}
+
+	}
+};
 
 
-}
+#endif // EV_QUEUE_H
 
-
-
-#endif //LOOP_H

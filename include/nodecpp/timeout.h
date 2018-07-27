@@ -25,22 +25,39 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef LOOP_H
-#define LOOP_H
+#ifndef TIMEOUT_H
+#define TIMEOUT_H
 
 #include "common.h"
 #include <functional>
 
-namespace nodecpp {
+namespace nodecpp
+{
+	class Timeout
+	{
+		uint64_t id = 0;
+	public:
+		Timeout() {}
+		Timeout(uint64_t id) :id(id) {}
+
+		Timeout(const Timeout&) = delete;
+		Timeout& operator=(const Timeout&) = delete;
+
+		Timeout(Timeout&&) = default;
+		Timeout& operator=(Timeout&&) = default;
+
+		~Timeout();
+
+		uint64_t getId() const { return id; }
+	};
 
 
+	Timeout setTimeout(std::function<void()> cb, int32_t ms);
+	void clearTimeout(const Timeout& to);
 
 	void setInmediate(std::function<void()> cb);
-	void runLoop();
-
-
 }
 
 
 
-#endif //LOOP_H
+#endif //TIMEOUT_H

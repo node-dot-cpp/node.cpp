@@ -30,6 +30,9 @@
     <ClCompile Include="..\..\src\infrastructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\timeout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\tcp_socket\tcp_socket.h">
@@ -52,6 +55,12 @@
     </ClInclude>
     <ClInclude Include="..\..\include\nodecpp\event.h">
       <Filter>Header Files\nodecpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nodecpp\timeout.h">
+      <Filter>Header Files\nodecpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ev_queue.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

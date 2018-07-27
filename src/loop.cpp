@@ -31,37 +31,10 @@
 using namespace std;
 using namespace nodecpp;
 
-void nodecpp::setInmediate(std::function<void()> cb)
-{
-	getInfra().setInmediate(std::move(cb));
-}
-
 
 void nodecpp::runLoop()
 {
-	NODECPP_ASSERT(isNetInitialized());
-
-	auto& ctx = getInfra();
-	while (ctx.running)
-	{
-
-		EvQueue queue;
-		getInfra().getNetServer().infraGetPendingEvents(queue);
-
-
-		if(!pollPhase(ctx.nextTimeoutAt, queue))
-			break;
-
-		queue.emit();
-		ctx.callInmediates();
-
-		getInfra().getNetSocket().infraGetCloseEvent(queue);
-		getInfra().getNetServer().infraGetCloseEvents(queue);
-		queue.emit();
-		getInfra().getNetSocket().infraClearStores();
-		getInfra().getNetServer().infraClearStores();
-
-	}
+	getInfra().runLoop();
 }
 
 

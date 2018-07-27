@@ -29,7 +29,108 @@
 
 thread_local Infrastructure infra;
 
-uint64_t getCurrentTime() { return 0; }
+uint64_t infraGetCurrentTime()
+{
+#ifdef _MSC_VER
+	return GetTickCount64() * 1000; // mks
+#else
+#error infraGetCurrentTime() is not defined for this architecture
+#endif
+}
+
+nodecpp::Timeout TimeoutManager::appSetTimeout(std::function<void()> cb, int32_t ms)
+{
+	if (ms == 0)
+		ms = 1;
+	else if (ms < 0)
+		ms = std::numeric_limits<int32_t>::max();
+
+	uint64_t id = ++lastId;
+
+	TimeoutEntry entry;
+	entry.id = id;
+	entry.cb = std::move(cb);
+	entry.lastSchedule = infraGetCurrentTime();
+	entry.delay = ms * 1000;
+
+	entry.nextTimeout = entry.lastSchedule + entry.delay;
+	
+	entry.active = true;
+	nextTimeouts.insert(std::make_pair(entry.nextTimeout, id));
+
+	timers.insert(std::make_pair(id, std::move(entry)));
+
+	return Timeout(id);
+}
+
+void TimeoutManager::appClearTimeout(const nodecpp::Timeout& to)
+{
+	uint64_t id = to.getId();
+
+	auto it = timers.find(id);
+	if (it != timers.end())
+	{
+		if (it->second.active)
+		{
+			auto it2 = nextTimeouts.equal_range(it->second.nextTimeout);
+			bool found = false;
+			while (it2.first != it2.second)
+			{
+				if (it2.first->second == id)
+				{
+					nextTimeouts.erase(it2.first);
+					it->second.active = false;
+					break;
+				}
+				++(it2.first);
+			}
+		}
+
+		//if it was active, we must have deactivated it
+		NODECPP_ASSERT(it->second.active == false);
+	}
+}
+
+void TimeoutManager::neutralTimeoutDestructor(uint64_t id)
+{
+	auto it = timers.find(id);
+	if (it != timers.end())
+	{
+		it->second.handleDestroyed = true;
+
+		if(it->second.active == false)
+			timers.erase(it);
+	}
+	else
+		NODECPP_TRACE("timer {} not found", id);
+}
+
+void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
+{
+	auto itBegin = nextTimeouts.begin();
+	auto itEnd = nextTimeouts.upper_bound(now);
+	auto it = itBegin;
+	while (it != itEnd)
+	{
+		auto it2 = timers.find(it->second);
+
+		NODECPP_ASSERT(it2 != timers.end());
+		NODECPP_ASSERT(it2->second.active);
+		
+		it2->second.active = false;
+			
+		evs.add(it2->second.cb);
+
+		if (it2->second.handleDestroyed)
+			timers.erase(it2);
+
+		++it;
+	}
+
+	nextTimeouts.erase(itBegin, itEnd);
+}
+
+
 
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 {
@@ -44,25 +145,22 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 }
 
 
-bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs)
+bool Infrastructure::pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
-	uint64_t now = getCurrentTime();
-	nextTimeoutAt = now + 1000;
-
 	size_t fds_sz = NetSocketManager::MAX_SOCKETS + NetServerManager::MAX_SOCKETS;
 	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
 
 	
 	pollfd* fds_begin = fds.get();
 	pollfd* fds_end = fds_begin + NetSocketManager::MAX_SOCKETS;
-	bool anySck = getInfra().getNetSocket().infraSetPollFdSet(fds_begin, fds_end);
+	bool refedSocket = netSocket.infraSetPollFdSet(fds_begin, fds_end);
 
 	fds_begin = fds_end;
 	fds_end += NetServerManager::MAX_SOCKETS;
-	bool anySvr = getInfra().getNetServer().infraSetPollFdSet(fds_begin, fds_end);
+	bool refedServer = netServer.infraSetPollFdSet(fds_begin, fds_end);
 
-	if (!anySck && !anySvr)
-		return false;
+	if (refed == false && refedSocket == false && refedServer == false)
+		return false; //stop here
 
 	int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
 
@@ -98,11 +196,11 @@ bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs)
 	{
 		fds_begin = fds.get();
 		fds_end = fds_begin + NetSocketManager::MAX_SOCKETS;
-		getInfra().getNetSocket().infraCheckPollFdSet(fds_begin, fds_end, evs);
+		netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
 
 		fds_begin = fds_end;
 		fds_end += NetServerManager::MAX_SOCKETS;
-		getInfra().getNetServer().infraCheckPollFdSet(fds_begin, fds_end, evs);
+		netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
 
 		//if (queue.empty())
 		//{
@@ -119,3 +217,34 @@ bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs)
 	}
 }
 
+void Infrastructure::runLoop()
+{
+	NODECPP_ASSERT(isNetInitialized());
+
+	while (running)
+	{
+
+		EvQueue queue;
+		netServer.infraGetPendingEvents(queue);
+		queue.emit();
+
+		uint64_t now = infraGetCurrentTime();
+		timeout.infraTimeoutEvents(now, queue);
+		queue.emit();
+
+		now = infraGetCurrentTime();
+		bool refed = pollPhase(refedTimeout(), nextTimeout(), now, queue);
+		if(!refed)
+			return;
+
+		queue.emit();
+		emitInmediates();
+
+		netSocket.infraGetCloseEvent(queue);
+		netServer.infraGetCloseEvents(queue);
+		queue.emit();
+
+		netSocket.infraClearStores();
+		netServer.infraClearStores();
+	}
+}

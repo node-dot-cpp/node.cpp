@@ -29,33 +29,88 @@
 #ifndef INFRASTRUCTURE_H
 #define INFRASTRUCTURE_H
 
+#include "ev_queue.h"
 #include "tcp_socket/tcp_socket.h"
 
+#include "../include/nodecpp/timeout.h"
+#include <functional>
 
 /*
-	Timeouts, as simple as they are clear examples of ownership issues.
-	'setTimeout()' will return a 'Timeout' object, that user may or maynot store.
-	If the user doesn't store it, timeout will fire normally, and after that all 
+	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
+	If the user doesn't store it, timeout will fire normally, and after that all
 	resources will be discarded.
 	But if user keeps a living reference, then she may call 'refresh' to reschedule,
 	so resources may not be discarded until user discards her reference.
+
+
 */
+
+static constexpr uint64_t TimeOutNever = std::numeric_limits<uint64_t>::max();
+
+
+struct TimeoutEntry
+{
+	uint64_t id;
+	std::function<void()> cb;
+	uint64_t lastSchedule;
+	uint64_t delay;
+	uint64_t nextTimeout;
+	bool handleDestroyed = false;
+	bool active = false;
+};
+
 class TimeoutManager
 {
+	uint64_t lastId = 0;
+	std::unordered_map<uint64_t, TimeoutEntry> timers;
+	std::multimap<uint64_t, uint64_t> nextTimeouts;
+public:
+
+	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms);
+	void appClearTimeout(const nodecpp::Timeout& to);
+	void neutralTimeoutDestructor(uint64_t id);
+
+	void infraTimeoutEvents(uint64_t now, EvQueue& evs);
+	uint64_t infraNextTimeout() const noexcept
+	{
+		auto it = nextTimeouts.begin();
+		return it != nextTimeouts.end() ? it->first : TimeOutNever;
+	}
+
+	bool infraRefedTimeout() const noexcept
+	{
+		return !nextTimeouts.empty();
+	}
 };
+
 
 class Infrastructure
 {
 	NetSocketManager netSocket;
 	NetServerManager netServer;
+	TimeoutManager timeout;
 	EvQueue inmediateQueue;
 public:
 	bool running = true;
 	uint64_t nextTimeoutAt = 0;
 	NetSocketManager& getNetSocket() { return netSocket; }
 	NetServerManager& getNetServer() { return netServer; }
+	TimeoutManager& getTimeout() { return timeout; }
 	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
-	void callInmediates() { inmediateQueue.emit(); }
+	void emitInmediates() { inmediateQueue.emit(); }
+
+	bool refedTimeout() const noexcept
+	{
+		return !inmediateQueue.empty() || timeout.infraRefedTimeout();
+	}
+
+	uint64_t nextTimeout() const noexcept
+	{
+		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
+	}
+
+	bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+	void runLoop();
 };
 
 extern thread_local Infrastructure infra;
@@ -63,12 +118,10 @@ extern thread_local Infrastructure infra;
 inline
 Infrastructure& getInfra() { return infra; }
 
-static constexpr uint64_t TimeOutNever = static_cast<uint64_t>(-1);
 
 //using EvQueue = std::vector<std::function<void()>>;
 
 
-bool pollPhase(uint64_t nextTimeoutAt, EvQueue& evs);
 
 
 #endif //INFRASTRUCTURE_H

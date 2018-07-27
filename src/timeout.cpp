@@ -25,22 +25,28 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef LOOP_H
-#define LOOP_H
+#include "../include/nodecpp/timeout.h"
+#include "infrastructure.h"
 
-#include "common.h"
-#include <functional>
+using namespace nodecpp;
 
-namespace nodecpp {
-
-
-
-	void setInmediate(std::function<void()> cb);
-	void runLoop();
-
-
+Timeout::~Timeout()
+{
+	getInfra().getTimeout().neutralTimeoutDestructor(id);
 }
 
+Timeout nodecpp::setTimeout(std::function<void()> cb, int32_t ms)
+{
+	return getInfra().getTimeout().appSetTimeout(std::move(cb), ms);
+}
 
+void nodecpp::clearTimeout(const Timeout& to)
+{
+	getInfra().getTimeout().appClearTimeout(to);
+}
 
-#endif //LOOP_H
+void nodecpp::setInmediate(std::function<void()> cb)
+{
+	getInfra().setInmediate(std::move(cb));
+}
+
