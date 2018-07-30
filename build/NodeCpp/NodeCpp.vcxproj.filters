@@ -30,7 +30,7 @@
     <ClCompile Include="..\..\src\infrastructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\timeout.cpp">
+    <ClCompile Include="..\..\src\timers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,11 +56,11 @@
     <ClInclude Include="..\..\include\nodecpp\event.h">
       <Filter>Header Files\nodecpp</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\nodecpp\timeout.h">
-      <Filter>Header Files\nodecpp</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\ev_queue.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nodecpp\timers.h">
+      <Filter>Header Files\nodecpp</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

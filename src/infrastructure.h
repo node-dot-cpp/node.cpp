@@ -32,7 +32,7 @@
 #include "ev_queue.h"
 #include "tcp_socket/tcp_socket.h"
 
-#include "../include/nodecpp/timeout.h"
+#include "../include/nodecpp/timers.h"
 #include <functional>
 
 /*

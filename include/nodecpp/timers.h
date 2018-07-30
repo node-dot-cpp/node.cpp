@@ -25,34 +25,41 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include "../include/nodecpp/timeout.h"
-#include "infrastructure.h"
+#ifndef TIMERS_H
+#define TIMERS_H
 
-using namespace nodecpp;
+#include "common.h"
+#include <functional>
 
-Timeout::~Timeout()
+namespace nodecpp
 {
-	getInfra().getTimeout().appTimeoutDestructor(id);
+	class Timeout
+	{
+		uint64_t id = 0;
+	public:
+		Timeout() {}
+		Timeout(uint64_t id) :id(id) {}
+
+		Timeout(const Timeout&) = delete;
+		Timeout& operator=(const Timeout&) = delete;
+
+		Timeout(Timeout&& other) :id(other.id) { other.id = 0; }
+		Timeout& operator=(Timeout&& other) { std::swap(this->id, other.id); return *this; };
+
+		~Timeout();
+
+		uint64_t getId() const { return id; }
+
+		void refresh();
+	};
+
+
+	Timeout setTimeout(std::function<void()> cb, int32_t ms);
+	void clearTimeout(const Timeout& to);
+
+	void setInmediate(std::function<void()> cb);
 }
 
-void Timeout::refresh()
-{
-	getInfra().getTimeout().appRefresh(id);
-}
 
 
-Timeout nodecpp::setTimeout(std::function<void()> cb, int32_t ms)
-{
-	return getInfra().getTimeout().appSetTimeout(std::move(cb), ms);
-}
-
-void nodecpp::clearTimeout(const Timeout& to)
-{
-	getInfra().getTimeout().appClearTimeout(to);
-}
-
-void nodecpp::setInmediate(std::function<void()> cb)
-{
-	getInfra().setInmediate(std::move(cb));
-}
-
+#endif //TIMERS_H

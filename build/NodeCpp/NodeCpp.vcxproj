@@ -23,7 +23,7 @@
     <ClCompile Include="..\..\src\loop.cpp" />
     <ClCompile Include="..\..\src\net.cpp" />
     <ClCompile Include="..\..\src\tcp_socket\tcp_socket.cpp" />
-    <ClCompile Include="..\..\src\timeout.cpp" />
+    <ClCompile Include="..\..\src\timers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\nodecpp\common.h" />
@@ -31,7 +31,7 @@
     <ClInclude Include="..\..\include\nodecpp\event.h" />
     <ClInclude Include="..\..\include\nodecpp\loop.h" />
     <ClInclude Include="..\..\include\nodecpp\net.h" />
-    <ClInclude Include="..\..\include\nodecpp\timeout.h" />
+    <ClInclude Include="..\..\include\nodecpp\timers.h" />
     <ClInclude Include="..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\src\tcp_socket\tcp_socket.h" />
