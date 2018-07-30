@@ -95,7 +95,7 @@ public:
 
 	void didConnect() {
 		print("onConnect!\n");
-		clearTimeout(timeout);
+		timeout.refresh();
 
 
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
@@ -111,6 +111,7 @@ public:
 
 	void didData(Buffer& buffer) {
 		print("onData!\n");
+		timeout.refresh();
 		recvSize += buffer.size();
 
 		if (recvSize >= sentSize)
@@ -123,6 +124,7 @@ public:
 
 	void didEnd() {
 		print("onEnd!\n");
+		clearTimeout(timeout);
 	}
 
 	void didError() {

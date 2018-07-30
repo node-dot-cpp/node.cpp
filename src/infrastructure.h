@@ -65,10 +65,13 @@ class TimeoutManager
 	std::unordered_map<uint64_t, TimeoutEntry> timers;
 	std::multimap<uint64_t, uint64_t> nextTimeouts;
 public:
+	void appSetTimeout(TimeoutEntry& entry);
+	void appClearTimeout(TimeoutEntry& entry);
 
 	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms);
 	void appClearTimeout(const nodecpp::Timeout& to);
-	void neutralTimeoutDestructor(uint64_t id);
+	void appRefresh(uint64_t id);
+	void appTimeoutDestructor(uint64_t id);
 
 	void infraTimeoutEvents(uint64_t now, EvQueue& evs);
 	uint64_t infraNextTimeout() const noexcept

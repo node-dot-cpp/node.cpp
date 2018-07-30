@@ -32,8 +32,14 @@ using namespace nodecpp;
 
 Timeout::~Timeout()
 {
-	getInfra().getTimeout().neutralTimeoutDestructor(id);
+	getInfra().getTimeout().appTimeoutDestructor(id);
 }
+
+void Timeout::refresh()
+{
+	getInfra().getTimeout().appRefresh(id);
+}
+
 
 Timeout nodecpp::setTimeout(std::function<void()> cb, int32_t ms)
 {

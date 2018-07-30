@@ -43,12 +43,14 @@ namespace nodecpp
 		Timeout(const Timeout&) = delete;
 		Timeout& operator=(const Timeout&) = delete;
 
-		Timeout(Timeout&&) = default;
-		Timeout& operator=(Timeout&&) = default;
+		Timeout(Timeout&& other) :id(other.id) { other.id = 0; }
+		Timeout& operator=(Timeout&& other) { std::swap(this->id, other.id); return *this; };
 
 		~Timeout();
 
 		uint64_t getId() const { return id; }
+
+		void refresh();
 	};
 
 

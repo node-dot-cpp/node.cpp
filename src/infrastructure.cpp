@@ -38,6 +38,42 @@ uint64_t infraGetCurrentTime()
 #endif
 }
 
+void TimeoutManager::appSetTimeout(TimeoutEntry& entry)
+{
+	NODECPP_ASSERT(entry.active == false);
+
+	entry.lastSchedule = infraGetCurrentTime();
+
+	entry.nextTimeout = entry.lastSchedule + entry.delay;
+
+	entry.active = true;
+	nextTimeouts.insert(std::make_pair(entry.nextTimeout, entry.id));
+
+}
+
+void TimeoutManager::appClearTimeout(TimeoutEntry& entry)
+{
+	if (entry.active)
+	{
+		auto it2 = nextTimeouts.equal_range(entry.nextTimeout);
+		bool found = false;
+		while (it2.first != it2.second)
+		{
+			if (it2.first->second == entry.id)
+			{
+				nextTimeouts.erase(it2.first);
+				entry.active = false;
+				break;
+			}
+			++(it2.first);
+		}
+	}
+
+	//if it was active, we must have deactivated it
+	NODECPP_ASSERT(entry.active == false);
+}
+
+
 nodecpp::Timeout TimeoutManager::appSetTimeout(std::function<void()> cb, int32_t ms)
 {
 	if (ms == 0)
@@ -50,17 +86,21 @@ nodecpp::Timeout TimeoutManager::appSetTimeout(std::function<void()> cb, int32_t
 	TimeoutEntry entry;
 	entry.id = id;
 	entry.cb = std::move(cb);
-	entry.lastSchedule = infraGetCurrentTime();
 	entry.delay = ms * 1000;
 
-	entry.nextTimeout = entry.lastSchedule + entry.delay;
-	
-	entry.active = true;
-	nextTimeouts.insert(std::make_pair(entry.nextTimeout, id));
+	auto res = timers.insert(std::make_pair(id, std::move(entry)));
+	if (res.second)
+	{
+		appSetTimeout(res.first->second);
 
-	timers.insert(std::make_pair(id, std::move(entry)));
+		return Timeout(id);
+	}
+	else
+	{
+		NODECPP_TRACE("Failed to insert Timeout {}", id);
+		return Timeout(0);
+	}
 
-	return Timeout(id);
 }
 
 void TimeoutManager::appClearTimeout(const nodecpp::Timeout& to)
@@ -70,28 +110,22 @@ void TimeoutManager::appClearTimeout(const nodecpp::Timeout& to)
 	auto it = timers.find(id);
 	if (it != timers.end())
 	{
-		if (it->second.active)
-		{
-			auto it2 = nextTimeouts.equal_range(it->second.nextTimeout);
-			bool found = false;
-			while (it2.first != it2.second)
-			{
-				if (it2.first->second == id)
-				{
-					nextTimeouts.erase(it2.first);
-					it->second.active = false;
-					break;
-				}
-				++(it2.first);
-			}
-		}
-
-		//if it was active, we must have deactivated it
-		NODECPP_ASSERT(it->second.active == false);
+		appClearTimeout(it->second);
 	}
 }
 
-void TimeoutManager::neutralTimeoutDestructor(uint64_t id)
+void TimeoutManager::appRefresh(uint64_t id)
+{
+	auto it = timers.find(id);
+	if (it != timers.end())
+	{
+		appClearTimeout(it->second);
+		appSetTimeout(it->second);
+	}
+}
+
+
+void TimeoutManager::appTimeoutDestructor(uint64_t id)
 {
 	auto it = timers.find(id);
 	if (it != timers.end())
