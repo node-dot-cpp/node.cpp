@@ -38,13 +38,13 @@
     <ClInclude Include="node2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="mallocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="socket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="socket_registration_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,8 @@
-#include "common.h"
+#include "../../../include/nodecpp/common.h"
 #include <map>
 #include <string>
 #include <vector>
+#include "socket.h"
 
 class NodeFactoryMap{
 	typedef std::basic_string<char, std::char_traits<char>, GlobalObjectAllocator<char>> StringT;
@@ -93,7 +94,7 @@ int main()
 		f->onConnect();
 
 	for ( auto f : *(SocketVector::getInstance().getSockets()) )
-		f->onClose();
+		f->onClose(true);
 
     return 0;
 }
