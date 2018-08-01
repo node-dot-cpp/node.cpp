@@ -41,8 +41,8 @@ public:
 	void onWhateverError(const SocketIdType* extra, nodecpp::Error&) { printf( "MyNodeTwo::onWhateverError()\n" ); }
 	void onWhateverEnd(const SocketIdType* extra) { printf( "MyNodeTwo::onWhateverEnd()\n" ); }
 
-	SocketN<MyNodeTwo,SocketIdType> sock1;
-	SocketN<MyNodeTwo,SocketIdType,OnConnect<&MyNodeTwo::onWhateverConnect>,OnClose<&MyNodeTwo::onWhateverClose>> sock2;
+	nodecpp::SocketN<MyNodeTwo,SocketIdType> sock1;
+	nodecpp::SocketN<MyNodeTwo,SocketIdType,nodecpp::OnConnect<&MyNodeTwo::onWhateverConnect>,nodecpp::OnClose<&MyNodeTwo::onWhateverClose>> sock2;
 };
 
 

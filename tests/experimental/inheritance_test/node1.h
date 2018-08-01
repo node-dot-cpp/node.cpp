@@ -55,10 +55,10 @@ public:
 	void onWhateverError_3(const SocketIdType* extra, nodecpp::Error&) { printf( "MyNodeOne::onWhateverError_3()\n" ); }
 	void onWhateverEnd_3(const SocketIdType* extra) { printf( "MyNodeOne::onWhateverEnd_3()\n" ); }
 
-	SocketN<MyNodeOne,SocketIdType> sock1;
-	SocketN<MyNodeOne,SocketIdType,OnConnect<&MyNodeOne::onWhateverConnect_2>,OnClose<&MyNodeOne::onWhateverClose_2>> clientSocket;
-	SocketN<MyNodeOne,void,OnEnd<&MyNodeOne::onWhateverEnd>> clientSocket2;
-	SocketN<MyNodeOne,void,OnConnect<&MyNodeOne::onWhateverConnect_3>,OnClose<&MyNodeOne::onWhateverClose_3>> clientSocket3;
+	nodecpp::SocketN<MyNodeOne,SocketIdType> sock1;
+	nodecpp::SocketN<MyNodeOne,SocketIdType,nodecpp::OnConnect<&MyNodeOne::onWhateverConnect_2>,nodecpp::OnClose<&MyNodeOne::onWhateverClose_2>> clientSocket;
+	nodecpp::SocketN<MyNodeOne,void,nodecpp::OnEnd<&MyNodeOne::onWhateverEnd>> clientSocket2;
+	nodecpp::SocketN<MyNodeOne,void,nodecpp::OnConnect<&MyNodeOne::onWhateverConnect_3>,nodecpp::OnClose<&MyNodeOne::onWhateverClose_3>> clientSocket3;
 };
 
 

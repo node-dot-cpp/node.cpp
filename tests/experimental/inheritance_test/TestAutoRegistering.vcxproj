@@ -178,10 +178,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\include\nodecpp\socket.h" />
     <ClInclude Include="mallocator.h" />
     <ClInclude Include="node1.h" />
     <ClInclude Include="node2.h" />
-    <ClInclude Include="socket.h" />
     <ClInclude Include="socket_registration_common.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

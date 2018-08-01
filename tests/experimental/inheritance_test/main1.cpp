@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "socket.h"
+#include "socket_registration_common.h"
 
 class NodeFactoryMap{
 	typedef std::basic_string<char, std::char_traits<char>, GlobalObjectAllocator<char>> StringT;
@@ -45,7 +45,7 @@ void registerFactory( const char* name, NodeFactoryBase* factory )
 
 
 class SocketVector{
-	typedef std::vector<SocketO*, GlobalObjectAllocator<SocketO*>> VectorT;
+	typedef std::vector<nodecpp::SocketO*, GlobalObjectAllocator<nodecpp::SocketO*>> VectorT;
 	VectorT* sv = nullptr;
 public:
 	static SocketVector& getInstance(){
@@ -53,7 +53,7 @@ public:
 		// volatile int dummy{};
 		return instance;
 	}
-	void registerSocket( SocketO* sock );
+	void registerSocket( nodecpp::SocketO* sock );
 	
 	VectorT* getSockets() { return sv; }
 	
@@ -65,7 +65,7 @@ private:
 
 };
 
-void SocketVector::registerSocket( SocketO* sock )
+void SocketVector::registerSocket( nodecpp::SocketO* sock )
 {
 	if ( sv == nullptr )
 		sv = new VectorT;
@@ -73,7 +73,7 @@ void SocketVector::registerSocket( SocketO* sock )
 	sv->push_back( sock );
 }
 
-void registerSocket( SocketO* sock )
+void registerSocket( nodecpp::SocketO* sock )
 {
 	SocketVector::getInstance().registerSocket( sock );
 }
@@ -95,6 +95,8 @@ int main()
 
 	for ( auto f : *(SocketVector::getInstance().getSockets()) )
 		f->onClose(true);
+
+//	getchar();
 
     return 0;
 }
