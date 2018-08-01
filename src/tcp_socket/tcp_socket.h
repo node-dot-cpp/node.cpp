@@ -124,14 +124,11 @@ public:
 
 bool isNetInitialized();
 
-class NetSocketEntry {
+class NetSocketEntryBase {
 public:
 	size_t index;
 	enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
 	state = Uninitialized;
-
-
-	net::Socket* ptr = nullptr;
 
 //	bool connecting = false;
 	bool remoteEnded = false;
@@ -147,9 +144,24 @@ public:
 
 	SOCKET osSocket = INVALID_SOCKET;
 
+	NetSocketEntryBase(size_t index) :index(index) {}
 
-	NetSocketEntry(size_t index) :index(index) {}
-	NetSocketEntry(size_t index, net::Socket* ptr) :index(index), ptr(ptr) {}
+	NetSocketEntryBase(const NetSocketEntryBase& other) = delete;
+	NetSocketEntryBase& operator=(const NetSocketEntryBase& other) = delete;
+
+	NetSocketEntryBase(NetSocketEntryBase&& other) = default;
+	NetSocketEntryBase& operator=(NetSocketEntryBase&& other) = default;
+
+};
+
+template<class SocketT>
+class NetSocketEntry : public NetSocketEntryBase {
+public:
+	SocketT* ptr = nullptr;
+
+
+	NetSocketEntry(size_t index) :NetSocketEntryBase(index) {}
+	NetSocketEntry(size_t index, SocketT* ptr) :NetSocketEntryBase(index), ptr(ptr) {}
 
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -159,7 +171,7 @@ public:
 
 	bool isValid() const { return ptr != nullptr; }
 
-	net::Socket* getPtr() const {
+	SocketT* getPtr() const {
 		return ptr;
 	}
 };
@@ -179,8 +191,12 @@ public:
 
 class NetSocketManager {
 	//mb: ioSockets[0] is always reserved and invalid.
-	std::vector<NetSocketEntry> ioSockets; // TODO: improve
+	std::vector<NetSocketEntry<net::Socket>> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, std::function<void()>>> pendingCloseEvents;
+
+	std::vector<NetSocketEntry<net::SocketO>> ioSocketsO; // TODO: improve
+	std::vector<std::pair<size_t, NetSocketEntry<net::SocketO>>> pendingCloseEventsO;
+
 	std::vector<Buffer> bufferStore; // TODO: improve
 	std::vector<Error> errorStore;
 
@@ -191,6 +207,7 @@ public:
 	NetSocketManager();
 	
 	size_t appConnect(net::Socket* ptr, const char* ip, uint16_t port);
+
 	void appDestroy(size_t id);
 	void appEnd(size_t id);
 	void appPause(size_t id) { appGetEntry(id).paused = true; }
@@ -231,19 +248,19 @@ public:
 	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
 
 private:
-	void infraProcessReadEvent(NetSocketEntry& current, EvQueue& evs);
-	void infraProcessRemoteEnded(NetSocketEntry& current, EvQueue& evs);
-	void infraProcessWriteEvent(NetSocketEntry& current, EvQueue& evs);
+	void infraProcessReadEvent(NetSocketEntry<net::Socket>& current, EvQueue& evs);
+	void infraProcessRemoteEnded(NetSocketEntry<net::Socket>& current, EvQueue& evs);
+	void infraProcessWriteEvent(NetSocketEntry<net::Socket>& current, EvQueue& evs);
 
 	std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
 
 private:
 	size_t addEntry(net::Socket* ptr);//app-infra neutral
-	NetSocketEntry& appGetEntry(size_t id);
-	const NetSocketEntry& appGetEntry(size_t id) const;
+	NetSocketEntry<net::Socket>& appGetEntry(size_t id);
+	const NetSocketEntry<net::Socket>& appGetEntry(size_t id) const;
 
-	void closeSocket(NetSocketEntry& entry);//app-infra neutral
-	void errorCloseSocket(NetSocketEntry& entry, Error& err);//app-infra neutral
+	void closeSocket(NetSocketEntry<net::Socket>& entry);//app-infra neutral
+	void errorCloseSocket(NetSocketEntry<net::Socket>& entry, Error& err);//app-infra neutral
 };
 
 

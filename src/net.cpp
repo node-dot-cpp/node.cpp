@@ -36,6 +36,45 @@ using namespace nodecpp::net;
 
 
 
+void SocketO::connect(uint16_t port, const char* ip)
+{
+	state = CONNECTING;
+	id = getInfra().getNetSocket().appConnect(this, ip, port);
+}
+
+void SocketO::destroy() { getInfra().getNetSocket().appDestroy(id); }
+void SocketO::end() { getInfra().getNetSocket().appEnd(id); }
+
+void SocketO::pause() { getInfra().getNetSocket().appPause(id); }
+void SocketO::ref() { getInfra().getNetSocket().appRef(id); }
+
+void SocketO::resume() { getInfra().getNetSocket().appResume(id); }
+void SocketO::unref() { getInfra().getNetSocket().appUnref(id); }
+
+size_t SocketO::bufferSize() const { return getInfra().getNetSocket().appBufferSize(id); }
+
+
+SocketO& SocketO::setNoDelay(bool noDelay)
+{ 
+	getInfra().getNetSocket().appSetNoDelay(id, noDelay);
+	return *this;
+}
+
+SocketO& SocketO::setKeepAlive(bool enable)
+{
+	getInfra().getNetSocket().appSetKeepAlive(id, enable);
+	return *this;
+}
+
+bool SocketO::write(const uint8_t* data, uint32_t size)
+{
+	_bytesWritten += size;
+	return getInfra().getNetSocket().appWrite(id, data, size);
+}
+
+
+
+
 void Socket::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
@@ -71,6 +110,9 @@ bool Socket::write(const uint8_t* data, uint32_t size)
 	_bytesWritten += size;
 	return getInfra().getNetSocket().appWrite(id, data, size);
 }
+
+
+
 
 void Server::ref() { getInfra().getNetServer().appRef(id); }
 void Server::unref() { getInfra().getNetServer().appUnref(id); }

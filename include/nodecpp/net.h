@@ -143,7 +143,126 @@ namespace nodecpp {
 			std::string address;
 		};
 
+		class SocketO {
+			size_t id = 0;
+			Address _local;
+			Address _remote;
+			//std::string _remoteAddress;
+			//std::string _remoteFamily;
+			//uint16_t _remotePort = 0;
+			size_t _bytesRead = 0;
+			size_t _bytesWritten = 0;
 
+			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
+
+		public:
+			SocketO() {}
+
+			SocketO(const SocketO&) = delete;
+			SocketO& operator=(const SocketO&) = delete;
+
+			SocketO(SocketO&&) = default;
+			SocketO& operator=(SocketO&&) = default;
+
+			virtual ~SocketO() { if (state == CONNECTING || state == CONNECTED) destroy(); }
+
+#if 0
+			void emitClose(bool hadError) {
+				state = DESTROYED;
+				this->id = 0;
+				//handler may release, put virtual onClose first.
+				onClose(hadError);
+				eClose.emit(hadError);
+			}
+
+			// not in node.js
+			void emitAccepted(size_t id) {
+				this->id = id;
+				state = CONNECTED;
+			}
+
+			void emitConnect() {
+				state = CONNECTED;
+				eConnect.emit();
+				onConnect();
+			}
+
+			void emitData(Buffer& buffer) {
+				_bytesRead += buffer.size();
+				eData.emit(std::ref(buffer));
+				onData(buffer);
+			}
+
+			void emitDrain() {
+				eDrain.emit();
+				onDrain();
+			}
+
+			void emitEnd() {
+				eEnd.emit();
+				onEnd();
+			}
+
+			void emitError(Error& err) {
+				state = DESTROYED;
+				this->id = 0;
+				eError.emit(err);
+				onError(err);
+			}
+#endif // 0
+
+			virtual void onClose(bool hadError) {}
+			virtual void onConnect() {}
+			virtual void onData(Buffer& buffer) {}
+			virtual void onDrain() {}
+			virtual void onEnd() {}
+			virtual void onError(Error& err) {}
+
+			const Address& address() const { return _local; }
+
+			size_t bufferSize() const;
+			size_t bytesRead() const { return _bytesRead; }
+			size_t bytesWritten() const { return _bytesWritten; }
+
+			void connect(uint16_t port, const char* ip);
+#if 0
+			void connect(uint16_t port, const char* ip, std::function<void()> cb) {
+				once(event::connect, std::move(cb));
+				connect(port, ip);
+			}
+#endif // 0
+			bool connecting() const { return state == CONNECTING; }
+			void destroy();
+			bool destroyed() const { return state == DESTROYED; };
+			void end();
+			const std::string& localAddress() const { return _local.address; }
+			uint16_t localPort() const { return _local.port; }
+
+			void pause();
+
+			const std::string& remoteAddress() const { return _remote.address; }
+			const std::string& remoteFamily() const { return _remote.family; }
+			uint16_t remotePort() const { return _remote.port; }
+
+			void ref();
+			void resume();
+
+			SocketO& setNoDelay(bool noDelay = true);
+			SocketO& setKeepAlive(bool enable = false);
+
+			void unref();
+			bool write(const uint8_t* data, uint32_t size);
+#if 0
+			bool write(const uint8_t* data, uint32_t size, std::function<void()> cb) {
+				bool b = write(data, size);
+				if(!b)
+					once(event::drain, std::move(cb));
+
+				return b;
+			}
+#endif // 0
+
+		};
 		class Socket /*:EventEmitter<event::Close>, EventEmitter<event::Connect> ,
 			EventEmitter<event::Data> , EventEmitter<event::Drain> ,
 			EventEmitter<event::End>, EventEmitter<event::Error>*/ {
