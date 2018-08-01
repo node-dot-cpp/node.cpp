@@ -6,7 +6,12 @@
 
 class MyNodeTwo : public NodeBase
 {
-	MySocket<MyNodeTwo> sock2;
+	struct SockIData
+	{
+		uint64_t id;
+		void* whatever;
+	};
+	using SocketIdType = SockIData;
 
 public:
 	MyNodeTwo() : sock1( this ), 
@@ -22,30 +27,22 @@ public:
 		registerSocket( &sock2 );
 	}
 
-	void onConnect() { printf( "MyNodeTwo::onConnect()\n" ); }
-	void onClose(bool) { printf( "MyNodeTwo::onClose()\n" ); }
-	void onData(nodecpp::Buffer&) { printf( "MyNodeTwo::onData()\n" ); }
-	void onDrain() { printf( "MyNodeTwo::onDrain()\n" ); }
-	void onError(nodecpp::Error&) { printf( "MyNodeTwo::onError()\n" ); }
-	void onEnd() { printf( "MyNodeTwo::onEnd()\n" ); }
+	void onConnect(const void* extra) { printf( "MyNodeTwo::onConnect()\n" ); }
+	void onClose(const void* extra,bool) { printf( "MyNodeTwo::onClose()\n" ); }
+	void onData(const void* extra, nodecpp::Buffer&) { printf( "MyNodeTwo::onData()\n" ); }
+	void onDrain(const void* extra) { printf( "MyNodeTwo::onDrain()\n" ); }
+	void onError(const void* extra, nodecpp::Error&) { printf( "MyNodeTwo::onError()\n" ); }
+	void onEnd(const void* extra) { printf( "MyNodeTwo::onEnd()\n" ); }
 
-	void onWhateverConnect() { printf( "MyNodeTwo::onWhateverConnect()\n" ); }
-	void onWhateverClose(bool) { printf( "MyNodeTwo::onWhateverClose()\n" ); }
-	void onWhateverData(nodecpp::Buffer&) { printf( "MyNodeTwo::onWhateverData()\n" ); }
-	void onWhateverDrain() { printf( "MyNodeTwo::onWhateverDrain()\n" ); }
-	void onWhateverError(nodecpp::Error&) { printf( "MyNodeTwo::onWhateverError()\n" ); }
-	void onWhateverEnd() { printf( "MyNodeTwo::onWhateverEnd()\n" ); }
+	void onWhateverConnect(const SocketIdType* extra) { printf( "MyNodeTwo::onWhateverConnect()\n" ); }
+	void onWhateverClose(const SocketIdType* extra, bool) { printf( "MyNodeTwo::onWhateverClose()\n" ); }
+	void onWhateverData(const SocketIdType* extra, nodecpp::Buffer&) { printf( "MyNodeTwo::onWhateverData()\n" ); }
+	void onWhateverDrain(const SocketIdType* extra) { printf( "MyNodeTwo::onWhateverDrain()\n" ); }
+	void onWhateverError(const SocketIdType* extra, nodecpp::Error&) { printf( "MyNodeTwo::onWhateverError()\n" ); }
+	void onWhateverEnd(const SocketIdType* extra) { printf( "MyNodeTwo::onWhateverEnd()\n" ); }
 
-	struct SocketHandlers_
-	{
-		static constexpr void (MyNodeTwo::*onConnect)() = &MyNodeTwo::onWhateverConnect;
-		static constexpr void (MyNodeTwo::*onClose)(bool) = &MyNodeTwo::onWhateverClose;
-		static constexpr void (MyNodeTwo::*onData)(nodecpp::Buffer&) = &MyNodeTwo::onWhateverData;
-		static constexpr void (MyNodeTwo::*onDrain)() = &MyNodeTwo::onWhateverDrain;
-		static constexpr void (MyNodeTwo::*onError)(nodecpp::Error&) = &MyNodeTwo::onWhateverError;
-		static constexpr void (MyNodeTwo::*onEnd)() = &MyNodeTwo::onWhateverEnd;
-	};
-	MySocket<MyNodeTwo,SocketHandlers_> sock1;
+	SocketN<MyNodeTwo,SocketIdType> sock1;
+	SocketN<MyNodeTwo,SocketIdType,OnConnect<&MyNodeTwo::onWhateverConnect>,OnClose<&MyNodeTwo::onWhateverClose>> sock2;
 };
 
 

@@ -7,14 +7,13 @@
 class MyNodeOne : public NodeBase
 {
 	using SocketIdType = int;
-	MySocket<MyNodeOne> sock2;
 
 public:
 	using noid = void;
 	MyNodeOne() : sock1( this ), 
-		sock2( this ),
-		clientSocket(this),
-		clientSocket2(this)
+		clientSocket( this ),
+		clientSocket2(this),
+		clientSocket3(this)
 	{
 		printf( "MyNodeOne::MyNodeOne()\n" );
 	}
@@ -23,24 +22,24 @@ public:
 	{
 		printf( "MyNodeOne::main()\n" );
 		registerSocket( &sock1 );
-		registerSocket( &sock2 );
 		registerSocket( &clientSocket );
 		registerSocket( &clientSocket2 );
+		registerSocket( &clientSocket3 );
 	}
 
-	void onConnect() { printf( "MyNodeOne::onConnect()\n" ); }
-	void onClose(bool) { printf( "MyNodeOne::onClose()\n" ); }
-	void onData(nodecpp::Buffer&) { printf( "MyNodeOne::onData()\n" ); }
-	void onDrain() { printf( "MyNodeOne::onDrain()\n" ); }
-	void onError(nodecpp::Error&) { printf( "MyNodeOne::onError()\n" ); }
-	void onEnd() { printf( "MyNodeOne::onEnd()\n" ); }
+	void onConnect(const void* extra) { printf( "MyNodeOne::onConnect()\n" ); }
+	void onClose(const void* extra,bool) { printf( "MyNodeOne::onClose()\n" ); }
+	void onData(const void* extra, nodecpp::Buffer&) { printf( "MyNodeOne::onData()\n" ); }
+	void onDrain(const void* extra) { printf( "MyNodeOne::onDrain()\n" ); }
+	void onError(const void* extra, nodecpp::Error&) { printf( "MyNodeOne::onError()\n" ); }
+	void onEnd(const void* extra) { printf( "MyNodeOne::onEnd()\n" ); }
 
-	void onWhateverConnect() { printf( "MyNodeOne::onWhateverConnect()\n" ); }
-	void onWhateverClose(bool) { printf( "MyNodeOne::onWhateverClose()\n" ); }
-	void onWhateverData(nodecpp::Buffer&) { printf( "MyNodeOne::onWhateverData()\n" ); }
-	void onWhateverDrain() { printf( "MyNodeOne::onWhateverDrain()\n" ); }
-	void onWhateverError(nodecpp::Error&) { printf( "MyNodeOne::onWhateverError()\n" ); }
-	void onWhateverEnd() { printf( "MyNodeOne::onWhateverEnd()\n" ); }
+	void onWhateverConnect(const void* extra) { printf( "MyNodeOne::onWhateverConnect()\n" ); }
+	void onWhateverClose(const void* extra, bool) { printf( "MyNodeOne::onWhateverClose()\n" ); }
+	void onWhateverData(const void* extra, nodecpp::Buffer&) { printf( "MyNodeOne::onWhateverData()\n" ); }
+	void onWhateverDrain(const void* extra) { printf( "MyNodeOne::onWhateverDrain()\n" ); }
+	void onWhateverError(const void* extra, nodecpp::Error&) { printf( "MyNodeOne::onWhateverError()\n" ); }
+	void onWhateverEnd(const void* extra) { printf( "MyNodeOne::onWhateverEnd()\n" ); }
 
 	void onWhateverConnect_2(const SocketIdType* extra) { printf( "MyNodeOne::onWhateverConnect_2()%s\n", extra ? "+ extra data" : "" ); }
 	void onWhateverClose_2(const SocketIdType* extra, bool) { printf( "MyNodeOne::onWhateverClose_2()%s\n", extra ? "+ extra data" : "" ); }
@@ -56,27 +55,10 @@ public:
 	void onWhateverError_3(const SocketIdType* extra, nodecpp::Error&) { printf( "MyNodeOne::onWhateverError_3()\n" ); }
 	void onWhateverEnd_3(const SocketIdType* extra) { printf( "MyNodeOne::onWhateverEnd_3()\n" ); }
 
-	struct SocketHandlers_
-	{
-		static constexpr void (MyNodeOne::*onConnect)() = &MyNodeOne::onWhateverConnect;
-		static constexpr void (MyNodeOne::*onClose)(bool) = &MyNodeOne::onWhateverClose;
-		static constexpr void (MyNodeOne::*onData)(nodecpp::Buffer&) = &MyNodeOne::onWhateverData;
-		static constexpr void (MyNodeOne::*onDrain)() = &MyNodeOne::onWhateverDrain;
-		static constexpr void (MyNodeOne::*onError)(nodecpp::Error&) = &MyNodeOne::onWhateverError;
-		static constexpr void (MyNodeOne::*onEnd)() = &MyNodeOne::onWhateverEnd;
-	};
-	MySocket<MyNodeOne,SocketHandlers_> sock1;
-#if 0
-	SocketN< MyNodeOne,
-	  /*OnConnect<&MyNodeOne::onWhateverConnect_2>,*/
-	  OnClose<MyNodeOne, &MyNodeOne::onWhateverClose_2>
-//	  &MyNode::onWhateverClose_2
-	> clientSocket;
-#endif
+	SocketN<MyNodeOne,SocketIdType> sock1;
 	SocketN<MyNodeOne,SocketIdType,OnConnect<&MyNodeOne::onWhateverConnect_2>,OnClose<&MyNodeOne::onWhateverClose_2>> clientSocket;
-//	SocketN<MyNodeOne,void/*,OnConnect<&MyNodeOne::onWhateverConnect_2>*/,OnClose<&MyNodeOne::onWhateverClose_2>> clientSocket2;
-//	SocketN<MyNodeOne,SocketIdType/*,OnConnect<&MyNodeOne::onWhateverConnect_2>*/,OnClose<&MyNodeOne::onWhateverClose_2>> clientSocket2;
-	SocketN<MyNodeOne,void,OnConnect<&MyNodeOne::onWhateverConnect_3>,OnClose<&MyNodeOne::onWhateverClose_3>> clientSocket2;
+	SocketN<MyNodeOne,void,OnEnd<&MyNodeOne::onWhateverEnd>> clientSocket2;
+	SocketN<MyNodeOne,void,OnConnect<&MyNodeOne::onWhateverConnect_3>,OnClose<&MyNodeOne::onWhateverClose_3>> clientSocket3;
 };
 
 
