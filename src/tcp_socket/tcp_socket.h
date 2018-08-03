@@ -124,7 +124,76 @@ public:
 
 bool isNetInitialized();
 
-class NetSocketEntryBase {
+class SocketGenericPtr
+{
+	enum SocketType { Uninitialized, Lambda, Inheritance } st = Uninitialized;
+	void* ptr = nullptr;
+public:
+	SocketGenericPtr() {}
+	SocketGenericPtr(net::Socket* s) { st = SocketType::Lambda; ptr = s; }
+	SocketGenericPtr(net::SocketO* so) { st = SocketType::Inheritance; ptr = so; }
+	void init(net::Socket* s) { NODECPP_ASSERT( st = SocketType::Uninitialized ); st = SocketType::Lambda; ptr = s; }
+	void init(net::SocketO* so) { NODECPP_ASSERT( st = SocketType::Uninitialized ); st = SocketType::Lambda; ptr = so; }
+
+	bool isValid() const { return ptr != nullptr; }
+
+	void emitClose(bool hadError) const
+	{
+		switch ( st )
+		{
+			case SocketType::Lambda: reinterpret_cast<net::Socket*>(ptr)->emitClose(hadError); break;
+			case SocketType::Inheritance: reinterpret_cast<net::SocketO*>(ptr)->onClose(hadError); break;
+			default: NODECPP_ASSERT( false ); break;
+		}
+	}
+	void emitConnect() const
+	{
+		switch ( st )
+		{
+			case SocketType::Lambda: reinterpret_cast<net::Socket*>(ptr)->emitConnect(); break;
+			case SocketType::Inheritance: reinterpret_cast<net::SocketO*>(ptr)->onConnect(); break;
+			default: NODECPP_ASSERT( false ); break;
+		}
+	}
+	void emitData(Buffer& buffer) const
+	{
+		switch ( st )
+		{
+			case SocketType::Lambda: reinterpret_cast<net::Socket*>(ptr)->emitData(buffer); break;
+			case SocketType::Inheritance: reinterpret_cast<net::SocketO*>(ptr)->onData(buffer); break;
+			default: NODECPP_ASSERT( false ); break;
+		}
+	}
+	void emitDrain() const
+	{
+		switch ( st )
+		{
+			case SocketType::Lambda: reinterpret_cast<net::Socket*>(ptr)->emitDrain(); break;
+			case SocketType::Inheritance: reinterpret_cast<net::SocketO*>(ptr)->onDrain(); break;
+			default: NODECPP_ASSERT( false ); break;
+		}
+	}
+	void emitEnd() const
+	{
+		switch ( st )
+		{
+			case SocketType::Lambda: reinterpret_cast<net::Socket*>(ptr)->emitEnd(); break;
+			case SocketType::Inheritance: reinterpret_cast<net::SocketO*>(ptr)->onEnd(); break;
+			default: NODECPP_ASSERT( false ); break;
+		}
+	}
+	void emitError(Error& err) const
+	{
+		switch ( st )
+		{
+			case SocketType::Lambda: reinterpret_cast<net::Socket*>(ptr)->emitError(err); break;
+			case SocketType::Inheritance: reinterpret_cast<net::SocketO*>(ptr)->onError(err); break;
+			default: NODECPP_ASSERT( false ); break;
+		}
+	}
+};
+
+class NetSocketEntry {
 public:
 	size_t index;
 	enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
@@ -144,24 +213,20 @@ public:
 
 	SOCKET osSocket = INVALID_SOCKET;
 
-	NetSocketEntryBase(size_t index) :index(index) {}
+/*	NetSocketEntryBase(size_t index) :index(index) {}
 
 	NetSocketEntryBase(const NetSocketEntryBase& other) = delete;
 	NetSocketEntryBase& operator=(const NetSocketEntryBase& other) = delete;
 
 	NetSocketEntryBase(NetSocketEntryBase&& other) = default;
-	NetSocketEntryBase& operator=(NetSocketEntryBase&& other) = default;
+	NetSocketEntryBase& operator=(NetSocketEntryBase&& other) = default;*/
 
-};
-
-template<class SocketT>
-class NetSocketEntry : public NetSocketEntryBase {
-public:
-	SocketT* ptr = nullptr;
+	SocketGenericPtr ptr;
 
 
-	NetSocketEntry(size_t index) :NetSocketEntryBase(index) {}
-	NetSocketEntry(size_t index, SocketT* ptr) :NetSocketEntryBase(index), ptr(ptr) {}
+	NetSocketEntry(size_t index) : index(index) {}
+	NetSocketEntry(size_t index, net::Socket* ptr_) : index(index), ptr(ptr_) {}
+	NetSocketEntry(size_t index, net::SocketO* ptr_) : index(index), ptr(ptr_) {}
 
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -169,11 +234,12 @@ public:
 	NetSocketEntry(NetSocketEntry&& other) = default;
 	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
 
-	bool isValid() const { return ptr != nullptr; }
+	bool isValid() const { return ptr.isValid(); }
 
-	SocketT* getPtr() const {
-		return ptr;
-	}
+//	SocketT* getPtr() const {
+//		return ptr;
+//	}
+	const SocketGenericPtr& getSockObject() const { return ptr; }
 };
 
 /* 
@@ -191,11 +257,8 @@ public:
 
 class NetSocketManager {
 	//mb: ioSockets[0] is always reserved and invalid.
-	std::vector<NetSocketEntry<net::Socket>> ioSockets; // TODO: improve
+	std::vector<NetSocketEntry> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, std::function<void()>>> pendingCloseEvents;
-
-	std::vector<NetSocketEntry<net::SocketO>> ioSocketsO; // TODO: improve
-	std::vector<std::pair<size_t, NetSocketEntry<net::SocketO>>> pendingCloseEventsO;
 
 	std::vector<Buffer> bufferStore; // TODO: improve
 	std::vector<Error> errorStore;
@@ -206,7 +269,8 @@ public:
 	static const size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetSocketManager();
 	
-	size_t appConnect(net::Socket* ptr, const char* ip, uint16_t port);
+	size_t appConnect(net::Socket* ptr, const char* ip, uint16_t port); // TODO: think about template with type checking inside
+	size_t appConnect(net::SocketO* ptr, const char* ip, uint16_t port); // TODO: think about template with type checking inside
 
 	void appDestroy(size_t id);
 	void appEnd(size_t id);
@@ -248,19 +312,20 @@ public:
 	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
 
 private:
-	void infraProcessReadEvent(NetSocketEntry<net::Socket>& current, EvQueue& evs);
-	void infraProcessRemoteEnded(NetSocketEntry<net::Socket>& current, EvQueue& evs);
-	void infraProcessWriteEvent(NetSocketEntry<net::Socket>& current, EvQueue& evs);
+	void infraProcessReadEvent(NetSocketEntry& current, EvQueue& evs);
+	void infraProcessRemoteEnded(NetSocketEntry& current, EvQueue& evs);
+	void infraProcessWriteEvent(NetSocketEntry& current, EvQueue& evs);
 
 	std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
 
 private:
 	size_t addEntry(net::Socket* ptr);//app-infra neutral
-	NetSocketEntry<net::Socket>& appGetEntry(size_t id);
-	const NetSocketEntry<net::Socket>& appGetEntry(size_t id) const;
+	size_t addEntry(net::SocketO* ptr);//app-infra neutral
+	NetSocketEntry& appGetEntry(size_t id);
+	const NetSocketEntry& appGetEntry(size_t id) const;
 
-	void closeSocket(NetSocketEntry<net::Socket>& entry);//app-infra neutral
-	void errorCloseSocket(NetSocketEntry<net::Socket>& entry, Error& err);//app-infra neutral
+	void closeSocket(NetSocketEntry& entry);//app-infra neutral
+	void errorCloseSocket(NetSocketEntry& entry, Error& err);//app-infra neutral
 };
 
 
