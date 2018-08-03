@@ -26,12 +26,16 @@
     <ClCompile Include="..\..\src\timers.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\nodecpp\assert.h" />
     <ClInclude Include="..\..\include\nodecpp\common.h" />
     <ClInclude Include="..\..\include\nodecpp\error.h" />
     <ClInclude Include="..\..\include\nodecpp\event.h" />
     <ClInclude Include="..\..\include\nodecpp\loop.h" />
+    <ClInclude Include="..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\include\nodecpp\net.h" />
+    <ClInclude Include="..\..\include\nodecpp\socket.h" />
     <ClInclude Include="..\..\include\nodecpp\timers.h" />
+    <ClInclude Include="..\..\include\nodecpp\trace.h" />
     <ClInclude Include="..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\src\tcp_socket\tcp_socket.h" />

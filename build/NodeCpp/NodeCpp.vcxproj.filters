@@ -62,5 +62,17 @@
     <ClInclude Include="..\..\include\nodecpp\timers.h">
       <Filter>Header Files\nodecpp</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\nodecpp\assert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nodecpp\mallocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nodecpp\socket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nodecpp\trace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
