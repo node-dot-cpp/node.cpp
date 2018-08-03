@@ -415,7 +415,14 @@ public:
 	void onWhateverEnd_2(const SocketIdType* extra) { printf( "MySampleInheritanceOneNode::onWhateverEnd_2()\n" ); }
 
 
-	nodecpp::net::SocketN2_<MySampleInheritanceOneNode,SocketIdType,nodecpp::net::OnConnect<&MySampleInheritanceOneNode::onWhateverConnect_2>,nodecpp::net::OnClose<&MySampleInheritanceOneNode::onWhateverClose_2>> sockNN1_3;
+	nodecpp::net::SocketN2_<MySampleInheritanceOneNode,SocketIdType,
+		nodecpp::net::OnConnect<&MySampleInheritanceOneNode::onWhateverConnect_2>,
+		nodecpp::net::OnClose<&MySampleInheritanceOneNode::onWhateverClose_2>,
+		nodecpp::net::OnData<&MySampleInheritanceOneNode::onWhateverData_2>,
+		nodecpp::net::OnDrain<&MySampleInheritanceOneNode::onWhateverDrain_2>,
+		nodecpp::net::OnError<&MySampleInheritanceOneNode::onWhateverError_2>,
+		nodecpp::net::OnEnd<&MySampleInheritanceOneNode::onWhateverEnd_2>
+	> sockNN1_3;
 };
 
 #endif // NET_SOCKET_H
