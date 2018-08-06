@@ -27,6 +27,14 @@
 
 #include "infrastructure.h"
 
+#include <time.h>
+#include <climits>
+
+#ifndef _MSC_VER
+#include <poll.h>
+#endif
+
+
 thread_local Infrastructure infra;
 
 uint64_t infraGetCurrentTime()
@@ -34,7 +42,9 @@ uint64_t infraGetCurrentTime()
 #ifdef _MSC_VER
 	return GetTickCount64() * 1000; // mks
 #else
-#error infraGetCurrentTime() is not defined for this architecture
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+	return (uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000; // mks
 #endif
 }
 
@@ -218,7 +228,7 @@ bool Infrastructure::pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now,
 #endif
 		/*        return WAIT_RESULTED_IN_TIMEOUT;*/
 		NODECPP_ASSERT(false);
-		NODECPP_TRACE("COMMLAYER_RET_FAILED");
+		NODECPP_TRACE0("COMMLAYER_RET_FAILED");
 		return false;
 	}
 	else if (retval == 0)

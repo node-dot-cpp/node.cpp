@@ -82,7 +82,7 @@ public:
 		}
 		catch (...)
 		{
-			NODECPP_TRACE("!!! Exception out of user handler !!!");
+			NODECPP_TRACE0("!!! Exception out of user handler !!!");
 		}
 
 	}

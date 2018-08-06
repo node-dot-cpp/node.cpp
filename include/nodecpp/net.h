@@ -781,7 +781,7 @@ namespace nodecpp {
 			}
 
 			template<class EV>
-			void on( typename EV, typename EV::callback cb) {
+			void on( EV, typename EV::callback cb) {
 				if constexpr ( std::is_same< EV, event::Close >::value ) { eClose.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Connect >::value ) { eConnect.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Data >::value ) { eData.on(std::move(cb)); }
@@ -792,7 +792,7 @@ namespace nodecpp {
 			}
 
 			template<class EV>
-			void once( typename EV, typename EV::callback cb) {
+			void once( EV, typename EV::callback cb) {
 				if constexpr ( std::is_same< EV, event::Close >::value ) { eClose.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Connect >::value ) { eConnect.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Data >::value ) { eData.once(std::move(cb)); }
@@ -948,7 +948,7 @@ namespace nodecpp {
 
 
 			template<class EV>
-			void on(typename EV, typename EV::callback cb) {
+			void on(EV, typename EV::callback cb) {
 				if constexpr (std::is_same< EV, event::Close >::value) { eClose.on(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.on(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.on(std::move(cb)); }
@@ -957,7 +957,7 @@ namespace nodecpp {
 			}
 
 			template<class EV>
-			void once(typename EV, typename EV::callback cb) {
+			void once(EV, typename EV::callback cb) {
 				if constexpr (std::is_same< EV, event::Close >::value) { eClose.once(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.once(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.once(std::move(cb)); }

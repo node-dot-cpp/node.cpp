@@ -117,7 +117,7 @@ bool netInitialize()
 		NODECPP_TRACE("WSAStartup failed with error: {}", iResult);
 		return false;
 	}
-	NODECPP_TRACE("WSAStartup success");
+	NODECPP_TRACE0("WSAStartup success");
 #endif
 	return true;
 }
@@ -536,7 +536,7 @@ size_t NetSocketManager::appConnect(net::Socket* ptr, const char* ip, uint16_t p
 	size_t id = addEntry(ptr);
 	if (id == 0)
 	{
-		NODECPP_TRACE("Failed to add entry on NetSocketManager::connect");
+		NODECPP_TRACE0("Failed to add entry on NetSocketManager::connect");
 		throw Error();
 	}
 
@@ -570,7 +570,7 @@ size_t NetSocketManager::appConnect(net::SocketO* ptr, const char* ip, uint16_t 
 	size_t id = addEntry(ptr);
 	if (id == 0)
 	{
-		NODECPP_TRACE("Failed to add entry on NetSocketManager::connect");
+		NODECPP_TRACE0("Failed to add entry on NetSocketManager::connect");
 		throw Error();
 	}
 
@@ -1102,7 +1102,7 @@ void NetServerManager::appListen(net::Server* ptr, uint16_t port, const char* ip
 	size_t id = addEntry(ptr);
 	if (id == 0)
 	{
-		NODECPP_TRACE("Failed to addEntry at NetServerManager::listen");
+		NODECPP_TRACE0("Failed to addEntry at NetServerManager::listen");
 		throw Error();
 	}
 
