@@ -31,8 +31,7 @@
 #include "common.h"
 #include "event.h"
 #include "net_common.h"
-#include "socket_o.h"
-#include "socket_l.h"
+#include "socket_common.h"
 
 namespace nodecpp {
 

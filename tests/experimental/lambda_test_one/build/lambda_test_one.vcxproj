@@ -36,6 +36,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net_common.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_l.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_o.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />

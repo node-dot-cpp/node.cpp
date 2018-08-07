@@ -83,5 +83,8 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_o.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
