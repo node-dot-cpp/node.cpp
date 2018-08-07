@@ -17,7 +17,7 @@ using namespace fmt;
 
 class MyServer;
 
-
+#if 0
 class MySocket :public net::Socket {
 	size_t recvSize = 0;
 	size_t sentSize = 0;
@@ -62,7 +62,7 @@ public:
 		print("onError!\n");
 	}
 };
-
+#endif
 
 class MySocketLambda :public net::Socket {
 	size_t recvSize = 0;

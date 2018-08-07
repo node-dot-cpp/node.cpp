@@ -36,23 +36,28 @@ using namespace nodecpp::net;
 
 
 
+void SocketBase::destroy() { getInfra().getNetSocket().appDestroy(id); }
+void SocketBase::end() { getInfra().getNetSocket().appEnd(id); }
+
+void SocketBase::pause() { getInfra().getNetSocket().appPause(id); }
+void SocketBase::ref() { getInfra().getNetSocket().appRef(id); }
+
+void SocketBase::resume() { getInfra().getNetSocket().appResume(id); }
+void SocketBase::unref() { getInfra().getNetSocket().appUnref(id); }
+
+size_t SocketBase::bufferSize() const { return getInfra().getNetSocket().appBufferSize(id); }
+
+bool SocketBase::write(const uint8_t* data, uint32_t size)
+{
+	_bytesWritten += size;
+	return getInfra().getNetSocket().appWrite(id, data, size);
+}
+
 void SocketO::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
 	id = getInfra().getNetSocket().appConnect(this, ip, port);
 }
-
-void SocketO::destroy() { getInfra().getNetSocket().appDestroy(id); }
-void SocketO::end() { getInfra().getNetSocket().appEnd(id); }
-
-void SocketO::pause() { getInfra().getNetSocket().appPause(id); }
-void SocketO::ref() { getInfra().getNetSocket().appRef(id); }
-
-void SocketO::resume() { getInfra().getNetSocket().appResume(id); }
-void SocketO::unref() { getInfra().getNetSocket().appUnref(id); }
-
-size_t SocketO::bufferSize() const { return getInfra().getNetSocket().appBufferSize(id); }
-
 
 SocketO& SocketO::setNoDelay(bool noDelay)
 { 
@@ -66,32 +71,11 @@ SocketO& SocketO::setKeepAlive(bool enable)
 	return *this;
 }
 
-bool SocketO::write(const uint8_t* data, uint32_t size)
-{
-	_bytesWritten += size;
-	return getInfra().getNetSocket().appWrite(id, data, size);
-}
-
-
-
-
 void Socket::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
 	id = getInfra().getNetSocket().appConnect(this, ip, port);
 }
-
-void Socket::destroy() { getInfra().getNetSocket().appDestroy(id); }
-void Socket::end() { getInfra().getNetSocket().appEnd(id); }
-
-void Socket::pause() { getInfra().getNetSocket().appPause(id); }
-void Socket::ref() { getInfra().getNetSocket().appRef(id); }
-
-void Socket::resume() { getInfra().getNetSocket().appResume(id); }
-void Socket::unref() { getInfra().getNetSocket().appUnref(id); }
-
-size_t Socket::bufferSize() const { return getInfra().getNetSocket().appBufferSize(id); }
-
 
 Socket& Socket::setNoDelay(bool noDelay)
 { 
@@ -103,12 +87,6 @@ Socket& Socket::setKeepAlive(bool enable)
 {
 	getInfra().getNetSocket().appSetKeepAlive(id, enable);
 	return *this;
-}
-
-bool Socket::write(const uint8_t* data, uint32_t size)
-{
-	_bytesWritten += size;
-	return getInfra().getNetSocket().appWrite(id, data, size);
 }
 
 
