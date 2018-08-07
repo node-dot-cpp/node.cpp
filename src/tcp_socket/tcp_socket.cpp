@@ -1065,7 +1065,7 @@ void NetSocketManager::errorCloseSocket(NetSocketEntry& entry, Error& err)
 	entry.state = NetSocketEntry::ErrorClosing;
 
 //	std::function<void()> ev = std::bind(&net::Socket::emitError, entry.getPtr(), std::ref(err));
-	std::function<void()> ev = std::bind(&SocketGenericPtr::emitError, entry.getSockObject(), std::ref(err));
+	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getSockObject(), std::ref(err));
 	pendingCloseEvents.emplace_back(entry.index, std::move(ev));
 }
 
