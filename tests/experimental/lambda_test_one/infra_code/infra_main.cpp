@@ -28,10 +28,10 @@ void NodeFactoryMap::registerFactory( const char* name, NodeFactoryBase* factory
 {
 	if ( factoryMap == nullptr )
 		factoryMap = new MapT;
-	assert( factoryMap != nullptr );
-	assert( factoryMap->find( name ) == factoryMap->end() );
+	NODECPP_ASSERT( factoryMap != nullptr );
+	NODECPP_ASSERT( factoryMap->find( name ) == factoryMap->end() );
 	auto insRet = factoryMap->insert( std::make_pair( name, factory ) );
-	assert( insRet.second );
+	NODECPP_ASSERT( insRet.second );
 }
 
 void registerFactory( const char* name, NodeFactoryBase* factory )

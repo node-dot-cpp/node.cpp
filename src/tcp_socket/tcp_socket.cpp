@@ -518,10 +518,10 @@ NetSocketManager::NetSocketManager()
 size_t NetSocketManager::appConnect(net::Socket* ptr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 {
 	Ip4 peerIp = Ip4::parse(ip);
-	Ip4 myIp = Ip4::parse(ip);
+//	Ip4 myIp = Ip4::parse(ip);
 
 	Port peerPort = Port::fromHost(port);
-	Port myPort = Port::fromHost(port);
+//	Port myPort = Port::fromHost(port);
 
 
 	SocketRiia s(internal_make_tcp_socket());
@@ -552,10 +552,10 @@ size_t NetSocketManager::appConnect(net::Socket* ptr, const char* ip, uint16_t p
 size_t NetSocketManager::appConnect(net::SocketO* ptr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 {
 	Ip4 peerIp = Ip4::parse(ip);
-	Ip4 myIp = Ip4::parse(ip);
+//	Ip4 myIp = Ip4::parse(ip);
 
 	Port peerPort = Port::fromHost(port);
-	Port myPort = Port::fromHost(port);
+//	Port myPort = Port::fromHost(port);
 
 
 	SocketRiia s(internal_make_tcp_socket());

@@ -68,9 +68,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\net.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
