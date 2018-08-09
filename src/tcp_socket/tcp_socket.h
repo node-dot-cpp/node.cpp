@@ -144,20 +144,12 @@ public:
 
 	SOCKET osSocket = INVALID_SOCKET;
 
-/*	NetSocketEntryBase(size_t index) :index(index) {}
-
-	NetSocketEntryBase(const NetSocketEntryBase& other) = delete;
-	NetSocketEntryBase& operator=(const NetSocketEntryBase& other) = delete;
-
-	NetSocketEntryBase(NetSocketEntryBase&& other) = default;
-	NetSocketEntryBase& operator=(NetSocketEntryBase&& other) = default;*/
-
-	net::SocketEmitter ptr;
+	net::SocketEmitter emitter;
 
 
 	NetSocketEntry(size_t index) : index(index) {}
-	NetSocketEntry(size_t index, net::Socket* ptr_) : index(index), ptr(ptr_) {}
-	NetSocketEntry(size_t index, net::SocketO* ptr_) : index(index), ptr(ptr_) {}
+	NetSocketEntry(size_t index, net::Socket* ptr_) : index(index), emitter(ptr_) {}
+	NetSocketEntry(size_t index, net::SocketO* ptr_) : index(index), emitter(ptr_) {}
 
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -165,12 +157,9 @@ public:
 	NetSocketEntry(NetSocketEntry&& other) = default;
 	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
 
-	bool isValid() const { return ptr.isValid(); }
+	bool isValid() const { return emitter.isValid(); }
 
-//	SocketT* getPtr() const {
-//		return ptr;
-//	}
-	const net::SocketEmitter& getSockObject() const { return ptr; }
+	const net::SocketEmitter& getEmitter() const { return emitter; }
 };
 
 /* 

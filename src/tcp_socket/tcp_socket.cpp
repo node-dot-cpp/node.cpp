@@ -790,10 +790,10 @@ void NetSocketManager::infraGetCloseEvent(EvQueue& evs)
 
 //				evs.add(&net::Socket::emitClose, entry.getPtr(), err);
 //				entry.getPtr()->emitClose(err);
-				entry.getSockObject().emitClose(err);
+				entry.getEmitter().emitClose(err);
 				entry.state = NetSocketEntry::Closed;
 			}
-			entry = NetSocketEntry(current.first);
+			entry = NetSocketEntry(current.first); 
 		}
 	}
 	pendingCloseEvents.clear();
@@ -864,7 +864,7 @@ void NetSocketManager::infraProcessReadEvent(NetSocketEntry& entry, EvQueue& evs
 //			entry.ptr->emitData(std::move(res.second));
 
 //			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
-			entry.getSockObject().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
+			entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
 		}
 		else //if (!entry.remoteEnded)
 		{
@@ -884,7 +884,7 @@ void NetSocketManager::infraProcessRemoteEnded(NetSocketEntry& entry, EvQueue& e
 	{
 		entry.remoteEnded = true;
 //		evs.add(&net::Socket::emitEnd, entry.getPtr());
-		entry.getSockObject().emitEnd();
+		entry.getEmitter().emitEnd();
 		if (entry.state == NetSocketEntry::LocalEnded)
 		{
 			//pendingCloseEvents.emplace_back(entry.index, false);
@@ -929,7 +929,7 @@ void NetSocketManager::infraProcessWriteEvent(NetSocketEntry& current, EvQueue& 
 //			entry.ptr->emitConnect();
 			current.state = NetSocketEntry::Connected;
 //			evs.add(&net::Socket::emitConnect, current.getPtr());
-			current.getSockObject().emitConnect();
+			current.getEmitter().emitConnect();
 		}
 		else
 		{
@@ -968,7 +968,7 @@ void NetSocketManager::infraProcessWriteEvent(NetSocketEntry& current, EvQueue& 
 				
 //			entry.ptr->emitDrain();
 //			evs.add(&net::Socket::emitDrain, current.getPtr());
-			current.getSockObject().emitDrain();
+			current.getEmitter().emitDrain();
 		}
 		else
 		{
@@ -1065,7 +1065,7 @@ void NetSocketManager::errorCloseSocket(NetSocketEntry& entry, Error& err)
 	entry.state = NetSocketEntry::ErrorClosing;
 
 //	std::function<void()> ev = std::bind(&net::Socket::emitError, entry.getPtr(), std::ref(err));
-	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getSockObject(), std::ref(err));
+	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), std::ref(err));
 	pendingCloseEvents.emplace_back(entry.index, std::move(ev));
 }
 
