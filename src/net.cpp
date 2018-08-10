@@ -36,74 +36,74 @@ using namespace nodecpp::net;
 
 
 
-void SocketBase::destroy() { getInfra().getNetSocket().appDestroy(id); }
-void SocketBase::end() { getInfra().getNetSocket().appEnd(id); }
+void SocketBase::destroy() { /*getInfra().*/getNetSocket().appDestroy(dataForCommandProcessing); }
+void SocketBase::end() { /*getInfra().*/getNetSocket().appEnd(dataForCommandProcessing); }
 
-void SocketBase::pause() { getInfra().getNetSocket().appPause(id); }
-void SocketBase::ref() { getInfra().getNetSocket().appRef(id); }
+//void SocketBase::pause() { /*getInfra().*/getNetSocket().appPause(id); }
+//void SocketBase::ref() { /*getInfra().*/getNetSocket().appRef(id); }
 
-void SocketBase::resume() { getInfra().getNetSocket().appResume(id); }
-void SocketBase::unref() { getInfra().getNetSocket().appUnref(id); }
+//void SocketBase::resume() { /*getInfra().*/getNetSocket().appResume(id); }
+//void SocketBase::unref() { /*getInfra().*/getNetSocket().appUnref(id); }
 
-size_t SocketBase::bufferSize() const { return getInfra().getNetSocket().appBufferSize(id); }
+//size_t SocketBase::bufferSize() const { return /*getInfra().*/getNetSocket().appBufferSize(id); }
 
 bool SocketBase::write(const uint8_t* data, uint32_t size)
 {
 	_bytesWritten += size;
-	return getInfra().getNetSocket().appWrite(id, data, size);
+	return /*getInfra().*/getNetSocket().appWrite(dataForCommandProcessing, data, size);
 }
 
 void SocketO::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
-	id = getInfra().getNetSocket().appConnect(this, ip, port);
+	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
 }
 
 SocketO& SocketO::setNoDelay(bool noDelay)
 { 
-	getInfra().getNetSocket().appSetNoDelay(id, noDelay);
+	/*getInfra().*/getNetSocket().appSetNoDelay(dataForCommandProcessing, noDelay);
 	return *this;
 }
 
 SocketO& SocketO::setKeepAlive(bool enable)
 {
-	getInfra().getNetSocket().appSetKeepAlive(id, enable);
+	/*getInfra().*/getNetSocket().appSetKeepAlive(dataForCommandProcessing, enable);
 	return *this;
 }
 
 void Socket::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
-	id = getInfra().getNetSocket().appConnect(this, ip, port);
+	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
 }
 
 Socket& Socket::setNoDelay(bool noDelay)
 { 
-	getInfra().getNetSocket().appSetNoDelay(id, noDelay);
+	/*getInfra().*/getNetSocket().appSetNoDelay(dataForCommandProcessing, noDelay);
 	return *this;
 }
 
 Socket& Socket::setKeepAlive(bool enable)
 {
-	getInfra().getNetSocket().appSetKeepAlive(id, enable);
+	/*getInfra().*/getNetSocket().appSetKeepAlive(dataForCommandProcessing, enable);
 	return *this;
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
 
-
-void Server::ref() { getInfra().getNetServer().appRef(id); }
-void Server::unref() { getInfra().getNetServer().appUnref(id); }
+void Server::ref() { /*getInfra().*/getNetServer().appRef(id); }
+void Server::unref() { /*getInfra().*/getNetServer().appUnref(id); }
 
 void Server::close()
 {
-	getInfra().getNetServer().appClose(id);
+	/*getInfra().*/getNetServer().appClose(id);
 }
 
 
 void Server::listen(uint16_t port, const char* ip, int backlog)
 {
-	getInfra().getNetServer().appListen(this, port, ip, backlog);
+	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
 }
 
 

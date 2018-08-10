@@ -72,7 +72,7 @@ namespace nodecpp {
 
 			void emitClose(bool hadError) {
 				state = DESTROYED;
-				this->id = 0;
+				this->dataForCommandProcessing.id = 0;
 				//handler may release, put virtual onClose first.
 //				onClose(hadError);
 				eClose.emit(hadError);
@@ -80,7 +80,7 @@ namespace nodecpp {
 
 			// not in node.js
 			void emitAccepted(size_t id) {
-				this->id = id;
+				this->dataForCommandProcessing.id = id;
 				state = CONNECTED;
 			}
 
@@ -112,7 +112,7 @@ namespace nodecpp {
 
 			void emitError(Error& err) {
 				state = DESTROYED;
-				this->id = 0;
+				this->dataForCommandProcessing.id = 0;
 				//EventEmitter<event::Error>::emit();
 				eError.emit(err);
 //				onError(err);

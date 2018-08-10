@@ -145,8 +145,42 @@ namespace nodecpp {
 
 		class SocketBase
 		{
+			public:
+			class DataForCommandProcessing {
+			public:
+				enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
+				state = Uninitialized;
+				size_t id = 0;
+
+			//	bool connecting = false;
+				bool remoteEnded = false;
+				//bool localEnded = false;
+				//bool pendingLocalEnd = false;
+				bool paused = false;
+				bool allowHalfOpen = true;
+
+				bool refed = true;
+
+				Buffer writeBuffer = Buffer(64 * 1024);
+
+				//SOCKET osSocket = INVALID_SOCKET;
+				//UINT_PTR osSocket = INVALID_SOCKET;
+				unsigned long long osSocket = 0;
+
+
+				DataForCommandProcessing() {}
+				DataForCommandProcessing(const DataForCommandProcessing& other) = delete;
+				DataForCommandProcessing& operator=(const DataForCommandProcessing& other) = delete;
+
+				DataForCommandProcessing(DataForCommandProcessing&& other) = default;
+				DataForCommandProcessing& operator=(DataForCommandProcessing&& other) = default;
+
+				bool isValid() const { return state != State::Uninitialized; }
+			};
+		//protected:
+			DataForCommandProcessing dataForCommandProcessing;
+
 		protected:
-			size_t id = 0;
 			Address _local;
 			Address _remote;
 			//std::string _remoteAddress;
@@ -169,28 +203,28 @@ namespace nodecpp {
 
 			const Address& address() const { return _local; }
 
-			size_t bufferSize() const;
+			size_t bufferSize() const { return dataForCommandProcessing.writeBuffer.size(); }
 			size_t bytesRead() const { return _bytesRead; }
 			size_t bytesWritten() const { return _bytesWritten; }
 
 			bool connecting() const { return state == CONNECTING; }
-			void destroy();
+			/*[!!]*/void destroy();
 			bool destroyed() const { return state == DESTROYED; };
-			void end();
+			/*[!!]*/void end();
 			const std::string& localAddress() const { return _local.address; }
 			uint16_t localPort() const { return _local.port; }
 
-			void pause();
+			void pause() { dataForCommandProcessing.paused = true; }
 
 			const std::string& remoteAddress() const { return _remote.address; }
 			const std::string& remoteFamily() const { return _remote.family; }
 			uint16_t remotePort() const { return _remote.port; }
 
-			void ref();
-			void resume();
+			void ref() { dataForCommandProcessing.refed = true; }
+			void resume() { dataForCommandProcessing.paused = false; }
 
-			void unref();
-			bool write(const uint8_t* data, uint32_t size);
+			void unref() { dataForCommandProcessing.refed = false; }
+			/*[!!]*/bool write(const uint8_t* data, uint32_t size);
 		};
 
 	} //namespace net

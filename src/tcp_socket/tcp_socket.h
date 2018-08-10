@@ -127,7 +127,7 @@ bool isNetInitialized();
 class NetSocketEntry {
 public:
 	size_t index;
-	enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
+/*	enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
 	state = Uninitialized;
 
 //	bool connecting = false;
@@ -139,17 +139,18 @@ public:
 
 	bool refed = true;
 
-	Buffer writeBuffer = Buffer(64 * 1024);
+//	Buffer writeBuffer = Buffer(64 * 1024);*/
 	Buffer recvBuffer = Buffer(64 * 1024);
 
-	SOCKET osSocket = INVALID_SOCKET;
+//	SOCKET osSocket = INVALID_SOCKET;
 
+	net::SocketBase* sockPtr = nullptr;
 	net::SocketEmitter emitter;
 
 
 	NetSocketEntry(size_t index) : index(index) {}
-	NetSocketEntry(size_t index, net::Socket* ptr_) : index(index), emitter(ptr_) {}
-	NetSocketEntry(size_t index, net::SocketO* ptr_) : index(index), emitter(ptr_) {}
+	NetSocketEntry(size_t index, net::Socket* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
+	NetSocketEntry(size_t index, net::SocketO* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
 
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -160,6 +161,7 @@ public:
 	bool isValid() const { return emitter.isValid(); }
 
 	const net::SocketEmitter& getEmitter() const { return emitter; }
+	net::SocketBase::DataForCommandProcessing* getSockData() const { assert(sockPtr != nullptr); return sockPtr ? &(sockPtr->dataForCommandProcessing) : nullptr; }
 };
 
 /* 
@@ -175,37 +177,36 @@ public:
 	Each method 'kind' must be isolated and can't call the other.
 */
 
-class NetSocketManager {
+class NetSocketManagerBase {
+protected:
 	//mb: ioSockets[0] is always reserved and invalid.
-	std::vector<NetSocketEntry> ioSockets; // TODO: improve
-	std::vector<std::pair<size_t, std::function<void()>>> pendingCloseEvents;
+//	std::vector<std::pair<size_t, std::function<void()>>> pendingCloseEvents;
+	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 
 	std::vector<Buffer> bufferStore; // TODO: improve
-	std::vector<Error> errorStore;
+//	std::vector<Error> errorStore;
 
 	std::string family = "IPv4";
 	
 public:
 	static const size_t MAX_SOCKETS = 100; //arbitrary limit
-	NetSocketManager();
-	
-	size_t appConnect(net::Socket* ptr, const char* ip, uint16_t port); // TODO: think about template with type checking inside
-	size_t appConnect(net::SocketO* ptr, const char* ip, uint16_t port); // TODO: think about template with type checking inside
+	NetSocketManagerBase() {}
 
-	void appDestroy(size_t id);
-	void appEnd(size_t id);
-	void appPause(size_t id) { appGetEntry(id).paused = true; }
-	void appResume(size_t id) { appGetEntry(id).paused = false; }
+//	void appDestroy(size_t id);
+	void appDestroy(net::SocketBase::DataForCommandProcessing& sockData);
+//	void appEnd(size_t id);
+	void appEnd(net::SocketBase::DataForCommandProcessing& sockData);
+//	void appPause(size_t id) { appGetEntry(id).getSockData()->paused = true; }
+//	void appResume(size_t id) { appGetEntry(id).getSockData()->paused = false; }
 
-	size_t appBufferSize(size_t id) { return appGetEntry(id).writeBuffer.size(); }
+//	size_t appBufferSize(size_t id) { return appGetEntry(id).writeBuffer.size(); }
 
-	void appRef(size_t id) { appGetEntry(id).refed = true; }
-	void appSetKeepAlive(size_t id, bool enable);
-	void appSetNoDelay(size_t id, bool noDelay);
-	void appUnref(size_t id) { appGetEntry(id).refed = false; }
-	bool appWrite(size_t id, const uint8_t* data, uint32_t size);
-
-	bool infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& evs);
+//	void appRef(size_t id) { appGetEntry(id).getSockData()->refed = true; }
+//	void appUnref(size_t id) { appGetEntry(id).getSockData()->refed = false; }
+//	bool appWrite(size_t id, const uint8_t* data, uint32_t size);
+	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
+	void appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable);
+	void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
 	//TODO quick workaround until definitive life managment is in place
 	Buffer& infraStoreBuffer(Buffer buff) {
@@ -213,15 +214,34 @@ public:
 		return bufferStore.back();
 	}
 
-	Error& storeError(Error err) { //app-infra neutral
+/*	Error& storeError(Error err) { //app-infra neutral
 		errorStore.push_back(std::move(err));
 		return errorStore.back();
-	}
+	}*/
 
 	void infraClearStores() {
 		bufferStore.clear();
-		errorStore.clear();
+//		errorStore.clear();
 	}
+	
+	
+public:
+
+	void closeSocket(net::SocketBase::DataForCommandProcessing& sockData);//app-infra neutral
+	void errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err);//app-infra neutral
+};
+
+class NetSocketManager : public NetSocketManagerBase {
+	//mb: ioSockets[0] is always reserved and invalid.
+	std::vector<NetSocketEntry> ioSockets; // TODO: improve
+	
+public:
+	NetSocketManager();
+	
+	size_t appConnect(net::Socket* ptr, const char* ip, uint16_t port); // TODO: think about template with type checking inside
+	size_t appConnect(net::SocketO* ptr, const char* ip, uint16_t port); // TODO: think about template with type checking inside
+
+	bool infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& evs);
 	
 	
 public:

@@ -93,6 +93,9 @@ class Infrastructure
 	NetServerManager netServer;
 	TimeoutManager timeout;
 	EvQueue inmediateQueue;
+
+public:
+	NetSocketManagerBase& getNetSocketBase() { return netSocket; }
 public:
 	bool running = true;
 	uint64_t nextTimeoutAt = 0;
@@ -120,6 +123,12 @@ extern thread_local Infrastructure infra;
 
 inline
 Infrastructure& getInfra() { return infra; }
+
+inline
+NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
+
+inline
+NetServerManager& getNetServer() { return infra.getNetServer(); }
 
 
 //using EvQueue = std::vector<std::function<void()>>;
