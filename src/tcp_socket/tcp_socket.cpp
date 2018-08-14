@@ -122,14 +122,14 @@ bool netInitialize()
 	return true;
 }
 
-static
+//static
 void internal_close(SOCKET sock)
 {
 	NODECPP_TRACE("internal_close() on sock {}", sock);
 	CLOSE_SOCKET(sock);
 }
 
-class SocketRiia
+/*class SocketRiia // moved to .h
 {
 	SOCKET s;
 public:
@@ -147,8 +147,12 @@ public:
 	SOCKET release() noexcept { SOCKET tmp = s; s = INVALID_SOCKET; return tmp; }
 	explicit operator bool() const noexcept { return s != INVALID_SOCKET; }
 
-};
-static
+};*/
+
+SocketRiia::~SocketRiia() { if (s != INVALID_SOCKET) internal_close(s); }
+
+
+//static
 void internal_shutdown_send(SOCKET sock)
 {
 #ifdef _MSC_VER
@@ -234,7 +238,7 @@ bool internal_socket_keep_alive(SOCKET sock, bool enable)
 	return true;
 }
 
-static
+//static
 bool internal_linger_zero_socket(SOCKET sock)
 {
 	linger value;
@@ -389,7 +393,7 @@ SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
 	return outSock;
 }
 
-static
+//static
 bool internal_getsockopt_so_error(SOCKET sock)
 {
 	int result;
@@ -508,14 +512,33 @@ Port Port::fromNetwork(uint16_t port)
 
 
 
-NetSocketManager::NetSocketManager()
+/*NetSocketManager::NetSocketManager() // moved to .h
 {
 	//mb tcpSockets[0] is always invalid
 	ioSockets.emplace_back(0);
+}*/
+SocketRiia&& NetSocketManagerBase::appAcquireSocket(const char* ip, uint16_t port)
+{
+	Ip4 peerIp = Ip4::parse(ip);
+//	Ip4 myIp = Ip4::parse(ip);
+
+	Port peerPort = Port::fromHost(port);
+//	Port myPort = Port::fromHost(port);
+
+
+	SocketRiia s(internal_make_tcp_socket());
+	if (!s)
+		throw Error();
+
+	uint8_t st = internal_connect_for_address(peerIp, peerPort, s.get());
+
+	if (st != COMMLAYER_RET_PENDING && st != COMMLAYER_RET_OK)
+		throw Error();
+
+	return std::move(s);
 }
 
-
-size_t NetSocketManager::appConnect(net::Socket* ptr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
+/*size_t NetSocketManager::appConnect(net::Socket* ptr, const char* ip, uint16_t port) // moved to .h
 {
 	Ip4 peerIp = Ip4::parse(ip);
 //	Ip4 myIp = Ip4::parse(ip);
@@ -549,7 +572,7 @@ size_t NetSocketManager::appConnect(net::Socket* ptr, const char* ip, uint16_t p
 	return id;
 }
 
-size_t NetSocketManager::appConnect(net::SocketO* ptr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
+size_t NetSocketManager::appConnect(net::SocketO* ptr, const char* ip, uint16_t port) // moved to .h
 {
 	Ip4 peerIp = Ip4::parse(ip);
 //	Ip4 myIp = Ip4::parse(ip);
@@ -581,7 +604,7 @@ size_t NetSocketManager::appConnect(net::SocketO* ptr, const char* ip, uint16_t 
 //	entry.connecting = true;
 
 	return id;
-}
+}*/
 
 /*void NetSocketManager::appDestroy(size_t id)
 {
@@ -832,7 +855,128 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 	}
 }
 
-bool NetSocketManager::infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& evs)
+std::pair<bool, Buffer> NetSocketManagerBase::infraGetPacketBytes(Buffer& buff, SOCKET sock)
+{
+	socklen_t fromlen = sizeof(struct sockaddr_in);
+	struct sockaddr_in sa_other;
+	size_t sz = 0;
+	uint8_t ret = internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
+
+	if (ret != COMMLAYER_RET_OK)
+		return make_pair(false, Buffer());
+
+	Buffer res(sz);
+	res.append(buff.begin(), sz);
+	buff.clear();
+
+	return make_pair(true, std::move(res));
+}
+
+NetSocketManagerBase::ShouldEmit NetSocketManagerBase::infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData)
+{
+	NetSocketManagerBase::ShouldEmit ret = EmitNone;
+//	if (current.connecting)
+	if(sockData.state == net::SocketBase::DataForCommandProcessing::Connecting)
+	{
+//		current.connecting = false;
+
+#if defined _MSC_VER || defined __MINGW32__
+		bool success = true;
+#else
+		bool success = internal_getsockopt_so_error(current.osSocket);
+#endif					
+		if (success)
+		{
+//			entry.ptr->emitConnect();
+			sockData.state = net::SocketBase::DataForCommandProcessing::Connected;
+//			evs.add(&net::Socket::emitConnect, current.getPtr());
+//			current.getEmitter().emitConnect();
+			ret = EmitConnect;
+		}
+		else
+		{
+//			errorCloseSocket(current, storeError(Error()));
+			Error e;
+			errorCloseSocket(sockData, e);
+		}
+	}
+	else if (!sockData.writeBuffer.empty())
+	{
+//		assert(entry.writeBuffer.size() != 0);
+		size_t sentSize = 0;
+		uint8_t res = internal_send_packet(sockData.writeBuffer.begin(), sockData.writeBuffer.size(), sockData.osSocket, sentSize);
+		if (res == COMMLAYER_RET_FAILED)
+		{
+			//			pendingCloseEvents.push_back(entry.id);
+//			errorCloseSocket(current, storeError(Error()));
+			Error e;
+			errorCloseSocket(sockData, e);
+		}
+		else if (sentSize == sockData.writeBuffer.size())
+		{
+//			entry.writeEvents = false;
+			sockData.writeBuffer.clear();
+			if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
+			{
+				internal_shutdown_send(sockData.osSocket);
+				//current.pendingLocalEnd = false;
+				//current.localEnded = true;
+
+				if (sockData.remoteEnded)
+				{
+					//current.state = net::SocketBase::DataForCommandProcessing::Closing;
+					//pendingCloseEvents.emplace_back(current.index, false);
+					closeSocket(sockData);
+				}
+				else
+					sockData.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
+			}
+				
+//			entry.ptr->emitDrain();
+//			evs.add(&net::Socket::emitDrain, current.getPtr());
+//			current.getEmitter().emitDrain();
+			ret = EmitDrain;
+		}
+		else
+		{
+			NODECPP_ASSERT(sentSize < sockData.writeBuffer.size());
+//			entry.writeEvents = true;
+			sockData.writeBuffer.popFront(sentSize);
+		}
+	}
+	else //ignore?
+		NODECPP_ASSERT(false, "Not supported yet!");
+
+	return ret;
+}
+
+/*void NetSocketManagerBase::infraProcessReadEvent(net::SocketBase::DataForCommandProcessing& sockData)
+{
+	auto res = infraGetPacketBytes(sockData.recvBuffer, sockData.osSocket);
+	if (res.first)
+	{
+		if (res.second.size() != 0)
+		{
+//			entry.ptr->emitData(std::move(res.second));
+
+//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
+			entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
+		}
+		else //if (!entry.remoteEnded)
+		{
+			infraProcessRemoteEnded(entry, evs);
+		}
+	}
+	else
+	{
+		internal_getsockopt_so_error(sockData.osSocket);
+//		return errorCloseSocket(entry, storeError(Error()));
+		Error e;
+		errorCloseSocket(sockData, e);
+	}
+}*/
+
+/*bool NetSocketManager::infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& evs) // moved to .h
 {
 	SocketRiia s(sock);
 	size_t ix = addEntry(ptr);
@@ -849,13 +993,13 @@ bool NetSocketManager::infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& 
 	evs.add(&net::Socket::emitAccepted, ptr, ix);
 
 	return true;
-}
+}*/
 
 
-size_t NetSocketManager::infraGetPollFdSetSize() const
+/*size_t NetSocketManager::infraGetPollFdSetSize() const // moved to .h
 {
 	return ioSockets.size();
-}
+}*/
 
 /*
  * TODO: for performace reasons, the poll data should be cached inside NetSocketManager
@@ -863,7 +1007,9 @@ size_t NetSocketManager::infraGetPollFdSetSize() const
  * Avoid to have to appWrite it all over again every time
  * 
  */
-bool NetSocketManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
+
+#if 0 // moved to .h
+bool NetSocketManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const // moved to .h
 {
 	size_t sz = end - begin;
 	assert(sz >= ioSockets.size());
@@ -892,7 +1038,7 @@ bool NetSocketManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 	return anyRefed;
 }
 
-void NetSocketManager::infraGetCloseEvent(EvQueue& evs)
+void NetSocketManager::infraGetCloseEvent(EvQueue& evs) // moved to .h
 {
 	// if there is an issue with a socket, we may need to appClose it,
 	// and push an event here to notify autom later.
@@ -932,7 +1078,7 @@ void NetSocketManager::infraGetCloseEvent(EvQueue& evs)
 }
 
 
-void NetSocketManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs)
+void NetSocketManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs) // moved to .h
 {
 	assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
 	for (size_t i = 0; i != ioSockets.size(); ++i)
@@ -988,7 +1134,7 @@ void NetSocketManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* en
 	}
 }
 
-void NetSocketManager::infraProcessReadEvent(NetSocketEntry& entry, EvQueue& evs)
+void NetSocketManager::infraProcessReadEvent(NetSocketEntry& entry, EvQueue& evs) // moved to .h
 {
 	auto res = infraGetPacketBytes(entry.recvBuffer, entry.getSockData()->osSocket);
 	if (res.first)
@@ -1014,7 +1160,7 @@ void NetSocketManager::infraProcessReadEvent(NetSocketEntry& entry, EvQueue& evs
 	}
 }
 
-void NetSocketManager::infraProcessRemoteEnded(NetSocketEntry& entry, EvQueue& evs)
+void NetSocketManager::infraProcessRemoteEnded(NetSocketEntry& entry, EvQueue& evs) // moved to .h
 {
 	if (!entry.getSockData()->remoteEnded)
 	{
@@ -1048,7 +1194,7 @@ void NetSocketManager::infraProcessRemoteEnded(NetSocketEntry& entry, EvQueue& e
 
 }
 
-void NetSocketManager::infraProcessWriteEvent(NetSocketEntry& current, EvQueue& evs)
+void NetSocketManager::infraProcessWriteEvent(NetSocketEntry& current, EvQueue& evs) // moved to .h
 {
 //	if (current.connecting)
 	if(current.getSockData()->state == net::SocketBase::DataForCommandProcessing::Connecting)
@@ -1121,7 +1267,8 @@ void NetSocketManager::infraProcessWriteEvent(NetSocketEntry& current, EvQueue& 
 		NODECPP_ASSERT(false, "Not supported yet!");
 }
 
-size_t NetSocketManager::addEntry(net::Socket* ptr)
+
+size_t NetSocketManager::addEntry(net::Socket* ptr) // moved to .h
 {
 	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 	{
@@ -1143,7 +1290,7 @@ size_t NetSocketManager::addEntry(net::Socket* ptr)
 	return ix;
 }
 
-size_t NetSocketManager::addEntry(net::SocketO* ptr)
+size_t NetSocketManager::addEntry(net::SocketO* ptr) // moved to .h
 {
 	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 	{
@@ -1164,42 +1311,26 @@ size_t NetSocketManager::addEntry(net::SocketO* ptr)
 	ioSockets.emplace_back(ix, ptr);
 	return ix;
 }
+#endif // 0, moved
 
-NetSocketEntry& NetSocketManager::appGetEntry(size_t id)
+/*NetSocketEntry& NetSocketManager::appGetEntry(size_t id)
 {
 	return ioSockets.at(id);
 }
 const NetSocketEntry& NetSocketManager::appGetEntry(size_t id) const
 {
 	return ioSockets.at(id);
-}
+}*/
 
 
-std::pair<bool, Buffer> NetSocketManager::infraGetPacketBytes(Buffer& buff, SOCKET sock)
-{
-	socklen_t fromlen = sizeof(struct sockaddr_in);
-	struct sockaddr_in sa_other;
-	size_t sz = 0;
-	uint8_t ret = internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
-
-	if (ret != COMMLAYER_RET_OK)
-		return make_pair(false, Buffer());
-
-	Buffer res(sz);
-	res.append(buff.begin(), sz);
-	buff.clear();
-
-	return make_pair(true, std::move(res));
-}
-
-void NetSocketManager::closeSocket(NetSocketEntry& entry)
+/*void NetSocketManager::closeSocket(NetSocketEntry& entry)
 {
 	entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closing;
 
 //	evs.add(&net::Socket::emitError, entry.getPtr(), storeError(Error()));
 //	pendingCloseEvents.emplace_back(entry.index, std::function<void()>());
 	pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
-}
+}*/
 
 void NetSocketManagerBase::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
 {
@@ -1207,7 +1338,7 @@ void NetSocketManagerBase::closeSocket(net::SocketBase::DataForCommandProcessing
 	pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( false, Error())));
 }
 
-void NetSocketManager::errorCloseSocket(NetSocketEntry& entry, Error& err)
+/*void NetSocketManager::errorCloseSocket(NetSocketEntry& entry, Error& err)
 {
 	entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
 
@@ -1215,7 +1346,7 @@ void NetSocketManager::errorCloseSocket(NetSocketEntry& entry, Error& err)
 //	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), std::ref(err));
 //	pendingCloseEvents.emplace_back(entry.index, std::move(ev));
 	pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
-}
+}*/
 
 void NetSocketManagerBase::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err)
 {

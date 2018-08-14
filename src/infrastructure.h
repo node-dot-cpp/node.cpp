@@ -89,7 +89,7 @@ public:
 
 class Infrastructure
 {
-	NetSocketManager netSocket;
+	NetSocketManager<NetSocketEntry> netSocket;
 	NetServerManager netServer;
 	TimeoutManager timeout;
 	EvQueue inmediateQueue;
@@ -99,7 +99,7 @@ public:
 public:
 	bool running = true;
 	uint64_t nextTimeoutAt = 0;
-	NetSocketManager& getNetSocket() { return netSocket; }
+	NetSocketManager<NetSocketEntry>& getNetSocket() { return netSocket; }
 	NetServerManager& getNetServer() { return netServer; }
 	TimeoutManager& getTimeout() { return timeout; }
 	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
@@ -129,6 +129,9 @@ NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
 
 inline
 NetServerManager& getNetServer() { return infra.getNetServer(); }
+
+template<class T>
+size_t connectToInfra(T* t, const char* ip, uint16_t port) { return infra.getNetSocket().appConnect(t, ip, port); }
 
 
 //using EvQueue = std::vector<std::function<void()>>;

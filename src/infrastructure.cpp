@@ -191,12 +191,12 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 
 bool Infrastructure::pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
-	size_t fds_sz = NetSocketManager::MAX_SOCKETS + NetServerManager::MAX_SOCKETS;
+	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManager::MAX_SOCKETS;
 	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
 
 	
 	pollfd* fds_begin = fds.get();
-	pollfd* fds_end = fds_begin + NetSocketManager::MAX_SOCKETS;
+	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
 	bool refedSocket = netSocket.infraSetPollFdSet(fds_begin, fds_end);
 
 	fds_begin = fds_end;
@@ -239,7 +239,7 @@ bool Infrastructure::pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now,
 	else //if(retval)
 	{
 		fds_begin = fds.get();
-		fds_end = fds_begin + NetSocketManager::MAX_SOCKETS;
+		fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
 		netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
 
 		fds_begin = fds_end;

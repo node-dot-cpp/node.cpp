@@ -162,6 +162,7 @@ namespace nodecpp {
 				bool refed = true;
 
 				Buffer writeBuffer = Buffer(64 * 1024);
+				Buffer recvBuffer = Buffer(64 * 1024);
 
 				//SOCKET osSocket = INVALID_SOCKET;
 				//UINT_PTR osSocket = INVALID_SOCKET;

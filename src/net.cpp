@@ -74,7 +74,8 @@ SocketO& SocketO::setKeepAlive(bool enable)
 void Socket::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
-	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
+//	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
+	dataForCommandProcessing.id = connectToInfra(this, ip, port);
 }
 
 Socket& Socket::setNoDelay(bool noDelay)
