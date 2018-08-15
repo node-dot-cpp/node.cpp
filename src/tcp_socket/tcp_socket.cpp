@@ -122,368 +122,357 @@ bool netInitialize()
 	return true;
 }
 
-//static
-void internal_close(SOCKET sock)
+
+namespace nodecpp
 {
-	NODECPP_TRACE("internal_close() on sock {}", sock);
-	CLOSE_SOCKET(sock);
-}
-
-/*class SocketRiia // moved to .h
-{
-	SOCKET s;
-public:
-	SocketRiia(SOCKET s) :s(s) {}
-
-	SocketRiia(const SocketRiia&) = delete;
-	SocketRiia& operator=(const SocketRiia&) = delete;
-
-	SocketRiia(SocketRiia&&) = default;
-	SocketRiia& operator=(SocketRiia&&) = default;
-
-	~SocketRiia() { if (s != INVALID_SOCKET) internal_close(s); }
-
-	SOCKET get() const noexcept { return s; }
-	SOCKET release() noexcept { SOCKET tmp = s; s = INVALID_SOCKET; return tmp; }
-	explicit operator bool() const noexcept { return s != INVALID_SOCKET; }
-
-};*/
-
-SocketRiia::~SocketRiia() { if (s != INVALID_SOCKET) internal_close(s); }
-
-
-//static
-void internal_shutdown_send(SOCKET sock)
-{
-#ifdef _MSC_VER
-	int how = SD_SEND;
-#else
-	int how = SHUT_WR;
-#endif
-
-	NODECPP_TRACE("internal_shutdown_send() on sock {}", sock);
-
-	int res = shutdown(sock, how);
-	if (0 != res)
+	namespace internal_usage_only
 	{
-		int error = getSockError();
-		NODECPP_TRACE("shutdown on sock {} failed; error {}", sock, error);
-	}
-}
+		//static
+		void internal_close(SOCKET sock)
+		{
+			NODECPP_TRACE("internal_close() on sock {}", sock);
+			CLOSE_SOCKET(sock);
+		}
+
+		//static
+		void internal_shutdown_send(SOCKET sock)
+		{
+		#ifdef _MSC_VER
+			int how = SD_SEND;
+		#else
+			int how = SHUT_WR;
+		#endif
+
+			NODECPP_TRACE("internal_shutdown_send() on sock {}", sock);
+
+			int res = shutdown(sock, how);
+			if (0 != res)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("shutdown on sock {} failed; error {}", sock, error);
+			}
+		}
 
 
-static
-bool internal_async_socket(SOCKET sock)
-{
-#if defined _MSC_VER || defined __MINGW32__
-	unsigned long one = 1;
-	int res2 = ioctlsocket(sock, FIONBIO, &one);
-#else
-	int one = 1;
-	int res2 = ioctl(sock, FIONBIO, &one);
-#endif
-	if (0 != res2)
-	{
-		int error = getSockError();
-		NODECPP_TRACE("async on sock {} failed; error {}", sock, error);
-		return false;
-	}
+		static
+		bool internal_async_socket(SOCKET sock)
+		{
+		#if defined _MSC_VER || defined __MINGW32__
+			unsigned long one = 1;
+			int res2 = ioctlsocket(sock, FIONBIO, &one);
+		#else
+			int one = 1;
+			int res2 = ioctl(sock, FIONBIO, &one);
+		#endif
+			if (0 != res2)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("async on sock {} failed; error {}", sock, error);
+				return false;
+			}
 
-	return true;
-}
+			return true;
+		}
 
-static
-bool internal_tcp_no_delay_socket(SOCKET sock, bool noDelay)
-{
-#if defined _MSC_VER || defined __MINGW32__
-	DWORD value = static_cast<DWORD>(noDelay);
-    int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &value, sizeof(value));
-#else
-	int value = static_cast<int>(noDelay);
-    int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &value, sizeof(value));
-#endif
+		static
+		bool internal_tcp_no_delay_socket(SOCKET sock, bool noDelay)
+		{
+		#if defined _MSC_VER || defined __MINGW32__
+			DWORD value = static_cast<DWORD>(noDelay);
+			int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &value, sizeof(value));
+		#else
+			int value = static_cast<int>(noDelay);
+			int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &value, sizeof(value));
+		#endif
 	
-	if (0 != result)
-	{
-		int error = getSockError();
-		NODECPP_TRACE("TCP_NODELAY on sock {} failed; error {}", sock, error);
-//		internal_close(sock);
-		return false;
-	}
-
-	return true;
-}
-
-
-
-static
-bool internal_socket_keep_alive(SOCKET sock, bool enable)
-{
-#if defined _MSC_VER || defined __MINGW32__
-	DWORD value = static_cast<DWORD>(enable);
-	int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&value, sizeof(value));
-#else
-	int value = static_cast<int>(enable);
-	int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&value, sizeof(value));
-#endif
-
-	if (0 != result)
-	{
-		int error = getSockError();
-		NODECPP_TRACE("TCP_NODELAY on sock {} failed; error {}", sock, error);
+			if (0 != result)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("TCP_NODELAY on sock {} failed; error {}", sock, error);
 		//		internal_close(sock);
-		return false;
-	}
+				return false;
+			}
 
-	return true;
-}
+			return true;
+		}
 
-//static
-bool internal_linger_zero_socket(SOCKET sock)
-{
-	linger value;
-	value.l_onoff = 1;
-	value.l_linger = 0;
-#if defined _MSC_VER || defined __MINGW32__
-    int result = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char *) &value, sizeof(value));
-#else
-	int result = setsockopt(sock, SOL_SOCKET, SO_LINGER, (void *) &value, sizeof(value));
-#endif
+
+
+		static
+		bool internal_socket_keep_alive(SOCKET sock, bool enable)
+		{
+		#if defined _MSC_VER || defined __MINGW32__
+			DWORD value = static_cast<DWORD>(enable);
+			int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&value, sizeof(value));
+		#else
+			int value = static_cast<int>(enable);
+			int result = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&value, sizeof(value));
+		#endif
+
+			if (0 != result)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("TCP_NODELAY on sock {} failed; error {}", sock, error);
+				//		internal_close(sock);
+				return false;
+			}
+
+			return true;
+		}
+
+		//static
+		bool internal_linger_zero_socket(SOCKET sock)
+		{
+			linger value;
+			value.l_onoff = 1;
+			value.l_linger = 0;
+		#if defined _MSC_VER || defined __MINGW32__
+			int result = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char *) &value, sizeof(value));
+		#else
+			int result = setsockopt(sock, SOL_SOCKET, SO_LINGER, (void *) &value, sizeof(value));
+		#endif
 	
-	if (0 != result)
-	{
-		int error = getSockError();
-		NODECPP_TRACE("SO_LINGER on sock {} failed; error {}", sock, error);
-		return false;
-	}
+			if (0 != result)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("SO_LINGER on sock {} failed; error {}", sock, error);
+				return false;
+			}
 
-	return true;
-}
+			return true;
+		}
 
 
-static
-SOCKET internal_make_tcp_socket()
-{
-	SOCKET sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (INVALID_SOCKET == sock)
-	{
-		int error = getSockError();
-		NODECPP_TRACE("socket() failed; error {}", error);
-		return INVALID_SOCKET;
-	}
+		static
+		SOCKET internal_make_tcp_socket()
+		{
+			SOCKET sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+			if (INVALID_SOCKET == sock)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("socket() failed; error {}", error);
+				return INVALID_SOCKET;
+			}
 
-	NODECPP_TRACE("socket() success {}", sock);
+			NODECPP_TRACE("socket() success {}", sock);
 
-	if (!internal_async_socket(sock))
-	{
-		internal_close(sock);
-		return INVALID_SOCKET;
-	}
+			if (!internal_async_socket(sock))
+			{
+				internal_close(sock);
+				return INVALID_SOCKET;
+			}
 	
-	return sock;
-}
-
-static
-bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self)
-{
-	int res = ::bind(sock, (struct sockaddr *)(&sa_self), sizeof(struct sockaddr_in));
-	if (0 != res)
-	{
-		int error = getSockError();
-		NODECPP_TRACE("bind() on sock {} failed; error {}", sock, error);
-		return false;
-	}
-
-	return true;
-}
-
-static
-uint8_t internal_connect_socket(struct sockaddr_in& sa_other, SOCKET sock)
-{
-	int res = connect(sock, (struct sockaddr *)(&sa_other), sizeof(struct sockaddr_in));
-	if (0 != res)
-	{
-		int error = getSockError();
-		if (isErrorWouldBlock(error))
-		{
-			NODECPP_TRACE("connect() on sock {} in progress", sock);
-			return COMMLAYER_RET_PENDING;
+			return sock;
 		}
-		else
+
+		static
+		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self)
 		{
-			NODECPP_TRACE("connect() on sock {} failed; error {}", sock, error);
-			return COMMLAYER_RET_FAILED;
+			int res = ::bind(sock, (struct sockaddr *)(&sa_self), sizeof(struct sockaddr_in));
+			if (0 != res)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("bind() on sock {} failed; error {}", sock, error);
+				return false;
+			}
+
+			return true;
 		}
-	}
-	else
-		NODECPP_TRACE("connect() on sock {} completed", sock);
 
-	return COMMLAYER_RET_OK;
-}
-
-
-static
-bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port)
-{
-	NODECPP_TRACE("internal_bind_socket() on sock {} to {}:{}", sock, ip.toStr(), port.toStr());
-	struct sockaddr_in sa;
-	memset(&sa, 0, sizeof(struct sockaddr_in));
-	sa.sin_family = AF_INET;
-	sa.sin_addr.s_addr = ip.getNetwork();
-	sa.sin_port = port.getNetwork();
-
-	return internal_bind_socket(sock, sa);
-}
-
-static
-bool internal_listen_tcp_socket(SOCKET sock)
-{
-	int res = listen(sock, tcpListenBacklogSize);
-	if (0 != res) {
-		int error = getSockError();
-		NODECPP_TRACE("listen() on sock {} failed; error {}", sock, error);
-		return false;
-	}
-	NODECPP_TRACE("listen() on sock {} success", sock);
-
-	return true;
-}
-
-static
-uint8_t internal_connect_for_address(Ip4 peerIp, Port peerPort, SOCKET sock)
-{
-	NODECPP_TRACE("internal_connect_for_address() on sock {} to {}:{}", sock, peerIp.toStr(), peerPort.toStr());
-
-	struct sockaddr_in saOther;
-	memset(&saOther, 0, sizeof(struct sockaddr_in));
-	saOther.sin_family = AF_INET;
-	saOther.sin_addr.s_addr = peerIp.getNetwork();
-	saOther.sin_port = peerPort.getNetwork();
-
-	return internal_connect_socket(saOther, sock);
-}
-
-static
-SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
-{
-	NODECPP_TRACE("internal_tcp_accept() on sock {}", sock);
-	struct sockaddr_in sa;
-	socklen_t sz = sizeof(struct sockaddr_in);
-	memset(&sa, 0, sz);
-
-	SOCKET outSock = accept(sock, (struct sockaddr *)&sa, &sz);
-	if (INVALID_SOCKET == outSock)
-	{
-		int error = getSockError();
-		NODECPP_TRACE("accept() on sock {} failed; error {}", error);
-
-		return INVALID_SOCKET;
-	}
-
-	
-	ip = Ip4::fromNetwork(sa.sin_addr.s_addr);
-	port = Port::fromNetwork(sa.sin_port);
-	NODECPP_TRACE("accept() new sock {} from {}:{}", outSock, ip.toStr(), port.toStr());
-
-	if (!internal_async_socket(outSock))
-	{
-		internal_close(outSock);
-		return INVALID_SOCKET;
-	}
-	return outSock;
-}
-
-//static
-bool internal_getsockopt_so_error(SOCKET sock)
-{
-	int result;
-	socklen_t result_len = sizeof(result);
-
-	int err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*)(&result), &result_len);
-	if (err != 0)
-	{
-		int error = getSockError();
-		NODECPP_TRACE("getsockopt() SO_ERROR on sock {} failed; error {}", sock, error);
-		return false;
-	}
-
-	if (result != 0)
-	{
-		NODECPP_TRACE("getsockopt() SO_ERROR on sock {} error {}", sock, result);
-		return false;
-	}
-
-	return true;
-}
-
-static
-uint8_t internal_send_packet(const uint8_t* data, size_t size, SOCKET sock, size_t& sentSize)
-{
-	const char* ptr = reinterpret_cast<const char*>(data); //windows uses char*, linux void*
-	ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
-
-	if (bytes_sent < 0)
-	{
-		sentSize = 0;
-		int error = getSockError();
-		if (isErrorWouldBlock(error))
+		static
+		uint8_t internal_connect_socket(struct sockaddr_in& sa_other, SOCKET sock)
 		{
-			NODECPP_TRACE("internal_send_packet() on sock {} size {} PENDING", sock, size, sentSize);
-
-			return COMMLAYER_RET_PENDING;
-		}
-		else
-		{
-			NODECPP_TRACE("internal_send_packet() on sock {} size {} ERROR {}", sock, size, error);
-			return COMMLAYER_RET_FAILED;
-		}
-	}
-	else
-	{
-		sentSize = static_cast<size_t>(bytes_sent);
-		if(sentSize == size)
-		{
-			NODECPP_TRACE("internal_send_packet() on sock {} size {} OK", sock, size);
+			int res = connect(sock, (struct sockaddr *)(&sa_other), sizeof(struct sockaddr_in));
+			if (0 != res)
+			{
+				int error = getSockError();
+				if (isErrorWouldBlock(error))
+				{
+					NODECPP_TRACE("connect() on sock {} in progress", sock);
+					return COMMLAYER_RET_PENDING;
+				}
+				else
+				{
+					NODECPP_TRACE("connect() on sock {} failed; error {}", sock, error);
+					return COMMLAYER_RET_FAILED;
+				}
+			}
+			else
+				NODECPP_TRACE("connect() on sock {} completed", sock);
 
 			return COMMLAYER_RET_OK;
 		}
-		else
-		{
-			NODECPP_TRACE("internal_send_packet() on sock {} size {} PENDING sent {} ", sock, size, sentSize);
-			
-			return COMMLAYER_RET_PENDING;
-		}
-	}
-}
 
-static
-uint8_t internal_get_packet_bytes2(SOCKET sock, uint8_t* buff, size_t buffSz, size_t& retSz, struct sockaddr_in& sa_other, socklen_t& fromlen)
-{
-	retSz = 0;
+
+		static
+		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port)
+		{
+			NODECPP_TRACE("internal_bind_socket() on sock {} to {}:{}", sock, ip.toStr(), port.toStr());
+			struct sockaddr_in sa;
+			memset(&sa, 0, sizeof(struct sockaddr_in));
+			sa.sin_family = AF_INET;
+			sa.sin_addr.s_addr = ip.getNetwork();
+			sa.sin_port = port.getNetwork();
+
+			return internal_bind_socket(sock, sa);
+		}
+
+		static
+		bool internal_listen_tcp_socket(SOCKET sock)
+		{
+			int res = listen(sock, tcpListenBacklogSize);
+			if (0 != res) {
+				int error = getSockError();
+				NODECPP_TRACE("listen() on sock {} failed; error {}", sock, error);
+				return false;
+			}
+			NODECPP_TRACE("listen() on sock {} success", sock);
+
+			return true;
+		}
+
+		static
+		uint8_t internal_connect_for_address(Ip4 peerIp, Port peerPort, SOCKET sock)
+		{
+			NODECPP_TRACE("internal_connect_for_address() on sock {} to {}:{}", sock, peerIp.toStr(), peerPort.toStr());
+
+			struct sockaddr_in saOther;
+			memset(&saOther, 0, sizeof(struct sockaddr_in));
+			saOther.sin_family = AF_INET;
+			saOther.sin_addr.s_addr = peerIp.getNetwork();
+			saOther.sin_port = peerPort.getNetwork();
+
+			return internal_connect_socket(saOther, sock);
+		}
+
+		static
+		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
+		{
+			NODECPP_TRACE("internal_tcp_accept() on sock {}", sock);
+			struct sockaddr_in sa;
+			socklen_t sz = sizeof(struct sockaddr_in);
+			memset(&sa, 0, sz);
+
+			SOCKET outSock = accept(sock, (struct sockaddr *)&sa, &sz);
+			if (INVALID_SOCKET == outSock)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("accept() on sock {} failed; error {}", error);
+
+				return INVALID_SOCKET;
+			}
+
 	
-	NODECPP_ASSERT(buff);
-	NODECPP_ASSERT(buffSz != 0);
-	ssize_t ret = recvfrom(sock, (char*)buff, (int)buffSz, 0, (struct sockaddr *)(&sa_other), &fromlen);
+			ip = Ip4::fromNetwork(sa.sin_addr.s_addr);
+			port = Port::fromNetwork(sa.sin_port);
+			NODECPP_TRACE("accept() new sock {} from {}:{}", outSock, ip.toStr(), port.toStr());
 
-	if (ret < 0)
-	{
-		int error = getSockError();
-		if (isErrorWouldBlock(error))
-		{
-			NODECPP_TRACE("internal_get_packet_bytes2() on sock {} PENDING", sock);
-			return COMMLAYER_RET_PENDING;
+			if (!internal_async_socket(outSock))
+			{
+				internal_close(outSock);
+				return INVALID_SOCKET;
+			}
+			return outSock;
 		}
-		else
-		{
-			NODECPP_TRACE("internal_get_packet_bytes2() on sock {} ERROR {}", sock, error);
-			return COMMLAYER_RET_FAILED;
-		}
-	}
 
-	retSz = static_cast<size_t>(ret);
-	NODECPP_TRACE("internal_get_packet_bytes2() on sock {} size {} OK", sock, retSz);
-	return COMMLAYER_RET_OK;
-}
+		//static
+		bool internal_getsockopt_so_error(SOCKET sock)
+		{
+			int result;
+			socklen_t result_len = sizeof(result);
+
+			int err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*)(&result), &result_len);
+			if (err != 0)
+			{
+				int error = getSockError();
+				NODECPP_TRACE("getsockopt() SO_ERROR on sock {} failed; error {}", sock, error);
+				return false;
+			}
+
+			if (result != 0)
+			{
+				NODECPP_TRACE("getsockopt() SO_ERROR on sock {} error {}", sock, result);
+				return false;
+			}
+
+			return true;
+		}
+
+		static
+		uint8_t internal_send_packet(const uint8_t* data, size_t size, SOCKET sock, size_t& sentSize)
+		{
+			const char* ptr = reinterpret_cast<const char*>(data); //windows uses char*, linux void*
+			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
+
+			if (bytes_sent < 0)
+			{
+				sentSize = 0;
+				int error = getSockError();
+				if (isErrorWouldBlock(error))
+				{
+					NODECPP_TRACE("internal_send_packet() on sock {} size {} PENDING", sock, size, sentSize);
+
+					return COMMLAYER_RET_PENDING;
+				}
+				else
+				{
+					NODECPP_TRACE("internal_send_packet() on sock {} size {} ERROR {}", sock, size, error);
+					return COMMLAYER_RET_FAILED;
+				}
+			}
+			else
+			{
+				sentSize = static_cast<size_t>(bytes_sent);
+				if(sentSize == size)
+				{
+					NODECPP_TRACE("internal_send_packet() on sock {} size {} OK", sock, size);
+
+					return COMMLAYER_RET_OK;
+				}
+				else
+				{
+					NODECPP_TRACE("internal_send_packet() on sock {} size {} PENDING sent {} ", sock, size, sentSize);
+			
+					return COMMLAYER_RET_PENDING;
+				}
+			}
+		}
+
+		static
+		uint8_t internal_get_packet_bytes2(SOCKET sock, uint8_t* buff, size_t buffSz, size_t& retSz, struct sockaddr_in& sa_other, socklen_t& fromlen)
+		{
+			retSz = 0;
+	
+			NODECPP_ASSERT(buff);
+			NODECPP_ASSERT(buffSz != 0);
+			ssize_t ret = recvfrom(sock, (char*)buff, (int)buffSz, 0, (struct sockaddr *)(&sa_other), &fromlen);
+
+			if (ret < 0)
+			{
+				int error = getSockError();
+				if (isErrorWouldBlock(error))
+				{
+					NODECPP_TRACE("internal_get_packet_bytes2() on sock {} PENDING", sock);
+					return COMMLAYER_RET_PENDING;
+				}
+				else
+				{
+					NODECPP_TRACE("internal_get_packet_bytes2() on sock {} ERROR {}", sock, error);
+					return COMMLAYER_RET_FAILED;
+				}
+			}
+
+			retSz = static_cast<size_t>(ret);
+			NODECPP_TRACE("internal_get_packet_bytes2() on sock {} size {} OK", sock, retSz);
+			return COMMLAYER_RET_OK;
+		}
+
+	} // internal_usage_only
+} // nodecpp
+
+
+SocketRiia::~SocketRiia() { if (s != INVALID_SOCKET) internal_usage_only::internal_close(s); }
+
 
 /* static */
 Ip4 Ip4::parse(const char* ip)
@@ -526,11 +515,11 @@ SocketRiia&& NetSocketManagerBase::appAcquireSocket(const char* ip, uint16_t por
 //	Port myPort = Port::fromHost(port);
 
 
-	SocketRiia s(internal_make_tcp_socket());
+	SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 	if (!s)
 		throw Error();
 
-	uint8_t st = internal_connect_for_address(peerIp, peerPort, s.get());
+	uint8_t st = internal_usage_only::internal_connect_for_address(peerIp, peerPort, s.get());
 
 	if (st != COMMLAYER_RET_PENDING && st != COMMLAYER_RET_OK)
 		throw Error();
@@ -631,7 +620,7 @@ void NetSocketManagerBase::appDestroy(net::SocketBase::DataForCommandProcessing&
 	}
 	//	
 	//	if(force)
-	internal_linger_zero_socket(sockData.osSocket);
+	internal_usage_only::internal_linger_zero_socket(sockData.osSocket);
 	//entry.state = net::SocketBase::DataForCommandProcessing::Closing;
 	//pendingCloseEvents.emplace_back(entry.index, false);
 	closeSocket(sockData);
@@ -682,7 +671,7 @@ void NetSocketManagerBase::appEnd(net::SocketBase::DataForCommandProcessing& soc
 	if (sockData.writeBuffer.empty())
 	{
 //		entry.localEnded = true;
-		internal_shutdown_send(sockData.osSocket);
+		internal_usage_only::internal_shutdown_send(sockData.osSocket);
 		if (sockData.remoteEnded)
 		{
 			//entry.state = net::SocketBase::DataForCommandProcessing::Closing;
@@ -725,7 +714,7 @@ void NetSocketManagerBase::appSetKeepAlive(net::SocketBase::DataForCommandProces
 		throw Error();
 	}
 
-	if (!internal_socket_keep_alive(sockData.osSocket, enable))
+	if (!internal_usage_only::internal_socket_keep_alive(sockData.osSocket, enable))
 	{
 //		errorCloseSocket(entry, storeError(Error()));
 		Error e;
@@ -758,7 +747,7 @@ void NetSocketManagerBase::appSetNoDelay(net::SocketBase::DataForCommandProcessi
 		throw Error();
 	}
 
-	if (!internal_tcp_no_delay_socket(sockData.osSocket, noDelay))
+	if (!internal_usage_only::internal_tcp_no_delay_socket(sockData.osSocket, noDelay))
 	{
 //		errorCloseSocket(entry, storeError(Error()));
 		Error e;
@@ -829,7 +818,7 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 	if (sockData.writeBuffer.size() == 0)
 	{
 		size_t sentSize = 0;
-		uint8_t res = internal_send_packet(data, size, sockData.osSocket, sentSize);
+		uint8_t res = internal_usage_only::internal_send_packet(data, size, sockData.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
 //			errorCloseSocket(sockData, storeError(Error()));
@@ -860,7 +849,7 @@ std::pair<bool, Buffer> NetSocketManagerBase::infraGetPacketBytes(Buffer& buff, 
 	socklen_t fromlen = sizeof(struct sockaddr_in);
 	struct sockaddr_in sa_other;
 	size_t sz = 0;
-	uint8_t ret = internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
+	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
 
 	if (ret != COMMLAYER_RET_OK)
 		return make_pair(false, Buffer());
@@ -904,7 +893,7 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::infraProcessWriteEvent(ne
 	{
 //		assert(entry.writeBuffer.size() != 0);
 		size_t sentSize = 0;
-		uint8_t res = internal_send_packet(sockData.writeBuffer.begin(), sockData.writeBuffer.size(), sockData.osSocket, sentSize);
+		uint8_t res = internal_usage_only::internal_send_packet(sockData.writeBuffer.begin(), sockData.writeBuffer.size(), sockData.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
 			//			pendingCloseEvents.push_back(entry.id);
@@ -918,7 +907,7 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::infraProcessWriteEvent(ne
 			sockData.writeBuffer.clear();
 			if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
 			{
-				internal_shutdown_send(sockData.osSocket);
+				internal_usage_only::internal_shutdown_send(sockData.osSocket);
 				//current.pendingLocalEnd = false;
 				//current.localEnded = true;
 
@@ -1368,18 +1357,18 @@ void NetServerManager::appListen(net::Server* ptr, uint16_t port, const char* ip
 	Port myPort = Port::fromHost(port);
 
 
-	SocketRiia s(internal_make_tcp_socket());
+	SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 	if (!s)
 	{
 		throw Error();
 	}
 
-	if (!internal_bind_socket(s.get(), myIp, myPort))
+	if (!internal_usage_only::internal_bind_socket(s.get(), myIp, myPort))
 	{
 		throw Error();
 	}
 
-	if (!internal_listen_tcp_socket(s.get()))
+	if (!internal_usage_only::internal_listen_tcp_socket(s.get()))
 	{
 		throw Error();
 	}
@@ -1467,7 +1456,7 @@ void NetServerManager::infraGetCloseEvents(EvQueue& evs)
 			if (entry.isValid())
 			{
 				if (entry.osSocket != INVALID_SOCKET)
-					internal_close(entry.osSocket);
+					internal_usage_only::internal_close(entry.osSocket);
 				//			entry.getPtr()->emitClose(entry.second);
 				evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
 			}
@@ -1489,7 +1478,7 @@ void NetServerManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* en
 			if ((begin[i].revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 			{
 				NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
-				internal_getsockopt_so_error(current.osSocket);
+				internal_usage_only::internal_getsockopt_so_error(current.osSocket);
 				infraMakeErrorEventAndClose(current, evs);
 			}
 			else if ((begin[i].revents & POLLIN) != 0)
@@ -1500,7 +1489,7 @@ void NetServerManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* en
 			else if (begin[i].revents != 0)
 			{
 				NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
-				internal_getsockopt_so_error(current.osSocket);
+				internal_usage_only::internal_getsockopt_so_error(current.osSocket);
 				infraMakeErrorEventAndClose(current, evs);
 			}
 		}
@@ -1513,7 +1502,7 @@ void NetServerManager::infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& e
 	Ip4 remoteIp;
 	Port remotePort;
 
-	SocketRiia newSock(internal_tcp_accept(remoteIp, remotePort, entry.osSocket));
+	SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, entry.osSocket));
 	if (!newSock)
 		return;
 

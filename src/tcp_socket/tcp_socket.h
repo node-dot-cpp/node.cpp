@@ -33,8 +33,6 @@
 #include "../../include/nodecpp/net.h"
 #include "../ev_queue.h"
 
-using namespace nodecpp;
-
 #ifdef _MSC_VER
 #include <winsock2.h>
 using socklen_t = int;
@@ -44,6 +42,21 @@ const SOCKET INVALID_SOCKET = -1;
 struct pollfd;
 #endif
 
+namespace nodecpp
+{
+	namespace internal_usage_only
+	{
+		bool internal_getsockopt_so_error(SOCKET sock);
+		void internal_shutdown_send(SOCKET sock);
+		bool internal_linger_zero_socket(SOCKET sock);
+		void internal_close(SOCKET sock);
+	} // internal_usage_only
+} // nodecpp
+
+
+
+
+using namespace nodecpp;
 
 /*
 	Pending events need some special treatment,
@@ -149,22 +162,6 @@ bool isNetInitialized();
 class NetSocketEntry {
 public:
 	size_t index;
-/*	enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
-	state = Uninitialized;
-
-//	bool connecting = false;
-	bool remoteEnded = false;
-	//bool localEnded = false;
-	//bool pendingLocalEnd = false;
-	bool paused = false;
-	bool allowHalfOpen = true;
-
-	bool refed = true;
-
-//	Buffer writeBuffer = Buffer(64 * 1024);
-	Buffer recvBuffer = Buffer(64 * 1024);*/
-
-//	SOCKET osSocket = INVALID_SOCKET;
 
 	net::SocketBase* sockPtr = nullptr;
 	net::SocketEmitter emitter;
@@ -198,11 +195,6 @@ public:
 
 	Each method 'kind' must be isolated and can't call the other.
 */
-
-bool internal_getsockopt_so_error(SOCKET sock);
-void internal_shutdown_send(SOCKET sock);
-bool internal_linger_zero_socket(SOCKET sock);
-void internal_close(SOCKET sock);
 
 class NetSocketManagerBase {
 protected:
@@ -278,21 +270,6 @@ public:
 	template<class SockType>
 	size_t appConnect(SockType* ptr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
-		/*Ip4 peerIp = Ip4::parse(ip);
-	//	Ip4 myIp = Ip4::parse(ip);
-
-		Port peerPort = Port::fromHost(port);
-	//	Port myPort = Port::fromHost(port);
-
-
-		SocketRiia s(internal_make_tcp_socket());
-		if (!s)
-			throw Error();
-
-		uint8_t st = internal_connect_for_address(peerIp, peerPort, s.get());
-
-		if (st != COMMLAYER_RET_PENDING && st != COMMLAYER_RET_OK)
-			throw Error();*/
 		SocketRiia s( std::move( this->appAcquireSocket( ip, port ) ) );
 
 		size_t id = addEntry(ptr);
@@ -311,26 +288,8 @@ public:
 		return id;
 	}
 
-
-	bool infraAddAccepted(net::Socket* ptr, SOCKET sock, EvQueue& evs)
-	{
-		SocketRiia s(sock);
-		size_t ix = addEntry(ptr);
-		if (ix == 0)
-		{
-			NODECPP_TRACE("Couldn't allocate new StreamSocket, closing {}", s.get());
-			return false;
-		}
-
-		auto& entry = appGetEntry(ix);
-		entry.getSockData()->osSocket = s.release();
-		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Connected;
-
-		evs.add(&net::Socket::emitAccepted, ptr, ix);
-
-		return true;
-	}
-	bool infraAddAccepted(net::SocketO* ptr, SOCKET sock, EvQueue& evs)
+	template<class SocketType>
+	bool infraAddAccepted(SocketType* ptr, SOCKET sock, EvQueue& evs)
 	{
 		SocketRiia s(sock);
 		size_t ix = addEntry(ptr);
@@ -397,9 +356,9 @@ public:
 					if (entry.getSockData()->osSocket != INVALID_SOCKET)
 					{
 						if(err) // if error closing, then discard all buffers
-							internal_linger_zero_socket(entry.getSockData()->osSocket);
+							internal_usage_only::internal_linger_zero_socket(entry.getSockData()->osSocket);
 
-						internal_close(entry.getSockData()->osSocket);
+						internal_usage_only::internal_close(entry.getSockData()->osSocket);
 					}
 
 					if (err) //if error closing, then first error event
@@ -430,7 +389,7 @@ public:
 				if ((begin[i].revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 				{
 					NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
-					internal_getsockopt_so_error(current.getSockData()->osSocket);
+					internal_usage_only::internal_getsockopt_so_error(current.getSockData()->osSocket);
 					//errorCloseSocket(current, storeError(Error()));
 					Error e;
 					errorCloseSocket(current, e);
@@ -495,7 +454,7 @@ private:
 		}
 		else
 		{
-			internal_getsockopt_so_error(entry.getSockData()->osSocket);
+			internal_usage_only::internal_getsockopt_so_error(entry.getSockData()->osSocket);
 	//		return errorCloseSocket(entry, storeError(Error()));
 			Error e;
 			errorCloseSocket(entry, e);
@@ -523,7 +482,7 @@ private:
 				}
 				else
 				{
-					internal_shutdown_send(entry.getSockData()->osSocket);
+					internal_usage_only::internal_shutdown_send(entry.getSockData()->osSocket);
 					entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::LocalEnded;
 	//				entry.localEnded = true;
 				}
