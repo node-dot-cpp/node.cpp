@@ -325,7 +325,7 @@ class MySampleInheritanceOneNode : public NodeBase
 //	unique_ptr<MySocketLambda> cli;
 //	MySocketLambda* cli;
 public:
-	MySampleInheritanceOneNode() : sockNN1_3( this )
+	MySampleInheritanceOneNode() : sockNN1_3( this )/*, sockNN1_4( this )*/
 	{
 		printf( "MySampleLambdaOneNode::MySampleLambdaOneNode()\n" );
 	}
@@ -336,7 +336,10 @@ public:
 
 		srv.listen(2000, "127.0.0.1", 5);
 
+		*( sockNN1_3.getExtra() ) = 17;
+//		*( sockNN1_4.getExtra() ) = 71;
 		sockNN1_3.connect(2000, "127.0.0.1");
+//		sockNN1_4.connect(2008, "127.0.0.1");
 	}
 
 	void onConnect(const void* extra) 
@@ -356,7 +359,7 @@ public:
 	void onClose(const void* extra,bool) { printf( "MySampleInheritanceOneNode::onClose()\n" ); }
 	void onData(const void* extra, nodecpp::Buffer& buffer) 
 	{ 
-		printf( "MySampleInheritanceOneNode::onData()\n" ); 
+		printf( "MySampleInheritanceOneNode::onData()\n" );  
 		recvSize += buffer.size();
 
 		if (recvSize >= sentSize)
@@ -372,7 +375,8 @@ public:
 
 	void onWhateverConnect_2(const SocketIdType* extra) 
 	{
-		printf( "MySampleInheritanceOneNode::onWhateverConnect_2()%s\n", extra ? "+ extra data" : "" );
+		NODECPP_ASSERT( extra != nullptr );
+		printf( "MySampleInheritanceOneNode::onWhateverConnect_2(), extra = %d\n", *extra );
 
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
@@ -384,10 +388,15 @@ public:
 			sentSize += size;
 		}
 	}
-	void onWhateverClose_2(const SocketIdType* extra, bool) { printf( "MySampleInheritanceOneNode::onWhateverClose_2()%s\n", extra ? "+ extra data" : "" ); }
+	void onWhateverClose_2(const SocketIdType* extra, bool)
+	{
+		NODECPP_ASSERT( extra != nullptr );
+		printf( "MySampleInheritanceOneNode::onWhateverClose_2(), extra = %d\n", *extra );
+	}
 	void onWhateverData_2(const SocketIdType* extra, nodecpp::Buffer& buffer)
 	{
-		printf( "MySampleInheritanceOneNode::onWhateverData_2()\n" );
+		NODECPP_ASSERT( extra != nullptr );
+		printf( "MySampleInheritanceOneNode::onWhateverData_2(), extra = %d\n", *extra );
 		recvSize += buffer.size();
 
 		if (recvSize >= sentSize)
@@ -395,11 +404,20 @@ public:
 	}
 	void onWhateverDrain_2(const SocketIdType* extra)
 	{
+		NODECPP_ASSERT( extra != nullptr );
 		if ( letOnDrain )
-			printf( "MySampleInheritanceOneNode::onWhateverDrain_2()\n" );
+			printf( "MySampleInheritanceOneNode::onWhateverDrain_2(), extra = %d\n", *extra );
 	}
-	void onWhateverError_2(const SocketIdType* extra, nodecpp::Error&) { printf( "MySampleInheritanceOneNode::onWhateverError_2()\n" ); }
-	void onWhateverEnd_2(const SocketIdType* extra) { printf( "MySampleInheritanceOneNode::onWhateverEnd_2()\n" ); }
+	void onWhateverError_2(const SocketIdType* extra, nodecpp::Error&)
+	{
+		NODECPP_ASSERT( extra != nullptr );
+		printf( "MySampleInheritanceOneNode::onWhateverError_2(), extra = %d\n", *extra );
+	}
+	void onWhateverEnd_2(const SocketIdType* extra)
+	{
+		NODECPP_ASSERT( extra != nullptr );
+		printf( "MySampleInheritanceOneNode::onWhateverEnd_2(), extra = %d\n", *extra );
+	}
 
 
 	nodecpp::net::SocketN<MySampleInheritanceOneNode,SocketIdType,
@@ -409,7 +427,7 @@ public:
 		nodecpp::net::OnDrain<&MySampleInheritanceOneNode::onWhateverDrain_2>,
 		nodecpp::net::OnError<&MySampleInheritanceOneNode::onWhateverError_2>,
 		nodecpp::net::OnEnd<&MySampleInheritanceOneNode::onWhateverEnd_2>
-	> sockNN1_3;
+	> sockNN1_3/*, sockNN1_4*/;
 };
 
 #endif // NET_SOCKET_H
