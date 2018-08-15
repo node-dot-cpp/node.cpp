@@ -30,13 +30,19 @@
 
 #define USING_O_SOCKETS // TODO: make project-level define as soon as related dev and testing done
 #define USING_L_SOCKETS // TODO: make project-level define as soon as related dev and testing done
+//#define USING_T_SOCKETS // TODO: make project-level define as soon as related dev and testing done
 
 #ifdef USING_O_SOCKETS
 #include "socket_o.h"
 #endif // USING_O_SOCKETS
+
 #ifdef USING_L_SOCKETS
 #include "socket_l.h"
 #endif // USING_L_SOCKETS
+
+#ifdef USING_T_SOCKETS
+#include "socket_t.h"
+#endif // USING_T_SOCKETS
 
 namespace nodecpp {
 
