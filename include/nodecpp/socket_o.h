@@ -276,10 +276,10 @@ namespace nodecpp {
 
 
 		template<class Node, class Extra, class ... Handlers>
-		class SocketN2_ : public SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>
+		class SocketN : public SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>
 		{
 		public:
-			SocketN2_(Node* node_) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( node_ ) {}
+			SocketN(Node* node_) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( node_ ) {}
 		
 		};
 
