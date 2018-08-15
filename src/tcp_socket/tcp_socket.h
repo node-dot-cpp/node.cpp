@@ -159,30 +159,6 @@ public:
 
 bool isNetInitialized();
 
-class NetSocketEntry {
-public:
-	size_t index;
-
-	net::SocketBase* sockPtr = nullptr;
-	net::SocketEmitter emitter;
-
-
-	NetSocketEntry(size_t index) : index(index) {}
-	NetSocketEntry(size_t index, net::Socket* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
-	NetSocketEntry(size_t index, net::SocketO* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
-
-	NetSocketEntry(const NetSocketEntry& other) = delete;
-	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
-
-	NetSocketEntry(NetSocketEntry&& other) = default;
-	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
-
-	bool isValid() const { return emitter.isValid(); }
-
-	const net::SocketEmitter& getEmitter() const { return emitter; }
-	net::SocketBase::DataForCommandProcessing* getSockData() const { assert(sockPtr != nullptr); return sockPtr ? &(sockPtr->dataForCommandProcessing) : nullptr; }
-};
-
 /* 
 	NetSocketManager is accesed from two 'sides'
 	Methods prepended with 'app' are to be used from user code.
@@ -257,6 +233,30 @@ public:
 
 	void closeSocket(net::SocketBase::DataForCommandProcessing& sockData);//app-infra neutral
 	void errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err);//app-infra neutral
+};
+
+class NetSocketEntry {
+public:
+	size_t index;
+
+	net::SocketBase* sockPtr = nullptr;
+	net::SocketEmitter emitter;
+
+
+	NetSocketEntry(size_t index) : index(index) {}
+	NetSocketEntry(size_t index, net::Socket* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
+	NetSocketEntry(size_t index, net::SocketO* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
+
+	NetSocketEntry(const NetSocketEntry& other) = delete;
+	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
+
+	NetSocketEntry(NetSocketEntry&& other) = default;
+	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
+
+	bool isValid() const { return emitter.isValid(); }
+
+	const net::SocketEmitter& getEmitter() const { return emitter; }
+	net::SocketBase::DataForCommandProcessing* getSockData() const { assert(sockPtr != nullptr); return sockPtr ? &(sockPtr->dataForCommandProcessing) : nullptr; }
 };
 
 template<class EmitterType>
