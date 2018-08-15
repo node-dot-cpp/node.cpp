@@ -35,7 +35,7 @@
 #endif
 
 
-thread_local Infrastructure infra;
+thread_local Infrastructure<NetSocketEntry> infra;
 
 uint64_t infraGetCurrentTime()
 {
@@ -189,7 +189,7 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 }
 
 
-bool Infrastructure::pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
+bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
 	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManager::MAX_SOCKETS;
 	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
@@ -197,11 +197,11 @@ bool Infrastructure::pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now,
 	
 	pollfd* fds_begin = fds.get();
 	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
-	bool refedSocket = netSocket.infraSetPollFdSet(fds_begin, fds_end);
+	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
 
 	fds_begin = fds_end;
 	fds_end += NetServerManager::MAX_SOCKETS;
-	bool refedServer = netServer.infraSetPollFdSet(fds_begin, fds_end);
+	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
 
 	if (refed == false && refedSocket == false && refedServer == false)
 		return false; //stop here
@@ -240,11 +240,11 @@ bool Infrastructure::pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now,
 	{
 		fds_begin = fds.get();
 		fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
-		netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
+		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
 
 		fds_begin = fds_end;
 		fds_end += NetServerManager::MAX_SOCKETS;
-		netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
+		infra.netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
 
 		//if (queue.empty())
 		//{
@@ -261,7 +261,7 @@ bool Infrastructure::pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now,
 	}
 }
 
-void Infrastructure::runLoop()
+/*void Infrastructure::runLoop()
 {
 	NODECPP_ASSERT(isNetInitialized());
 
@@ -290,5 +290,37 @@ void Infrastructure::runLoop()
 
 		netSocket.infraClearStores();
 		netServer.infraClearStores();
+	}
+}*/
+
+void runInfraLoop()
+{
+	NODECPP_ASSERT(isNetInitialized());
+
+	while (infra.running)
+	{
+
+		EvQueue queue;
+		infra.netServer.infraGetPendingEvents(queue);
+		queue.emit();
+
+		uint64_t now = infraGetCurrentTime();
+		infra.timeout.infraTimeoutEvents(now, queue);
+		queue.emit();
+
+		now = infraGetCurrentTime();
+		bool refed = /*infra.*/pollPhase(infra.refedTimeout(), infra.nextTimeout(), now, queue);
+		if(!refed)
+			return;
+
+		queue.emit();
+		infra.emitInmediates();
+
+		infra.netSocket.infraGetCloseEvent(queue);
+		infra.netServer.infraGetCloseEvents(queue);
+		queue.emit();
+
+		infra.netSocket.infraClearStores();
+		infra.netServer.infraClearStores();
 	}
 }

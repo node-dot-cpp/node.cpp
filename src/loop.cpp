@@ -34,7 +34,8 @@ using namespace nodecpp;
 
 void nodecpp::runLoop()
 {
-	getInfra().runLoop();
+//	getInfra().runLoop();
+	runInfraLoop();
 }
 
 
