@@ -506,7 +506,7 @@ Port Port::fromNetwork(uint16_t port)
 	//mb tcpSockets[0] is always invalid
 	ioSockets.emplace_back(0);
 }*/
-SocketRiia&& NetSocketManagerBase::appAcquireSocket(const char* ip, uint16_t port)
+SocketRiia NetSocketManagerBase::appAcquireSocket(const char* ip, uint16_t port)
 {
 	Ip4 peerIp = Ip4::parse(ip);
 //	Ip4 myIp = Ip4::parse(ip);
@@ -524,7 +524,7 @@ SocketRiia&& NetSocketManagerBase::appAcquireSocket(const char* ip, uint16_t por
 	if (st != COMMLAYER_RET_PENDING && st != COMMLAYER_RET_OK)
 		throw Error();
 
-	return std::move(s);
+	return s;
 }
 
 /*size_t NetSocketManager::appConnect(net::Socket* ptr, const char* ip, uint16_t port) // moved to .h

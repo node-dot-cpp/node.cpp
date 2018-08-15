@@ -144,8 +144,8 @@ public:
 	SocketRiia(const SocketRiia&) = delete;
 	SocketRiia& operator=(const SocketRiia&) = delete;
 
-	SocketRiia(SocketRiia&&) = default;
-	SocketRiia& operator=(SocketRiia&&) = default;
+	SocketRiia(SocketRiia&&other) {s = other.s; other.s = INVALID_SOCKET; }
+	SocketRiia& operator=(SocketRiia&&other) {s = other.s; other.s = INVALID_SOCKET; }
 
 	~SocketRiia();// { if (s != INVALID_SOCKET) internal_close(s); }
 
@@ -208,7 +208,7 @@ protected:
 	std::string family = "IPv4";
 
 protected:
-	SocketRiia&& appAcquireSocket(const char* ip, uint16_t port);
+	SocketRiia appAcquireSocket(const char* ip, uint16_t port);
 
 public:
 	static const size_t MAX_SOCKETS = 100; //arbitrary limit
