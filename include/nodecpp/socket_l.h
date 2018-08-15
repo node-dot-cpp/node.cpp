@@ -67,7 +67,6 @@ namespace nodecpp {
 			Socket(Socket&&) = default;
 			Socket& operator=(Socket&&) = default;
 
-//			virtual ~Socket() { if (state == CONNECTING || state == CONNECTED) destroy(); }
 			~Socket() { if (state == CONNECTING || state == CONNECTED) destroy(); }
 
 			void emitClose(bool hadError) {
@@ -118,13 +117,6 @@ namespace nodecpp {
 //				onError(err);
 			}
 
-
-/*			virtual void onClose(bool hadError) {}
-			virtual void onConnect() {}
-			virtual void onData(Buffer& buffer) {}
-			virtual void onDrain() {}
-			virtual void onEnd() {}
-			virtual void onError(Error& err) {}*/
 /*
 			virtual void onClose(bool hadError) {
 				fmt::print("onClose!\n");

@@ -336,19 +336,6 @@ public:
 
 		srv.listen(2000, "127.0.0.1", 5);
 
-//		sockNN1_3.on(event::data, [this](Buffer& buffer) { this->sockNN1_3.didData(buffer); });
-
-	//	sockNN1_3.once<event::Connect>([this]() { fmt::print( "welcome lambda-based solution [1]!\n" ); });
-/*		sockNN1_3.once(event::connect, [this]() { fmt::print( "welcome lambda-based solution [2]!\n" ); });
-		sockNN1_3.once(event::Connect::name, [this]() { fmt::print( "welcome lambda-based solution [3]!\n" ); });
-		sockNN1_3.once("connect", [this]() { fmt::print( "welcome lambda-based solution [3.1]!\n" ); });
-
-	//	sockNN1_3.once<event::Close>([this](bool) { fmt::print( "close lambda-based solution [1]!\n" ); return true; });
-		sockNN1_3.once(event::close, [this](bool) { fmt::print( "close lambda-based solution [2]!\n" ); return true; });
-		sockNN1_3.once(event::Close::name, [this](bool) { fmt::print( "close lambda-based solution [3]!\n" ); return true; });
-		sockNN1_3.once("close", [this](bool) { fmt::print( "close lambda-based solution [3.1]!\n" ); return true; });*/
-
-//		sockNN1_3.connect(2000, "127.0.0.1", [this] {sockNN1_3.didConnect(); });
 		sockNN1_3.connect(2000, "127.0.0.1");
 	}
 
