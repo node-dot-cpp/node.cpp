@@ -190,18 +190,8 @@ public:
 	static const size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetSocketManagerBase() {}
 
-//	void appDestroy(size_t id);
 	void appDestroy(net::SocketBase::DataForCommandProcessing& sockData);
-//	void appEnd(size_t id);
 	void appEnd(net::SocketBase::DataForCommandProcessing& sockData);
-//	void appPause(size_t id) { appGetEntry(id).getSockData()->paused = true; }
-//	void appResume(size_t id) { appGetEntry(id).getSockData()->paused = false; }
-
-//	size_t appBufferSize(size_t id) { return appGetEntry(id).writeBuffer.size(); }
-
-//	void appRef(size_t id) { appGetEntry(id).getSockData()->refed = true; }
-//	void appUnref(size_t id) { appGetEntry(id).getSockData()->refed = false; }
-//	bool appWrite(size_t id, const uint8_t* data, uint32_t size);
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
 	void appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable);
 	void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
