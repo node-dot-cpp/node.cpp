@@ -35,7 +35,7 @@
 #endif
 
 
-thread_local Infrastructure<NetSocketEntry> infra;
+thread_local Infrastructure<net::SocketEmitter> infra;
 
 uint64_t infraGetCurrentTime()
 {

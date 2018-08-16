@@ -126,10 +126,10 @@ public:
 //	void runLoop();
 };
 
-extern thread_local Infrastructure<NetSocketEntry> infra;
+extern thread_local Infrastructure<net::SocketEmitter> infra;
 
 inline
-Infrastructure<NetSocketEntry>& getInfra() { return infra; }
+Infrastructure<net::SocketEmitter>& getInfra() { return infra; }
 
 inline
 NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
