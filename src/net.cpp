@@ -57,7 +57,8 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 void SocketO::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
-	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
+//	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
+	dataForCommandProcessing.id = connectToInfra(this, ip, port);
 }
 
 SocketO& SocketO::setNoDelay(bool noDelay)
@@ -94,21 +95,20 @@ Socket& Socket::setKeepAlive(bool enable)
 }
 #endif // USING_L_SOCKETS
 
-#if 0//def USING_T_SOCKETS
-void SocketT::connect(uint16_t port, const char* ip)
+#ifdef USING_T_SOCKETS
+void SocketTBase::connect(uint16_t port, const char* ip)
 {
 	state = CONNECTING;
-//	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
-	dataForCommandProcessing.id = connectToInfra(this, ip, port);
+//	dataForCommandProcessing.id = connectToInfra(this, ip, port);
 }
 
-SocketT& SocketT::setNoDelay(bool noDelay)
+SocketTBase& SocketTBase::setNoDelay(bool noDelay)
 { 
 	/*getInfra().*/getNetSocket().appSetNoDelay(dataForCommandProcessing, noDelay);
 	return *this;
 }
 
-SocketT& SocketT::setKeepAlive(bool enable)
+SocketTBase& SocketTBase::setKeepAlive(bool enable)
 {
 	/*getInfra().*/getNetSocket().appSetKeepAlive(dataForCommandProcessing, enable);
 	return *this;
