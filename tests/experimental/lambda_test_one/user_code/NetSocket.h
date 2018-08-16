@@ -64,6 +64,7 @@ public:
 };
 #endif
 
+#ifdef USING_L_SOCKETS
 class MySocketLambda :public net::Socket {
 	size_t recvSize = 0;
 	size_t sentSize = 0;
@@ -121,7 +122,7 @@ public:
 		print("onError!\n");
 	}
 };
-
+#endif // USING_L_SOCKETS
 /*
 class MyServerSocket :public net::Socket {
 	size_t count = 0;
@@ -202,6 +203,8 @@ void MyServerSocket::onClose(bool hadError) {
 		server->closeMe(this);
 }
 */
+
+#ifdef USING_L_SOCKETS
 class MyServerMember;
 
 class MyServerSocketMember {
@@ -277,7 +280,9 @@ void MyServerSocketMember::didClose(bool hadError) {
 	if (server)
 		server->closeMe(this);
 }
+#endif // USING_L_SOCKETS
 
+#ifdef USING_L_SOCKETS
 class MySampleLambdaOneNode : public NodeBase
 {
 	MyServerMember srv;
@@ -310,7 +315,9 @@ public:
 		cli->connect(2000, "127.0.0.1", [this] {cli->didConnect(); });
 	}
 };
+#endif // USING_L_SOCKETS
 
+#ifdef USING_O_SOCKETS
 class MySampleInheritanceOneNode : public NodeBase
 {
 	size_t recvSize = 0;
@@ -429,5 +436,6 @@ public:
 		nodecpp::net::OnEnd<&MySampleInheritanceOneNode::onWhateverEnd_2>
 	> sockNN1_3/*, sockNN1_4*/;
 };
+#endif // USING_O_SOCKETS
 
 #endif // NET_SOCKET_H

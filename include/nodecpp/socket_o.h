@@ -211,7 +211,7 @@ namespace nodecpp {
 		{
 			Node* node;
 	//		static constexpr auto x = void (Node::*onConnect)(const void*);
-			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
+//			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
 	//		typename void (Node::*)(const void*) y;
 	#if 1
 			static_assert( Initializer::onConnect != nullptr );
@@ -223,7 +223,7 @@ namespace nodecpp {
 	//		static_assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
 	#endif
 		public:
-			SocketN2(Node* node_) : x(nullptr)/*, y(nullptr)*/ { node = node_;}
+			SocketN2(Node* node_) /*: x(nullptr), y(nullptr)*/ { node = node_;}
 			void* getExtra() { return nullptr; }
 
 			void onConnect() override

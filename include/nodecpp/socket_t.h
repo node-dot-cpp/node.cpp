@@ -29,6 +29,7 @@
 #define SOCKET_T_H
 
 #include <stdio.h>
+#include "template_common.h"
 #include "net_common.h"
 
 namespace nodecpp {
@@ -56,6 +57,57 @@ namespace nodecpp {
 			SocketT& setNoDelay(bool noDelay = true);
 			SocketT& setKeepAlive(bool enable = false);
 		};
+
+#if 0
+		template<class T, class T1, class Extra, class ... args>
+		void emitConnect( T* ptr, int type, Extra* extra, bool ok )
+		{
+			if ( type == 0 )
+			{
+				reinterpret_cast<T1*>(ptr)->doOne(ok);
+			}
+			else
+				callDoOne<T, args...>(ptr, type-1, ok);
+		}
+
+		template<class T>
+		void emitConnect( T* ptr, int type, Extra* extra, bool ok )
+		{
+			assert( false );
+		}
+
+		template< class ... args >
+		class Emitter
+		{
+		public:
+			class Ptr
+			{
+				void* ptr;
+			public:
+				Ptr() {}
+				void init( void* ptr_ ) { ptr = ptr_; }
+				void* getPtr() {return ptr;}
+			};
+
+		protected:
+			Ptr ptr;
+			int type = -1;
+
+		public:
+			Emitter() {}
+
+			template<class Sock>
+			void init(Sock* s)
+			{ 
+				ptr.init(s);
+				type = getTypeIndex<Sock,args...>( s );
+			}
+
+			void emitOne( bool ok ) { callDoOne<Ptr, args...>(&ptr, this->type, ok); }
+			void emitTwo( bool ok ) { callDoTwo<Ptr, args...>(&ptr, this->type, ok); }
+			void emitThree() { callDoThree<Ptr, args...>(&ptr, this->type); }
+		};
+#endif // 0
 
 	} // namespace net
 

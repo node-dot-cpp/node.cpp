@@ -35,6 +35,12 @@
 #endif // _MSC_VER
 
 
+#ifdef __GNUC__
+#define NODECPP_UNUSED_VAR [[gnu::unused]]
+#else
+#define NODECPP_UNUSED_VAR 
+#endif
+
 #include <utility>
 
 #include <vector>
