@@ -143,7 +143,115 @@ size_t connectToInfra(T* t, const char* ip, uint16_t port) { return infra.getNet
 
 //using EvQueue = std::vector<std::function<void()>>;
 
+int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
+uint64_t infraGetCurrentTime();
+#if 1
+template<class Infra>
+bool /*Infrastructure::*/pollPhase(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
+{
+	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManager::MAX_SOCKETS;
+	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
 
+	
+	pollfd* fds_begin = fds.get();
+	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
+	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
+
+	fds_begin = fds_end;
+	fds_end += NetServerManager::MAX_SOCKETS;
+	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
+
+	if (refed == false && refedSocket == false && refedServer == false)
+		return false; //stop here
+
+	int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
+
+#ifdef _MSC_VER
+	int retval = WSAPoll(fds.get(), static_cast<ULONG>(fds_sz), timeoutToUse);
+#else
+	int retval = poll(fds.get(), fds_sz, timeoutToUse);
+#endif
+
+
+	if (retval < 0)
+	{
+#ifdef _MSC_VER
+		int error = WSAGetLastError();
+		//		if ( error == WSAEWOULDBLOCK )
+		NODECPP_TRACE("error {}", error);
+#else
+		perror("select()");
+		//		int error = errno;
+		//		if ( error == EAGAIN || error == EWOULDBLOCK )
+#endif
+		/*        return WAIT_RESULTED_IN_TIMEOUT;*/
+		NODECPP_ASSERT(false);
+		NODECPP_TRACE0("COMMLAYER_RET_FAILED");
+		return false;
+	}
+	else if (retval == 0)
+	{
+		//timeout, just return with empty queue
+		return true; 
+	}
+	else //if(retval)
+	{
+		fds_begin = fds.get();
+		fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
+		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
+
+		fds_begin = fds_end;
+		fds_end += NetServerManager::MAX_SOCKETS;
+		infra.netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
+
+		//if (queue.empty())
+		//{
+		//	NODECPP_TRACE("No event generated from poll wake up (non timeout)");
+		//	for (size_t i = 0; i != fds_sz; ++i)
+		//	{
+		//		if (fds[i].fd >= 0 && fds[i].revents != 0)
+		//		{
+		//			NODECPP_TRACE("At id {}, socket {}, revent {:x}", i, fds[i].fd, fds[i].revents);
+		//		}
+		//	}
+		//}
+		return true;
+	}
+}
+
+template<class Infra>
+void runInfraLoop( Infra& infra )
+{
+	NODECPP_ASSERT(isNetInitialized());
+
+	while (infra.running)
+	{
+
+		EvQueue queue;
+		infra.netServer.infraGetPendingEvents(queue);
+		queue.emit();
+
+		uint64_t now = infraGetCurrentTime();
+		infra.timeout.infraTimeoutEvents(now, queue);
+		queue.emit();
+
+		now = infraGetCurrentTime();
+		bool refed = /*infra.*/pollPhase(infra, infra.refedTimeout(), infra.nextTimeout(), now, queue);
+		if(!refed)
+			return;
+
+		queue.emit();
+		infra.emitInmediates();
+
+		infra.netSocket.infraGetCloseEvent(queue);
+		infra.netServer.infraGetCloseEvents(queue);
+		queue.emit();
+
+		infra.netSocket.infraClearStores();
+		infra.netServer.infraClearStores();
+	}
+}
+#endif
 
 
 #endif //INFRASTRUCTURE_H
