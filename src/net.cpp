@@ -118,10 +118,10 @@ SocketTBase& SocketTBase::setKeepAlive(bool enable)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Server::ref() { /*getInfra().*/getNetServer().appRef(id); }
-void Server::unref() { /*getInfra().*/getNetServer().appUnref(id); }
+void ServerBase::ref() { /*getInfra().*/getNetServer().appRef(id); }
+void ServerBase::unref() { /*getInfra().*/getNetServer().appUnref(id); }
 
-void Server::close()
+void ServerBase::close()
 {
 	/*getInfra().*/getNetServer().appClose(id);
 }
