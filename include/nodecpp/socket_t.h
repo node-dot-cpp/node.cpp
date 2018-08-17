@@ -36,48 +36,265 @@ namespace nodecpp {
 
 	namespace net {
 
-		template<class UserDefID>
-		class SocketT : public SocketBase {
+#if 1
+//		template<class UserDefID>
+		class SocketTBase : public SocketBase {
 		
 		public:
-			UserDefID userDefID;
+//			UserDefID userDefID;
 
 		public:
-			SocketT() {}
+			SocketTBase() {}
 
-			SocketT(const SocketT&) = delete;
-			SocketT& operator=(const SocketT&) = delete;
+			SocketTBase(const SocketTBase&) = delete;
+			SocketTBase& operator=(const SocketTBase&) = delete;
 
-			SocketT(SocketT&&) = default;
-			SocketT& operator=(SocketT&&) = default;
+			SocketTBase(SocketTBase&&) = default;
+			SocketTBase& operator=(SocketTBase&&) = default;
 
-			~SocketT() { if (state == CONNECTING || state == CONNECTED) destroy(); }
+			~SocketTBase() { if (state == CONNECTING || state == CONNECTED) destroy(); }
 
 			void connect(uint16_t port, const char* ip);
-			SocketT& setNoDelay(bool noDelay = true);
-			SocketT& setKeepAlive(bool enable = false);
+			SocketTBase& setNoDelay(bool noDelay = true);
+			SocketTBase& setKeepAlive(bool enable = false);
 		};
 
-#if 0
-		template<class T, class T1, class Extra, class ... args>
-		void emitConnect( T* ptr, int type, Extra* extra, bool ok )
+#endif // 0
+
+		template<auto x>
+		struct OnCloseT {};
+
+		template<auto x>
+		struct OnConnectT {};
+
+		template<auto x>
+		struct OnDataT {};
+
+		template<auto x>
+		struct OnDrainT {};
+
+		template<auto x>
+		struct OnErrorT {};
+
+		template<auto x>
+		struct OnEndT {};
+
+		template<typename ... args>
+		struct SocketTInitializer;
+
+		//partial template specialization:
+		template<auto F, typename ... args>
+		struct SocketTInitializer<OnCloseT<F>, args...>
+		: public SocketTInitializer<args...> {
+			static constexpr auto onClose = F;
+		};
+
+		//partial template specialization:
+		template<auto F, typename ... args>
+		struct SocketTInitializer<OnConnectT<F>, args...>
+		: public SocketTInitializer<args...> {
+			static constexpr auto onConnect = F;
+		};
+
+		//partial template specialization:
+		template<auto F, typename ... args>
+		struct SocketTInitializer<OnDataT<F>, args...>
+		: public SocketTInitializer<args...> {
+			static constexpr auto onData = F;
+		};
+
+		//partial template specialization:
+		template<auto F, typename ... args>
+		struct SocketTInitializer<OnDrainT<F>, args...>
+		: public SocketTInitializer<args...> {
+			static constexpr auto onDrain = F;
+		};
+
+		//partial template specialization:
+		template<auto F, typename ... args>
+		struct SocketTInitializer<OnErrorT<F>, args...>
+		: public SocketTInitializer<args...> {
+			static constexpr auto onError = F;
+		};
+
+		//partial template specialization:
+		template<auto F, typename ... args>
+		struct SocketTInitializer<OnEndT<F>, args...>
+		: public SocketTInitializer<args...> {
+			static constexpr auto onEnd = F;
+		};
+
+		//create similar partial specializations for all the args
+
+		//partial template specialiazation to end recursion
+		template<>
+		struct SocketTInitializer<> {
+			static constexpr auto onConnect = nullptr;
+			static constexpr auto onClose = nullptr;
+			static constexpr auto onData = nullptr;
+			static constexpr auto onDrain = nullptr;
+			static constexpr auto onError = nullptr;
+			static constexpr auto onEnd = nullptr;
+		};
+
+	//	template <class T, class M> constexpr M get_member_type(M T:: *);
+	//	#define GET_TYPE_OF(mem) decltype(get_member_type((mem)))
+
+		template<class Node, class Initializer, class Extra>
+		class SocketT2 : public SocketTBase
+		{
+			using userIdType = Extra;
+			using userNodeType = Node;
+			Extra extra;
+		public:
+
+//			static constexpr Initializer handlers;
+			using Handlers = Initializer;
+			Node* node;
+
+			SocketT2(Node* node_) {node = node_;}
+			Extra* getExtra() { return &extra; }
+
+		};
+
+		template<class Node, class Initializer>
+		class SocketT2<Node, Initializer, void> : public SocketBase
+		{
+			public:
+				using userIdType = void;
+				using userNodeType = Node;
+
+		public:
+			SocketT2() {}
+			void* getExtra() { return nullptr; }
+
+		};
+
+
+		template<class Node, class Extra, class ... Handlers>
+		class SocketT : public SocketT2<Node, SocketTInitializer<Handlers...>, Extra>
+		{
+		public:
+			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {}
+		
+		};
+
+
+
+
+		template<class T, class T1, class ... args>
+		void callOnConnect( void* nodePtr, const T* ptr, int type )
 		{
 			if ( type == 0 )
 			{
-				reinterpret_cast<T1*>(ptr)->doOne(ok);
+				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onConnect)(reinterpret_cast<T1*>(ptr)->getExtra());
 			}
 			else
-				callDoOne<T, args...>(ptr, type-1, ok);
+				callOnConnect<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		void emitConnect( T* ptr, int type, Extra* extra, bool ok )
+		void callOnConnect( const T* ptr, int type )
 		{
 			assert( false );
 		}
 
+
+		template<class T, class T1, class ... args>
+		void callOnClose( void* nodePtr, const T* ptr, int type, bool ok )
+		{
+			if ( type == 0 )
+			{
+				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onClose)(reinterpret_cast<T1*>(ptr)->getExtra(), ok);
+			}
+			else
+				callOnClose<T, args...>(nodePtr, ptr, type-1, ok);
+		}
+
+		template<class T>
+		void callOnClose( const T* ptr, int type, bool ok )
+		{
+			assert( false );
+		}
+
+
+		template<class T, class T1, class ... args>
+		void callOnData( void* nodePtr, const T* ptr, int type, nodecpp::Buffer& b )
+		{
+			if ( type == 0 )
+			{
+				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onData)(reinterpret_cast<T1*>(ptr)->getExtra(), b);
+			}
+			else
+				callOnData<T, args...>(nodePtr, ptr, type-1, b);
+		}
+
+		template<class T>
+		void callOnData( const T* ptr, int type, nodecpp::Buffer& b )
+		{
+			assert( false );
+		}
+
+
+		template<class T, class T1, class ... args>
+		void callOnDrain( void* nodePtr, const T* ptr, int type )
+		{
+			if ( type == 0 )
+			{
+				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onDrain)(reinterpret_cast<T1*>(ptr)->getExtra());
+			}
+			else
+				callOnDrain<T, args...>(nodePtr, ptr, type-1);
+		}
+
+		template<class T>
+		void callOnDrain( const T* ptr, int type )
+		{
+			assert( false );
+		}
+
+
+		template<class T, class T1, class ... args>
+		void callOnError( void* nodePtr, const T* ptr, int type, nodecpp::Error& e )
+		{
+			if ( type == 0 )
+			{
+				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onError)(reinterpret_cast<T1*>(ptr)->getExtra(), e);
+			}
+			else
+				callOnError<T, args...>(nodePtr, ptr, type-1, e);
+		}
+
+		template<class T>
+		void callOnError( const T* ptr, int type, nodecpp::Error& e )
+		{
+			assert( false );
+		}
+
+
+		template<class T, class T1, class ... args>
+		void callOnEnd( void* nodePtr, const T* ptr, int type )
+		{
+			if ( type == 0 )
+			{
+				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onEnd)(reinterpret_cast<T1*>(ptr)->getExtra());
+			}
+			else
+				callOnEnd<T, args...>(nodePtr, ptr, type-1);
+		}
+
+		template<class T>
+		void callOnEnd( const T* ptr, int type )
+		{
+			assert( false );
+		}
+
+
+
+
+
 		template< class ... args >
-		class Emitter
+		class SocketTEmitter
 		{
 		public:
 			class Ptr
@@ -86,29 +303,34 @@ namespace nodecpp {
 			public:
 				Ptr() {}
 				void init( void* ptr_ ) { ptr = ptr_; }
-				void* getPtr() {return ptr;}
+				void* getPtr() const {return ptr;}
+				bool isValid() const { return ptr != nullptr; }
 			};
 
 		protected:
 			Ptr ptr;
+			void* nodePtr;
 			int type = -1;
 
 		public:
-			Emitter() {}
+			SocketTEmitter() {}
 
 			template<class Sock>
 			void init(Sock* s)
 			{ 
 				ptr.init(s);
+				nodePtr = s->node;
 				type = getTypeIndex<Sock,args...>( s );
 			}
+			bool isValid() const { return ptr.isValid(); }
 
-			void emitOne( bool ok ) { callDoOne<Ptr, args...>(&ptr, this->type, ok); }
-			void emitTwo( bool ok ) { callDoTwo<Ptr, args...>(&ptr, this->type, ok); }
-			void emitThree() { callDoThree<Ptr, args...>(&ptr, this->type); }
+			void emitConnect() const { callOnConnect<Ptr, args...>(nodePtr, &ptr, this->type); }
+			void emitClose( bool ok ) const { callOnClose<Ptr, args...>(nodePtr, &ptr, this->type, ok); }
+			void emitData( nodecpp::Buffer& b ) const { callOnData<Ptr, args...>(nodePtr, &ptr, this->type, b); }
+			void emitDrain() const { callOnDrain<Ptr, args...>(nodePtr, &ptr, this->type); }
+			void emitError( nodecpp::Error& e ) const { callOnError<Ptr, args...>(nodePtr, &ptr, this->type, e); }
+			void emitEnd() const { callOnEnd<Ptr, args...>(nodePtr, &ptr, this->type); }
 		};
-#endif // 0
-
 	} // namespace net
 
 } // namespace nodecpp
