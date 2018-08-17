@@ -229,9 +229,9 @@ namespace nodecpp {
 			void onConnect() override
 			{ 
 	//assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
-				printf("type 1 = \'%s\', hash = 0x%zx\n", typeid(x).name(), typeid(x).hash_code() );
-				printf("type 2 = \'%s\', hash = 0x%zx\n", typeid(void (Node::*)(const void*)).name(), typeid(x).hash_code() );
-				printf("type 3 = \'%s\', hash = 0x%zx\n", typeid(Initializer::onConnect).name(), typeid(x).hash_code() );
+				//printf("type 1 = \'%s\', hash = 0x%zx\n", typeid(x).name(), typeid(x).hash_code() );
+				//printf("type 2 = \'%s\', hash = 0x%zx\n", typeid(void (Node::*)(const void*)).name(), typeid(x).hash_code() );
+				//printf("type 3 = \'%s\', hash = 0x%zx\n", typeid(Initializer::onConnect).name(), typeid(x).hash_code() );
 				if constexpr ( Initializer::onConnect != nullptr )
 					(node->*(Initializer::onConnect))(this->getExtra()); 
 				else

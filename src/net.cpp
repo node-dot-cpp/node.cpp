@@ -118,6 +118,8 @@ SocketTBase& SocketTBase::setKeepAlive(bool enable)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifndef NET_CLIENT_ONLY
+
 void ServerBase::ref() { /*getInfra().*/getNetServer().appRef(id); }
 void ServerBase::unref() { /*getInfra().*/getNetServer().appUnref(id); }
 
@@ -131,6 +133,13 @@ void Server::listen(uint16_t port, const char* ip, int backlog)
 {
 	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
 }
+
+void ServerO::listen(uint16_t port, const char* ip, int backlog)
+{
+//	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
+}
+
+#endif // NO_SERVER_STAFF
 
 
 

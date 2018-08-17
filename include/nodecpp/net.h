@@ -32,7 +32,10 @@
 #include "event.h"
 #include "net_common.h"
 #include "socket_common.h"
+
+#ifndef NET_CLIENT_ONLY
 #include "server_l.h"
+#endif
 
 namespace nodecpp {
 

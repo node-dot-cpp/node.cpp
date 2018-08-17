@@ -36,6 +36,9 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net_common.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\server_l.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\server_o.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_l.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_o.h" />

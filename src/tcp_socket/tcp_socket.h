@@ -37,6 +37,7 @@
 #include <winsock2.h>
 using socklen_t = int;
 #else
+#include <sys/poll.h> // for pollfd
 using SOCKET = int;
 const SOCKET INVALID_SOCKET = -1;
 struct pollfd;
@@ -237,8 +238,6 @@ public:
 	NetSocketEntry(size_t index) : index(index) {}
 	template<class SocketType>
 	NetSocketEntry(size_t index, SocketType* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
-//	NetSocketEntry(size_t index, net::Socket* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
-//	NetSocketEntry(size_t index, net::SocketO* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
 
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
