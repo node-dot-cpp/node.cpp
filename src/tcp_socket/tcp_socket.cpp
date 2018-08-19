@@ -674,7 +674,8 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::infraProcessWriteEvent(ne
 #if defined _MSC_VER || defined __MINGW32__
 		bool success = true;
 #else
-		bool success = internal_getsockopt_so_error(current.osSocket);
+//		bool success = internal_getsockopt_so_error(current.osSocket);
+		bool success = internal_getsockopt_so_error(sockData.osSocket);
 #endif					
 		if (success)
 		{

@@ -146,7 +146,7 @@ public:
 	SocketRiia& operator=(const SocketRiia&) = delete;
 
 	SocketRiia(SocketRiia&&other) {s = other.s; other.s = INVALID_SOCKET; }
-	SocketRiia& operator=(SocketRiia&&other) {s = other.s; other.s = INVALID_SOCKET; }
+	SocketRiia& operator=(SocketRiia&&other) {s = other.s; other.s = INVALID_SOCKET; return *this; }
 
 	~SocketRiia();// { if (s != INVALID_SOCKET) internal_close(s); }
 

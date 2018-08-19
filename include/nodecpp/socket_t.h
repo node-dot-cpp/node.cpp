@@ -143,13 +143,14 @@ namespace nodecpp {
 		template<class Node, class Initializer, class Extra>
 		class SocketT2 : public SocketTBase
 		{
+		public:
 			using userIdType = Extra;
 			using userNodeType = Node;
+			using Handlers = Initializer;
+
+		protected:
 			Extra extra;
 		public:
-
-//			static constexpr Initializer handlers;
-			using Handlers = Initializer;
 			Node* node;
 
 			SocketT2(Node* node_) {node = node_;}
@@ -163,6 +164,7 @@ namespace nodecpp {
 			public:
 				using userIdType = void;
 				using userNodeType = Node;
+				using Handlers = Initializer;
 
 		public:
 			SocketT2() {}
@@ -187,14 +189,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onConnect)(reinterpret_cast<T1*>(ptr)->getExtra());
+				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnect)(reinterpret_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnConnect<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		void callOnConnect( const T* ptr, int type )
+		void callOnConnect( void* nodePtr, const T* ptr, int type )
 		{
 			assert( false );
 		}
@@ -205,14 +207,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onClose)(reinterpret_cast<T1*>(ptr)->getExtra(), ok);
+				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(reinterpret_cast<T1*>(ptr->getPtr())->getExtra(), ok);
 			}
 			else
 				callOnClose<T, args...>(nodePtr, ptr, type-1, ok);
 		}
 
 		template<class T>
-		void callOnClose( const T* ptr, int type, bool ok )
+		void callOnClose( void* nodePtr, const T* ptr, int type, bool ok )
 		{
 			assert( false );
 		}
@@ -223,14 +225,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onData)(reinterpret_cast<T1*>(ptr)->getExtra(), b);
+				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onData)(reinterpret_cast<T1*>(ptr->getPtr())->getExtra(), b);
 			}
 			else
 				callOnData<T, args...>(nodePtr, ptr, type-1, b);
 		}
 
 		template<class T>
-		void callOnData( const T* ptr, int type, nodecpp::Buffer& b )
+		void callOnData( void* nodePtr, const T* ptr, int type, nodecpp::Buffer& b )
 		{
 			assert( false );
 		}
@@ -241,14 +243,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onDrain)(reinterpret_cast<T1*>(ptr)->getExtra());
+				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onDrain)(reinterpret_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnDrain<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		void callOnDrain( const T* ptr, int type )
+		void callOnDrain( void* nodePtr, const T* ptr, int type )
 		{
 			assert( false );
 		}
@@ -259,14 +261,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onError)(reinterpret_cast<T1*>(ptr)->getExtra(), e);
+				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(reinterpret_cast<T1*>(ptr->getPtr())->getExtra(), e);
 			}
 			else
 				callOnError<T, args...>(nodePtr, ptr, type-1, e);
 		}
 
 		template<class T>
-		void callOnError( const T* ptr, int type, nodecpp::Error& e )
+		void callOnError( void* nodePtr, const T* ptr, int type, nodecpp::Error& e )
 		{
 			assert( false );
 		}
@@ -277,14 +279,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*(T1::Handlers::onEnd)(reinterpret_cast<T1*>(ptr)->getExtra());
+				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onEnd)(reinterpret_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnEnd<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		void callOnEnd( const T* ptr, int type )
+		void callOnEnd( void* nodePtr, const T* ptr, int type )
 		{
 			assert( false );
 		}
