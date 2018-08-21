@@ -226,18 +226,23 @@ void runInfraLoop2( Infra& infra )
 #endif
 
 
+#ifndef USE_TEMPLATE_SOCKETS
 void runInfraLoop();
 bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+#endif // !USE_TEMPLATE_SOCKETS
 
 template<class EmitterType>
 class Infrastructure
 {
+#ifndef USE_TEMPLATE_SOCKETS
 	friend void runInfraLoop();
 	friend bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+#else
 	template<class T> 
 	friend void runInfraLoop2( T& );
 	template<class T>
 	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+#endif // USE_TEMPLATE_SOCKETS
 
 
 	NetSocketManager<EmitterType> netSocket;
@@ -274,15 +279,19 @@ public:
 //	void runLoop();
 };
 
-//extern thread_local Infrastructure<net::SocketEmitter> infra;
+#ifdef USE_TEMPLATE_SOCKETS
+size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t port);
+#else
+extern thread_local Infrastructure<net::SocketEmitter> infra;
+inline
+NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
+#endif // USE_TEMPLATE_SOCKETS
 
 #ifndef NET_CLIENT_ONLY
 inline
 Infrastructure<net::SocketEmitter>& getInfra() { return infra; }
 #endif
 
-//inline
-//NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
 NetSocketManagerBase& getNetSocket();
 
 #ifndef NET_CLIENT_ONLY
@@ -293,10 +302,6 @@ NetServerManager& getNetServer() { return infra.getNetServer(); }
 template<class T>
 //size_t connectToInfra(T* t, const char* ip, uint16_t port) { return infra.getNetSocket().appConnect(t, ip, port); }
 size_t connectToInfra(T* t, const char* ip, uint16_t port) { return /*getNetSocket().appConnect(t, ip, port)*/0; }
-
-#ifdef USE_TEMPLATE_SOCKETS
-size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t port);
-#endif // USE_TEMPLATE_SOCKETS
 
 //using EvQueue = std::vector<std::function<void()>>;
 

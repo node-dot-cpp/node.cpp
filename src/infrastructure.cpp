@@ -35,7 +35,9 @@
 #endif
 
 
+#ifndef USE_TEMPLATE_SOCKETS
 thread_local Infrastructure<net::SocketEmitter> infra;
+#endif // USE_TEMPLATE_SOCKETS
 
 uint64_t infraGetCurrentTime()
 {
@@ -188,6 +190,8 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 	         return INT_MAX;
 }
 
+
+#ifndef USE_TEMPLATE_SOCKETS
 
 bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
@@ -342,3 +346,5 @@ void runInfraLoop()
 #endif // NO_SERVER_STAFF
 	}
 }
+
+#endif // !USE_TEMPLATE_SOCKETS

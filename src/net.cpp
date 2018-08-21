@@ -98,6 +98,7 @@ Socket& Socket::setKeepAlive(bool enable)
 #ifdef USING_T_SOCKETS
 void SocketTBase::connect(uint16_t port, const char* ip)
 {
+	assert(false); // revise implementation
 	state = CONNECTING;
 //	dataForCommandProcessing.id = connectToInfra(this, ip, port);
 }
@@ -133,11 +134,12 @@ void Server::listen(uint16_t port, const char* ip, int backlog)
 {
 	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
 }
-
+#if 0 // be back later
 void ServerO::listen(uint16_t port, const char* ip, int backlog)
 {
 //	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
 }
+#endif
 
 #endif // NO_SERVER_STAFF
 
