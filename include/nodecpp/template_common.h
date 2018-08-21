@@ -32,6 +32,7 @@
 template<class T, bool ok>
 class NODECPP_BRANCH_CHECK
 {
+public:
 	NODECPP_BRANCH_CHECK() {static_assert( ok );}
 };
 

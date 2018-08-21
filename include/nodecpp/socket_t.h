@@ -176,8 +176,9 @@ namespace nodecpp {
 		template<class Node, class Extra, class ... Handlers>
 		class SocketT : public SocketT2<Node, SocketTInitializer<Handlers...>, Extra>
 		{
+			size_t idType1; // we will try to get rid of it later
 		public:
-			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {}
+			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
 		
 		};
 
@@ -316,6 +317,9 @@ namespace nodecpp {
 
 		public:
 			SocketTEmitter() {}
+
+			template<class Sock>
+			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,args...>( s ); } // we may need it externally
 
 			template<class Sock>
 			void init(Sock* s)
