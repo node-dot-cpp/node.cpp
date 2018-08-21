@@ -87,69 +87,19 @@ public:
 };
 
 
-void runInfraLoop();
-bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
-
-template<class EmitterType>
-class Infrastructure
-{
-	friend void runInfraLoop();
-	friend bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
-
-	NetSocketManager<EmitterType> netSocket;
-	NetServerManager netServer;
-	TimeoutManager timeout;
-	EvQueue inmediateQueue;
-
-public:
-	NetSocketManagerBase& getNetSocketBase() { return netSocket; }
-public:
-	bool running = true;
-	uint64_t nextTimeoutAt = 0;
-	NetSocketManager<EmitterType>& getNetSocket() { return netSocket; }
-	NetServerManager& getNetServer() { return netServer; }
-	TimeoutManager& getTimeout() { return timeout; }
-	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
-	void emitInmediates() { inmediateQueue.emit(); }
-
-	bool refedTimeout() const noexcept
-	{
-		return !inmediateQueue.empty() || timeout.infraRefedTimeout();
-	}
-
-	uint64_t nextTimeout() const noexcept
-	{
-		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
-	}
-
-//	bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
-//	void runLoop();
-};
-
-extern thread_local Infrastructure<net::SocketEmitter> infra;
-
-inline
-Infrastructure<net::SocketEmitter>& getInfra() { return infra; }
-
-inline
-NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
-
-inline
-NetServerManager& getNetServer() { return infra.getNetServer(); }
-
-template<class T>
-size_t connectToInfra(T* t, const char* ip, uint16_t port) { return infra.getNetSocket().appConnect(t, ip, port); }
-
-
-//using EvQueue = std::vector<std::function<void()>>;
 
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
+
 #if 1
 template<class Infra>
-bool /*Infrastructure::*/pollPhase(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
+bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
-	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManager::MAX_SOCKETS;
+	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS 
+#ifndef NET_CLIENT_ONLY
+		+ NetServerManager::MAX_SOCKETS
+#endif
+		;
 	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
 
 	
@@ -157,11 +107,20 @@ bool /*Infrastructure::*/pollPhase(Infra& infra, bool refed, uint64_t nextTimeou
 	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
 	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
 
+//	fds_begin += pollfdsz;
 	fds_begin = fds_end;
+#ifndef NET_CLIENT_ONLY
 	fds_end += NetServerManager::MAX_SOCKETS;
+//	pollfdsz = NetServerManager::MAX_SOCKETS;
 	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
+//	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, pollfdsz);
+#endif
 
-	if (refed == false && refedSocket == false && refedServer == false)
+	if (refed == false && refedSocket == false 
+#ifndef NET_CLIENT_ONLY
+		&& refedServer == false
+#endif
+		)
 		return false; //stop here
 
 	int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
@@ -198,11 +157,18 @@ bool /*Infrastructure::*/pollPhase(Infra& infra, bool refed, uint64_t nextTimeou
 	{
 		fds_begin = fds.get();
 		fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
+//		pollfdsz = NetSocketManagerBase::MAX_SOCKETS;
 		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
+//		infra.netSocket.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
 
 		fds_begin = fds_end;
+//		fds_begin += pollfdsz;
+#ifndef NET_CLIENT_ONLY
 		fds_end += NetServerManager::MAX_SOCKETS;
 		infra.netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
+//		pollfdsz = NetServerManager::MAX_SOCKETS;
+//		infra.netServer.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
+#endif
 
 		//if (queue.empty())
 		//{
@@ -220,7 +186,7 @@ bool /*Infrastructure::*/pollPhase(Infra& infra, bool refed, uint64_t nextTimeou
 }
 
 template<class Infra>
-void runInfraLoop( Infra& infra )
+void runInfraLoop2( Infra& infra )
 {
 	NODECPP_ASSERT(isNetInitialized());
 
@@ -228,15 +194,17 @@ void runInfraLoop( Infra& infra )
 	{
 
 		EvQueue queue;
+#ifndef NET_CLIENT_ONLY
 		infra.netServer.infraGetPendingEvents(queue);
 		queue.emit();
+#endif
 
 		uint64_t now = infraGetCurrentTime();
 		infra.timeout.infraTimeoutEvents(now, queue);
 		queue.emit();
 
 		now = infraGetCurrentTime();
-		bool refed = /*infra.*/pollPhase(infra, infra.refedTimeout(), infra.nextTimeout(), now, queue);
+		bool refed = /*infra.*/pollPhase2(infra, infra.refedTimeout(), infra.nextTimeout(), now, queue);
 		if(!refed)
 			return;
 
@@ -244,14 +212,91 @@ void runInfraLoop( Infra& infra )
 		infra.emitInmediates();
 
 		infra.netSocket.infraGetCloseEvent(queue);
+#ifndef NET_CLIENT_ONLY
 		infra.netServer.infraGetCloseEvents(queue);
+#endif
 		queue.emit();
 
 		infra.netSocket.infraClearStores();
+#ifndef NET_CLIENT_ONLY
 		infra.netServer.infraClearStores();
+#endif
 	}
 }
 #endif
 
+
+void runInfraLoop();
+bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+
+template<class EmitterType>
+class Infrastructure
+{
+	friend void runInfraLoop();
+	friend bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+	template<class T> 
+	friend void runInfraLoop2( T& );
+	template<class T>
+	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+
+
+	NetSocketManager<EmitterType> netSocket;
+#ifndef NET_CLIENT_ONLY
+	NetServerManager netServer;
+#endif
+	TimeoutManager timeout;
+	EvQueue inmediateQueue;
+
+public:
+	NetSocketManagerBase& getNetSocketBase() { return netSocket; }
+public:
+	bool running = true;
+	uint64_t nextTimeoutAt = 0;
+	NetSocketManager<EmitterType>& getNetSocket() { return netSocket; }
+#ifndef NET_CLIENT_ONLY
+	NetServerManager& getNetServer() { return netServer; }
+#endif
+	TimeoutManager& getTimeout() { return timeout; }
+	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
+	void emitInmediates() { inmediateQueue.emit(); }
+
+	bool refedTimeout() const noexcept
+	{
+		return !inmediateQueue.empty() || timeout.infraRefedTimeout();
+	}
+
+	uint64_t nextTimeout() const noexcept
+	{
+		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
+	}
+
+//	bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+//	void runLoop();
+};
+
+//extern thread_local Infrastructure<net::SocketEmitter> infra;
+
+#ifndef NET_CLIENT_ONLY
+inline
+Infrastructure<net::SocketEmitter>& getInfra() { return infra; }
+#endif
+
+//inline
+//NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
+NetSocketManagerBase& getNetSocket();
+
+#ifndef NET_CLIENT_ONLY
+inline
+NetServerManager& getNetServer() { return infra.getNetServer(); }
+#endif
+
+template<class T>
+//size_t connectToInfra(T* t, const char* ip, uint16_t port) { return infra.getNetSocket().appConnect(t, ip, port); }
+size_t connectToInfra(T* t, const char* ip, uint16_t port) { return /*getNetSocket().appConnect(t, ip, port)*/0; }
+
+
+//using EvQueue = std::vector<std::function<void()>>;
+
+//mmmmmmmmmmm
 
 #endif //INFRASTRUCTURE_H

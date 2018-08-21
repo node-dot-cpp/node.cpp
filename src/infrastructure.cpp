@@ -191,7 +191,11 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 
 bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
-	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManager::MAX_SOCKETS;
+	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS 
+#ifndef NET_CLIENT_ONLY
+		+ NetServerManager::MAX_SOCKETS
+#endif // NO_SERVER_STAFF
+		;
 	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
 
 	
@@ -200,10 +204,16 @@ bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t 
 	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
 
 	fds_begin = fds_end;
+#ifndef NET_CLIENT_ONLY
 	fds_end += NetServerManager::MAX_SOCKETS;
 	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
+#endif // NO_SERVER_STAFF
 
-	if (refed == false && refedSocket == false && refedServer == false)
+	if (refed == false && refedSocket == false
+#ifndef NET_CLIENT_ONLY
+		 && refedServer == false
+#endif // NO_SERVER_STAFF
+		)
 		return false; //stop here
 
 	int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
@@ -243,8 +253,10 @@ bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t 
 		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
 
 		fds_begin = fds_end;
+#ifndef NET_CLIENT_ONLY
 		fds_end += NetServerManager::MAX_SOCKETS;
 		infra.netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
+#endif // NO_SERVER_STAFF
 
 		//if (queue.empty())
 		//{
@@ -301,8 +313,10 @@ void runInfraLoop()
 	{
 
 		EvQueue queue;
+#ifndef NET_CLIENT_ONLY
 		infra.netServer.infraGetPendingEvents(queue);
 		queue.emit();
+#endif // NO_SERVER_STAFF
 
 		uint64_t now = infraGetCurrentTime();
 		infra.timeout.infraTimeoutEvents(now, queue);
@@ -317,10 +331,14 @@ void runInfraLoop()
 		infra.emitInmediates();
 
 		infra.netSocket.infraGetCloseEvent(queue);
+#ifndef NET_CLIENT_ONLY
 		infra.netServer.infraGetCloseEvents(queue);
+#endif // NO_SERVER_STAFF
 		queue.emit();
 
 		infra.netSocket.infraClearStores();
+#ifndef NET_CLIENT_ONLY
 		infra.netServer.infraClearStores();
+#endif // NO_SERVER_STAFF
 	}
 }

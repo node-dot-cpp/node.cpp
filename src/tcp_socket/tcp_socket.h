@@ -356,7 +356,8 @@ public:
 					if (err) //if error closing, then first error event
 					{
 	//					evs.add(std::move(current.second));
-						std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), current.second.second);
+//						std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), current.second.second);
+						std::function<void()> ev = std::bind(&EmitterType::emitError, entry.getEmitter(), current.second.second);
 						evs.add(std::move(ev));
 					}
 
@@ -526,27 +527,6 @@ private:
 		ioSockets.emplace_back(ix, ptr);
 		return ix;
 	}
-/*	size_t addEntry(net::SocketO* ptr) //app-infra neutral
-	{
-		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
-		{
-			if (!ioSockets[i].isValid())
-			{
-				NetSocketEntry entry(i, ptr);
-				ioSockets[i] = std::move(entry);
-				return i;
-			}
-		}
-
-		if (ioSockets.size() >= MAX_SOCKETS)
-		{
-			return 0;
-		}
-
-		size_t ix = ioSockets.size();
-		ioSockets.emplace_back(ix, ptr);
-		return ix;
-	}*/
 
 	NetSocketEntry<EmitterType>& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry<EmitterType>& appGetEntry(size_t id) const { return ioSockets.at(id); }
@@ -572,6 +552,7 @@ private:
 
 
 
+#ifndef NET_CLIENT_ONLY
 class NetServerEntry {
 public:
 	size_t index;
@@ -642,6 +623,8 @@ private:
 
 	void infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs);
 };
+
+#endif // !NET_CLIENT_ONLY
 
 
 #endif // TCP_SOCKET_H

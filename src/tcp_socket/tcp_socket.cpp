@@ -675,7 +675,7 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::infraProcessWriteEvent(ne
 		bool success = true;
 #else
 //		bool success = internal_getsockopt_so_error(current.osSocket);
-		bool success = internal_getsockopt_so_error(sockData.osSocket);
+		bool success = internal_usage_only::internal_getsockopt_so_error(sockData.osSocket);
 #endif					
 		if (success)
 		{
@@ -762,6 +762,7 @@ void NetSocketManagerBase::errorCloseSocket(net::SocketBase::DataForCommandProce
 }
 
 
+#ifndef NET_CLIENT_ONLY
 NetServerManager::NetServerManager()
 {
 	//mb ioSockets[0] is always invalid
@@ -977,3 +978,4 @@ void NetServerManager::infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueu
 	evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 	pendingCloseEvents.emplace_back(entry.index, true);
 }
+#endif // NO_SERVER_STAFF
