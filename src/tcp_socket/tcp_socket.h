@@ -238,6 +238,9 @@ public:
 	NetSocketEntry(size_t index) : index(index) {}
 	template<class SocketType>
 	NetSocketEntry(size_t index, SocketType* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
+#ifdef USE_TEMPLATE_SOCKETS
+	NetSocketEntry(size_t index, void* ptr_, int type) : index(index), sockPtr(ptr_), emitter(ptr_, type) {}
+#endif // USE_TEMPLATE_SOCKETS
 
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -279,6 +282,28 @@ public:
 
 		return id;
 	}
+
+#ifdef USE_TEMPLATE_SOCKETS
+	size_t appConnect(void* ptr, int typeId, const char* ip, uint16_t port) // TODO: think about template with type checking inside
+	{
+		SocketRiia s( std::move( this->appAcquireSocket( ip, port ) ) );
+
+		size_t id = addEntry(ptr);
+		if (id == 0)
+		{
+			NODECPP_TRACE0("Failed to add entry on NetSocketManager::connect");
+			throw Error();
+		}
+
+		auto& entry = appGetEntry(id);
+		NODECPP_ASSERT(entry.getSockData()->state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+		entry.getSockData()->osSocket = s.release();
+		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Connecting;
+	//	entry.connecting = true;
+
+		return id;
+	}
+#endif // USE_TEMPLATE_SOCKETS
 
 	template<class SocketType>
 	bool infraAddAccepted(SocketType* ptr, SOCKET sock, EvQueue& evs)
@@ -527,6 +552,30 @@ private:
 		ioSockets.emplace_back(ix, ptr);
 		return ix;
 	}
+
+#ifdef USE_TEMPLATE_SOCKETS
+	size_t addEntry(void* ptr, int typeId) //app-infra neutral
+	{
+		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
+		{
+			if (!ioSockets[i].isValid())
+			{
+				NetSocketEntry<EmitterType> entry(i, ptr, typeId);
+				ioSockets[i] = std::move(entry);
+				return i;
+			}
+		}
+
+		if (ioSockets.size() >= MAX_SOCKETS)
+		{
+			return 0;
+		}
+
+		size_t ix = ioSockets.size();
+		ioSockets.emplace_back(ix, ptr, typeId);
+		return ix;
+	}
+#endif // USE_TEMPLATE_SOCKETS
 
 	NetSocketEntry<EmitterType>& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry<EmitterType>& appGetEntry(size_t id) const { return ioSockets.at(id); }

@@ -317,6 +317,7 @@ namespace nodecpp {
 
 		public:
 			SocketTEmitter() {}
+			SocketTEmitter(void* ptr, int type_) {ptr.init(s); type = type_;}
 
 			template<class Sock>
 			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,args...>( s ); } // we may need it externally

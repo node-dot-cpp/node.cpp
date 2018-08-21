@@ -294,6 +294,9 @@ template<class T>
 //size_t connectToInfra(T* t, const char* ip, uint16_t port) { return infra.getNetSocket().appConnect(t, ip, port); }
 size_t connectToInfra(T* t, const char* ip, uint16_t port) { return /*getNetSocket().appConnect(t, ip, port)*/0; }
 
+#ifdef USE_TEMPLATE_SOCKETS
+size_t connectToInfra(void* t, int typeId, const char* ip, uint16_t port);
+#endif // USE_TEMPLATE_SOCKETS
 
 //using EvQueue = std::vector<std::function<void()>>;
 
