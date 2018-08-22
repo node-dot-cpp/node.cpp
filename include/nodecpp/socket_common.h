@@ -28,9 +28,9 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
-#define USING_O_SOCKETS // TODO: make project-level define as soon as related dev and testing done
-#define USING_L_SOCKETS // TODO: make project-level define as soon as related dev and testing done
-#define USING_T_SOCKETS // TODO: make project-level define as soon as related dev and testing done
+//#define USING_O_SOCKETS // TODO: make project-level define as soon as related dev and testing done
+//#define USING_L_SOCKETS // TODO: make project-level define as soon as related dev and testing done
+//#define USING_T_SOCKETS // TODO: make project-level define as soon as related dev and testing done
 
 #ifdef USING_O_SOCKETS
 #include "socket_o.h"

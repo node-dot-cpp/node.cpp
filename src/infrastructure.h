@@ -226,15 +226,15 @@ void runInfraLoop2( Infra& infra )
 #endif
 
 
-#ifndef USE_TEMPLATE_SOCKETS
+#ifndef USING_T_SOCKETS
 void runInfraLoop();
 bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
-#endif // !USE_TEMPLATE_SOCKETS
+#endif // !USING_T_SOCKETS
 
 template<class EmitterType>
 class Infrastructure
 {
-#ifndef USE_TEMPLATE_SOCKETS
+#ifndef USING_T_SOCKETS
 	friend void runInfraLoop();
 	friend bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
 #else
@@ -242,7 +242,7 @@ class Infrastructure
 	friend void runInfraLoop2( T& );
 	template<class T>
 	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
-#endif // USE_TEMPLATE_SOCKETS
+#endif // USING_T_SOCKETS
 
 
 	NetSocketManager<EmitterType> netSocket;
@@ -279,13 +279,13 @@ public:
 //	void runLoop();
 };
 
-#ifdef USE_TEMPLATE_SOCKETS
+#ifdef USING_T_SOCKETS
 size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t port);
 #else
 extern thread_local Infrastructure<net::SocketEmitter> infra;
 inline
 NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
-#endif // USE_TEMPLATE_SOCKETS
+#endif // USING_T_SOCKETS
 
 #ifndef NET_CLIENT_ONLY
 inline

@@ -236,12 +236,12 @@ public:
 
 
 	NetSocketEntry(size_t index) : index(index) {}
-#ifdef USE_TEMPLATE_SOCKETS
+#ifdef USING_T_SOCKETS
 	NetSocketEntry(size_t index, net::SocketTBase* ptr_, int type) : index(index), sockPtr(ptr_), emitter(ptr_, type) {}
 #else
 	template<class SocketType>
 	NetSocketEntry(size_t index, SocketType* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
-#endif // USE_TEMPLATE_SOCKETS
+#endif // USING_T_SOCKETS
 
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -284,7 +284,7 @@ public:
 		return id;
 	}
 
-#ifdef USE_TEMPLATE_SOCKETS
+#ifdef USING_T_SOCKETS
 	size_t appConnect(net::SocketTBase* ptr, int typeId, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
 		SocketRiia s( std::move( this->appAcquireSocket( ip, port ) ) );
@@ -304,7 +304,7 @@ public:
 
 		return id;
 	}
-#endif // USE_TEMPLATE_SOCKETS
+#endif // USING_T_SOCKETS
 
 	template<class SocketType>
 	bool infraAddAccepted(SocketType* ptr, SOCKET sock, EvQueue& evs)
@@ -531,7 +531,7 @@ private:
 	}
 
 private:
-#ifdef USE_TEMPLATE_SOCKETS
+#ifdef USING_T_SOCKETS
 	size_t addEntry(net::SocketTBase* ptr, int typeId) //app-infra neutral
 	{
 		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
@@ -578,7 +578,7 @@ private:
 		ioSockets.emplace_back(ix, ptr);
 		return ix;
 	}
-#endif // USE_TEMPLATE_SOCKETS
+#endif // USING_T_SOCKETS
 
 	NetSocketEntry<EmitterType>& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry<EmitterType>& appGetEntry(size_t id) const { return ioSockets.at(id); }

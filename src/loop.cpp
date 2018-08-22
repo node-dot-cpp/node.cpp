@@ -35,7 +35,7 @@ using namespace nodecpp;
 void nodecpp::runLoop()
 {
 //	getInfra().runLoop();
-#ifndef USE_TEMPLATE_SOCKETS
+#ifndef USING_T_SOCKETS
 	runInfraLoop();
 #endif
 }

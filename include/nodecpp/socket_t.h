@@ -36,8 +36,6 @@ namespace nodecpp {
 
 	namespace net {
 
-#if 1
-//		template<class UserDefID>
 		class SocketTBase : public SocketBase {
 		
 		public:
@@ -59,8 +57,6 @@ namespace nodecpp {
 			SocketTBase& setNoDelay(bool noDelay = true);
 			SocketTBase& setKeepAlive(bool enable = false);
 		};
-
-#endif // 0
 
 		template<auto x>
 		struct OnCloseT {};
