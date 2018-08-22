@@ -42,6 +42,7 @@ namespace nodecpp {
 		
 		public:
 //			UserDefID userDefID;
+			void* node = nullptr;
 
 		public:
 			SocketTBase() {}
@@ -151,9 +152,9 @@ namespace nodecpp {
 		protected:
 			Extra extra;
 		public:
-			Node* node;
+//			Node* node;
 
-			SocketT2(Node* node_) {node = node_;}
+			SocketT2(Node* node_) {this->node = node_;}
 			Extra* getExtra() { return &extra; }
 
 		};
@@ -313,14 +314,14 @@ namespace nodecpp {
 
 		protected:
 			Ptr ptr;
-			void* nodePtr;
+			void* nodePtr = nullptr;
 			int type = -1;
 
 		public:
 			SocketTEmitter() {}
 			template<class Sock>
-			SocketTEmitter(Sock* s) {ptr.init(s); type = getTypeIndex<Sock,args...>( s );}
-			SocketTEmitter(SocketTBase* ptr_, int type_) {ptr.init(ptr_); type = type_;}
+			SocketTEmitter(Sock* s) {ptr.init(s); nodePtr = s->node; type = getTypeIndex<Sock,args...>( s );}
+			SocketTEmitter(SocketTBase* ptr_, int type_) {ptr.init(ptr_); nodePtr = ptr_->node; type = type_;}
 
 			template<class Sock>
 			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,args...>( s ); } // we may need it externally
