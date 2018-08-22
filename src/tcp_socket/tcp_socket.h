@@ -306,6 +306,7 @@ public:
 	}
 #endif // USING_T_SOCKETS
 
+#ifndef NET_CLIENT_ONLY
 	template<class SocketType>
 	bool infraAddAccepted(SocketType* ptr, SOCKET sock, EvQueue& evs)
 	{
@@ -325,6 +326,8 @@ public:
 
 		return true;
 	}
+#endif // !NET_CLIENT_ONLY
+
 	
 	
 public:
