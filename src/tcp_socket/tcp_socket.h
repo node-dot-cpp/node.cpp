@@ -179,7 +179,7 @@ protected:
 //	std::vector<std::pair<size_t, std::function<void()>>> pendingCloseEvents;
 	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 
-	std::vector<Buffer> bufferStore; // TODO: improve
+//	std::vector<Buffer> bufferStore; // TODO: improve
 //	std::vector<Error> errorStore;
 
 	std::string family = "IPv4";
@@ -203,21 +203,21 @@ public:
 //	void infraProcessReadEvent(net::SocketBase::DataForCommandProcessing& sockData);
 	ShouldEmit infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);
 
-	//TODO quick workaround until definitive life managment is in place
+/*	//TODO quick workaround until definitive life managment is in place
 	Buffer& infraStoreBuffer(Buffer buff) {
 		bufferStore.push_back(std::move(buff));
 		return bufferStore.back();
 	}
 
-/*	Error& storeError(Error err) { //app-infra neutral
+	Error& storeError(Error err) { //app-infra neutral
 		errorStore.push_back(std::move(err));
 		return errorStore.back();
-	}*/
+	}
 
 	void infraClearStores() {
 		bufferStore.clear();
 //		errorStore.clear();
-	}
+	}*/
 	
 	
 public:
@@ -259,6 +259,18 @@ template<class EmitterType>
 class NetSocketManager : public NetSocketManagerBase {
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetSocketEntry<EmitterType>> ioSockets; // TODO: improve
+	std::vector<Buffer> bufferStore; // TODO: improve
+
+public:
+	//TODO quick workaround until definitive life managment is in place
+	Buffer& infraStoreBuffer(Buffer buff) {
+		bufferStore.push_back(std::move(buff));
+		return bufferStore.back();
+	}
+
+	void infraClearStores() {
+		bufferStore.clear();
+	}
 	
 public:
 	NetSocketManager() { ioSockets.emplace_back(0); }
