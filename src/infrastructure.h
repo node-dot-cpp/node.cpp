@@ -281,6 +281,25 @@ public:
 
 #ifdef USING_T_SOCKETS
 size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t port);
+
+#include "../include/nodecpp/loop.h"
+
+template<class Node>
+class Runnable : public RunnableBase
+{
+	Node* node;
+public:
+	using NodeType = Node;
+	Runnable() {}
+	void run() override
+	{
+		Infrastructure<typename Node::EmitterType> infra;
+		node = new Node;
+		node->main();
+		runInfraLoop2<Infrastructure<typename Node::EmitterType>>(infra);
+//		nodecpp::runLoop();
+	}
+};
 #else
 extern thread_local Infrastructure<net::SocketEmitter> infra;
 inline

@@ -67,6 +67,57 @@ public:
 	virtual void main() = 0;
 };
 
+#ifdef USING_T_SOCKETS
+
+class RunnableBase
+{
+public:
+	RunnableBase() {}
+	virtual void run() = 0;
+};
+
+class RunnableFactoryBase
+{
+public:
+	RunnableFactoryBase() {}
+	virtual RunnableBase* create() = 0;
+};
+
+void registerFactory( const char* name, RunnableFactoryBase* factory );
+
+//template<class RunnableT>
+template<class RunnableT,class Infra>
+class NodeRegistrator
+{
+public:
+//	thread_local Infrastructure<typename RunnableT::NodeType::EmitterType>* infraPtr;
+	static thread_local Infra* infraPtr;
+
+public:
+	NodeRegistrator( const char* name )
+	{
+		//NODECPP_TRACE( "NodeRegistrator(\"%s\");", name );
+		class NodeFactory : public RunnableFactoryBase
+		{
+		public:
+			NodeFactory() {}
+			virtual RunnableBase* create() override
+			{
+				return new RunnableT;
+			}
+		};
+		NodeFactory* factory = new NodeFactory;
+		registerFactory( name, reinterpret_cast<NodeFactory*>(factory) );
+	}
+};
+
+template<class RunnableT,class Infra>
+/*class NodeRegistrator
+static*/ thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;
+
+
+#else
+
 class NodeFactoryBase
 {
 public:
@@ -97,6 +148,7 @@ public:
 	}
 };
 
+#endif // USING_T_SOCKETS
 
 
 #endif //COMMON_H
