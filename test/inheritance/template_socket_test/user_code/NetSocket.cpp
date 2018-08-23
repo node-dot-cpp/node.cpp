@@ -16,24 +16,11 @@ static NodeRegistrator<MySampleInheritanceOneNode> noname( "MySampleInheritanceO
 //static NodeRegistrator<Runnable<MySampleTNode>> noname( "MySampleTemplateNode" );
 static NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>> noname( "MySampleTemplateNode" );
 
-//static thread_local Infrastructure<MySampleTNode::EmitterType> infraPtr;
-thread_local Infrastructure<MySampleTNode::EmitterType>* infraPtr;
-
-size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
+/*size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
 {
-//	return infraPtr->getNetSocket().appConnect(t, typeId, ip, port);
 	return NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>>::infraPtr->getNetSocket().appConnect(t, typeId, ip, port);
-}
-/*
-void runLoop()
-{
-	Infrastructure<MySampleTNode::EmitterType> infra;
-	infraPtr = &infra;
-	MySampleTNode node;
-	node.main();
-	runInfraLoop2<Infrastructure<MySampleTNode::EmitterType>>( infra );
 }*/
 
-NetSocketManagerBase& getNetSocket() { return infraPtr->getNetSocket(); }
+NetSocketManagerBase& getNetSocket() { return NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>>::infraPtr->getNetSocket(); }
 
 #endif // USING_T_SOCKETS
