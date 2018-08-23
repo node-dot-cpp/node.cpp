@@ -176,8 +176,8 @@ namespace nodecpp {
 			int idType1; // we will try to get rid of it later
 		public:
 			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
-//			void connect(uint16_t port, const char* ip) {connectToInfra(this, idType1, ip, port);}
-			void connect(uint16_t port, const char* ip) {connectToInfra2<Node>(this, idType1, ip, port);}
+			void connect(uint16_t port, const char* ip) {connectToInfra(this, idType1, ip, port);}
+//			void connect(uint16_t port, const char* ip) {connectToInfra2<Node>(this, idType1, ip, port);}
 		
 		};
 
