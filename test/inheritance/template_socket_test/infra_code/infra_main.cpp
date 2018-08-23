@@ -111,4 +111,4 @@ int main()
 	return 0;
 }
 
-#endif USING_T_SOCKETS
+#endif // USING_T_SOCKETS

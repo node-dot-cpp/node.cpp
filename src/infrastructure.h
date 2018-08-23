@@ -281,11 +281,6 @@ public:
 
 #ifdef USING_T_SOCKETS
 size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t port);
-template<class Node>
-size_t connectToInfra2(net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
-{
-	return NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr->getNetSocket().appConnect(t, typeId, ip, port);
-}
 
 #include "../include/nodecpp/loop.h"
 
@@ -306,6 +301,12 @@ public:
 //		nodecpp::runLoop();
 	}
 };
+
+template<class Node>
+size_t connectToInfra2(net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
+{
+	return NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr->getNetSocket().appConnect(t, typeId, ip, port);
+}
 #else
 extern thread_local Infrastructure<net::SocketEmitter> infra;
 inline
