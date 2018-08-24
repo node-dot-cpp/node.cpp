@@ -499,6 +499,7 @@ Port Port::fromNetwork(uint16_t port)
 	return Port(port);
 }
 
+thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 
 
 SocketRiia NetSocketManagerBase::appAcquireSocket(const char* ip, uint16_t port)

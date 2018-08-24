@@ -95,7 +95,7 @@ uint64_t infraGetCurrentTime();
 template<class Infra>
 bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
-	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS 
+	size_t fds_sz = NetSocketManager<Infra>::MAX_SOCKETS 
 #ifndef NET_CLIENT_ONLY
 		+ NetServerManager::MAX_SOCKETS
 #endif
@@ -104,7 +104,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 
 	
 	pollfd* fds_begin = fds.get();
-	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
+	pollfd* fds_end = fds_begin + NetSocketManager<Infra>::MAX_SOCKETS;
 	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
 
 //	fds_begin += pollfdsz;
@@ -156,8 +156,8 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 	else //if(retval)
 	{
 		fds_begin = fds.get();
-		fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
-//		pollfdsz = NetSocketManagerBase::MAX_SOCKETS;
+		fds_end = fds_begin + NetSocketManager<Infra>::MAX_SOCKETS;
+//		pollfdsz = NetSocketManager<Infra>::MAX_SOCKETS;
 		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
 //		infra.netSocket.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
 
@@ -318,7 +318,7 @@ inline
 Infrastructure<net::SocketEmitter>& getInfra() { return infra; }
 #endif
 
-NetSocketManagerBase& getNetSocket();
+//NetSocketManagerBase& getNetSocket();
 
 #ifndef NET_CLIENT_ONLY
 inline

@@ -173,57 +173,31 @@ bool isNetInitialized();
 	Each method 'kind' must be isolated and can't call the other.
 */
 
+extern thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+
 class NetSocketManagerBase {
 protected:
-	//mb: ioSockets[0] is always reserved and invalid.
-//	std::vector<std::pair<size_t, std::function<void()>>> pendingCloseEvents;
-	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
-
-//	std::vector<Buffer> bufferStore; // TODO: improve
-//	std::vector<Error> errorStore;
-
 	std::string family = "IPv4";
 
-protected:
-	SocketRiia appAcquireSocket(const char* ip, uint16_t port);
+public:
+	static SocketRiia appAcquireSocket(const char* ip, uint16_t port);
 
 public:
-	static const size_t MAX_SOCKETS = 100; //arbitrary limit
-	NetSocketManagerBase() {}
+	static void appDestroy(net::SocketBase::DataForCommandProcessing& sockData);
+	static void appEnd(net::SocketBase::DataForCommandProcessing& sockData);
+	static bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
+	static void appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable);
+	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
-	void appDestroy(net::SocketBase::DataForCommandProcessing& sockData);
-	void appEnd(net::SocketBase::DataForCommandProcessing& sockData);
-	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
-	void appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable);
-	void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
-
-	std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
+	static std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
 
 	enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
-//	void infraProcessReadEvent(net::SocketBase::DataForCommandProcessing& sockData);
-	ShouldEmit infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);
+	static ShouldEmit infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);
 
-/*	//TODO quick workaround until definitive life managment is in place
-	Buffer& infraStoreBuffer(Buffer buff) {
-		bufferStore.push_back(std::move(buff));
-		return bufferStore.back();
-	}
-
-	Error& storeError(Error err) { //app-infra neutral
-		errorStore.push_back(std::move(err));
-		return errorStore.back();
-	}
-
-	void infraClearStores() {
-		bufferStore.clear();
-//		errorStore.clear();
-	}*/
-	
-	
 public:
 
-	void closeSocket(net::SocketBase::DataForCommandProcessing& sockData);//app-infra neutral
-	void errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err);//app-infra neutral
+	static void closeSocket(net::SocketBase::DataForCommandProcessing& sockData);//app-infra neutral
+	static void errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err);//app-infra neutral
 };
 
 template<class EmitterType>
@@ -256,7 +230,7 @@ public:
 };
 
 template<class EmitterType>
-class NetSocketManager : public NetSocketManagerBase {
+class NetSocketManager {
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetSocketEntry<EmitterType>> ioSockets; // TODO: improve
 	std::vector<Buffer> bufferStore; // TODO: improve
@@ -272,6 +246,8 @@ public:
 		bufferStore.clear();
 	}
 	
+	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
+
 public:
 	NetSocketManager() { ioSockets.emplace_back(0); }
 
@@ -299,7 +275,7 @@ public:
 #ifdef USING_T_SOCKETS
 	size_t appConnect(net::SocketTBase* ptr, int typeId, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
-		SocketRiia s( std::move( this->appAcquireSocket( ip, port ) ) );
+		SocketRiia s( std::move( NetSocketManagerBase::appAcquireSocket( ip, port ) ) );
 
 		size_t id = addEntry(ptr, typeId);
 		if (id == 0)
@@ -471,7 +447,7 @@ public:
 private:
 	void infraProcessReadEvent(NetSocketEntry<EmitterType>& entry, EvQueue& evs)
 	{
-		auto res = infraGetPacketBytes(entry.getSockData()->recvBuffer, entry.getSockData()->osSocket);
+		auto res = NetSocketManagerBase::infraGetPacketBytes(entry.getSockData()->recvBuffer, entry.getSockData()->osSocket);
 		if (res.first)
 		{
 			if (res.second.size() != 0)

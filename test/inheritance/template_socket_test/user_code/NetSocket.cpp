@@ -21,6 +21,6 @@ size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t 
 	return NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>>::infraPtr->getNetSocket().appConnect(t, typeId, ip, port);
 }
 
-NetSocketManagerBase& getNetSocket() { return NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>>::infraPtr->getNetSocket(); }
+//NetSocketManagerBase& getNetSocket() { return NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>>::infraPtr->getNetSocket(); }
 
 #endif // USING_T_SOCKETS
