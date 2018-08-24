@@ -40,7 +40,7 @@ namespace nodecpp {
 		
 		public:
 //			UserDefID userDefID;
-			void* node = nullptr;
+			NodeBase* node = nullptr;
 
 		public:
 			SocketTBase() {}
@@ -152,6 +152,7 @@ namespace nodecpp {
 
 			SocketT2(Node* node_) {this->node = node_;}
 			Extra* getExtra() { return &extra; }
+			const Extra* getExtra() const { return &extra; }
 
 		};
 
@@ -166,6 +167,7 @@ namespace nodecpp {
 		public:
 			SocketT2() {}
 			void* getExtra() { return nullptr; }
+			const void* getExtra() const { return nullptr; }
 
 		};
 
@@ -176,7 +178,7 @@ namespace nodecpp {
 			int idType1; // we will try to get rid of it later
 		public:
 			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
-			void connect(uint16_t port, const char* ip) {connectToInfra(this, idType1, ip, port);}
+			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, idType1, ip, port);}
 //			void connect(uint16_t port, const char* ip) {connectToInfra2<Node>(this, idType1, ip, port);}
 		
 		};
@@ -345,108 +347,108 @@ namespace nodecpp {
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		template<class T, class T1, class ... args>
-		void callOnConnect2( void* nodePtr, const T* ptr, int type )
+		void callOnConnect2( void* nodePtr, T* ptr, int type )
 		{
 			if ( type == 0 )
 			{
-				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnect)(reinterpret_cast<T1*>(ptr)->getExtra());
+				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnect)(static_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnConnect2<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		void callOnConnect2( void* nodePtr, const T* ptr, int type )
+		void callOnConnect2( void* nodePtr, T* ptr, int type )
 		{
 			assert( false );
 		}
 
 
 		template<class T, class T1, class ... args>
-		void callOnClose2( void* nodePtr, const T* ptr, int type, bool ok )
+		void callOnClose2( void* nodePtr, T* ptr, int type, bool ok )
 		{
 			if ( type == 0 )
 			{
-				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(reinterpret_cast<T1*>(ptr)->getExtra(), ok);
+				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(static_cast<T1*>(ptr->getPtr())->getExtra(), ok);
 			}
 			else
 				callOnClose2<T, args...>(nodePtr, ptr, type-1, ok);
 		}
 
 		template<class T>
-		void callOnClose2( void* nodePtr, const T* ptr, int type, bool ok )
+		void callOnClose2( void* nodePtr, T* ptr, int type, bool ok )
 		{
 			assert( false );
 		}
 
 
 		template<class T, class T1, class ... args>
-		void callOnData2( void* nodePtr, const T* ptr, int type, nodecpp::Buffer& b )
+		void callOnData2( void* nodePtr, T* ptr, int type, nodecpp::Buffer& b )
 		{
 			if ( type == 0 )
 			{
-				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onData)(reinterpret_cast<T1*>(ptr)->getExtra(), b);
+				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onData)(static_cast<T1*>(ptr->getPtr())->getExtra(), b);
 			}
 			else
 				callOnData2<T, args...>(nodePtr, ptr, type-1, b);
 		}
 
 		template<class T>
-		void callOnData2( void* nodePtr, const T* ptr, int type, nodecpp::Buffer& b )
+		void callOnData2( void* nodePtr, T* ptr, int type, nodecpp::Buffer& b )
 		{
 			assert( false );
 		}
 
 
 		template<class T, class T1, class ... args>
-		void callOnDrain2( void* nodePtr, const T* ptr, int type )
+		void callOnDrain2( void* nodePtr, T* ptr, int type )
 		{
 			if ( type == 0 )
 			{
-				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onDrain)(reinterpret_cast<T1*>(ptr)->getExtra());
+				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onDrain)(static_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnDrain2<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		void callOnDrain2( void* nodePtr, const T* ptr, int type )
+		void callOnDrain2( void* nodePtr, T* ptr, int type )
 		{
 			assert( false );
 		}
 
 
 		template<class T, class T1, class ... args>
-		void callOnError2( void* nodePtr, const T* ptr, int type, nodecpp::Error& e )
+		void callOnError2( void* nodePtr, T* ptr, int type, nodecpp::Error& e )
 		{
 			if ( type == 0 )
 			{
-				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(reinterpret_cast<T1*>(ptr)->getExtra(), e);
+				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
 			}
 			else
 				callOnError2<T, args...>(nodePtr, ptr, type-1, e);
 		}
 
 		template<class T>
-		void callOnError2( void* nodePtr, const T* ptr, int type, nodecpp::Error& e )
+		void callOnError2( void* nodePtr, T* ptr, int type, nodecpp::Error& e )
 		{
 			assert( false );
 		}
 
 
 		template<class T, class T1, class ... args>
-		void callOnEnd2( void* nodePtr, const T* ptr, int type )
+		void callOnEnd2( void* nodePtr, T* ptr, int type )
 		{
 			if ( type == 0 )
 			{
-				(reinterpret_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onEnd)(reinterpret_cast<T1*>(ptr)->getExtra());
+				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onEnd)(static_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnEnd2<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		void callOnEnd2( void* nodePtr, const T* ptr, int type )
+		void callOnEnd2( void* nodePtr, T* ptr, int type )
 		{
 			assert( false );
 		}
@@ -459,29 +461,24 @@ namespace nodecpp {
 		class SocketTEmitter2
 		{
 		public:
-			SocketTEmitter2() {}
-//			template<class Sock>
-//			SocketTEmitter2(Sock* s) {ptr.init(s); nodePtr = s->node; type = getTypeIndex<Sock,args...>( s );}
-//			SocketTEmitter2(SocketTBase* ptr_, int type_) {ptr.init(ptr_); nodePtr = ptr_->node; type = type_;}
+			class Ptr
+			{
+				void* ptr;
+			public:
+				Ptr( void* ptr_ ) { ptr = ptr_; }
+				void* getPtr() const {return ptr;}
+			};
 
+		public:
 			template<class Sock>
-			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,args...>( s ); } // we may need it externally
+			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,args...>( s ); }
 
-/*			template<class Sock>
-			void init(Sock* s)
-			{ 
-				ptr.init(s);
-				nodePtr = s->node;
-				type = getTypeIndex<Sock,args...>( s );
-			}
-			bool isValid() const { return ptr.isValid(); }*/
-
-			static void emitConnect( const OpaqueEmitter& emitter ) { callOnConnect2<Ptr, args...>(nodePtr, emitter.ptr, emitter.type); }
-			static void emitClose( const OpaqueEmitter& emitter, bool ok ) { callOnClose2<Ptr, args...>(nodePtr, emitter.ptr, emitter.type, ok); }
-			static void emitData( const OpaqueEmitter& emitter, nodecpp::Buffer& b ) { callOnData2<Ptr, args...>(nodePtr, emitter.ptr, emitter.type, b); }
-			static void emitDrain( const OpaqueEmitter& emitter ) { callOnDrain2<Ptr, args...>(nodePtr, emitter.ptr, emitter.type); }
-			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { callOnError2<Ptr, args...>(nodePtr, emitter.ptr, emitter.type, e); }
-			static void emitEnd( const OpaqueEmitter& emitter ) { callOnEnd2<Ptr, args...>(nodePtr, emitter.ptr, emitter.type); }
+			static void emitConnect( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnConnect<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitClose( const OpaqueEmitter& emitter, bool ok ) { Ptr emitter_ptr( emitter.ptr ); callOnClose2<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, ok); }
+			static void emitData( const OpaqueEmitter& emitter, nodecpp::Buffer& b ) { Ptr emitter_ptr( emitter.ptr ); callOnData2<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, b); }
+			static void emitDrain( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnDrain2<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { Ptr emitter_ptr( emitter.ptr ); callOnError2<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
+			static void emitEnd( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnEnd2<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 		};
 	} // namespace net
 

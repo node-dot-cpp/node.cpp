@@ -280,7 +280,7 @@ public:
 };
 
 #ifdef USING_T_SOCKETS
-size_t connectToInfra(net::SocketTBase* t, int typeId, const char* ip, uint16_t port);
+size_t connectToInfra(NodeBase* node, net::SocketTBase* t, int typeId, const char* ip, uint16_t port);
 
 #include "../include/nodecpp/loop.h"
 

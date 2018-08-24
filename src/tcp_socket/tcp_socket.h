@@ -239,7 +239,7 @@ public:
 
 	NetSocketEntry2(size_t index) : index(index) {}
 #ifdef USING_T_SOCKETS
-	NetSocketEntry2(size_t index, net::SocketTBase* ptr_, int type) : index(index), sockPtr(ptr_), emitter(ptr_, type) {}
+	NetSocketEntry2(NodeBase* node, size_t index, net::SocketTBase* ptr_, int type) : index(index), sockPtr(ptr_), emitter(node, ptr_, type) {}
 #else
 	template<class SocketType>
 	NetSocketEntry(size_t index, SocketType* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
@@ -260,6 +260,10 @@ public:
 class NetSocketManagerBase
 {
 	std::vector<Buffer> bufferStore; // TODO: improve
+	//mb: ioSockets[0] is always reserved and invalid.
+
+protected:
+	std::vector<NetSocketEntry2> ioSockets; // TODO: improve
 
 public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
@@ -279,8 +283,6 @@ public:
 
 template<class EmitterType>
 class NetSocketManager : public NetSocketManagerBase {
-	//mb: ioSockets[0] is always reserved and invalid.
-	std::vector<NetSocketEntry<EmitterType>> ioSockets; // TODO: improve
 
 public:
 	NetSocketManager() { ioSockets.emplace_back(0); }
@@ -307,11 +309,11 @@ public:
 	}
 
 #ifdef USING_T_SOCKETS
-	size_t appConnect(net::SocketTBase* ptr, int typeId, const char* ip, uint16_t port) // TODO: think about template with type checking inside
+	size_t appConnect(NodeBase* node, net::SocketTBase* ptr, int typeId, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
 		SocketRiia s( std::move( OSLayer::appAcquireSocket( ip, port ) ) );
 
-		size_t id = addEntry(ptr, typeId);
+		size_t id = addEntry(node, ptr, typeId);
 		if (id == 0)
 		{
 			NODECPP_TRACE0("Failed to add entry on NetSocketManager::connect");
@@ -414,10 +416,10 @@ public:
 
 	//				evs.add(&net::Socket::emitClose, entry.getPtr(), err);
 	//				entry.getPtr()->emitClose(err);
-					entry.getEmitter().emitClose(err);
+					EmitterType::emitClose(entry.getEmitter(), err);
 					entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 				}
-				entry = NetSocketEntry<EmitterType>(current.first); 
+				entry = NetSocketEntry2(current.first); 
 			}
 		}
 		pendingCloseEvents.clear();
@@ -479,7 +481,7 @@ public:
 	}
 
 private:
-	void infraProcessReadEvent(NetSocketEntry<EmitterType>& entry, EvQueue& evs)
+	void infraProcessReadEvent(NetSocketEntry2& entry, EvQueue& evs)
 	{
 		auto res = OSLayer::infraGetPacketBytes(entry.getSockData()->recvBuffer, entry.getSockData()->osSocket);
 		if (res.first)
@@ -489,7 +491,8 @@ private:
 	//			entry.ptr->emitData(std::move(res.second));
 
 	//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
-				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
+//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
+				EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
 			}
 			else //if (!entry.remoteEnded)
 			{
@@ -505,13 +508,13 @@ private:
 		}
 	}
 
-	void infraProcessRemoteEnded(NetSocketEntry<EmitterType>& entry, EvQueue& evs)
+	void infraProcessRemoteEnded(NetSocketEntry2& entry, EvQueue& evs)
 	{
 		if (!entry.getSockData()->remoteEnded)
 		{
 			entry.getSockData()->remoteEnded = true;
 	//		evs.add(&net::Socket::emitEnd, entry.getPtr());
-			entry.getEmitter().emitEnd();
+			EmitterType::emitEnd(entry.getEmitter());
 			if (entry.getSockData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 			{
 				//pendingCloseEvents.emplace_back(entry.index, false);
@@ -539,16 +542,16 @@ private:
 
 	}
 
-	void infraProcessWriteEvent(NetSocketEntry<EmitterType>& current, EvQueue& evs)
+	void infraProcessWriteEvent(NetSocketEntry2& current, EvQueue& evs)
 	{
 		OSLayer::ShouldEmit status = OSLayer::infraProcessWriteEvent(*current.getSockData());
 		switch ( status )
 		{
 			case OSLayer::ShouldEmit::EmitConnect:
-				current.getEmitter().emitConnect();
+				EmitterType::emitConnect(current.getEmitter());
 				break;
 			case OSLayer::ShouldEmit::EmitDrain:
-				current.getEmitter().emitDrain();
+				EmitterType::emitDrain(current.getEmitter());
 				break;
 			default:
 				NODECPP_ASSERT(status == OSLayer::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
@@ -557,13 +560,13 @@ private:
 
 private:
 #ifdef USING_T_SOCKETS
-	size_t addEntry(net::SocketTBase* ptr, int typeId) //app-infra neutral
+	size_t addEntry(NodeBase* node, net::SocketTBase* ptr, int typeId) //app-infra neutral
 	{
 		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 		{
 			if (!ioSockets[i].isValid())
 			{
-				NetSocketEntry<EmitterType> entry(i, ptr, typeId);
+				NetSocketEntry2 entry(node, i, ptr, typeId);
 				ioSockets[i] = std::move(entry);
 				return i;
 			}
@@ -575,7 +578,7 @@ private:
 		}
 
 		size_t ix = ioSockets.size();
-		ioSockets.emplace_back(ix, ptr, typeId);
+		ioSockets.emplace_back(node, ix, ptr, typeId);
 		return ix;
 	}
 
@@ -588,7 +591,7 @@ private:
 		{
 			if (!ioSockets[i].isValid())
 			{
-				NetSocketEntry<EmitterType> entry(i, ptr);
+				NetSocketEntry2 entry(i, ptr);
 				ioSockets[i] = std::move(entry);
 				return i;
 			}
@@ -605,10 +608,10 @@ private:
 	}
 #endif // USING_T_SOCKETS
 
-	NetSocketEntry<EmitterType>& appGetEntry(size_t id) { return ioSockets.at(id); }
-	const NetSocketEntry<EmitterType>& appGetEntry(size_t id) const { return ioSockets.at(id); }
+	NetSocketEntry2& appGetEntry(size_t id) { return ioSockets.at(id); }
+	const NetSocketEntry2& appGetEntry(size_t id) const { return ioSockets.at(id); }
 
-	void closeSocket(NetSocketEntry<EmitterType>& entry) //app-infra neutral
+	void closeSocket(NetSocketEntry2& entry) //app-infra neutral
 	{
 		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closing;
 
@@ -616,7 +619,7 @@ private:
 	//	pendingCloseEvents.emplace_back(entry.index, std::function<void()>());
 		pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
 	}
-	void errorCloseSocket(NetSocketEntry<EmitterType>& entry, Error& err) //app-infra neutral
+	void errorCloseSocket(NetSocketEntry2& entry, Error& err) //app-infra neutral
 	{
 		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
 

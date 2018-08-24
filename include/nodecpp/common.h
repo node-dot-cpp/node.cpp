@@ -152,11 +152,12 @@ public:
 
 struct OpaqueEmitter
 {
-	void* ptr = nullptr;
+	using PtrType = void*;
+	PtrType ptr = nullptr;
 	int type = -1;
-	void* nodePtr = nullptr;
+	NodeBase* nodePtr = nullptr;
 	OpaqueEmitter() : ptr( nullptr), type(-1) {}
-	OpaqueEmitter( void* ptr_, int type_ ) : ptr( ptr_), type(type_) {}
+	OpaqueEmitter( NodeBase* node, void* ptr_, int type_ ) : ptr( ptr_), type(type_), nodePtr( node ) {}
 	bool isValid() const { return ptr != nullptr; }
 };
 
