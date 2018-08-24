@@ -637,7 +637,7 @@ public:
 	>;
 	SockType_2 sockNN_2;
 
-	using EmitterType = nodecpp::net::SocketTEmitter2<SockType_1, SockType_2>;
+	using EmitterType = nodecpp::net::SocketTEmitter<SockType_1, SockType_2>;
 //	using EmitterType = nodecpp::net::SocketTEmitter<SockType_1>;
 };
 
