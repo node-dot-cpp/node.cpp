@@ -173,7 +173,7 @@ bool isNetInitialized();
 	Each method 'kind' must be isolated and can't call the other.
 */
 
-extern thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+//extern thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 
 class OSLayer {
 protected:
@@ -259,16 +259,20 @@ public:
 
 class NetSocketManagerBase
 {
+	friend class OSLayer;
 	std::vector<Buffer> bufferStore; // TODO: improve
 	//mb: ioSockets[0] is always reserved and invalid.
 
 protected:
 	std::vector<NetSocketEntry2> ioSockets; // TODO: improve
+	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 
 public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 
 public:
+	NetSocketManagerBase() { ioSockets.emplace_back(0); }
+
 	//TODO quick workaround until definitive life managment is in place
 	Buffer& infraStoreBuffer(Buffer buff) {
 		bufferStore.push_back(std::move(buff));
@@ -278,14 +282,9 @@ public:
 	void infraClearStores() {
 		bufferStore.clear();
 	}
-	
-};
-
-template<class EmitterType>
-class NetSocketManager : public NetSocketManagerBase {
 
 public:
-	NetSocketManager() { ioSockets.emplace_back(0); }
+	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
 
 	template<class SockType>
 	size_t appConnect(SockType* ptr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
@@ -329,34 +328,7 @@ public:
 		return id;
 	}
 #endif // USING_T_SOCKETS
-
-#ifndef NET_CLIENT_ONLY
-	template<class SocketType>
-	bool infraAddAccepted(SocketType* ptr, SOCKET sock, EvQueue& evs)
-	{
-		SocketRiia s(sock);
-		size_t ix = addEntry(ptr);
-		if (ix == 0)
-		{
-			NODECPP_TRACE("Couldn't allocate new StreamSocket, closing {}", s.get());
-			return false;
-		}
-
-		auto& entry = appGetEntry(ix);
-		entry.getSockData()->osSocket = s.release();
-		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Connected;
-
-		evs.add(&net::Socket::emitAccepted, ptr, ix);
-
-		return true;
-	}
-#endif // !NET_CLIENT_ONLY
-
 	
-	
-public:
-	// to help with 'poll'
-	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
 	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 	{
 		size_t sz = end - begin;
@@ -385,6 +357,113 @@ public:
 		}
 		return anyRefed;
 	}
+
+protected:
+#ifdef USING_T_SOCKETS
+	size_t addEntry(NodeBase* node, net::SocketTBase* ptr, int typeId) //app-infra neutral
+	{
+		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
+		{
+			if (!ioSockets[i].isValid())
+			{
+				NetSocketEntry2 entry(node, i, ptr, typeId);
+				ioSockets[i] = std::move(entry);
+				return i;
+			}
+		}
+
+		if (ioSockets.size() >= MAX_SOCKETS)
+		{
+			return 0;
+		}
+
+		size_t ix = ioSockets.size();
+		ioSockets.emplace_back(node, ix, ptr, typeId);
+		return ix;
+	}
+
+#else
+
+	template<class SocketType>
+	size_t addEntry(SocketType* ptr) //app-infra neutral
+	{
+		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
+		{
+			if (!ioSockets[i].isValid())
+			{
+				NetSocketEntry2 entry(i, ptr);
+				ioSockets[i] = std::move(entry);
+				return i;
+			}
+		}
+
+		if (ioSockets.size() >= MAX_SOCKETS)
+		{
+			return 0;
+		}
+
+		size_t ix = ioSockets.size();
+		ioSockets.emplace_back(ix, ptr);
+		return ix;
+	}
+#endif // USING_T_SOCKETS
+
+	NetSocketEntry2& appGetEntry(size_t id) { return ioSockets.at(id); }
+	const NetSocketEntry2& appGetEntry(size_t id) const { return ioSockets.at(id); }
+
+	void closeSocket(NetSocketEntry2& entry) //app-infra neutral
+	{
+		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closing;
+
+	//	evs.add(&net::Socket::emitError, entry.getPtr(), storeError(Error()));
+	//	pendingCloseEvents.emplace_back(entry.index, std::function<void()>());
+		pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
+	}
+	void errorCloseSocket(NetSocketEntry2& entry, Error& err) //app-infra neutral
+	{
+		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
+
+	//	std::function<void()> ev = std::bind(&net::Socket::emitError, entry.getPtr(), std::ref(err));
+	//	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), std::ref(err));
+	//	pendingCloseEvents.emplace_back(entry.index, std::move(ev));
+		pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
+	}
+};
+
+extern thread_local NetSocketManagerBase* netSocketManagerBase;
+
+template<class EmitterType>
+class NetSocketManager : public NetSocketManagerBase {
+
+public:
+	NetSocketManager() {}
+
+#ifndef NET_CLIENT_ONLY
+	template<class SocketType>
+	bool infraAddAccepted(SocketType* ptr, SOCKET sock, EvQueue& evs)
+	{
+		SocketRiia s(sock);
+		size_t ix = addEntry(ptr);
+		if (ix == 0)
+		{
+			NODECPP_TRACE("Couldn't allocate new StreamSocket, closing {}", s.get());
+			return false;
+		}
+
+		auto& entry = appGetEntry(ix);
+		entry.getSockData()->osSocket = s.release();
+		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Connected;
+
+		evs.add(&net::Socket::emitAccepted, ptr, ix);
+
+		return true;
+	}
+#endif // !NET_CLIENT_ONLY
+
+	
+	
+public:
+	// to help with 'poll'
 	void infraGetCloseEvent(EvQueue& evs)
 	{
 		// if there is an issue with a socket, we may need to appClose it,
@@ -556,77 +635,6 @@ private:
 			default:
 				NODECPP_ASSERT(status == OSLayer::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
 		}
-	}
-
-private:
-#ifdef USING_T_SOCKETS
-	size_t addEntry(NodeBase* node, net::SocketTBase* ptr, int typeId) //app-infra neutral
-	{
-		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
-		{
-			if (!ioSockets[i].isValid())
-			{
-				NetSocketEntry2 entry(node, i, ptr, typeId);
-				ioSockets[i] = std::move(entry);
-				return i;
-			}
-		}
-
-		if (ioSockets.size() >= MAX_SOCKETS)
-		{
-			return 0;
-		}
-
-		size_t ix = ioSockets.size();
-		ioSockets.emplace_back(node, ix, ptr, typeId);
-		return ix;
-	}
-
-#else
-
-	template<class SocketType>
-	size_t addEntry(SocketType* ptr) //app-infra neutral
-	{
-		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
-		{
-			if (!ioSockets[i].isValid())
-			{
-				NetSocketEntry2 entry(i, ptr);
-				ioSockets[i] = std::move(entry);
-				return i;
-			}
-		}
-
-		if (ioSockets.size() >= MAX_SOCKETS)
-		{
-			return 0;
-		}
-
-		size_t ix = ioSockets.size();
-		ioSockets.emplace_back(ix, ptr);
-		return ix;
-	}
-#endif // USING_T_SOCKETS
-
-	NetSocketEntry2& appGetEntry(size_t id) { return ioSockets.at(id); }
-	const NetSocketEntry2& appGetEntry(size_t id) const { return ioSockets.at(id); }
-
-	void closeSocket(NetSocketEntry2& entry) //app-infra neutral
-	{
-		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closing;
-
-	//	evs.add(&net::Socket::emitError, entry.getPtr(), storeError(Error()));
-	//	pendingCloseEvents.emplace_back(entry.index, std::function<void()>());
-		pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
-	}
-	void errorCloseSocket(NetSocketEntry2& entry, Error& err) //app-infra neutral
-	{
-		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
-
-	//	std::function<void()> ev = std::bind(&net::Socket::emitError, entry.getPtr(), std::ref(err));
-	//	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), std::ref(err));
-	//	pendingCloseEvents.emplace_back(entry.index, std::move(ev));
-		pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
 	}
 };
 

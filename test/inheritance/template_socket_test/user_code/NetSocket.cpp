@@ -16,10 +16,11 @@ static NodeRegistrator<MySampleInheritanceOneNode> noname( "MySampleInheritanceO
 //static NodeRegistrator<Runnable<MySampleTNode>> noname( "MySampleTemplateNode" );
 static NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>> noname( "MySampleTemplateNode" );
 
-size_t connectToInfra(NodeBase* node, net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
+/*size_t connectToInfra(NodeBase* node, net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
 {
-	return NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>>::infraPtr->getNetSocket().appConnect(node, t, typeId, ip, port);
-}
+//	return NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>>::infraPtr->getNetSocket().appConnect(node, t, typeId, ip, port);
+	return netSocketManagerBase->appConnect(node, t, typeId, ip, port);
+}*/
 
 //NetSocketManagerBase& getNetSocket() { return NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>>::infraPtr->getNetSocket(); }
 

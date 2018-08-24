@@ -499,7 +499,8 @@ Port Port::fromNetwork(uint16_t port)
 	return Port(port);
 }
 
-thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+//thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+thread_local NetSocketManagerBase* netSocketManagerBase;
 
 
 SocketRiia OSLayer::appAcquireSocket(const char* ip, uint16_t port)
@@ -753,13 +754,15 @@ OSLayer::ShouldEmit OSLayer::infraProcessWriteEvent(net::SocketBase::DataForComm
 void OSLayer::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
-	pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( false, Error())));
+	NODECPP_ASSERT( netSocketManagerBase != nullptr );
+	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( false, Error())));
 }
 
 void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
-	pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( true, err)));
+	NODECPP_ASSERT( netSocketManagerBase != nullptr );
+	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( true, err)));
 }
 
 

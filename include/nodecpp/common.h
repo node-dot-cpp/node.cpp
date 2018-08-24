@@ -91,7 +91,7 @@ class NodeRegistrator
 {
 public:
 //	thread_local Infrastructure<typename RunnableT::NodeType::EmitterType>* infraPtr;
-	static thread_local Infra* infraPtr;
+//	static thread_local Infra* infraPtr;
 
 public:
 	NodeRegistrator( const char* name )
@@ -111,9 +111,8 @@ public:
 	}
 };
 
-template<class RunnableT,class Infra>
-/*class NodeRegistrator
-static*/ thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;
+/*template<class RunnableT,class Infra>
+thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;*/
 
 
 #else

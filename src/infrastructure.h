@@ -280,7 +280,11 @@ public:
 };
 
 #ifdef USING_T_SOCKETS
-size_t connectToInfra(NodeBase* node, net::SocketTBase* t, int typeId, const char* ip, uint16_t port);
+inline
+size_t connectToInfra(NodeBase* node, net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
+{
+	return netSocketManagerBase->appConnect(node, t, typeId, ip, port);
+}
 
 #include "../include/nodecpp/loop.h"
 
@@ -294,7 +298,8 @@ public:
 	void run() override
 	{
 		Infrastructure<typename Node::EmitterType> infra;
-		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
+		netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
+//		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
 		node = new Node;
 		node->main();
 		runInfraLoop2<Infrastructure<typename Node::EmitterType>>(infra);
