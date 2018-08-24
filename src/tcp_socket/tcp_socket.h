@@ -229,6 +229,34 @@ public:
 	net::SocketBase::DataForCommandProcessing* getSockData() const { assert(sockPtr != nullptr); return sockPtr ? &(sockPtr->dataForCommandProcessing) : nullptr; }
 };
 
+class NetSocketEntry2 {
+public:
+	size_t index;
+
+	net::SocketBase* sockPtr = nullptr;
+	OpaqueEmitter emitter;
+
+
+	NetSocketEntry2(size_t index) : index(index) {}
+#ifdef USING_T_SOCKETS
+	NetSocketEntry2(size_t index, net::SocketTBase* ptr_, int type) : index(index), sockPtr(ptr_), emitter(ptr_, type) {}
+#else
+	template<class SocketType>
+	NetSocketEntry(size_t index, SocketType* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
+#endif // USING_T_SOCKETS
+
+	NetSocketEntry2(const NetSocketEntry2& other) = delete;
+	NetSocketEntry2& operator=(const NetSocketEntry2& other) = delete;
+
+	NetSocketEntry2(NetSocketEntry2&& other) = default;
+	NetSocketEntry2& operator=(NetSocketEntry2&& other) = default;
+
+	bool isValid() const { return emitter.isValid(); }
+
+	const OpaqueEmitter& getEmitter() const { return emitter; }
+	net::SocketBase::DataForCommandProcessing* getSockData() const { assert(sockPtr != nullptr); return sockPtr ? &(sockPtr->dataForCommandProcessing) : nullptr; }
+};
+
 class NetSocketManagerBase
 {
 	std::vector<Buffer> bufferStore; // TODO: improve

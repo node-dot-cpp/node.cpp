@@ -150,5 +150,14 @@ public:
 
 #endif // USING_T_SOCKETS
 
+struct OpaqueEmitter
+{
+	void* ptr = nullptr;
+	int type = -1;
+	void* nodePtr = nullptr;
+	OpaqueEmitter() : ptr( nullptr), type(-1) {}
+	OpaqueEmitter( void* ptr_, int type_ ) : ptr( ptr_), type(type_) {}
+	bool isValid() const { return ptr != nullptr; }
+};
 
 #endif //COMMON_H
