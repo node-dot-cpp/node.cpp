@@ -36,21 +36,21 @@ using namespace nodecpp::net;
 
 
 
-void SocketBase::destroy() { NetSocketManagerBase::appDestroy(dataForCommandProcessing); }
-void SocketBase::end() { NetSocketManagerBase::appEnd(dataForCommandProcessing); }
+void SocketBase::destroy() { OSLayer::appDestroy(dataForCommandProcessing); }
+void SocketBase::end() { OSLayer::appEnd(dataForCommandProcessing); }
 
-//void SocketBase::pause() { NetSocketManagerBase::appPause(id); }
-//void SocketBase::ref() { NetSocketManagerBase::appRef(id); }
+//void SocketBase::pause() { OSLayer::appPause(id); }
+//void SocketBase::ref() { OSLayer::appRef(id); }
 
-//void SocketBase::resume() { NetSocketManagerBase::appResume(id); }
-//void SocketBase::unref() { NetSocketManagerBase::appUnref(id); }
+//void SocketBase::resume() { OSLayer::appResume(id); }
+//void SocketBase::unref() { OSLayer::appUnref(id); }
 
-//size_t SocketBase::bufferSize() const { return NetSocketManagerBase::appBufferSize(id); }
+//size_t SocketBase::bufferSize() const { return OSLayer::appBufferSize(id); }
 
 bool SocketBase::write(const uint8_t* data, uint32_t size)
 {
 	_bytesWritten += size;
-	return NetSocketManagerBase::appWrite(dataForCommandProcessing, data, size);
+	return OSLayer::appWrite(dataForCommandProcessing, data, size);
 }
 
 #ifdef USING_O_SOCKETS
@@ -63,13 +63,13 @@ void SocketO::connect(uint16_t port, const char* ip)
 
 SocketO& SocketO::setNoDelay(bool noDelay)
 { 
-	NetSocketManagerBase::appSetNoDelay(dataForCommandProcessing, noDelay);
+	OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay);
 	return *this;
 }
 
 SocketO& SocketO::setKeepAlive(bool enable)
 {
-	NetSocketManagerBase::appSetKeepAlive(dataForCommandProcessing, enable);
+	OSLayer::appSetKeepAlive(dataForCommandProcessing, enable);
 	return *this;
 }
 #endif // USING_O_SOCKETS
@@ -84,13 +84,13 @@ void Socket::connect(uint16_t port, const char* ip)
 
 Socket& Socket::setNoDelay(bool noDelay)
 { 
-	NetSocketManagerBase::appSetNoDelay(dataForCommandProcessing, noDelay);
+	OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay);
 	return *this;
 }
 
 Socket& Socket::setKeepAlive(bool enable)
 {
-	NetSocketManagerBase::appSetKeepAlive(dataForCommandProcessing, enable);
+	OSLayer::appSetKeepAlive(dataForCommandProcessing, enable);
 	return *this;
 }
 #endif // USING_L_SOCKETS
@@ -105,13 +105,13 @@ void SocketTBase::connect(uint16_t port, const char* ip)
 
 SocketTBase& SocketTBase::setNoDelay(bool noDelay)
 { 
-	NetSocketManagerBase::appSetNoDelay(dataForCommandProcessing, noDelay);
+	OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay);
 	return *this;
 }
 
 SocketTBase& SocketTBase::setKeepAlive(bool enable)
 {
-	NetSocketManagerBase::appSetKeepAlive(dataForCommandProcessing, enable);
+	OSLayer::appSetKeepAlive(dataForCommandProcessing, enable);
 	return *this;
 }
 #endif // USING_T_SOCKETS

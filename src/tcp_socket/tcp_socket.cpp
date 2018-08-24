@@ -502,7 +502,7 @@ Port Port::fromNetwork(uint16_t port)
 thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 
 
-SocketRiia NetSocketManagerBase::appAcquireSocket(const char* ip, uint16_t port)
+SocketRiia OSLayer::appAcquireSocket(const char* ip, uint16_t port)
 {
 	Ip4 peerIp = Ip4::parse(ip);
 //	Ip4 myIp = Ip4::parse(ip);
@@ -523,7 +523,7 @@ SocketRiia NetSocketManagerBase::appAcquireSocket(const char* ip, uint16_t port)
 	return s;
 }
 
-void NetSocketManagerBase::appDestroy(net::SocketBase::DataForCommandProcessing& sockData)
+void OSLayer::appDestroy(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	if (!sockData.isValid())
 	{
@@ -538,7 +538,7 @@ void NetSocketManagerBase::appDestroy(net::SocketBase::DataForCommandProcessing&
 	closeSocket(sockData);
 }
 
-void NetSocketManagerBase::appEnd(net::SocketBase::DataForCommandProcessing& sockData)
+void OSLayer::appEnd(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	if (!sockData.isValid())
 	{
@@ -569,7 +569,7 @@ void NetSocketManagerBase::appEnd(net::SocketBase::DataForCommandProcessing& soc
 	}
 }
 
-void NetSocketManagerBase::appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable)
+void OSLayer::appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable)
 {
 	if (!sockData.isValid())
 	{
@@ -585,7 +585,7 @@ void NetSocketManagerBase::appSetKeepAlive(net::SocketBase::DataForCommandProces
 	}
 }
 
-void NetSocketManagerBase::appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay)
+void OSLayer::appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay)
 {
 	if (!sockData.isValid())
 	{
@@ -601,7 +601,7 @@ void NetSocketManagerBase::appSetNoDelay(net::SocketBase::DataForCommandProcessi
 	}
 }
 
-bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size)
+bool OSLayer::appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size)
 {
 	if (!sockData.isValid())
 	{
@@ -647,7 +647,7 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 	}
 }
 
-std::pair<bool, Buffer> NetSocketManagerBase::infraGetPacketBytes(Buffer& buff, SOCKET sock)
+std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
 	socklen_t fromlen = sizeof(struct sockaddr_in);
 	struct sockaddr_in sa_other;
@@ -664,9 +664,9 @@ std::pair<bool, Buffer> NetSocketManagerBase::infraGetPacketBytes(Buffer& buff, 
 	return make_pair(true, std::move(res));
 }
 
-NetSocketManagerBase::ShouldEmit NetSocketManagerBase::infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData)
+OSLayer::ShouldEmit OSLayer::infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData)
 {
-	NetSocketManagerBase::ShouldEmit ret = EmitNone;
+	OSLayer::ShouldEmit ret = EmitNone;
 //	if (current.connecting)
 	if(sockData.state == net::SocketBase::DataForCommandProcessing::Connecting)
 	{
@@ -750,13 +750,13 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::infraProcessWriteEvent(ne
  * 
  */
 
-void NetSocketManagerBase::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
+void OSLayer::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
 	pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( false, Error())));
 }
 
-void NetSocketManagerBase::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err)
+void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
 	pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( true, err)));

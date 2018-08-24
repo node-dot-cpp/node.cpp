@@ -175,7 +175,7 @@ bool isNetInitialized();
 
 extern thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 
-class NetSocketManagerBase {
+class OSLayer {
 protected:
 	std::string family = "IPv4";
 
@@ -229,11 +229,12 @@ public:
 	net::SocketBase::DataForCommandProcessing* getSockData() const { assert(sockPtr != nullptr); return sockPtr ? &(sockPtr->dataForCommandProcessing) : nullptr; }
 };
 
-template<class EmitterType>
-class NetSocketManager {
-	//mb: ioSockets[0] is always reserved and invalid.
-	std::vector<NetSocketEntry<EmitterType>> ioSockets; // TODO: improve
+class NetSocketManagerBase
+{
 	std::vector<Buffer> bufferStore; // TODO: improve
+
+public:
+	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 
 public:
 	//TODO quick workaround until definitive life managment is in place
@@ -246,7 +247,12 @@ public:
 		bufferStore.clear();
 	}
 	
-	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
+};
+
+template<class EmitterType>
+class NetSocketManager : public NetSocketManagerBase {
+	//mb: ioSockets[0] is always reserved and invalid.
+	std::vector<NetSocketEntry<EmitterType>> ioSockets; // TODO: improve
 
 public:
 	NetSocketManager() { ioSockets.emplace_back(0); }
@@ -275,7 +281,7 @@ public:
 #ifdef USING_T_SOCKETS
 	size_t appConnect(net::SocketTBase* ptr, int typeId, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
-		SocketRiia s( std::move( NetSocketManagerBase::appAcquireSocket( ip, port ) ) );
+		SocketRiia s( std::move( OSLayer::appAcquireSocket( ip, port ) ) );
 
 		size_t id = addEntry(ptr, typeId);
 		if (id == 0)
@@ -447,7 +453,7 @@ public:
 private:
 	void infraProcessReadEvent(NetSocketEntry<EmitterType>& entry, EvQueue& evs)
 	{
-		auto res = NetSocketManagerBase::infraGetPacketBytes(entry.getSockData()->recvBuffer, entry.getSockData()->osSocket);
+		auto res = OSLayer::infraGetPacketBytes(entry.getSockData()->recvBuffer, entry.getSockData()->osSocket);
 		if (res.first)
 		{
 			if (res.second.size() != 0)
@@ -507,17 +513,17 @@ private:
 
 	void infraProcessWriteEvent(NetSocketEntry<EmitterType>& current, EvQueue& evs)
 	{
-		NetSocketManagerBase::ShouldEmit status = NetSocketManagerBase::infraProcessWriteEvent(*current.getSockData());
+		OSLayer::ShouldEmit status = OSLayer::infraProcessWriteEvent(*current.getSockData());
 		switch ( status )
 		{
-			case NetSocketManagerBase::ShouldEmit::EmitConnect:
+			case OSLayer::ShouldEmit::EmitConnect:
 				current.getEmitter().emitConnect();
 				break;
-			case NetSocketManagerBase::ShouldEmit::EmitDrain:
+			case OSLayer::ShouldEmit::EmitDrain:
 				current.getEmitter().emitDrain();
 				break;
 			default:
-				NODECPP_ASSERT(status == NetSocketManagerBase::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
+				NODECPP_ASSERT(status == OSLayer::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
 		}
 	}
 
