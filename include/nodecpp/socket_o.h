@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include "net_common.h"
 
+#ifdef USING_O_SOCKETS
 namespace nodecpp {
 
 	namespace net {
@@ -286,5 +287,7 @@ namespace nodecpp {
 	} // namespace net
 
 } // namespace nodecpp
+
+#endif // USING_O_SOCKETS
 
 #endif // SOCKET_O_H

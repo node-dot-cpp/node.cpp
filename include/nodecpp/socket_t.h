@@ -31,10 +31,36 @@
 #include <stdio.h>
 #include "template_common.h"
 #include "net_common.h"
+#include "socket_o.h"
 
 namespace nodecpp {
 
 	namespace net {
+
+		class SocketO : public SocketBase {
+
+		public:
+			SocketO() {}
+
+			SocketO(const SocketO&) = delete;
+			SocketO& operator=(const SocketO&) = delete;
+
+			SocketO(SocketO&&) = default;
+			SocketO& operator=(SocketO&&) = default;
+
+			virtual ~SocketO() { if (state == CONNECTING || state == CONNECTED) destroy(); }
+
+			virtual void onClose(bool hadError) {}
+			virtual void onConnect() {}
+			virtual void onData(Buffer& buffer) {}
+			virtual void onDrain() {}
+			virtual void onEnd() {}
+			virtual void onError(Error& err) {}
+
+			void connect(uint16_t port, const char* ip);
+			SocketO& setNoDelay(bool noDelay = true);
+			SocketO& setKeepAlive(bool enable = false);
+		};
 
 		class SocketTBase : public SocketBase {
 		
@@ -179,8 +205,6 @@ namespace nodecpp {
 		public:
 			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
 			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, idType1, ip, port);}
-//			void connect(uint16_t port, const char* ip) {connectToInfra2<Node>(this, idType1, ip, port);}
-		
 		};
 
 
@@ -191,7 +215,10 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnect)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				if constexpr (std::is_same< T1, SocketO >::value)
+					(static_cast<SocketO*>(ptr->getPtr()))->onConnect();
+				else
+					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnect)(static_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnConnect<T, args...>(nodePtr, ptr, type-1);
@@ -205,18 +232,21 @@ namespace nodecpp {
 
 
 		template<class T, class T1, class ... args>
-		void callOnClose( void* nodePtr, T* ptr, int type, bool ok )
+		void callOnClose( void* nodePtr, T* ptr, int type, bool hadError )
 		{
 			if ( type == 0 )
 			{
-				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(static_cast<T1*>(ptr->getPtr())->getExtra(), ok);
+				if constexpr (std::is_same< T1, SocketO >::value)
+					(static_cast<SocketO*>(ptr->getPtr()))->onClose(hadError);
+				else
+					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(static_cast<T1*>(ptr->getPtr())->getExtra(), hadError);
 			}
 			else
-				callOnClose<T, args...>(nodePtr, ptr, type-1, ok);
+				callOnClose<T, args...>(nodePtr, ptr, type-1, hadError);
 		}
 
 		template<class T>
-		void callOnClose( void* nodePtr, T* ptr, int type, bool ok )
+		void callOnClose( void* nodePtr, T* ptr, int type, bool hadError )
 		{
 			assert( false );
 		}
@@ -227,7 +257,10 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onData)(static_cast<T1*>(ptr->getPtr())->getExtra(), b);
+				if constexpr (std::is_same< T1, SocketO >::value)
+					(static_cast<SocketO*>(ptr->getPtr()))->onData(b);
+				else
+					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onData)(static_cast<T1*>(ptr->getPtr())->getExtra(), b);
 			}
 			else
 				callOnData<T, args...>(nodePtr, ptr, type-1, b);
@@ -245,7 +278,10 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onDrain)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				if constexpr (std::is_same< T1, SocketO >::value)
+					(static_cast<SocketO*>(ptr->getPtr()))->onDrain();
+				else
+					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onDrain)(static_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnDrain<T, args...>(nodePtr, ptr, type-1);
@@ -263,7 +299,10 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
+				if constexpr (std::is_same< T1, SocketO >::value)
+					(static_cast<SocketO*>(ptr->getPtr()))->onError(e);
+				else
+					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
 			}
 			else
 				callOnError<T, args...>(nodePtr, ptr, type-1, e);
@@ -281,7 +320,10 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onEnd)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				if constexpr (std::is_same< T1, SocketO >::value)
+					(static_cast<SocketO*>(ptr->getPtr()))->onEnd();
+				else
+					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onEnd)(static_cast<T1*>(ptr->getPtr())->getExtra());
 			}
 			else
 				callOnEnd<T, args...>(nodePtr, ptr, type-1);
@@ -314,7 +356,7 @@ namespace nodecpp {
 			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,args...>( s ); }
 
 			static void emitConnect( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnConnect<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
-			static void emitClose( const OpaqueEmitter& emitter, bool ok ) { Ptr emitter_ptr( emitter.ptr ); callOnClose<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, ok); }
+			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) { Ptr emitter_ptr( emitter.ptr ); callOnClose<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError); }
 			static void emitData( const OpaqueEmitter& emitter, nodecpp::Buffer& b ) { Ptr emitter_ptr( emitter.ptr ); callOnData<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, b); }
 			static void emitDrain( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnDrain<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { Ptr emitter_ptr( emitter.ptr ); callOnError<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
