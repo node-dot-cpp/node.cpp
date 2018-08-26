@@ -459,8 +459,8 @@ class MySocketO : public net::SocketO
 public:
 	MySocketO( MySampleTNode* myNode_ ) : myNode( myNode_ ) {}
 	void onClose(bool hadError) override { myNode->onClose( &myId, hadError ); }
-	void onConnect() override { myNode->onConnect( &myId ); }
-	void onData(Buffer& buffer) override { myNode->onData( &myId, buffer ); }
+	void onConnect() override { myNode->onConnectO( &myId ); }
+	void onData(Buffer& buffer) override { myNode->onDataO( &myId, buffer ); }
 	void onDrain() override { myNode->onDrain( &myId ); }
 	void onEnd() override { myNode->onEnd( &myId ); }
 	void onError(Error& err) override { myNode->onError( &myId, err ); }
@@ -498,8 +498,9 @@ public:
 #endif // NO_SERVER_STAFF
 
 		*( sockNN_1.getExtra() ) = 17;
+		sockO_1.connect(2000, "127.0.0.1");
 //		*( sockNN1_4.getExtra() ) = 71;
-		sockNN_1.connect(2000, "127.0.0.1");
+//		sockNN_1.connect(2000, "127.0.0.1");
 //		sockNN1_4.connect(2008, "127.0.0.1");
 	}
 
@@ -533,6 +534,29 @@ public:
 	}
 	void onError(const void* extra, nodecpp::Error&) { printf( "MySampleTNode::onError()\n" ); }
 	void onEnd(const void* extra) { printf( "MySampleTNode::onEnd()\n" ); }
+
+	void onConnectO(const void* extra) 
+	{ 
+		printf( "MySampleTNode::onConnect()\n" ); 
+
+		ptr.reset(static_cast<uint8_t*>(malloc(size)));
+
+		bool ok = true;
+		while (ok) {
+//			ok = write(ptr.get(), size, [] { print("onDrain!\n"); });
+			ok = sockO_1.write(ptr.get(), size);
+			letOnDrain = !ok;
+			sentSize += size;
+		}
+	}
+	void onDataO(const void* extra, nodecpp::Buffer& buffer) 
+	{ 
+		printf( "MySampleTNode::onData()\n" );  
+		recvSize += buffer.size();
+
+		if (recvSize >= sentSize)
+			sockO_1.end();
+	}
 
 	
 	void onWhateverConnect(const SocketIdType* extra) 

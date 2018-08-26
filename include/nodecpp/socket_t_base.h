@@ -62,4 +62,15 @@ namespace nodecpp {
 
 } // namespace nodecpp
 
+struct OpaqueEmitter
+{
+	using PtrType = nodecpp::net::SocketTBase*;
+	PtrType ptr = nullptr;
+	int type = -1;
+	NodeBase* nodePtr = nullptr;
+	OpaqueEmitter() : ptr( nullptr), type(-1) {}
+	OpaqueEmitter( NodeBase* node, PtrType ptr_, int type_ ) : ptr( ptr_), type(type_), nodePtr( node ) {}
+	bool isValid() const { return ptr != nullptr; }
+};
+
 #endif // SOCKET_T_BASE_H

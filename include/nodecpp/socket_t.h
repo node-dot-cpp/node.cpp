@@ -327,10 +327,10 @@ namespace nodecpp {
 		public:
 			class Ptr
 			{
-				void* ptr;
+				SocketTBase* ptr;
 			public:
-				Ptr( void* ptr_ ) { ptr = ptr_; }
-				void* getPtr() const {return ptr;}
+				Ptr( SocketTBase* ptr_ ) { ptr = ptr_; }
+				SocketTBase* getPtr() const {return ptr;}
 			};
 
 		public:
