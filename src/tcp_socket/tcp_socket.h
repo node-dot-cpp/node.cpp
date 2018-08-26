@@ -30,7 +30,8 @@
 #define TCP_SOCKET_H
 
 #include "../../include/nodecpp/common.h"
-#include "../../include/nodecpp/net.h"
+//#include "../../include/nodecpp/net.h"
+#include "../../include/nodecpp/socket_t_base.h"
 #include "../ev_queue.h"
 
 #ifdef _MSC_VER

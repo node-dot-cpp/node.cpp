@@ -31,58 +31,12 @@
 #include <stdio.h>
 #include "template_common.h"
 #include "net_common.h"
-#include "socket_o.h"
+#include "socket_t_base.h"
+#include "../../src/infrastructure.h"
 
 namespace nodecpp {
 
 	namespace net {
-
-		class SocketO : public SocketBase {
-
-		public:
-			SocketO() {}
-
-			SocketO(const SocketO&) = delete;
-			SocketO& operator=(const SocketO&) = delete;
-
-			SocketO(SocketO&&) = default;
-			SocketO& operator=(SocketO&&) = default;
-
-			virtual ~SocketO() { if (state == CONNECTING || state == CONNECTED) destroy(); }
-
-			virtual void onClose(bool hadError) {}
-			virtual void onConnect() {}
-			virtual void onData(Buffer& buffer) {}
-			virtual void onDrain() {}
-			virtual void onEnd() {}
-			virtual void onError(Error& err) {}
-
-			void connect(uint16_t port, const char* ip);
-			SocketO& setNoDelay(bool noDelay = true);
-			SocketO& setKeepAlive(bool enable = false);
-		};
-
-		class SocketTBase : public SocketBase {
-		
-		public:
-//			UserDefID userDefID;
-			NodeBase* node = nullptr;
-
-		public:
-			SocketTBase() {}
-
-			SocketTBase(const SocketTBase&) = delete;
-			SocketTBase& operator=(const SocketTBase&) = delete;
-
-			SocketTBase(SocketTBase&&) = default;
-			SocketTBase& operator=(SocketTBase&&) = default;
-
-			~SocketTBase() { if (state == CONNECTING || state == CONNECTED) destroy(); }
-
-			void connect(uint16_t port, const char* ip);
-			SocketTBase& setNoDelay(bool noDelay = true);
-			SocketTBase& setKeepAlive(bool enable = false);
-		};
 
 		template<auto x>
 		struct OnCloseT {};
@@ -205,6 +159,34 @@ namespace nodecpp {
 		public:
 			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
 			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, idType1, ip, port);}
+		};
+
+
+		class SocketO : public SocketTBase {
+
+		public:
+			SocketO() {}
+
+			SocketO(const SocketO&) = delete;
+			SocketO& operator=(const SocketO&) = delete;
+
+			SocketO(SocketO&&) = default;
+			SocketO& operator=(SocketO&&) = default;
+
+			virtual ~SocketO() { if (state == CONNECTING || state == CONNECTED) destroy(); }
+
+			virtual void onClose(bool hadError) {}
+			virtual void onConnect() {}
+			virtual void onData(Buffer& buffer) {}
+			virtual void onDrain() {}
+			virtual void onEnd() {}
+			virtual void onError(Error& err) {}
+
+//			void connect(uint16_t port, const char* ip);
+//			void connect(uint16_t port, const char* ip) {connectToInfra(nullptr, this, idType1, ip, port);}
+			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, 0, ip, port);}
+			SocketO& setNoDelay(bool noDelay = true);
+			SocketO& setKeepAlive(bool enable = false);
 		};
 
 

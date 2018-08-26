@@ -448,6 +448,24 @@ public:
 };
 #endif // USING_O_SOCKETS
 
+class MySampleTNode; // forward declaration; needed in SocketO-derived classes
+
+template<class Extra>
+class MySocketO : public net::SocketO
+{
+	MySampleTNode* myNode = nullptr;
+	Extra myId;
+
+public:
+	MySocketO( MySampleTNode* myNode_ ) : myNode( myNode_ ) {}
+	void onClose(bool hadError) override { myNode->onClose( &myId, hadError ); }
+	void onConnect() override { myNode->onConnect( &myId ); }
+	void onData(Buffer& buffer) override { myNode->onData( &myId, buffer ); }
+	void onDrain() override { myNode->onDrain( &myId ); }
+	void onEnd() override { myNode->onEnd( &myId ); }
+	void onError(Error& err) override { myNode->onError( &myId, err ); }
+};
+
 class MySampleTNode : public NodeBase
 {
 	size_t recvSize = 0;
@@ -458,13 +476,15 @@ class MySampleTNode : public NodeBase
 
 	using SocketIdType = int;
 
+	MySocketO<SocketIdType> sockO_1;
+
 #ifndef NET_CLIENT_ONLY
 	MyServerMember srv;
 #endif // NO_SERVER_STAFF
 //	unique_ptr<MySocketLambda> cli;
 //	MySocketLambda* cli;
 public:
-	MySampleTNode() : sockNN_1(this), sockNN_2(this)
+	MySampleTNode() : sockO_1( this ), sockNN_1(this), sockNN_2(this)
 	{
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
@@ -637,7 +657,7 @@ public:
 	>;
 	SockType_2 sockNN_2;
 
-	using EmitterType = nodecpp::net::SocketTEmitter<SockType_1, SockType_2>;
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, SockType_1, SockType_2>;
 //	using EmitterType = nodecpp::net::SocketTEmitter<SockType_1>;
 };
 

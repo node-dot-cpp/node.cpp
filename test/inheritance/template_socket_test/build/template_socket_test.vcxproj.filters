@@ -104,5 +104,8 @@
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\socket_t _base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
