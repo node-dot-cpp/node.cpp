@@ -30,7 +30,7 @@
 
 #include "net_common.h"
 #include "socket_t_base.h"
-#include "../../src/infrastructure.h"
+//#include "../../src/infrastructure.h"
 
 namespace nodecpp {
 
@@ -56,7 +56,8 @@ namespace nodecpp {
 			virtual void onEnd() {}
 			virtual void onError(Error& err) {}
 
-			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, 0, ip, port);}
+//			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, 0, ip, port);}
+			void connect(uint16_t port, const char* ip);
 			SocketO& setNoDelay(bool noDelay = true);
 			SocketO& setKeepAlive(bool enable = false);
 		};
