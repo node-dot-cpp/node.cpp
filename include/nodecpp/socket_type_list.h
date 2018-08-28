@@ -33,7 +33,7 @@
 #include "socket_t.h"
 #include "socket_o.h"
 #include "socket_l.h"
-#include "../../src/infrastructure.h"
+//#include "../../src/infrastructure.h"
 
 namespace nodecpp {
 
@@ -196,6 +196,8 @@ namespace nodecpp {
 		public:
 			template<class Sock>
 			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,args...>( s ); }
+			template<class Sock>
+			static int softGetTypeIndexIfTypeExists() { return ::softGetTypeIndexIfTypeExists<Sock,args...>(); }
 
 			static void emitConnect( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnConnect<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) { Ptr emitter_ptr( emitter.ptr ); callOnClose<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError); }

@@ -48,8 +48,25 @@ int getTypeIndex( T* ptr NODECPP_UNUSED_VAR )
 template<class T>
 int getTypeIndex( T* )
 {
-//	static_assert( false );
 	NODECPP_BRANCH_CHECK<T, false> bc;
+	return -1;
+}
+
+template<class T, class T1, class ... args>
+int softGetTypeIndexIfTypeExists()
+// Note: difference with getTypeIndex() is that 
+// getTypeIndex() assumes that type T does exist in the list, and will fail at compile time, if a type DNE (which might be good to avoid run-time checks)
+// softGetTypeIndexIfTypeExists() has no such assumptions 
+{
+	if constexpr ( std::is_same< T, T1 >::value )
+		return 0;
+	else
+		return 1 + getTypeIndex<T, args...>(ptr);
+}
+
+template<class T>
+int softGetTypeIndexIfTypeExists()
+{
 	return -1;
 }
 
