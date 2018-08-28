@@ -61,7 +61,7 @@ int softGetTypeIndexIfTypeExists()
 	if constexpr ( std::is_same< T, T1 >::value )
 		return 0;
 	else
-		return 1 + getTypeIndex<T, args...>(ptr);
+		return 1 + softGetTypeIndexIfTypeExists<T, args...>();
 }
 
 template<class T>
