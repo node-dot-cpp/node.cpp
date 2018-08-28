@@ -86,7 +86,7 @@ public:
 void registerFactory( const char* name, RunnableFactoryBase* factory );
 
 //template<class RunnableT>
-template<class RunnableT,class Infra>
+template<class RunnableT>
 class NodeRegistrator
 {
 public:

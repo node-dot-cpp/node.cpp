@@ -13,6 +13,7 @@ static NodeRegistrator<MySampleInheritanceOneNode> noname( "MySampleInheritanceO
 
 #ifdef USING_T_SOCKETS
 
-static NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>> noname( "MySampleTemplateNode" );
+//static NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>> noname( "MySampleTemplateNode" );
+static NodeRegistrator<Runnable<MySampleTNode>> noname( "MySampleTemplateNode" );
 
 #endif // USING_T_SOCKETS
