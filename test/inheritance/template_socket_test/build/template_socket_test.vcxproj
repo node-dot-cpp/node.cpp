@@ -176,6 +176,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_o.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_t _base.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_t.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\socket_type_list.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\trace.h" />

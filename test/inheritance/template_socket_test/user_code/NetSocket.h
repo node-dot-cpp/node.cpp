@@ -6,7 +6,8 @@
 
 
 #include "../../../../3rdparty/fmt/include/fmt/format.h"
-#include "../../../../include/nodecpp/net.h"
+//#include "../../../../include/nodecpp/net.h"
+#include "../../../../include/nodecpp/socket_type_list.h"
 
 #include <functional>
 
@@ -64,7 +65,7 @@ public:
 };
 #endif
 
-#ifdef USING_L_SOCKETS
+#if 1//def USING_L_SOCKETS
 class MySocketLambda :public net::Socket {
 	size_t recvSize = 0;
 	size_t sentSize = 0;
@@ -123,6 +124,7 @@ public:
 	}
 };
 #endif // USING_L_SOCKETS
+
 /*
 class MyServerSocket :public net::Socket {
 	size_t count = 0;
@@ -477,6 +479,7 @@ class MySampleTNode : public NodeBase
 	using SocketIdType = int;
 
 	MySocketO<SocketIdType> sockO_1;
+	MySocketLambda* cli;
 
 #ifndef NET_CLIENT_ONLY
 	MyServerMember srv;
@@ -484,7 +487,7 @@ class MySampleTNode : public NodeBase
 //	unique_ptr<MySocketLambda> cli;
 //	MySocketLambda* cli;
 public:
-	MySampleTNode() : sockO_1( this ), sockNN_1(this), sockNN_2(this)
+	MySampleTNode() : sockO_1( this ), cli( new MySocketLambda() ), sockNN_1(this), sockNN_2(this)
 	{
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
@@ -498,10 +501,25 @@ public:
 #endif // NO_SERVER_STAFF
 
 		*( sockNN_1.getExtra() ) = 17;
-		sockO_1.connect(2000, "127.0.0.1");
+//		sockO_1.connect(2000, "127.0.0.1");
 //		*( sockNN1_4.getExtra() ) = 71;
 //		sockNN_1.connect(2000, "127.0.0.1");
 //		sockNN1_4.connect(2008, "127.0.0.1");
+
+		// lambda staff
+		cli->on(event::data, [this](Buffer& buffer) { this->cli->didData(buffer); });
+
+	//	cli->once<event::Connect>([this]() { fmt::print( "welcome lambda-based solution [1]!\n" ); });
+		cli->once(event::connect, [this]() { fmt::print( "welcome lambda-based solution [2]!\n" ); });
+		cli->once(event::Connect::name, [this]() { fmt::print( "welcome lambda-based solution [3]!\n" ); });
+		cli->once("connect", [this]() { fmt::print( "welcome lambda-based solution [3.1]!\n" ); });
+
+	//	cli->once<event::Close>([this](bool) { fmt::print( "close lambda-based solution [1]!\n" ); return true; });
+		cli->once(event::close, [this](bool) { fmt::print( "close lambda-based solution [2]!\n" ); return true; });
+		cli->once(event::Close::name, [this](bool) { fmt::print( "close lambda-based solution [3]!\n" ); return true; });
+		cli->once("close", [this](bool) { fmt::print( "close lambda-based solution [3.1]!\n" ); return true; });
+
+		cli->connect(2000, "127.0.0.1", [this] {cli->didConnect(); });
 	}
 
 	void onConnect(const void* extra) 
@@ -681,7 +699,7 @@ public:
 	>;
 	SockType_2 sockNN_2;
 
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, SockType_1, SockType_2>;
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockType_1, SockType_2>;
 //	using EmitterType = nodecpp::net::SocketTEmitter<SockType_1>;
 };
 
