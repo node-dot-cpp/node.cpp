@@ -303,8 +303,8 @@ public:
 		netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
 //		netSocketManagerBase->setTypeIndexOfSocketO<typename Node::EmitterType>();
 //		netSocketManagerBase->setTypeIndexOfSocketL<typename Node::EmitterType>();
-	netSocketManagerBase->typeIndexOfSocketO = Node::EmitterType::softGetTypeIndexIfTypeExists<net::SocketO>();
-	netSocketManagerBase->typeIndexOfSocketL = Node::EmitterType::softGetTypeIndexIfTypeExists<net::Socket>();
+	netSocketManagerBase->typeIndexOfSocketO = Node::EmitterType::template softGetTypeIndexIfTypeExists<net::SocketO>();
+	netSocketManagerBase->typeIndexOfSocketL = Node::EmitterType::template softGetTypeIndexIfTypeExists<net::Socket>();
 //		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
 		node = new Node;
 		node->main();
@@ -313,11 +313,6 @@ public:
 	}
 };
 
-template<class Node>
-size_t connectToInfra2(net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
-{
-	return NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr->getNetSocket().appConnect(t, typeId, ip, port);
-}
 #else
 extern thread_local Infrastructure<net::SocketEmitter> infra;
 inline
