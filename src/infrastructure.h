@@ -35,6 +35,10 @@
 #include "../include/nodecpp/timers.h"
 #include <functional>
 
+#include "../include/nodecpp/loop.h"
+#include "../include/nodecpp/socket_o.h"
+#include "../include/nodecpp/socket_l.h"
+
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
 	If the user doesn't store it, timeout will fire normally, and after that all
@@ -286,8 +290,6 @@ size_t connectToInfra(NodeBase* node, net::SocketTBase* t, int typeId, const cha
 	return netSocketManagerBase->appConnect(node, t, typeId, ip, port);
 }
 
-#include "../include/nodecpp/loop.h"
-
 template<class Node>
 class Runnable : public RunnableBase
 {
@@ -299,6 +301,10 @@ public:
 	{
 		Infrastructure<typename Node::EmitterType> infra;
 		netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
+//		netSocketManagerBase->setTypeIndexOfSocketO<typename Node::EmitterType>();
+//		netSocketManagerBase->setTypeIndexOfSocketL<typename Node::EmitterType>();
+	netSocketManagerBase->typeIndexOfSocketO = Node::EmitterType::softGetTypeIndexIfTypeExists<net::SocketO>();
+	netSocketManagerBase->typeIndexOfSocketL = Node::EmitterType::softGetTypeIndexIfTypeExists<net::Socket>();
 //		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
 		node = new Node;
 		node->main();

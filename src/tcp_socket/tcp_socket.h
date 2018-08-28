@@ -235,6 +235,10 @@ class NetSocketManagerBase
 	std::vector<Buffer> bufferStore; // TODO: improve
 	//mb: ioSockets[0] is always reserved and invalid.
 
+public:
+	int typeIndexOfSocketO = -1;
+	int typeIndexOfSocketL = -1;
+
 protected:
 	std::vector<NetSocketEntry> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
