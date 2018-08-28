@@ -29,6 +29,7 @@
 
 #include "infrastructure.h"
 #include "../include/nodecpp/socket_o.h"
+#include "../include/nodecpp/socket_l.h"
 
 using namespace std;
 using namespace nodecpp;
@@ -54,7 +55,8 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 	return OSLayer::appWrite(dataForCommandProcessing, data, size);
 }
 
-void SocketO::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, 0, ip, port);}
+void SocketO::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, netSocketManagerBase->typeIndexOfSocketO, ip, port);}
+void Socket::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, netSocketManagerBase->typeIndexOfSocketL, ip, port);}
 
 #ifdef USING_O_SOCKETS
 void SocketO::connect(uint16_t port, const char* ip)
