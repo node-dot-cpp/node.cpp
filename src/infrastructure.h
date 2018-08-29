@@ -320,15 +320,15 @@ NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
 #endif // USING_T_SOCKETS
 
 #ifndef NET_CLIENT_ONLY
-inline
-Infrastructure<net::SocketEmitter>& getInfra() { return infra; }
+//inline
+//Infrastructure<net::SocketEmitter>& getInfra() { return infra; }
 #endif
 
 //NetSocketManagerBase& getNetSocket();
 
 #ifndef NET_CLIENT_ONLY
-inline
-NetServerManager& getNetServer() { return infra.getNetServer(); }
+//inline
+//NetServerManager& getNetServer() { return infra.getNetServer(); }
 #endif
 
 template<class T>
