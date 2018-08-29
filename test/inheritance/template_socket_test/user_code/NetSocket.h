@@ -460,12 +460,12 @@ class MySocketO : public net::SocketO
 
 public:
 	MySocketO( MySampleTNode* myNode_ ) : myNode( myNode_ ) {}
-	void onClose(bool hadError) override { myNode->onClose( &myId, hadError ); }
-	void onConnect() override { myNode->onConnectO( &myId ); }
-	void onData(Buffer& buffer) override { myNode->onDataO( &myId, buffer ); }
-	void onDrain() override { myNode->onDrain( &myId ); }
-	void onEnd() override { myNode->onEnd( &myId ); }
-	void onError(Error& err) override { myNode->onError( &myId, err ); }
+	void onClose(bool hadError) override;
+	void onConnect() override;
+	void onData(Buffer& buffer)override;
+	void onDrain() override;
+	void onEnd() override;
+	void onError(Error& err) override;
 };
 
 class MySampleTNode : public NodeBase
@@ -702,5 +702,12 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockType_1, SockType_2>;
 //	using EmitterType = nodecpp::net::SocketTEmitter<SockType_1>;
 };
+
+template<class Extra> void MySocketO<Extra>::onClose(bool hadError) { myNode->onClose( &myId, hadError ); }
+template<class Extra> void MySocketO<Extra>::onConnect() { myNode->onConnectO( &myId ); }
+template<class Extra> void MySocketO<Extra>::onData(Buffer& buffer) { myNode->onDataO( &myId, buffer ); }
+template<class Extra> void MySocketO<Extra>::onDrain() { myNode->onDrain( &myId ); }
+template<class Extra> void MySocketO<Extra>::onEnd() { myNode->onEnd( &myId ); }
+template<class Extra> void MySocketO<Extra>::onError(Error& err) { myNode->onError( &myId, err ); }
 
 #endif // NET_SOCKET_H

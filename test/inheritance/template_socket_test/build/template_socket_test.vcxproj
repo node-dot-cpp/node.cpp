@@ -183,6 +183,7 @@
     <ClInclude Include="..\..\..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />
+    <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket_base.h" />
     <ClInclude Include="..\user_code\NetSocket.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

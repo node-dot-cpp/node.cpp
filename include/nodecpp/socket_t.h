@@ -158,6 +158,8 @@ namespace nodecpp {
 		public:
 			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
 			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, idType1, ip, port);}
+			SocketT& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(this->dataForCommandProcessing, noDelay); return *this; }
+			SocketT& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(this->dataForCommandProcessing, enable); return *this; }
 		};
 
 	} // namespace net

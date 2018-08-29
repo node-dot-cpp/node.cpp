@@ -46,7 +46,12 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 }
 
 void SocketO::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, netSocketManagerBase->typeIndexOfSocketO, ip, port);}
+//SocketO& SocketO::setNoDelay(bool noDelay) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
+//SocketO& SocketO::setKeepAlive(bool enable) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
+
 void Socket::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, netSocketManagerBase->typeIndexOfSocketL, ip, port);}
+//Socket& Socket::setNoDelay(bool noDelay) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
+//Socket& Socket::setKeepAlive(bool enable) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
 
 #ifdef USING_O_SOCKETS
 void SocketO::connect(uint16_t port, const char* ip)
