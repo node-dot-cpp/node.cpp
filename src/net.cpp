@@ -38,7 +38,6 @@ using namespace nodecpp::net;
 
 void SocketBase::destroy() { OSLayer::appDestroy(dataForCommandProcessing); }
 void SocketBase::end() { OSLayer::appEnd(dataForCommandProcessing); }
-
 bool SocketBase::write(const uint8_t* data, uint32_t size)
 {
 	_bytesWritten += size;
@@ -46,76 +45,8 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 }
 
 void SocketO::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, netSocketManagerBase->typeIndexOfSocketO, ip, port);}
-//SocketO& SocketO::setNoDelay(bool noDelay) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
-//SocketO& SocketO::setKeepAlive(bool enable) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
 
 void Socket::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, netSocketManagerBase->typeIndexOfSocketL, ip, port);}
-//Socket& Socket::setNoDelay(bool noDelay) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
-//Socket& Socket::setKeepAlive(bool enable) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
-
-#ifdef USING_O_SOCKETS
-void SocketO::connect(uint16_t port, const char* ip)
-{
-	state = CONNECTING;
-//	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
-	dataForCommandProcessing.id = connectToInfra(this, ip, port);
-}
-
-SocketO& SocketO::setNoDelay(bool noDelay)
-{ 
-	OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay);
-	return *this;
-}
-
-SocketO& SocketO::setKeepAlive(bool enable)
-{
-	OSLayer::appSetKeepAlive(dataForCommandProcessing, enable);
-	return *this;
-}
-#endif // USING_O_SOCKETS
-
-#ifdef USING_L_SOCKETS
-void Socket::connect(uint16_t port, const char* ip)
-{
-	state = CONNECTING;
-//	dataForCommandProcessing.id = getInfra().getNetSocket().appConnect(this, ip, port);
-	dataForCommandProcessing.id = connectToInfra(this, ip, port);
-}
-
-Socket& Socket::setNoDelay(bool noDelay)
-{ 
-	OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay);
-	return *this;
-}
-
-Socket& Socket::setKeepAlive(bool enable)
-{
-	OSLayer::appSetKeepAlive(dataForCommandProcessing, enable);
-	return *this;
-}
-#endif // USING_L_SOCKETS
-
-#ifdef USING_T_SOCKETS
-void SocketTBase::connect(uint16_t port, const char* ip)
-{
-	assert(false); // revise implementation
-	state = CONNECTING;
-//	dataForCommandProcessing.id = connectToInfra(this, ip, port);
-}
-
-SocketTBase& SocketTBase::setNoDelay(bool noDelay)
-{ 
-	OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay);
-	return *this;
-}
-
-SocketTBase& SocketTBase::setKeepAlive(bool enable)
-{
-	OSLayer::appSetKeepAlive(dataForCommandProcessing, enable);
-	return *this;
-}
-#endif // USING_T_SOCKETS
-
 
 ///////////////////////////////////////////////////////////////////////////////
 

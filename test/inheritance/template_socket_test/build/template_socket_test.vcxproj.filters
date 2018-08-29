@@ -104,13 +104,13 @@
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_t _base.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_type_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket_base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\socket_t_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

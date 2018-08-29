@@ -53,10 +53,6 @@ namespace nodecpp {
 			SocketTBase& operator=(SocketTBase&&) = default;
 
 			~SocketTBase() { if (state == CONNECTING || state == CONNECTED) destroy(); }
-
-			void connect(uint16_t port, const char* ip);
-			SocketTBase& setNoDelay(bool noDelay = true);
-			SocketTBase& setKeepAlive(bool enable = false);
 		};
 
 	} // namespace net
