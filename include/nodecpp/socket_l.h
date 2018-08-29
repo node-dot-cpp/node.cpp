@@ -30,7 +30,6 @@
 
 #include "net_common.h"
 #include "socket_t_base.h"
-//#include "../../src/infrastructure.h"
 
 namespace nodecpp {
 

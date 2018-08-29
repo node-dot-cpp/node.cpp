@@ -36,18 +36,8 @@ using namespace nodecpp;
 using namespace nodecpp::net;
 
 
-
-
 void SocketBase::destroy() { OSLayer::appDestroy(dataForCommandProcessing); }
 void SocketBase::end() { OSLayer::appEnd(dataForCommandProcessing); }
-
-//void SocketBase::pause() { OSLayer::appPause(id); }
-//void SocketBase::ref() { OSLayer::appRef(id); }
-
-//void SocketBase::resume() { OSLayer::appResume(id); }
-//void SocketBase::unref() { OSLayer::appUnref(id); }
-
-//size_t SocketBase::bufferSize() const { return OSLayer::appBufferSize(id); }
 
 bool SocketBase::write(const uint8_t* data, uint32_t size)
 {
