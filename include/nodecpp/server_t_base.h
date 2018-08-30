@@ -25,8 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef SOCKET_T_BASE_H
-#define SOCKET_T_BASE_H
+#ifndef SERVER_T_BASE_H
+#define SERVER_T_BASE_H
 
 #include <stdio.h>
 #include "template_common.h"
@@ -71,4 +71,4 @@ namespace nodecpp {
 
 } // namespace nodecpp
 
-#endif // SOCKET_T_BASE_H
+#endif // SERVER_T_BASE_H

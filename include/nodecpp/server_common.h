@@ -31,7 +31,6 @@
 #include "common.h"
 #include "event.h"
 #include "net_common.h"
-#include "socket_common.h"
 
 namespace nodecpp {
 
@@ -78,17 +77,6 @@ namespace nodecpp {
 			void ref();
 			void unref();
 
-		};
-
-		struct OpaqueEmitterForServer
-		{
-			using PtrType = nodecpp::net::ServerBase*;
-			PtrType ptr = nullptr;
-			int type = -1;
-			NodeBase* nodePtr = nullptr;
-			OpaqueEmitterForServer() : ptr( nullptr), type(-1) {}
-			OpaqueEmitterForServer( NodeBase* node, PtrType ptr_, int type_ ) : ptr( ptr_), type(type_), nodePtr( node ) {}
-			bool isValid() const { return ptr != nullptr; }
 		};
 
 		//TODO don't use naked pointers, think
