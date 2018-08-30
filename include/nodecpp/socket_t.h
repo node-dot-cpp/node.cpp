@@ -136,7 +136,7 @@ namespace nodecpp {
 		};
 
 		template<class Node, class Initializer>
-		class SocketT2<Node, Initializer, void> : public SocketBase
+		class SocketT2<Node, Initializer, void> : public SocketTBase
 		{
 			public:
 				using userIdType = void;
