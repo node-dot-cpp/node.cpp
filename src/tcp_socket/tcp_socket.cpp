@@ -505,7 +505,16 @@ thread_local int typeIndexOfSocketO = -1;
 thread_local int typeIndexOfSocketL = -1;
 
 
-SocketRiia OSLayer::appAcquireSocket(const char* ip, uint16_t port)
+SocketRiia OSLayer::appAcquireSocket()
+{
+	SocketRiia s(internal_usage_only::internal_make_tcp_socket());
+	if (!s)
+		throw Error();
+
+	return s;
+}
+
+void OSLayer::appConnectSocket(SOCKET s, const char* ip, uint16_t port)
 {
 	Ip4 peerIp = Ip4::parse(ip);
 //	Ip4 myIp = Ip4::parse(ip);
@@ -514,11 +523,7 @@ SocketRiia OSLayer::appAcquireSocket(const char* ip, uint16_t port)
 //	Port myPort = Port::fromHost(port);
 
 
-	SocketRiia s(internal_usage_only::internal_make_tcp_socket());
-	if (!s)
-		throw Error();
-
-	uint8_t st = internal_usage_only::internal_connect_for_address(peerIp, peerPort, s.get());
+	uint8_t st = internal_usage_only::internal_connect_for_address(peerIp, peerPort, s);
 
 	if (st != COMMLAYER_RET_PENDING && st != COMMLAYER_RET_OK)
 		throw Error();

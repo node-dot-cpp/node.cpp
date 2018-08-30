@@ -182,7 +182,8 @@ protected:
 	std::string family = "IPv4";
 
 public:
-	static SocketRiia appAcquireSocket(const char* ip, uint16_t port);
+	static SocketRiia appAcquireSocket();
+	static void appConnectSocket(SOCKET s, const char* ip, uint16_t port);
 
 public:
 	static void appDestroy(net::SocketBase::DataForCommandProcessing& sockData);

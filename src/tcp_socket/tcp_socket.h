@@ -116,10 +116,8 @@ public:
 	}
 
 #ifdef USING_T_SOCKETS
-	size_t appConnect(NodeBase* node, net::SocketTBase* ptr, int typeId, const char* ip, uint16_t port) // TODO: think about template with type checking inside
+	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId) // TODO: think about template with type checking inside
 	{
-		SocketRiia s( std::move( OSLayer::appAcquireSocket( ip, port ) ) );
-
 		size_t id = addEntry(node, ptr, typeId);
 		if (id == 0)
 		{
@@ -129,11 +127,17 @@ public:
 
 		auto& entry = appGetEntry(id);
 		NODECPP_ASSERT(entry.getSockData()->state == net::SocketBase::DataForCommandProcessing::Uninitialized);
-		entry.getSockData()->osSocket = s.release();
-		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Connecting;
-	//	entry.connecting = true;
 
 		return id;
+	}
+
+	void appConnectSocket(net::SocketTBase* sockPtr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
+	{
+		// TODO: check sockPtr validity
+		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket,  ip, port );
+		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
+	//	entry.connecting = true;
 	}
 #endif // USING_T_SOCKETS
 	

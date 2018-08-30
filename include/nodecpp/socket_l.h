@@ -44,7 +44,7 @@ namespace nodecpp {
 			EventEmitter<event::Error> eError;
 
 		public:
-			Socket() {}
+			Socket();
 
 			Socket(const Socket&) = delete;
 			Socket& operator=(const Socket&) = delete;

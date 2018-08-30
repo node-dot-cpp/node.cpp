@@ -44,9 +44,11 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 	return OSLayer::appWrite(dataForCommandProcessing, data, size);
 }
 
-void SocketO::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, netSocketManagerBase->typeIndexOfSocketO, ip, port);}
+SocketO::SocketO() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
+void SocketO::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
-void Socket::connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, netSocketManagerBase->typeIndexOfSocketL, ip, port);}
+Socket::Socket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL);}
+void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -38,7 +38,7 @@ namespace nodecpp {
 		class SocketO : public SocketTBase {
 
 		public:
-			SocketO() {}
+			SocketO();
 
 			SocketO(const SocketO&) = delete;
 			SocketO& operator=(const SocketO&) = delete;

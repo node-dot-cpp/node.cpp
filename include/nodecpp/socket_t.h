@@ -154,10 +154,10 @@ namespace nodecpp {
 		template<class Node, class Extra, class ... Handlers>
 		class SocketT : public SocketT2<Node, SocketTInitializer<Handlers...>, Extra>
 		{
-			int idType1; // we will try to get rid of it later
+//			int idType1; // we will try to get rid of it later
 		public:
-			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
-			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, idType1, ip, port);}
+			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAcquireSocket(this->node, this, idType1); }
+			void connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 			SocketT& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(this->dataForCommandProcessing, noDelay); return *this; }
 			SocketT& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(this->dataForCommandProcessing, enable); return *this; }
 		};

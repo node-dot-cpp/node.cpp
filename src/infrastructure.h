@@ -285,9 +285,15 @@ public:
 
 #ifdef USING_T_SOCKETS
 inline
-size_t connectToInfra(NodeBase* node, net::SocketTBase* t, int typeId, const char* ip, uint16_t port)
+size_t registerWithInfraAndAcquireSocket(NodeBase* node, net::SocketTBase* t, int typeId)
 {
-	return netSocketManagerBase->appConnect(node, t, typeId, ip, port);
+	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
+}
+
+inline
+void connectSocket(net::SocketTBase* s, const char* ip, uint16_t port)
+{
+	netSocketManagerBase->appConnectSocket(s, ip, port);
 }
 
 template<class Node>
