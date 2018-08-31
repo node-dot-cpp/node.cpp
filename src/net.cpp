@@ -54,18 +54,23 @@ void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, por
 
 #ifndef NET_CLIENT_ONLY
 
-void ServerBase::ref() { /*getInfra().*/getNetServer().appRef(id); }
-void ServerBase::unref() { /*getInfra().*/getNetServer().appUnref(id); }
+//void ServerBase::ref() { /*getInfra().*/getNetServer().appRef(id); }
+//void ServerBase::unref() { /*getInfra().*/getNetServer().appUnref(id); }
+void ServerBase::ref() { netServerManagerBase->appRef(id); }
+void ServerBase::unref() { netServerManagerBase->appUnref(id); }
 
 void ServerBase::close()
 {
-	/*getInfra().*/getNetServer().appClose(id);
+//	/*getInfra().*/getNetServer().appClose(id);
+	netServerManagerBase->appClose(id);
 }
 
 
 void Server::listen(uint16_t port, const char* ip, int backlog)
 {
-	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
+	assert( false );
+//	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
+//	netServerManagerBase->appListen(this, port, ip, backlog);
 }
 #if 0 // be back later
 void ServerO::listen(uint16_t port, const char* ip, int backlog)

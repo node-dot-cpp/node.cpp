@@ -41,6 +41,7 @@ namespace nodecpp {
 			public:
 			class DataForCommandProcessing {
 			public:
+				size_t index;
 				bool refed = true;
 				short fdEvents = 0;
 				//SOCKET osSocket = INVALID_SOCKET;

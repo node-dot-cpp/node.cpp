@@ -30,6 +30,7 @@
 #define TCP_SOCKET_H
 
 #include "tcp_socket_base.h"
+//#include "../../include/nodecpp/server_common.h"
 
 using namespace nodecpp;
 
@@ -94,7 +95,7 @@ public:
 public:
 	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
 
-	template<class SockType>
+/*	template<class SockType>
 	size_t appConnect(SockType* ptr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
 		SocketRiia s( std::move( OSLayer::appAcquireSocket( ip, port ) ) );
@@ -113,7 +114,7 @@ public:
 	//	entry.connecting = true;
 
 		return id;
-	}
+	}*/
 
 #ifdef USING_T_SOCKETS
 	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId) // TODO: think about template with type checking inside
@@ -450,19 +451,21 @@ private:
 	}
 };
 
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef NET_CLIENT_ONLY
 class NetServerEntry {
 public:
 	size_t index;
-	net::Server* ptr = nullptr;
-	bool refed = true;
-	SOCKET osSocket = INVALID_SOCKET;
-	short fdEvents = 0;
+	net::ServerBase* serverPtr = nullptr;
+	net::OpaqueEmitterForServer emitter;
+
+//	bool refed = true;
+//	SOCKET osSocket = INVALID_SOCKET;
+//	short fdEvents = 0;
 
 	NetServerEntry(size_t index) :index(index) {}
-	NetServerEntry(size_t index, net::Server* ptr) :index(index), ptr(ptr) {}
+	NetServerEntry(size_t index, NodeBase* node, net::ServerBase* serverPtr_, int type) : index(index), serverPtr(serverPtr_), emitter(node, serverPtr_, type) {serverPtr_->dataForCommandProcessing.index = index;}
 	
 	NetServerEntry(const NetServerEntry& other) = delete;
 	NetServerEntry& operator=(const NetServerEntry& other) = delete;
@@ -470,31 +473,36 @@ public:
 	NetServerEntry(NetServerEntry&& other) = default;
 	NetServerEntry& operator=(NetServerEntry&& other) = default;
 
-	bool isValid() const { return ptr != nullptr; }
+	bool isValid() const { return serverPtr != nullptr; }
 
-	net::Server* getPtr() const { return ptr; }
+//	net::ServerBase* getPtr() const { return serverPtr; }
+	const net::OpaqueEmitterForServer& getEmitter() const { return emitter; }
+	net::ServerBase::DataForCommandProcessing* getServerData() const { assert(serverPtr != nullptr); return serverPtr ? &(serverPtr->dataForCommandProcessing) : nullptr; }
 };
 
-
-class NetServerManager
+class NetServerManagerBase
 {
+	friend class OSLayer;
+protected:
 	//mb: ioSockets[0] is always reserved and invalid.
 	std::vector<NetServerEntry> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
 	PendingEvQueue pendingEvents;
 	std::vector<Error> errorStore;
+	std::vector<size_t> pendingListenEvents;
 
 	std::string family = "IPv4";
 
 public:
 	static const size_t MAX_SOCKETS = 100; //arbitrary limit
-	NetServerManager();
+	NetServerManagerBase() { ioSockets.emplace_back(0); }
 
 	void appClose(size_t id);
-	void appListen(net::Server* ptr, uint16_t port, const char* ip, int backlog);
+	void appAddServer(NodeBase* node, net::ServerBase* ptr, int typeId);
+	void appListen(net::ServerBase* ptr, uint16_t port, const char* ip, int backlog);
 
-	void appRef(size_t id) { appGetEntry(id).refed = true; }
-	void appUnref(size_t id) { appGetEntry(id).refed = false; }
+	void appRef(size_t id) { appGetEntry(id).getServerData()->refed = true; }
+	void appUnref(size_t id) { appGetEntry(id).getServerData()->refed = false; }
 
 
 	//TODO quick workaround until definitive life managment is in place
@@ -508,20 +516,185 @@ public:
 	}
 
 	// to help with 'poll'
-	size_t infraGetPollFdSetSize() const;
-	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const;
-	void infraGetCloseEvents(EvQueue& evs);
+	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
+//	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const;
+//	void infraGetCloseEvents(EvQueue& evs);
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
-	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
+//	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs);
+
+protected:
+//	void infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& evs);
+
+	size_t addEntry(NodeBase* node, net::ServerBase* ptr, int typeId);
+	NetServerEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
+	const NetServerEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
+
+//	void infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs);
+};
+
+extern thread_local NetServerManagerBase* netServerManagerBase;
+
+
+template<class EmitterType>
+class NetServerManager : public NetServerManagerBase
+{
+	//mb: ioSockets[0] is always reserved and invalid.
+//	std::vector<NetServerEntry> ioSockets; // TODO: improve
+//	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
+//	PendingEvQueue pendingEvents;
+//	std::vector<Error> errorStore;
+
+	std::string family = "IPv4";
+
+public:
+//	static const size_t MAX_SOCKETS = 100; //arbitrary limit
+	NetServerManager() {}
+
+//	void appClose(size_t id);
+//	void appListen(net::Server* ptr, uint16_t port, const char* ip, int backlog);
+
+//	void appRef(size_t id) { appGetEntry(id).refed = true; }
+//	void appUnref(size_t id) { appGetEntry(id).refed = false; }
+
+
+	//TODO quick workaround until definitive life managment is in place
+	Error& infraStoreError(Error err) {
+		errorStore.push_back(std::move(err));
+		return errorStore.back();
+	}
+
+	void infraClearStores() {
+		errorStore.clear();
+	}
+
+	// to help with 'poll'
+//	size_t infraGetPollFdSetSize() const;
+	/*
+	* TODO: for performace reasons, the poll data should be cached inside NetSocketManager
+	* and updated at the same time that StreamSocketEntry.
+	* Avoid to have to write it all over again every time
+	*
+	*/
+	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const
+	{ 
+		size_t sz = end - begin;
+		assert(sz >= ioSockets.size());
+		bool anyRefed = false;
+
+		for (size_t i = 0; i != sz; ++i)
+		{
+			if (i < ioSockets.size() && ioSockets[i].isValid())
+			{
+				const auto& current = ioSockets[i];
+				NODECPP_ASSERT(current.getServerData()->osSocket != INVALID_SOCKET);
+
+				anyRefed = anyRefed || current.getServerData()->refed;
+
+				begin[i].fd = current.getServerData()->osSocket;
+				begin[i].events = 0;
+
+				bool f2 = true;
+				if (f2)
+					begin[i].events |= POLLIN;
+			}
+			else
+				begin[i].fd = INVALID_SOCKET;
+		}
+
+		return anyRefed;
+	}
+	void infraGetCloseEvents(EvQueue& evs)
+	{
+		// if there is an issue with a socket, we may need to close it,
+		// and push an event here to notify later.
+
+		for (auto& current : pendingCloseEvents)
+		{
+			//first remove any pending event for this socket
+			pendingEvents.remove(current.first);
+			if (current.first < ioSockets.size())
+			{
+				auto& entry = ioSockets[current.first];
+				if (entry.isValid())
+				{
+					if (entry.getServerData()->osSocket != INVALID_SOCKET)
+						internal_usage_only::internal_close(entry.getServerData()->osSocket);
+					//			entry.getPtr()->emitClose(entry.second);
+					evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
+				}
+				entry = NetServerEntry(current.first);
+			}
+		}
+		pendingCloseEvents.clear();
+	}
+	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
+	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs)
+	{
+		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
+		for (size_t i = 0; i != ioSockets.size(); ++i)
+		{
+			auto& current = ioSockets[i];
+			if (begin[i].fd != INVALID_SOCKET)
+			{
+				if ((begin[i].revents & (POLLERR | POLLNVAL)) != 0) // check errors first
+				{
+					NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
+					internal_usage_only::internal_getsockopt_so_error(current.getServerData()->osSocket);
+					infraMakeErrorEventAndClose(current, evs);
+				}
+				else if ((begin[i].revents & POLLIN) != 0)
+				{
+					NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
+					infraProcessAcceptEvent(current, evs);
+				}
+				else if (begin[i].revents != 0)
+				{
+					NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
+					internal_usage_only::internal_getsockopt_so_error(current.getServerData()->osSocket);
+					infraMakeErrorEventAndClose(current, evs);
+				}
+			}
+		}
+	}
 
 private:
-	void infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& evs);
+	void infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& evs)
+	{
+		Ip4 remoteIp;
+		Port remotePort;
 
-	size_t addEntry(net::Server* ptr);
-	NetServerEntry& appGetEntry(size_t id);
-	const NetServerEntry& appGetEntry(size_t id) const;
+		SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, entry.getServerData()->osSocket));
+		if (!newSock)
+			return;
 
-	void infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs);
+	//	net::Socket* ptr = entry.getPtr()->makeSocket();
+		net::Socket* ptr = EmitterType::makeSocket(entry.getEmitter());
+
+//		auto& man = getInfra().getNetSocket();
+//		bool ok = man.infraAddAccepted(ptr, newSock.release(), evs);
+		NODECPP_ASSERT( netSocketManagerBase != nullptr );
+		bool ok = netSocketManagerBase->infraAddAccepted(ptr, newSock.release(), evs);
+
+		if (!ok)
+			return;
+
+	//	entry.getPtr()->emitConnection(ptr);
+		evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
+		EmitterType::emitConnection( entry.getEmitter(), ptr );
+
+		return;
+	}
+
+//	size_t addEntry(net::Server* ptr);
+//	NetServerEntry& appGetEntry(size_t id);
+//	const NetServerEntry& appGetEntry(size_t id) const;
+
+	void infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs)
+	{
+//		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
+		EmitterType::emitError( entry.getEmitter(), Error() );
+		pendingCloseEvents.emplace_back(entry.index, true);
+	}
 };
 
 #endif // !NET_CLIENT_ONLY

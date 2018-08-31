@@ -235,7 +235,7 @@ void runInfraLoop();
 bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
 #endif // !USING_T_SOCKETS
 
-template<class EmitterType>
+template<class EmitterType, class ServerEmitterType>
 class Infrastructure
 {
 #ifndef USING_T_SOCKETS
@@ -251,7 +251,7 @@ class Infrastructure
 
 	NetSocketManager<EmitterType> netSocket;
 #ifndef NET_CLIENT_ONLY
-	NetServerManager netServer;
+	NetServerManager<ServerEmitterType> netServer;
 #endif
 	TimeoutManager timeout;
 	EvQueue inmediateQueue;
@@ -263,7 +263,7 @@ public:
 	uint64_t nextTimeoutAt = 0;
 	NetSocketManager<EmitterType>& getNetSocket() { return netSocket; }
 #ifndef NET_CLIENT_ONLY
-	NetServerManager& getNetServer() { return netServer; }
+	NetServerManager<ServerEmitterType>& getNetServer() { return netServer; }
 #endif
 	TimeoutManager& getTimeout() { return timeout; }
 	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
@@ -337,9 +337,9 @@ NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
 //NetServerManager& getNetServer() { return infra.getNetServer(); }
 #endif
 
-template<class T>
+//template<class T>
 //size_t connectToInfra(T* t, const char* ip, uint16_t port) { return infra.getNetSocket().appConnect(t, ip, port); }
-size_t connectToInfra(T* t, const char* ip, uint16_t port) { return /*getNetSocket().appConnect(t, ip, port)*/0; }
+//size_t connectToInfra(T* t, const char* ip, uint16_t port) { return /*getNetSocket().appConnect(t, ip, port)*/0; }
 
 //using EvQueue = std::vector<std::function<void()>>;
 

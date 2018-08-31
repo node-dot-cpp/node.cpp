@@ -503,6 +503,7 @@ Port Port::fromNetwork(uint16_t port)
 thread_local NetSocketManagerBase* netSocketManagerBase;
 thread_local int typeIndexOfSocketO = -1;
 thread_local int typeIndexOfSocketL = -1;
+thread_local NetServerManagerBase* netServerManagerBase;
 
 
 SocketRiia OSLayer::appAcquireSocket()
@@ -527,8 +528,6 @@ void OSLayer::appConnectSocket(SOCKET s, const char* ip, uint16_t port)
 
 	if (st != COMMLAYER_RET_PENDING && st != COMMLAYER_RET_OK)
 		throw Error();
-
-	return s;
 }
 
 void OSLayer::appDestroy(net::SocketBase::DataForCommandProcessing& sockData)
@@ -774,17 +773,11 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 
 
 #ifndef NET_CLIENT_ONLY
-NetServerManager::NetServerManager()
+void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerBase* ptr, int typeId)
 {
-	//mb ioSockets[0] is always invalid
-	ioSockets.emplace_back(0);
-}
+//	Ip4 myIp = Ip4::parse(ip);
 
-void NetServerManager::appListen(net::Server* ptr, uint16_t port, const char* ip, int backlog)
-{
-	Ip4 myIp = Ip4::parse(ip);
-
-	Port myPort = Port::fromHost(port);
+//	Port myPort = Port::fromHost(port);
 
 
 	SocketRiia s(internal_usage_only::internal_make_tcp_socket());
@@ -793,7 +786,7 @@ void NetServerManager::appListen(net::Server* ptr, uint16_t port, const char* ip
 		throw Error();
 	}
 
-	if (!internal_usage_only::internal_bind_socket(s.get(), myIp, myPort))
+/*	if (!internal_usage_only::internal_bind_socket(s.get(), myIp, myPort))
 	{
 		throw Error();
 	}
@@ -801,9 +794,9 @@ void NetServerManager::appListen(net::Server* ptr, uint16_t port, const char* ip
 	if (!internal_usage_only::internal_listen_tcp_socket(s.get()))
 	{
 		throw Error();
-	}
+	}*/
 
-	size_t id = addEntry(ptr);
+	size_t id = addEntry(node, ptr, typeId);
 	if (id == 0)
 	{
 		NODECPP_TRACE0("Failed to addEntry at NetServerManager::listen");
@@ -811,15 +804,56 @@ void NetServerManager::appListen(net::Server* ptr, uint16_t port, const char* ip
 	}
 
 	auto& entry = appGetEntry(id);
-	entry.osSocket = s.release();
+	entry.getServerData()->osSocket = s.release();
+
+/*	net::Address addr;
+
+	pendingEvents.add(id, &net::Server::emitListening, ptr, id, std::move(addr));*/
+}
+
+void NetServerManagerBase::appListen(net::ServerBase* ptr, uint16_t port, const char* ip, int backlog)
+{
+	Ip4 myIp = Ip4::parse(ip);
+
+	Port myPort = Port::fromHost(port);
+
+
+/*	SocketRiia s(internal_usage_only::internal_make_tcp_socket());
+	if (!s)
+	{
+		throw Error();
+	}*/
+
+	if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort))
+	{
+		throw Error();
+	}
+
+	if (!internal_usage_only::internal_listen_tcp_socket(ptr->dataForCommandProcessing.osSocket))
+	{
+		throw Error();
+	}
+
+/*	size_t id = addEntry(node, ptr, typeId);
+	if (id == 0)
+	{
+		NODECPP_TRACE0("Failed to addEntry at NetServerManager::listen");
+		throw Error();
+	}
+
+	auto& entry = appGetEntry(id);
+	entry.getServerData()->osSocket = s.release();*/
 
 	net::Address addr;
 
-	pendingEvents.add(id, &net::Server::emitListening, ptr, id, std::move(addr));
+//	auto& entry = appGetEntry(ptr->dataForCommandProcessing.index);
+//	pendingEvents.add(id, &net::Server::emitListening, ptr, id, std::move(addr));
+//	EmitterType::emitError( entry.getEmitter(), Error() );
+	pendingListenEvents.push_back( ptr->dataForCommandProcessing.index );
 }
 
 
-void NetServerManager::appClose(size_t id)
+void NetServerManagerBase::appClose(size_t id)
 {
 	auto& entry = appGetEntry(id);
 	if (!entry.isValid())
@@ -831,10 +865,10 @@ void NetServerManager::appClose(size_t id)
 	pendingCloseEvents.emplace_back(entry.index, false);
 }
 
-size_t NetServerManager::infraGetPollFdSetSize() const
+/*size_t NetServerManager::infraGetPollFdSetSize() const
 {
 	return ioSockets.size();
-}
+}*/
 
 /*
 * TODO: for performace reasons, the poll data should be cached inside NetSocketManager
@@ -842,8 +876,8 @@ size_t NetServerManager::infraGetPollFdSetSize() const
 * Avoid to have to write it all over again every time
 *
 */
-bool NetServerManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
-{
+/*bool NetServerManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
+{ 
 	size_t sz = end - begin;
 	assert(sz >= ioSockets.size());
 	bool anyRefed = false;
@@ -853,11 +887,11 @@ bool NetServerManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 		if (i < ioSockets.size() && ioSockets[i].isValid())
 		{
 			const auto& current = ioSockets[i];
-			NODECPP_ASSERT(current.osSocket != INVALID_SOCKET);
+			NODECPP_ASSERT(current.getServerData()->osSocket != INVALID_SOCKET);
 
-			anyRefed = anyRefed || current.refed;
+			anyRefed = anyRefed || current.getServerData()->refed;
 
-			begin[i].fd = current.osSocket;
+			begin[i].fd = current.getServerData()->osSocket;
 			begin[i].events = 0;
 
 			bool f2 = true;
@@ -885,8 +919,8 @@ void NetServerManager::infraGetCloseEvents(EvQueue& evs)
 			auto& entry = ioSockets[current.first];
 			if (entry.isValid())
 			{
-				if (entry.osSocket != INVALID_SOCKET)
-					internal_usage_only::internal_close(entry.osSocket);
+				if (entry.getServerData()->osSocket != INVALID_SOCKET)
+					internal_usage_only::internal_close(entry.getServerData()->osSocket);
 				//			entry.getPtr()->emitClose(entry.second);
 				evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
 			}
@@ -908,7 +942,7 @@ void NetServerManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* en
 			if ((begin[i].revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 			{
 				NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
-				internal_usage_only::internal_getsockopt_so_error(current.osSocket);
+				internal_usage_only::internal_getsockopt_so_error(current.getServerData()->osSocket);
 				infraMakeErrorEventAndClose(current, evs);
 			}
 			else if ((begin[i].revents & POLLIN) != 0)
@@ -919,7 +953,7 @@ void NetServerManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* en
 			else if (begin[i].revents != 0)
 			{
 				NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
-				internal_usage_only::internal_getsockopt_so_error(current.osSocket);
+				internal_usage_only::internal_getsockopt_so_error(current.getServerData()->osSocket);
 				infraMakeErrorEventAndClose(current, evs);
 			}
 		}
@@ -932,11 +966,12 @@ void NetServerManager::infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& e
 	Ip4 remoteIp;
 	Port remotePort;
 
-	SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, entry.osSocket));
+	SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, entry.getServerData()->osSocket));
 	if (!newSock)
 		return;
 
-	net::Socket* ptr = entry.getPtr()->makeSocket();
+//	net::Socket* ptr = entry.getPtr()->makeSocket();
+	net::Socket* ptr = entry.getEmitter()->makeSocket();
 	auto& man = getInfra().getNetSocket();
 
 	bool ok = man.infraAddAccepted(ptr, newSock.release(), evs);
@@ -948,15 +983,15 @@ void NetServerManager::infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& e
 	evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
 
 	return;
-}
+}*/
 
-size_t NetServerManager::addEntry(net::Server* ptr)
+size_t NetServerManagerBase::addEntry(NodeBase* node, net::ServerBase* ptr, int typeId)
 {
 	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 	{
 		if (!ioSockets[i].isValid())
 		{
-			NetServerEntry entry(i, ptr);
+			NetServerEntry entry(i, node, ptr, typeId);
 			ioSockets[i] = std::move(entry);
 			return i;
 		}
@@ -968,11 +1003,11 @@ size_t NetServerManager::addEntry(net::Server* ptr)
 	}
 
 	size_t ix = ioSockets.size();
-	ioSockets.emplace_back(ix, ptr);
+	ioSockets.emplace_back(ix, node, ptr, typeId);
 	return ix;
 }
 
-NetServerEntry& NetServerManager::appGetEntry(size_t id)
+/*NetServerEntry& NetServerManager::appGetEntry(size_t id)
 {
 	return ioSockets.at(id);
 }
@@ -988,5 +1023,5 @@ void NetServerManager::infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueu
 {
 	evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 	pendingCloseEvents.emplace_back(entry.index, true);
-}
+}*/
 #endif // NO_SERVER_STAFF
