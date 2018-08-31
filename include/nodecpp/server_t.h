@@ -126,12 +126,13 @@ namespace nodecpp {
 		};
 
 
-		template<class Node, class Extra, class ... Handlers>
+		template<class Node, class Socket, class Extra, class ... Handlers>
 		class ServerT : public ServerT2<Node, ServerTInitializer<Handlers...>, Extra>
 		{
 			int idType1; // we will try to get rid of it later
 		public:
 			ServerT(Node* node) : ServerT2<Node, ServerTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
+			Socket* createSocket() { return new Socket( this->node ); }
 //			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, idType1, ip, port);}
 		};
 

@@ -137,11 +137,11 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				/*if constexpr (std::is_same< T1, ServerO >::value)
-					(static_cast<ServerO*>(ptr->getPtr()))->onError(e);
+					(static_cast<ServerO*>(ptr->getPtr()))->createSocket();
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->emitError(e);
+					(static_cast<Server*>(ptr->getPtr()))->createSocket();
 				else*/
-					return (static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::makeSocket)(static_cast<T1*>(ptr->getPtr())->getExtra());
+					return (static_cast<typename T1*>(ptr->getPtr())->createSocket();
 			}
 			else
 				return makeSocket<T, args...>(nodePtr, ptr, type-1);
