@@ -40,7 +40,7 @@ namespace nodecpp {
 
 
 		template<class T, class T1, class ... args>
-		void callOnConnection( void* nodePtr, T* ptr, int type )
+		void callOnConnection( void* nodePtr, T* ptr, int type, SocketTBase* sock )
 		{
 			if ( type == 0 )
 			{
@@ -49,14 +49,14 @@ namespace nodecpp {
 				else if constexpr (std::is_same< T1, Server >::value)
 					(static_cast<Server*>(ptr->getPtr()))->emitConnection();
 				else*/
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr())->getExtra());
+					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr())->getExtra(), static_cast<typename T1::SocketType*>(sock) );
 			}
 			else
 				callOnConnection<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		void callOnConnection( void* nodePtr, T* ptr, int type )
+		void callOnConnection( void* nodePtr, T* ptr, int type, SocketTBase* sock )
 		{
 			assert( false );
 		}
@@ -173,7 +173,7 @@ namespace nodecpp {
 			template<class Server>
 			static int softGetTypeIndexIfTypeExists() { return ::softGetTypeIndexIfTypeExists<Server,args...>(); }
 
-			static void emitConnection( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnConnection<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitConnection( const OpaqueEmitter& emitter, SocketTBase* sock ) { Ptr emitter_ptr( emitter.ptr ); callOnConnection<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sock); }
 			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) { Ptr emitter_ptr( emitter.ptr ); callOnCloseServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError); }
 			static void emitListening( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnListening<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { Ptr emitter_ptr( emitter.ptr ); callOnErrorServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }

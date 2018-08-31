@@ -130,6 +130,7 @@ namespace nodecpp {
 		class ServerT : public ServerT2<Node, ServerTInitializer<Handlers...>, Extra>
 		{
 			int idType1; // we will try to get rid of it later
+			using SocketType = Socket;
 		public:
 			ServerT(Node* node) : ServerT2<Node, ServerTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
 			Socket* createSocket() { return new Socket( this->node ); }
