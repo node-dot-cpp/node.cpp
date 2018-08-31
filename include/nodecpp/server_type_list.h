@@ -132,7 +132,7 @@ namespace nodecpp {
 
 
 		template<class T, class T1, class ... args>
-		SocketTBase* makeSocket( void* nodePtr, T* ptr, int type, nodecpp::Error& e )
+		SocketTBase* callMakeSocket( void* nodePtr, T* ptr, int type, nodecpp::Error& e )
 		{
 			if ( type == 0 )
 			{
@@ -141,14 +141,14 @@ namespace nodecpp {
 				else if constexpr (std::is_same< T1, Server >::value)
 					(static_cast<Server*>(ptr->getPtr()))->createSocket();
 				else*/
-					return (static_cast<typename T1*>(ptr->getPtr())->createSocket();
+					return static_cast<T1*>(ptr->getPtr())->createSocket();
 			}
 			else
-				return makeSocket<T, args...>(nodePtr, ptr, type-1);
+				return callMakeSocket<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
-		SocketTBase* makeSocket( void* nodePtr, T* ptr, int type, nodecpp::Error& e )
+		SocketTBase* callMakeSocket( void* nodePtr, T* ptr, int type, nodecpp::Error& e )
 		{
 			assert( false );
 		}
@@ -178,7 +178,7 @@ namespace nodecpp {
 			static void emitListening( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnListening<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { Ptr emitter_ptr( emitter.ptr ); callOnErrorServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
 
-			static SocketTBase* makeSocket() { Ptr emitter_ptr( emitter.ptr ); return makeSocket<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static SocketTBase* makeSocket() { Ptr emitter_ptr( emitter.ptr ); return callMakeSocket<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 		};
 	} // namespace net
 

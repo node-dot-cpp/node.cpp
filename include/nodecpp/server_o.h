@@ -55,7 +55,7 @@ namespace nodecpp {
 
 		
 		template<auto x>
-		struct OnClose {};
+		struct OnCloseS {};
 
 		template<auto x>
 		struct OnConnection {};
@@ -64,14 +64,14 @@ namespace nodecpp {
 		struct OnListening {};
 
 		template<auto x>
-		struct OnError {};
+		struct OnErrorS {};
 
 		template<typename ... args>
 		struct ServerOInitializer;
 
 		//partial template specializations:
 		template<auto F, typename ... args>
-		struct ServerOInitializer<OnClose<F>, args...>
+		struct ServerOInitializer<OnCloseS<F>, args...>
 		: public ServerOInitializer<args...> {
 			static constexpr auto onClose = F;
 		};

@@ -305,7 +305,7 @@ public:
 	Runnable() {}
 	void run() override
 	{
-		Infrastructure<typename Node::EmitterType> infra;
+		Infrastructure<typename Node::EmitterType, typename Node::EmitterTypeForServer> infra;
 		netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
 //		netSocketManagerBase->setTypeIndexOfSocketO<typename Node::EmitterType>();
 //		netSocketManagerBase->setTypeIndexOfSocketL<typename Node::EmitterType>();
@@ -314,7 +314,7 @@ public:
 //		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
 		node = new Node;
 		node->main();
-		runInfraLoop2<Infrastructure<typename Node::EmitterType>>(infra);
+		runInfraLoop2<Infrastructure<typename Node::EmitterType, typename Node::EmitterTypeForServer>>(infra);
 //		nodecpp::runLoop();
 	}
 };

@@ -35,16 +35,16 @@ namespace nodecpp {
 	namespace net {
 
 		template<auto x>
-		struct OnCloseS {};
+		struct OnCloseST {};
 
 		template<auto x>
-		struct OnConnectionS {};
+		struct OnConnectionST {};
 
 		template<auto x>
-		struct OnListeningS {};
+		struct OnListeningST {};
 
 		template<auto x>
-		struct OnErrorS {};
+		struct OnErrorST {};
 
 		template<auto x>
 		struct MakeSocketS {};
@@ -54,25 +54,25 @@ namespace nodecpp {
 
 		//partial template specializations:
 		template<auto F, typename ... args>
-		struct ServerTInitializer<OnCloseS<F>, args...>
+		struct ServerTInitializer<OnCloseST<F>, args...>
 		: public ServerTInitializer<args...> {
 			static constexpr auto onClose = F;
 		};
 
 		template<auto F, typename ... args>
-		struct ServerTInitializer<OnConnectionS<F>, args...>
+		struct ServerTInitializer<OnConnectionST<F>, args...>
 		: public ServerTInitializer<args...> {
 			static constexpr auto onConnection = F;
 		};
 
 		template<auto F, typename ... args>
-		struct ServerTInitializer<OnListeningS<F>, args...>
+		struct ServerTInitializer<OnListeningST<F>, args...>
 		: public ServerTInitializer<args...> {
 			static constexpr auto onListening = F;
 		};
 
 		template<auto F, typename ... args>
-		struct ServerTInitializer<OnErrorS<F>, args...>
+		struct ServerTInitializer<OnErrorST<F>, args...>
 		: public ServerTInitializer<args...> {
 			static constexpr auto onError = F;
 		};

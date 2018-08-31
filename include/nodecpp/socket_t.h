@@ -156,7 +156,7 @@ namespace nodecpp {
 		{
 //			int idType1; // we will try to get rid of it later
 		public:
-			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAcquireSocket(this->node, this, idType1); }
+			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAcquireSocket(this->node, this, idType1); }
 			void connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 			SocketT& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(this->dataForCommandProcessing, noDelay); return *this; }
 			SocketT& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(this->dataForCommandProcessing, enable); return *this; }
