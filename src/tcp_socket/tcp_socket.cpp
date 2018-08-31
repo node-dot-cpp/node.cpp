@@ -773,7 +773,7 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 
 
 #ifndef NET_CLIENT_ONLY
-void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerBase* ptr, int typeId)
+void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerTBase* ptr, int typeId)
 {
 //	Ip4 myIp = Ip4::parse(ip);
 
@@ -811,7 +811,7 @@ void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerBase* ptr, in
 	pendingEvents.add(id, &net::Server::emitListening, ptr, id, std::move(addr));*/
 }
 
-void NetServerManagerBase::appListen(net::ServerBase* ptr, uint16_t port, const char* ip, int backlog)
+void NetServerManagerBase::appListen(net::ServerTBase* ptr, uint16_t port, const char* ip, int backlog)
 {
 	Ip4 myIp = Ip4::parse(ip);
 
@@ -985,7 +985,7 @@ void NetServerManager::infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& e
 	return;
 }*/
 
-size_t NetServerManagerBase::addEntry(NodeBase* node, net::ServerBase* ptr, int typeId)
+size_t NetServerManagerBase::addEntry(NodeBase* node, net::ServerTBase* ptr, int typeId)
 {
 	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 	{

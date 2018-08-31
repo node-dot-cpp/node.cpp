@@ -46,8 +46,8 @@ namespace nodecpp {
 		template<auto x>
 		struct OnErrorST {};
 
-		template<auto x>
-		struct MakeSocketS {};
+//		template<auto x>
+//		struct MakeSocketS {};
 
 		template<typename ... args>
 		struct ServerTInitializer;
@@ -77,11 +77,11 @@ namespace nodecpp {
 			static constexpr auto onError = F;
 		};
 
-		template<auto F, typename ... args>
+/*		template<auto F, typename ... args>
 		struct ServerTInitializer<MakeSocketS<F>, args...>
 		: public ServerTInitializer<args...> {
 			static constexpr auto makeSocket = F;
-		};
+		};*/
 
 		template<>
 		struct ServerTInitializer<> {
@@ -89,7 +89,7 @@ namespace nodecpp {
 			static constexpr auto onClose = nullptr;
 			static constexpr auto onListening = nullptr;
 			static constexpr auto onError = nullptr;
-			static constexpr auto makeSocket = nullptr;
+//			static constexpr auto makeSocket = nullptr;
 		};
 
 		template<class Node, class Initializer, class Extra>

@@ -58,7 +58,7 @@ namespace nodecpp {
 
 		struct OpaqueEmitterForServer
 		{
-			using PtrType = nodecpp::net::ServerBase*;
+			using PtrType = nodecpp::net::ServerTBase*;
 			PtrType ptr = nullptr;
 			int type = -1;
 			NodeBase* nodePtr = nullptr;

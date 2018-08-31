@@ -457,7 +457,7 @@ private:
 class NetServerEntry {
 public:
 	size_t index;
-	net::ServerBase* serverPtr = nullptr;
+	net::ServerTBase* serverPtr = nullptr;
 	net::OpaqueEmitterForServer emitter;
 
 //	bool refed = true;
@@ -465,7 +465,7 @@ public:
 //	short fdEvents = 0;
 
 	NetServerEntry(size_t index) :index(index) {}
-	NetServerEntry(size_t index, NodeBase* node, net::ServerBase* serverPtr_, int type) : index(index), serverPtr(serverPtr_), emitter(node, serverPtr_, type) {serverPtr_->dataForCommandProcessing.index = index;}
+	NetServerEntry(size_t index, NodeBase* node, net::ServerTBase* serverPtr_, int type) : index(index), serverPtr(serverPtr_), emitter(node, serverPtr_, type) {serverPtr_->dataForCommandProcessing.index = index;}
 	
 	NetServerEntry(const NetServerEntry& other) = delete;
 	NetServerEntry& operator=(const NetServerEntry& other) = delete;
@@ -475,9 +475,9 @@ public:
 
 	bool isValid() const { return serverPtr != nullptr; }
 
-//	net::ServerBase* getPtr() const { return serverPtr; }
+//	net::ServerTBase* getPtr() const { return serverPtr; }
 	const net::OpaqueEmitterForServer& getEmitter() const { return emitter; }
-	net::ServerBase::DataForCommandProcessing* getServerData() const { assert(serverPtr != nullptr); return serverPtr ? &(serverPtr->dataForCommandProcessing) : nullptr; }
+	net::ServerTBase::DataForCommandProcessing* getServerData() const { assert(serverPtr != nullptr); return serverPtr ? &(serverPtr->dataForCommandProcessing) : nullptr; }
 };
 
 class NetServerManagerBase
@@ -498,8 +498,8 @@ public:
 	NetServerManagerBase() { ioSockets.emplace_back(0); }
 
 	void appClose(size_t id);
-	void appAddServer(NodeBase* node, net::ServerBase* ptr, int typeId);
-	void appListen(net::ServerBase* ptr, uint16_t port, const char* ip, int backlog);
+	void appAddServer(NodeBase* node, net::ServerTBase* ptr, int typeId);
+	void appListen(net::ServerTBase* ptr, uint16_t port, const char* ip, int backlog);
 
 	void appRef(size_t id) { appGetEntry(id).getServerData()->refed = true; }
 	void appUnref(size_t id) { appGetEntry(id).getServerData()->refed = false; }
@@ -525,7 +525,7 @@ public:
 protected:
 //	void infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& evs);
 
-	size_t addEntry(NodeBase* node, net::ServerBase* ptr, int typeId);
+	size_t addEntry(NodeBase* node, net::ServerTBase* ptr, int typeId);
 	NetServerEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetServerEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 
@@ -620,7 +620,8 @@ public:
 					if (entry.getServerData()->osSocket != INVALID_SOCKET)
 						internal_usage_only::internal_close(entry.getServerData()->osSocket);
 					//			entry.getPtr()->emitClose(entry.second);
-					evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
+					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
+					EmitterType::emitClose( entry.getEmitter(), current.second);
 				}
 				entry = NetServerEntry(current.first);
 			}

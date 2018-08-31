@@ -101,7 +101,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 {
 	size_t fds_sz = NetSocketManager<Infra>::MAX_SOCKETS 
 #ifndef NET_CLIENT_ONLY
-		+ NetServerManager::MAX_SOCKETS
+		+ NetServerManager<Infra>::MAX_SOCKETS
 #endif
 		;
 	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
@@ -114,7 +114,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 //	fds_begin += pollfdsz;
 	fds_begin = fds_end;
 #ifndef NET_CLIENT_ONLY
-	fds_end += NetServerManager::MAX_SOCKETS;
+	fds_end += NetServerManager<Infra>::MAX_SOCKETS;
 //	pollfdsz = NetServerManager::MAX_SOCKETS;
 	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
 //	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, pollfdsz);
@@ -168,7 +168,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 		fds_begin = fds_end;
 //		fds_begin += pollfdsz;
 #ifndef NET_CLIENT_ONLY
-		fds_end += NetServerManager::MAX_SOCKETS;
+		fds_end += NetServerManager<Infra>::MAX_SOCKETS;
 		infra.netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
 //		pollfdsz = NetServerManager::MAX_SOCKETS;
 //		infra.netServer.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
