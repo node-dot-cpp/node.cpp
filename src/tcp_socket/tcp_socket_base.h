@@ -45,17 +45,6 @@ const SOCKET INVALID_SOCKET = -1;
 struct pollfd;
 #endif
 
-namespace nodecpp
-{
-	namespace internal_usage_only
-	{
-		bool internal_getsockopt_so_error(SOCKET sock);
-		void internal_shutdown_send(SOCKET sock);
-		bool internal_linger_zero_socket(SOCKET sock);
-		void internal_close(SOCKET sock);
-	} // internal_usage_only
-} // nodecpp
-
 
 
 
@@ -158,6 +147,19 @@ public:
 
 };
 
+
+namespace nodecpp
+{
+	namespace internal_usage_only
+	{
+		bool internal_getsockopt_so_error(SOCKET sock);
+		void internal_shutdown_send(SOCKET sock);
+		bool internal_linger_zero_socket(SOCKET sock);
+		void internal_close(SOCKET sock);
+
+		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock);
+	} // internal_usage_only
+} // nodecpp
 
 
 bool isNetInitialized();

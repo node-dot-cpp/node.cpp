@@ -92,13 +92,14 @@ namespace nodecpp {
 //			static constexpr auto makeSocket = nullptr;
 		};
 
-		template<class Node, class Initializer, class Extra>
+		template<class Node, class Socket, class Initializer, class Extra>
 		class ServerT2 : public ServerTBase
 		{
 		public:
 			using userIdType = Extra;
 			using userNodeType = Node;
 			using Handlers = Initializer;
+			using SocketType = Socket;
 
 		protected:
 			Extra extra;
@@ -110,13 +111,14 @@ namespace nodecpp {
 
 		};
 
-		template<class Node, class Initializer>
-		class ServerT2<Node, Initializer, void> : public ServerTBase
+		template<class Node, class Socket, class Initializer>
+		class ServerT2<Node, Socket, Initializer, void> : public ServerTBase
 		{
 			public:
 				using userIdType = void;
 				using userNodeType = Node;
 				using Handlers = Initializer;
+				using SocketType = Socket;
 
 		public:
 			ServerT2() {}
@@ -127,12 +129,11 @@ namespace nodecpp {
 
 
 		template<class Node, class Socket, class Extra, class ... Handlers>
-		class ServerT : public ServerT2<Node, ServerTInitializer<Handlers...>, Extra>
+		class ServerT : public ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>
 		{
 			int idType1; // we will try to get rid of it later
-			using SocketType = Socket;
 		public:
-			ServerT(Node* node) : ServerT2<Node, ServerTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
+			ServerT(Node* node) : ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>(node) {idType1 = Node::EmitterType::getTypeIndex( this );}
 			Socket* createSocket() { return new Socket( this->node ); }
 //			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, idType1, ip, port);}
 		};

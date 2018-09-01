@@ -669,7 +669,7 @@ private:
 			return;
 
 	//	net::Socket* ptr = entry.getPtr()->makeSocket();
-		net::Socket* ptr = EmitterType::makeSocket(entry.getEmitter());
+		net::SocketTBase* ptr = EmitterType::makeSocket(entry.getEmitter());
 
 //		auto& man = getInfra().getNetSocket();
 //		bool ok = man.infraAddAccepted(ptr, newSock.release(), evs);
@@ -693,7 +693,8 @@ private:
 	void infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs)
 	{
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
-		EmitterType::emitError( entry.getEmitter(), Error() );
+		Error e;
+		EmitterType::emitError( entry.getEmitter(), e );
 		pendingCloseEvents.emplace_back(entry.index, true);
 	}
 };

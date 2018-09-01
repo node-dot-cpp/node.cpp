@@ -345,7 +345,7 @@ namespace nodecpp
 			return internal_connect_socket(saOther, sock);
 		}
 
-		static
+		//static
 		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
 		{
 			NODECPP_TRACE("internal_tcp_accept() on sock {}", sock);
