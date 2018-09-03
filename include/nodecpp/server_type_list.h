@@ -30,7 +30,7 @@
 
 #include "template_common.h"
 #include "net_common.h"
-#include "Server_t.h"
+#include "server_t.h"
 #include "server_o.h"
 #include "server_l.h"
 
@@ -107,7 +107,7 @@ namespace nodecpp {
 				}
 			}
 			else
-				callOnListening<T, args...>(nodePtr, ptr, type-1, b);
+				callOnListening<T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class T>
@@ -182,7 +182,7 @@ namespace nodecpp {
 
 		public:
 			template<class Server>
-			static int getTypeIndex(Server* s) { return ::getTypeIndex<Sock,args...>( s ); }
+			static int getTypeIndex(Server* s) { return ::getTypeIndex<Server,args...>( s ); }
 			template<class Server>
 			static int softGetTypeIndexIfTypeExists() { return ::softGetTypeIndexIfTypeExists<Server,args...>(); }
 

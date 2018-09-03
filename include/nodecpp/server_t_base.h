@@ -28,7 +28,6 @@
 #ifndef SERVER_T_BASE_H
 #define SERVER_T_BASE_H
 
-#include <stdio.h>
 #include "template_common.h"
 #include "server_common.h"
 #include "../../src/tcp_socket/tcp_socket_base.h"

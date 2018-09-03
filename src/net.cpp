@@ -66,13 +66,13 @@ void ServerBase::close()
 }
 
 
+#if 0 // be back later
 void Server::listen(uint16_t port, const char* ip, int backlog)
 {
 	assert( false );
 //	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
 //	netServerManagerBase->appListen(this, port, ip, backlog);
 }
-#if 0 // be back later
 void ServerO::listen(uint16_t port, const char* ip, int backlog)
 {
 //	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
