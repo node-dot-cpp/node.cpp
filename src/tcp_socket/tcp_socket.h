@@ -267,7 +267,7 @@ public:
 		entry.getSockData()->osSocket = s.release();
 		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Connected;
 
-		evs.add(&net::Socket::emitAccepted, ptr, ix);
+		//[+++]evs.add(&net::Socket::emitAccepted, ptr, ix);
 
 		return true;
 	}
@@ -673,15 +673,15 @@ private:
 
 //		auto& man = getInfra().getNetSocket();
 //		bool ok = man.infraAddAccepted(ptr, newSock.release(), evs);
-		NODECPP_ASSERT( netSocketManagerBase != nullptr );
+/*		NODECPP_ASSERT( netSocketManagerBase != nullptr );
 		bool ok = netSocketManagerBase->infraAddAccepted(ptr, newSock.release(), evs);
 
 		if (!ok)
-			return;
+			return;*/
 
 	//	entry.getPtr()->emitConnection(ptr);
-		evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
-		EmitterType::emitConnection( entry.getEmitter(), ptr );
+	//	evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
+		//[+++]EmitterType::emitConnection( entry.getEmitter(), ptr );
 
 		return;
 	}

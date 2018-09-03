@@ -491,7 +491,7 @@ class MySampleTNode : public NodeBase
 //	unique_ptr<MySocketLambda> cli;
 //	MySocketLambda* cli;
 public:
-	MySampleTNode() : sockO_1( this ), cli( new MySocketLambda() ), sockNN_1(this), sockNN_2(this)/*, srv( this )*/
+	MySampleTNode() : sockO_1( this ), cli( new MySocketLambda() ), sockNN_1(this), sockNN_2(this), srv( this )
 	{
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
@@ -733,7 +733,6 @@ public:
 	>;
 	SockType_2 sockNN_2;
 
-#if 1
 	using SockTypeServerSocket = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
 		nodecpp::net::OnConnectT<&MySampleTNode::onConnectSererSocket>,
 		nodecpp::net::OnCloseT<&MySampleTNode::onCloseSererSocket>,
@@ -743,21 +742,16 @@ public:
 		nodecpp::net::OnEndT<&MySampleTNode::onEndSererSocket>
 	>;
 	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
-//	using ServerType = nodecpp::net::ServerT<MySampleTNode,MySocketO<SocketIdType>,ServerIdType,
-//		nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
+		nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
 		nodecpp::net::OnCloseST<&MySampleTNode::onCloseServer>,
 		nodecpp::net::OnListeningST<&MySampleTNode::onListening>,
 		nodecpp::net::OnErrorST<&MySampleTNode::onErrorServer>
 	>;
-//	ServerType srv;
+	ServerType srv;
 
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockType_1, SockType_2, SockTypeServerSocket>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ServerType>;
-#else
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockType_1, SockType_2>;
-	using EmitterTypeForServer = void;
-#endif
 };
 
 template<class Extra> void MySocketO<Extra>::onClose(bool hadError) { myNode->onClose( &myId, hadError ); }
