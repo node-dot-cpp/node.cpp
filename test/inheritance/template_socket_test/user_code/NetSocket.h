@@ -8,6 +8,9 @@
 #include "../../../../3rdparty/fmt/include/fmt/format.h"
 //#include "../../../../include/nodecpp/net.h"
 #include "../../../../include/nodecpp/socket_type_list.h"
+#include "../../../../include/nodecpp/socket_t_base.h"
+#include "../../../../include/nodecpp/server_t.h"
+#include "../../../../include/nodecpp/server_type_list.h"
 
 #include <functional>
 
@@ -277,13 +280,13 @@ public:
 	}
 };
 #endif // NO_SERVER_STAFF
-
+/*
 inline
 void MyServerSocketMember::didClose(bool hadError) {
 	print("onClose!\n");
 	if (server)
 		server->closeMe(this);
-}
+}*/
 #endif // USING_L_SOCKETS
 
 #ifdef USING_L_SOCKETS
@@ -477,17 +480,18 @@ class MySampleTNode : public NodeBase
 	bool letOnDrain = false;
 
 	using SocketIdType = int;
+	using ServerIdType = int;
 
 	MySocketO<SocketIdType> sockO_1;
 	MySocketLambda* cli;
 
 #ifndef NET_CLIENT_ONLY
-	MyServerMember srv;
+//	MyServerMember srv;
 #endif // NO_SERVER_STAFF
 //	unique_ptr<MySocketLambda> cli;
 //	MySocketLambda* cli;
 public:
-	MySampleTNode() : sockO_1( this ), cli( new MySocketLambda() ), sockNN_1(this), sockNN_2(this)
+	MySampleTNode() : sockO_1( this ), cli( new MySocketLambda() ), sockNN_1(this), sockNN_2(this)/*, srv( this )*/
 	{
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
@@ -497,7 +501,7 @@ public:
 		printf( "MySampleLambdaOneNode::main()\n" );
 
 #ifndef NET_CLIENT_ONLY
-		srv.listen(2000, "127.0.0.1", 5);
+//		srv.listen(2000, "127.0.0.1", 5);
 #endif // NO_SERVER_STAFF
 
 		*( sockNN_1.getExtra() ) = 17;
@@ -670,7 +674,37 @@ public:
 		printf( "MySampleTNode::onWhateverEnd_2(), extra = %d\n", *extra );
 	}
 
-/*	using Initializer = SocketTInitializer<
+	// server socket
+	void onCloseSererSocket(bool hadError) {};
+	void onConnectSererSocket() {
+		print("onConnect!\n");
+	}
+	void onDataSererSocket(Buffer& buffer) {
+		print("onData!\n");
+//		++count;
+//		write(buffer.begin(), buffer.size());
+	}
+	void onDrainSererSocket() {
+		print("onDrain!\n");
+	}
+	void onEndSererSocket() {
+		print("onEnd!\n");
+		const char buff[] = "goodbye!";
+//		write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+//		end();
+	}
+	void onErrorSererSocket() {
+		print("onError!\n");
+	}
+
+	// server
+	void onCloseServer(const ServerIdType* extra, bool hadError) {}
+//	void onConnection(SockTypeServerSocket* socket) { NODECPP_ASSERT( socket != nullptr ); *(socket->getExtra()) = 1;}
+	void onConnection(const ServerIdType* extra, net::SocketTBase* socket) { NODECPP_ASSERT( socket != nullptr ); /**(socket->getExtra()) = 1;*/}
+	void onListening(const ServerIdType* extra) {}
+	void onErrorServer(const ServerIdType* extra, Error& err) {}
+
+	/*	using Initializer = SocketTInitializer<
 		nodecpp::net::OnConnectT<&MySampleTNode::onWhateverConnect>,
 		nodecpp::net::OnCloseT<&MySampleTNode::onWhateverClose>,
 		nodecpp::net::OnDataT<&MySampleTNode::onWhateverData>,
@@ -699,8 +733,31 @@ public:
 	>;
 	SockType_2 sockNN_2;
 
+#if 1
+	using SockTypeServerSocket = nodecpp::net::SocketT<MySampleTNode,SocketIdType/*,
+		nodecpp::net::OnConnectT<&MySampleTNode::onConnectSererSocket>,
+		nodecpp::net::OnCloseT<&MySampleTNode::onCloseSererSocket>,
+		nodecpp::net::OnDataT<&MySampleTNode::onDataSererSocket>,
+		nodecpp::net::OnDrainT<&MySampleTNode::onDrainSererSocket>,
+		nodecpp::net::OnErrorT<&MySampleTNode::onErrorSererSocket>,
+		nodecpp::net::OnEndT<&MySampleTNode::onEndSererSocket>*/
+	>;
+	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
+//	using ServerType = nodecpp::net::ServerT<MySampleTNode,MySocketO<SocketIdType>,ServerIdType,
+		/*nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
+		nodecpp::net::OnCloseST<&MySampleTNode::onCloseServer>,
+		nodecpp::net::OnListeningST<&MySampleTNode::onListening>,*/
+		nodecpp::net::OnErrorST<&MySampleTNode::onErrorServer>
+	>;
+//	ServerType srv;
+
+
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockType_1, SockType_2, SockTypeServerSocket>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ServerType>;
+#else
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockType_1, SockType_2>;
-//	using EmitterType = nodecpp::net::SocketTEmitter<SockType_1>;
+	using EmitterTypeForServer = void;
+#endif
 };
 
 template<class Extra> void MySocketO<Extra>::onClose(bool hadError) { myNode->onClose( &myId, hadError ); }
