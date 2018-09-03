@@ -675,25 +675,25 @@ public:
 	}
 
 	// server socket
-	void onCloseSererSocket(bool hadError) {};
-	void onConnectSererSocket() {
+	void onCloseSererSocket(const SocketIdType* extra, bool hadError) {};
+	void onConnectSererSocket(const SocketIdType* extra) {
 		print("onConnect!\n");
 	}
-	void onDataSererSocket(Buffer& buffer) {
+	void onDataSererSocket(const SocketIdType* extra, Buffer& buffer) {
 		print("onData!\n");
 //		++count;
 //		write(buffer.begin(), buffer.size());
 	}
-	void onDrainSererSocket() {
+	void onDrainSererSocket(const SocketIdType* extra) {
 		print("onDrain!\n");
 	}
-	void onEndSererSocket() {
+	void onEndSererSocket(const SocketIdType* extra) {
 		print("onEnd!\n");
 		const char buff[] = "goodbye!";
 //		write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 //		end();
 	}
-	void onErrorSererSocket() {
+	void onErrorSererSocket(const SocketIdType* extra, nodecpp::Error&) {
 		print("onError!\n");
 	}
 
@@ -734,19 +734,19 @@ public:
 	SockType_2 sockNN_2;
 
 #if 1
-	using SockTypeServerSocket = nodecpp::net::SocketT<MySampleTNode,SocketIdType/*,
+	using SockTypeServerSocket = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
 		nodecpp::net::OnConnectT<&MySampleTNode::onConnectSererSocket>,
 		nodecpp::net::OnCloseT<&MySampleTNode::onCloseSererSocket>,
 		nodecpp::net::OnDataT<&MySampleTNode::onDataSererSocket>,
 		nodecpp::net::OnDrainT<&MySampleTNode::onDrainSererSocket>,
 		nodecpp::net::OnErrorT<&MySampleTNode::onErrorSererSocket>,
-		nodecpp::net::OnEndT<&MySampleTNode::onEndSererSocket>*/
+		nodecpp::net::OnEndT<&MySampleTNode::onEndSererSocket>
 	>;
 	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
 //	using ServerType = nodecpp::net::ServerT<MySampleTNode,MySocketO<SocketIdType>,ServerIdType,
-		/*nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
+//		nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
 		nodecpp::net::OnCloseST<&MySampleTNode::onCloseServer>,
-		nodecpp::net::OnListeningST<&MySampleTNode::onListening>,*/
+		nodecpp::net::OnListeningST<&MySampleTNode::onListening>,
 		nodecpp::net::OnErrorST<&MySampleTNode::onErrorServer>
 	>;
 //	ServerType srv;
