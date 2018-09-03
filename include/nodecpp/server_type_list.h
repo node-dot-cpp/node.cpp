@@ -49,7 +49,10 @@ namespace nodecpp {
 				else if constexpr (std::is_same< T1, Server >::value)
 					(static_cast<Server*>(ptr->getPtr()))->emitConnection();
 				else*/
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr())->getExtra(), static_cast<typename T1::SocketType*>(sock) );
+				{
+					if constexpr ( T1::Handlers::onConnection != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr())->getExtra(), static_cast<typename T1::SocketType*>(sock) );
+				}
 			}
 			else
 				callOnConnection<T, args...>(nodePtr, ptr, type-1);
@@ -98,7 +101,10 @@ namespace nodecpp {
 				else if constexpr (std::is_same< T1, Server >::value)
 					(static_cast<Server*>(ptr->getPtr()))->emitListening();
 				else*/
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				{
+					if constexpr ( T1::Handlers::onListening != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				}
 			}
 			else
 				callOnListening<T, args...>(nodePtr, ptr, type-1, b);
@@ -121,7 +127,10 @@ namespace nodecpp {
 				else if constexpr (std::is_same< T1, Server >::value)
 					(static_cast<Server*>(ptr->getPtr()))->emitError(e);
 				else*/
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
+				{
+					if constexpr ( T1::Handlers::onError != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
+				}
 			}
 			else
 				callOnErrorServer<T, args...>(nodePtr, ptr, type-1, e);
