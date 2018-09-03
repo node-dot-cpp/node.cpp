@@ -49,8 +49,11 @@ namespace nodecpp {
 					(static_cast<SocketO*>(ptr->getPtr()))->onConnect();
 				else if constexpr (std::is_same< T1, Socket >::value)
 					(static_cast<Socket*>(ptr->getPtr()))->emitConnect();
-				else
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnect)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				else 
+				{
+					if constexpr( T1::Handlers::onConnect != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnect)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				}
 			}
 			else
 				callOnConnect<T, args...>(nodePtr, ptr, type-1);
@@ -72,8 +75,11 @@ namespace nodecpp {
 					(static_cast<SocketO*>(ptr->getPtr()))->onClose(hadError);
 				else if constexpr (std::is_same< T1, Socket >::value)
 					(static_cast<Socket*>(ptr->getPtr()))->emitClose(hadError);
-				else
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(static_cast<T1*>(ptr->getPtr())->getExtra(), hadError);
+				else 
+				{
+					if constexpr( T1::Handlers::onClose != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(static_cast<T1*>(ptr->getPtr())->getExtra(), hadError);
+				}
 			}
 			else
 				callOnClose<T, args...>(nodePtr, ptr, type-1, hadError);
@@ -95,8 +101,11 @@ namespace nodecpp {
 					(static_cast<SocketO*>(ptr->getPtr()))->onData(b);
 				else if constexpr (std::is_same< T1, Socket >::value)
 					(static_cast<Socket*>(ptr->getPtr()))->emitData(b);
-				else
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onData)(static_cast<T1*>(ptr->getPtr())->getExtra(), b);
+				else 
+				{
+					if constexpr( T1::Handlers::onData != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onData)(static_cast<T1*>(ptr->getPtr())->getExtra(), b);
+				}
 			}
 			else
 				callOnData<T, args...>(nodePtr, ptr, type-1, b);
@@ -118,8 +127,11 @@ namespace nodecpp {
 					(static_cast<SocketO*>(ptr->getPtr()))->onDrain();
 				else if constexpr (std::is_same< T1, Socket >::value)
 					(static_cast<Socket*>(ptr->getPtr()))->emitDrain();
-				else
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onDrain)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				else 
+				{
+					if constexpr( T1::Handlers::onDrain != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onDrain)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				}
 			}
 			else
 				callOnDrain<T, args...>(nodePtr, ptr, type-1);
@@ -141,8 +153,11 @@ namespace nodecpp {
 					(static_cast<SocketO*>(ptr->getPtr()))->onError(e);
 				else if constexpr (std::is_same< T1, Socket >::value)
 					(static_cast<Socket*>(ptr->getPtr()))->emitError(e);
-				else
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
+				else 
+				{
+					if constexpr( T1::Handlers::onError != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
+				}
 			}
 			else
 				callOnError<T, args...>(nodePtr, ptr, type-1, e);
@@ -164,8 +179,11 @@ namespace nodecpp {
 					(static_cast<SocketO*>(ptr->getPtr()))->onEnd();
 				else if constexpr (std::is_same< T1, Socket >::value)
 					(static_cast<Socket*>(ptr->getPtr()))->emitEnd();
-				else
-					(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onEnd)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				else 
+				{
+					if constexpr( T1::Handlers::onEnd != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onEnd)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				}
 			}
 			else
 				callOnEnd<T, args...>(nodePtr, ptr, type-1);
