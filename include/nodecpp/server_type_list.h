@@ -163,6 +163,7 @@ namespace nodecpp {
 		SocketTBase* callMakeSocket( void* nodePtr, T* ptr, int type )
 		{
 			assert( false );
+			return nullptr;
 		}
 
 
