@@ -503,7 +503,9 @@ Port Port::fromNetwork(uint16_t port)
 thread_local NetSocketManagerBase* netSocketManagerBase;
 thread_local int typeIndexOfSocketO = -1;
 thread_local int typeIndexOfSocketL = -1;
+#ifndef NET_CLIENT_ONLY
 thread_local NetServerManagerBase* netServerManagerBase;
+#endif
 
 
 SocketRiia OSLayer::appAcquireSocket()

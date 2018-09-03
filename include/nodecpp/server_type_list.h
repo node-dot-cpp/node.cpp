@@ -55,7 +55,7 @@ namespace nodecpp {
 				}
 			}
 			else
-				callOnConnection<T, args...>(nodePtr, ptr, type-1);
+				callOnConnection<T, args...>(nodePtr, ptr, type-1, sock);
 		}
 
 		template<class T>

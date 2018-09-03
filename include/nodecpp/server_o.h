@@ -55,41 +55,41 @@ namespace nodecpp {
 
 		
 		template<auto x>
-		struct OnCloseS {};
+		struct OnCloseSO {};
 
 		template<auto x>
-		struct OnConnection {};
+		struct OnConnectionSO {};
 
 		template<auto x>
-		struct OnListening {};
+		struct OnListeningSO {};
 
 		template<auto x>
-		struct OnErrorS {};
+		struct OnErrorSO {};
 
 		template<typename ... args>
 		struct ServerOInitializer;
 
 		//partial template specializations:
 		template<auto F, typename ... args>
-		struct ServerOInitializer<OnCloseS<F>, args...>
+		struct ServerOInitializer<OnCloseSO<F>, args...>
 		: public ServerOInitializer<args...> {
 			static constexpr auto onClose = F;
 		};
 
 		template<auto F, typename ... args>
-		struct ServerOInitializer<OnConnection<F>, args...>
+		struct ServerOInitializer<OnConnectionSO<F>, args...>
 		: public ServerOInitializer<args...> {
 			static constexpr auto onConnection = F;
 		};
 
 		template<auto F, typename ... args>
-		struct ServerOInitializer<OnListening<F>, args...>
+		struct ServerOInitializer<OnListeningSO<F>, args...>
 		: public ServerOInitializer<args...> {
 			static constexpr auto onListening = F;
 		};
 
 		template<auto F, typename ... args>
-		struct ServerOInitializer<OnError<F>, args...>
+		struct ServerOInitializer<OnErrorSO<F>, args...>
 		: public ServerOInitializer<args...> {
 			static constexpr auto onError = F;
 		};
