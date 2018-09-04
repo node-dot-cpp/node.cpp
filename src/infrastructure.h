@@ -300,22 +300,33 @@ template<class Node>
 class Runnable : public RunnableBase
 {
 	Node* node;
+	template<class ClientSocketEmitter, class ServerSocketEmitter>
+	void internalRun()
+	{
+//		if( !std::is_same< ServerSocketEmitter, void >::value )
+		{
+			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
+			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
+	//		netSocketManagerBase->setTypeIndexOfSocketO<typename Node::EmitterType>();
+	//		netSocketManagerBase->setTypeIndexOfSocketL<typename Node::EmitterType>();
+		netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
+		netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
+	//		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
+			node = new Node;
+			node->main();
+			runInfraLoop2<Infrastructure<ClientSocketEmitter, ServerSocketEmitter>>(infra);
+	//		nodecpp::runLoop();
+		}
+/*		else
+		{
+		}*/
+	}
 public:
 	using NodeType = Node;
 	Runnable() {}
 	void run() override
 	{
-		Infrastructure<typename Node::EmitterType, typename Node::EmitterTypeForServer> infra;
-		netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
-//		netSocketManagerBase->setTypeIndexOfSocketO<typename Node::EmitterType>();
-//		netSocketManagerBase->setTypeIndexOfSocketL<typename Node::EmitterType>();
-	netSocketManagerBase->typeIndexOfSocketO = Node::EmitterType::template softGetTypeIndexIfTypeExists<net::SocketO>();
-	netSocketManagerBase->typeIndexOfSocketL = Node::EmitterType::template softGetTypeIndexIfTypeExists<net::Socket>();
-//		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
-		node = new Node;
-		node->main();
-		runInfraLoop2<Infrastructure<typename Node::EmitterType, typename Node::EmitterTypeForServer>>(infra);
-//		nodecpp::runLoop();
+		return internalRun<typename Node::EmitterType, typename Node::EmitterTypeForServer>();
 	}
 };
 
