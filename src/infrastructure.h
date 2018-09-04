@@ -299,6 +299,14 @@ void connectSocket(net::SocketTBase* s, const char* ip, uint16_t port)
 	netSocketManagerBase->appConnectSocket(s, ip, port);
 }
 
+#ifndef NET_CLIENT_ONLY
+
+inline
+void registerServer(NodeBase* node, net::ServerTBase* t, int typeId)
+{
+	return netServerManagerBase->appAddServer(node, t, typeId);
+}
+
 template<class Node>
 class Runnable : public RunnableBase
 {

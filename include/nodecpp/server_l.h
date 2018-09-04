@@ -28,13 +28,13 @@
 #ifndef SERVER_L_H
 #define SERVER_L_H
 
-#include "server_common.h"
+#include "server_t_base.h"
 
 namespace nodecpp {
 
 	namespace net {
 
-		class Server : public ServerBase
+		class Server : public ServerTBase
 		{
 			EventEmitter<event::Close> eClose;
 			EventEmitter<event::Connection> eConnection;
@@ -42,7 +42,7 @@ namespace nodecpp {
 			EventEmitter<event::Error> eError;
 
 		public:
-			Server() {}
+			Server();
 			~Server() {}
 
 			void emitClose(bool hadError) {
