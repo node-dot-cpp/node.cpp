@@ -30,6 +30,8 @@
 #include "infrastructure.h"
 #include "../include/nodecpp/socket_o.h"
 #include "../include/nodecpp/socket_l.h"
+#include "../include/nodecpp/server_o.h"
+#include "../include/nodecpp/server_l.h"
 
 using namespace std;
 using namespace nodecpp;

@@ -801,7 +801,7 @@ void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerTBase* ptr, i
 	size_t id = addEntry(node, ptr, typeId);
 	if (id == 0)
 	{
-		NODECPP_TRACE0("Failed to addEntry at NetServerManager::listen");
+		NODECPP_TRACE0("Failed to addEntry at NetServerManager::appAddServer");
 		throw Error();
 	}
 
