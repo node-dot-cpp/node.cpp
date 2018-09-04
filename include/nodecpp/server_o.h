@@ -34,25 +34,38 @@ namespace nodecpp {
 
 	namespace net {
 
+#if 0 // [+++]sample code preventing from being compilable
+		class X : public ServerBase
+		{
+		public:
+			X() {}
+			virtual ~X() {}
+
+			virtual void onConnection(Socket* socket) {}
+			virtual void onListening() {}
+		};
+#endif
+		
 		class ServerO : public ServerTBase
 		{
 		public:
-			ServerO() {}
+			ServerO();
 			virtual ~ServerO() {}
 
 			virtual void onClose(bool hadError) {}
+#if 0 // [+++]revision required
 			virtual void onConnection(Socket* socket) {}
 			virtual void onListening() {}
+#endif
 			virtual void onError(Error& err) {}
 
-			virtual Socket* makeSocket() {
+/*			virtual Socket* makeSocket() {
 				return new Socket();
-			}
+			}*/
+			virtual Socket* makeSocket() = 0;
 
-			void listen(uint16_t port, const char* ip, int backlog);
-
+			virtual SocketTBase* createSocket() = 0;
 		};
-
 		
 		template<auto x>
 		struct OnCloseSO {};
@@ -112,19 +125,20 @@ namespace nodecpp {
 			ServerN2(Node* node_) { node = node_;}
 			Extra* getExtra() { return &extra; }
 
-			void onConnection() override
-			{ 
-				if constexpr ( Initializer::onConnection != nullptr )
-					(node->*(Initializer::onConnection))(this->getExtra()); 
-				else
-					ServerO::onConnection();
-			}
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
 					(node->*(Initializer::onClose))(this->getExtra(),b); 
 				else
 					ServerO::onClose(b);
+			}
+#if 0 //[+++] revision required
+			void onConnection() override
+			{ 
+				if constexpr ( Initializer::onConnection != nullptr )
+					(node->*(Initializer::onConnection))(this->getExtra()); 
+				else
+					ServerO::onConnection();
 			}
 			void onListening(nodecpp::Buffer& b) override
 			{ 
@@ -133,6 +147,7 @@ namespace nodecpp {
 				else
 					ServerO::onListening(b);
 			}
+#endif
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )
@@ -151,19 +166,20 @@ namespace nodecpp {
 			ServerN2(Node* node_) { node = node_;}
 			void* getExtra() { return nullptr; }
 
-			void onConnection() override
-			{ 
-				if constexpr ( Initializer::onConnection != nullptr )
-					(node->*(Initializer::onConnection))(this->getExtra()); 
-				else
-					ServerO::onConnection();
-			}
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
 					(node->*(Initializer::onClose))(this->getExtra(),b); 
 				else
 					ServerO::onClose(b);
+			}
+#if 0 //[+++] revision required
+			void onConnection() override
+			{ 
+				if constexpr ( Initializer::onConnection != nullptr )
+					(node->*(Initializer::onConnection))(this->getExtra()); 
+				else
+					ServerO::onConnection();
 			}
 			void onListening(nodecpp::Buffer& b) override
 			{ 
@@ -172,6 +188,7 @@ namespace nodecpp {
 				else
 					ServerO::onListening(b);
 			}
+#endif
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )

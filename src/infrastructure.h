@@ -38,6 +38,8 @@
 #include "../include/nodecpp/loop.h"
 #include "../include/nodecpp/socket_o.h"
 #include "../include/nodecpp/socket_l.h"
+#include "../include/nodecpp/server_o.h"
+#include "../include/nodecpp/server_l.h"
 
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
@@ -307,6 +309,13 @@ void registerServer(NodeBase* node, net::ServerTBase* t, int typeId)
 	return netServerManagerBase->appAddServer(node, t, typeId);
 }
 
+/*inline
+void serverListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog)
+{
+	return netServerManagerBase->appListen(ptr, ip, port, backlog);
+}*/
+#endif // NET_CLIENT_ONLY
+
 template<class Node>
 class Runnable : public RunnableBase
 {
@@ -322,6 +331,8 @@ class Runnable : public RunnableBase
 	//		netSocketManagerBase->setTypeIndexOfSocketL<typename Node::EmitterType>();
 		netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
 		netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
+		netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
+		netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
 	//		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
 			node = new Node;
 			node->main();

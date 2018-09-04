@@ -501,7 +501,7 @@ public:
 		printf( "MySampleLambdaOneNode::main()\n" );
 
 #ifndef NET_CLIENT_ONLY
-//		srv.listen(2000, "127.0.0.1", 5);
+		srv.listen(2000, "127.0.0.1", 5);
 #endif // NO_SERVER_STAFF
 
 		*( sockNN_1.getExtra() ) = 17;
@@ -751,7 +751,8 @@ public:
 
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockType_1, SockType_2, SockTypeServerSocket>;
-	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ServerType>;
+//	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ServerType>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server, ServerType>;
 };
 
 template<class Extra> void MySocketO<Extra>::onClose(bool hadError) { myNode->onClose( &myId, hadError ); }

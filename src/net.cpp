@@ -68,18 +68,14 @@ void ServerBase::close()
 }
 
 
-#if 0 // be back later
-void Server::listen(uint16_t port, const char* ip, int backlog)
-{
-	assert( false );
-//	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
-//	netServerManagerBase->appListen(this, port, ip, backlog);
-}
-void ServerO::listen(uint16_t port, const char* ip, int backlog)
+ServerO::ServerO() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerO);}
+Server::Server() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL);}
+
+void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 {
 //	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
+	netServerManagerBase->appListen(this, ip, port, backlog);
 }
-#endif
 
 #endif // NO_SERVER_STAFF
 

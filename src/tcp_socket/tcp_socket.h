@@ -517,12 +517,16 @@ protected:
 	std::string family = "IPv4";
 
 public:
+	int typeIndexOfServerO = -1;
+	int typeIndexOfServerL = -1;
+
+public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetServerManagerBase() { ioSockets.emplace_back(0); }
 
 	void appClose(size_t id);
 	void appAddServer(NodeBase* node, net::ServerTBase* ptr, int typeId);
-	void appListen(net::ServerTBase* ptr, uint16_t port, const char* ip, int backlog);
+	void appListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog);
 
 	void appRef(size_t id) { appGetEntry(id).getServerData()->refed = true; }
 	void appUnref(size_t id) { appGetEntry(id).getServerData()->refed = false; }

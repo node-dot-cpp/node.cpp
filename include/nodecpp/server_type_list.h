@@ -31,8 +31,8 @@
 #include "template_common.h"
 #include "net_common.h"
 #include "server_t.h"
-//#include "server_o.h"
-//#include "server_l.h"
+#include "server_o.h"
+#include "server_l.h"
 
 namespace nodecpp {
 
@@ -44,11 +44,11 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				/*if constexpr (std::is_same< T1, ServerO >::value)
-					(static_cast<ServerO*>(ptr->getPtr()))->onConnection();
+				if constexpr (std::is_same< T1, ServerO >::value)
+					;//(static_cast<ServerO*>(ptr->getPtr()))->onConnection();
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->emitConnection();
-				else*/
+					;//(static_cast<Server*>(ptr->getPtr()))->emitConnection();
+				else
 				{
 					if constexpr ( T1::Handlers::onConnection != nullptr )
 						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr())->getExtra(), static_cast<typename T1::SocketType*>(sock) );
@@ -70,11 +70,11 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				/*if constexpr (std::is_same< T1, ServerO >::value)
+				if constexpr (std::is_same< T1, ServerO >::value)
 					(static_cast<ServerO*>(ptr->getPtr()))->onClose(hadError);
 				else if constexpr (std::is_same< T1, Server >::value)
 					(static_cast<Server*>(ptr->getPtr()))->emitClose(hadError);
-				else*/
+				else
 				{
 					if constexpr ( T1::Handlers::onClose != nullptr )
 						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(static_cast<T1*>(ptr->getPtr())->getExtra(), hadError);
@@ -96,11 +96,11 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				/*if constexpr (std::is_same< T1, ServerO >::value)
-					(static_cast<ServerO*>(ptr->getPtr()))->onListening();
+				if constexpr (std::is_same< T1, ServerO >::value)
+					;//(static_cast<ServerO*>(ptr->getPtr()))->onListening();
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->emitListening();
-				else*/
+					;//(static_cast<Server*>(ptr->getPtr()))->emitListening();
+				else
 				{
 					if constexpr ( T1::Handlers::onListening != nullptr )
 						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(static_cast<T1*>(ptr->getPtr())->getExtra());
@@ -122,11 +122,11 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				/*if constexpr (std::is_same< T1, ServerO >::value)
+				if constexpr (std::is_same< T1, ServerO >::value)
 					(static_cast<ServerO*>(ptr->getPtr()))->onError(e);
 				else if constexpr (std::is_same< T1, Server >::value)
 					(static_cast<Server*>(ptr->getPtr()))->emitError(e);
-				else*/
+				else
 				{
 					if constexpr ( T1::Handlers::onError != nullptr )
 						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
@@ -148,11 +148,11 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				/*if constexpr (std::is_same< T1, ServerO >::value)
-					(static_cast<ServerO*>(ptr->getPtr()))->createSocket();
+				if constexpr (std::is_same< T1, ServerO >::value)
+					return (static_cast<ServerO*>(ptr->getPtr()))->createSocket();
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->createSocket();
-				else*/
+					return nullptr;//(static_cast<Server*>(ptr->getPtr()))->createSocket();
+				else
 					return static_cast<T1*>(ptr->getPtr())->createSocket();
 			}
 			else

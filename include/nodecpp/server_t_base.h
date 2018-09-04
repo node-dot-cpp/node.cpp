@@ -52,6 +52,8 @@ namespace nodecpp {
 			ServerTBase& operator=(ServerTBase&&) = default;
 
 			~ServerTBase() {}
+
+			void listen(uint16_t port, const char* ip, int backlog);
 		};
 
 

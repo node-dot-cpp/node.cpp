@@ -54,7 +54,9 @@ namespace nodecpp {
 
 			void emitConnection(Socket* socket) {
 				eConnection.emit(socket);
+#if 0 // [+++]revision required
 				onConnection(socket);
+#endif
 			}
 
 			void emitListening(size_t id, Address addr) {
@@ -62,7 +64,9 @@ namespace nodecpp {
 				localAddress = std::move(addr);
 				state = LISTENING;
 				eListening.emit();
+#if 0 // [+++]revision required
 				onListening();
+#endif
 			}
 
 			void emitError(Error& err) {
@@ -81,14 +85,15 @@ namespace nodecpp {
 			}
 
 			virtual void onClose(bool hadError) {}
+#if 0 // [+++]revision required
 			virtual void onConnection(Socket* socket) {}
 			virtual void onListening() {}
+#endif
 			virtual void onError(Error& err) {}
 
-			void listen(uint16_t port, const char* ip, int backlog);
 			void listen(uint16_t port, const char* ip, int backlog, std::function<void()> cb) {
 				once(event::listening, std::move(cb));
-				listen(port, ip, backlog);
+				ServerTBase::listen(port, ip, backlog);
 			}
 
 			//template<class EV>
@@ -183,7 +188,6 @@ namespace nodecpp {
 				else if constexpr (std::is_same< EV, event::Error >::value) { eError.once(std::move(cb)); }
 				else assert(false);
 			}
-
 
 		};
 
