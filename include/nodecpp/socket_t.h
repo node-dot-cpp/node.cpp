@@ -55,6 +55,9 @@ namespace nodecpp {
 		template<auto x>
 		struct OnEndT {};
 
+		template<auto x>
+		struct OnAcceptedT {};
+
 		template<typename ... args>
 		struct SocketTInitializer;
 
@@ -100,6 +103,13 @@ namespace nodecpp {
 			static constexpr auto onEnd = F;
 		};
 
+		//partial template specialization:
+		template<auto F, typename ... args>
+		struct SocketTInitializer<OnAcceptedT<F>, args...>
+		: public SocketTInitializer<args...> {
+			static constexpr auto onAccepted = F;
+		};
+
 		//create similar partial specializations for all the args
 
 		//partial template specialiazation to end recursion
@@ -111,6 +121,7 @@ namespace nodecpp {
 			static constexpr auto onDrain = nullptr;
 			static constexpr auto onError = nullptr;
 			static constexpr auto onEnd = nullptr;
+			static constexpr auto onAccepted = nullptr;
 		};
 
 	//	template <class T, class M> constexpr M get_member_type(M T:: *);

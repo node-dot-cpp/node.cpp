@@ -75,6 +75,7 @@ public:
 protected:
 	std::vector<NetSocketEntry> ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+	std::vector<size_t> pendingAcceptedEvents;
 
 public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
@@ -94,6 +95,12 @@ public:
 
 public:
 	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
+
+	void infraAddAccepted(net::SocketTBase* ptr)
+	{
+		pendingAcceptedEvents.push_back(ptr->dataForCommandProcessing.id);
+		ptr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connected;
+	}
 
 /*	template<class SockType>
 	size_t appConnect(SockType* ptr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
@@ -127,6 +134,7 @@ public:
 		}
 
 		auto& entry = appGetEntry(id);
+		ptr->dataForCommandProcessing.id = id;
 		NODECPP_ASSERT(entry.getSockData()->state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 
 		return id;
@@ -252,7 +260,7 @@ public:
 	NetSocketManager() {}
 
 #ifndef NET_CLIENT_ONLY
-	template<class SocketType>
+/*	template<class SocketType>
 	bool infraAddAccepted(SocketType* ptr, SOCKET sock, EvQueue& evs)
 	{
 		SocketRiia s(sock);
@@ -270,7 +278,7 @@ public:
 		//[+++]evs.add(&net::Socket::emitAccepted, ptr, ix);
 
 		return true;
-	}
+	}*/
 #endif // !NET_CLIENT_ONLY
 
 	
@@ -315,6 +323,21 @@ public:
 			}
 		}
 		pendingCloseEvents.clear();
+	}
+	void infraProcessSockAcceptedEvents()
+	{
+		for ( auto idx:pendingAcceptedEvents )
+		{
+			if (idx < ioSockets.size())
+			{
+				auto& entry = ioSockets[idx];
+				if (entry.isValid())
+				{
+					EmitterType::emitAccepted(entry.getEmitter());
+				}
+			}
+			pendingAcceptedEvents.clear();
+		}
 	}
 	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs)
 	{
@@ -494,7 +517,7 @@ protected:
 	std::string family = "IPv4";
 
 public:
-	static const size_t MAX_SOCKETS = 100; //arbitrary limit
+	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetServerManagerBase() { ioSockets.emplace_back(0); }
 
 	void appClose(size_t id);
@@ -681,6 +704,7 @@ private:
 
 	//	entry.getPtr()->emitConnection(ptr);
 	//	evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
+		netSocketManagerBase->infraAddAccepted(ptr);
 		EmitterType::emitConnection( entry.getEmitter(), ptr );
 
 		return;

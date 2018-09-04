@@ -53,6 +53,7 @@ namespace nodecpp {
 			virtual void onData(Buffer& buffer) {}
 			virtual void onDrain() {}
 			virtual void onEnd() {}
+			virtual void onAccepted() {}
 			virtual void onError(Error& err) {}
 
 //			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, 0, ip, port);}
@@ -76,6 +77,9 @@ namespace nodecpp {
 
 		template<auto x>
 		struct OnError {};
+
+		template<auto x>
+		struct OnAccepted {};
 
 		template<auto x>
 		struct OnEnd {};
@@ -125,6 +129,13 @@ namespace nodecpp {
 			static constexpr auto onEnd = F;
 		};
 
+		//partial template specialization:
+		template<auto F, typename ... args>
+		struct SocketOInitializer2<OnAccepted<F>, args...>
+		: public SocketOInitializer2<args...> {
+			static constexpr auto onAccepted = F;
+		};
+
 		//create similar partial specializations for all the args
 
 		//partial template specialiazation to end recursion
@@ -136,6 +147,7 @@ namespace nodecpp {
 			static constexpr auto onDrain = nullptr;
 			static constexpr auto onError = nullptr;
 			static constexpr auto onEnd = nullptr;
+			static constexpr auto onAccepted = nullptr;
 		};
 
 	//	template <class T, class M> constexpr M get_member_type(M T:: *);
@@ -205,6 +217,13 @@ namespace nodecpp {
 				else
 					SocketO::onEnd();
 			}
+			void onAccepted() override
+			{
+				if constexpr ( Initializer::onAccepted != nullptr )
+					(node->*(Initializer::onAccepted))(this->getExtra());
+				else
+					SocketO::onAccepted();
+			}
 		};
 
 		template<class Node, class Initializer>
@@ -272,6 +291,13 @@ namespace nodecpp {
 					(node->*(Initializer::onEnd))(this->getExtra());
 				else
 					SocketO::onEnd();
+			}
+			void onAccepted() override
+			{
+				if constexpr ( Initializer::onAccepted != nullptr )
+					(node->*(Initializer::onAccepted))(this->getExtra());
+				else
+					SocketO::onAccepted();
 			}
 		};
 

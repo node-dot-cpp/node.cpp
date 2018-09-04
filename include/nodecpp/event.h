@@ -75,6 +75,13 @@ namespace nodecpp
 		};
 		static constexpr End end = End();
 
+		struct Accepted
+		{
+			using callback = std::function<void()>;
+			static constexpr const char* name = "end";
+		};
+		static constexpr Accepted accepted = Accepted();
+
 		struct Error
 		{
 			using callback = std::function<void(nodecpp::Error&)>;

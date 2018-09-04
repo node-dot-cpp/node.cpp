@@ -42,6 +42,7 @@ namespace nodecpp {
 			EventEmitter<event::Drain> eDrain;
 			EventEmitter<event::End> eEnd;
 			EventEmitter<event::Error> eError;
+			EventEmitter<event::Accepted> eAccepted;
 
 		public:
 			Socket();
@@ -62,8 +63,7 @@ namespace nodecpp {
 			}
 
 			// not in node.js
-			void emitAccepted(size_t id) {
-				this->dataForCommandProcessing.id = id;
+			void emitAccepted() {
 				state = CONNECTED;
 			}
 
@@ -151,6 +151,8 @@ namespace nodecpp {
 					eConnect.on(std::move(cb));
 				else if (name == event::End::name)
 					eEnd.on(std::move(cb));
+				else if (name == event::Accepted::name)
+					eAccepted.on(std::move(cb));
 				else
 					assert(false);
 			}
@@ -194,6 +196,8 @@ namespace nodecpp {
 					eConnect.once(std::move(cb));
 				else if (name == event::End::name)
 					eEnd.once(std::move(cb));
+				else if (name == event::Accepted::name)
+					eAccepted.once(std::move(cb));
 				else
 					assert(false);
 			}
@@ -206,6 +210,7 @@ namespace nodecpp {
 				else if constexpr ( std::is_same< EV, event::Drain >::value ) { eDrain.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::End >::value ) { eEnd.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Error >::value ) { eError.on(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Accepted >::value ) { eAccepted.on(std::move(cb)); }
 				else assert(false);
 			}
 
@@ -217,6 +222,7 @@ namespace nodecpp {
 				else if constexpr ( std::is_same< EV, event::Drain >::value ) { eDrain.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::End >::value ) { eEnd.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Error >::value ) { eError.once(std::move(cb)); }
+				else if constexpr ( std::is_same< EV, event::Accepted >::value ) { eAccepted.once(std::move(cb)); }
 				else assert(false);
 			}
 		};

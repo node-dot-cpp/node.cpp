@@ -216,6 +216,7 @@ void runInfraLoop2( Infra& infra )
 //		infra.emitInmediates();
 
 		infra.netSocket.infraGetCloseEvent(queue);
+		infra.netSocket.infraProcessSockAcceptedEvents();
 #ifndef NET_CLIENT_ONLY
 		infra.netServer.infraGetCloseEvents(queue);
 #endif

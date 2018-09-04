@@ -195,6 +195,31 @@ namespace nodecpp {
 			assert( false );
 		}
 
+		template<class T, class T1, class ... args>
+		void callOnAccepted( void* nodePtr, T* ptr, int type )
+		{
+			if ( type == 0 )
+			{
+				if constexpr (std::is_same< T1, SocketO >::value)
+					(static_cast<SocketO*>(ptr->getPtr()))->onAccepted();
+				else if constexpr (std::is_same< T1, Socket >::value)
+					(static_cast<Socket*>(ptr->getPtr()))->emitAccepted();
+				else 
+				{
+					if constexpr( T1::Handlers::onAccepted != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onAccepted)(static_cast<T1*>(ptr->getPtr())->getExtra());
+				}
+			}
+			else
+				callOnAccepted<T, args...>(nodePtr, ptr, type-1);
+		}
+
+		template<class T>
+		void callOnAccepted( void* nodePtr, T* ptr, int type )
+		{
+			assert( false );
+		}
+
 
 
 
@@ -223,6 +248,7 @@ namespace nodecpp {
 			static void emitDrain( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnDrain<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { Ptr emitter_ptr( emitter.ptr ); callOnError<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
 			static void emitEnd( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnEnd<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitAccepted( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnAccepted<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 		};
 	} // namespace net
 
