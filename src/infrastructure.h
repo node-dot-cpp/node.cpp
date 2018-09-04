@@ -99,22 +99,22 @@ uint64_t infraGetCurrentTime();
 template<class Infra>
 bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
-	size_t fds_sz = NetSocketManager<Infra>::MAX_SOCKETS 
+	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS 
 #ifndef NET_CLIENT_ONLY
-		+ NetServerManager<Infra>::MAX_SOCKETS
+		+ NetServerManagerBase::MAX_SOCKETS
 #endif
 		;
 	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
 
 	
 	pollfd* fds_begin = fds.get();
-	pollfd* fds_end = fds_begin + NetSocketManager<Infra>::MAX_SOCKETS;
+	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
 	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
 
 //	fds_begin += pollfdsz;
 	fds_begin = fds_end;
 #ifndef NET_CLIENT_ONLY
-	fds_end += NetServerManager<Infra>::MAX_SOCKETS;
+	fds_end += NetServerManagerBase::MAX_SOCKETS;
 //	pollfdsz = NetServerManager::MAX_SOCKETS;
 	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
 //	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, pollfdsz);
@@ -160,15 +160,15 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 	else //if(retval)
 	{
 		fds_begin = fds.get();
-		fds_end = fds_begin + NetSocketManager<Infra>::MAX_SOCKETS;
-//		pollfdsz = NetSocketManager<Infra>::MAX_SOCKETS;
+		fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
+//		pollfdsz = NetSocketManagerBase::MAX_SOCKETS;
 		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
 //		infra.netSocket.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
 
 		fds_begin = fds_end;
 //		fds_begin += pollfdsz;
 #ifndef NET_CLIENT_ONLY
-		fds_end += NetServerManager<Infra>::MAX_SOCKETS;
+		fds_end += NetServerManagerBase::MAX_SOCKETS;
 		infra.netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
 //		pollfdsz = NetServerManager::MAX_SOCKETS;
 //		infra.netServer.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
@@ -213,7 +213,7 @@ void runInfraLoop2( Infra& infra )
 			return;
 
 		queue.emit();
-		infra.emitInmediates();
+//		infra.emitInmediates();
 
 		infra.netSocket.infraGetCloseEvent(queue);
 #ifndef NET_CLIENT_ONLY
@@ -254,7 +254,7 @@ class Infrastructure
 	NetServerManager<ServerEmitterType> netServer;
 #endif
 	TimeoutManager timeout;
-	EvQueue inmediateQueue;
+//	EvQueue inmediateQueue;
 
 public:
 	NetSocketManagerBase& getNetSocketBase() { return netSocket; }
@@ -266,17 +266,19 @@ public:
 	NetServerManager<ServerEmitterType>& getNetServer() { return netServer; }
 #endif
 	TimeoutManager& getTimeout() { return timeout; }
-	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
-	void emitInmediates() { inmediateQueue.emit(); }
+//	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
+//	void emitInmediates() { inmediateQueue.emit(); }
 
 	bool refedTimeout() const noexcept
 	{
-		return !inmediateQueue.empty() || timeout.infraRefedTimeout();
+//		return !inmediateQueue.empty() || timeout.infraRefedTimeout();
+		return timeout.infraRefedTimeout();
 	}
 
 	uint64_t nextTimeout() const noexcept
 	{
-		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
+//		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
+		return timeout.infraNextTimeout();
 	}
 
 //	bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);

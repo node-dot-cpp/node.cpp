@@ -681,7 +681,7 @@ private:
 
 	//	entry.getPtr()->emitConnection(ptr);
 	//	evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
-		//[+++]EmitterType::emitConnection( entry.getEmitter(), ptr );
+		EmitterType::emitConnection( entry.getEmitter(), ptr );
 
 		return;
 	}
