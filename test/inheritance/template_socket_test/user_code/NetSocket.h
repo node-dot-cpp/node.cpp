@@ -681,7 +681,7 @@ public:
 	}
 	void onDataSererSocket(const SocketIdType* extra, Buffer& buffer) {
 		print("server socket: onData!\n");
-//		++count;
+		++serverSockCount;
 		assert( serversSocks.size() );
 		// todo: find a right sock using extra
 		serversSocks[0]->write(buffer.begin(), buffer.size());
@@ -706,11 +706,16 @@ public:
 	// server
 private:
 	std::vector<net::SocketTBase*> serversSocks;
+	size_t serverSockCount = 0;
+
 public:
-	void onCloseServer(const ServerIdType* extra, bool hadError) {print("server: onCloseServer()!\n");}
+	void onCloseServer(const ServerIdType* extra, bool hadError) {
+		print("server: onCloseServer()!\n");
+	}
 //	void onConnection(SockTypeServerSocket* socket) { NODECPP_ASSERT( socket != nullptr ); *(socket->getExtra()) = 1;}
 	void onConnection(const ServerIdType* extra, net::SocketTBase* socket) { 
 		print("server: onConnection()!\n");
+		srv.unref();
 		NODECPP_ASSERT( socket != nullptr ); 
 		serversSocks.push_back( socket );
 		/**(socket->getExtra()) = 1;*/

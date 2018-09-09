@@ -30,22 +30,22 @@
 
 #include "server_t_base.h"
 
-namespace nodecpp {
-
-	namespace net {
-
-#if 0 // [+++]sample code preventing from being compilable
-		class X : public ServerBase
+#if 1 // [+++]sample code preventing from being compilable
+		class X //: public ServerBase
 		{
 		public:
 			X() {}
 			virtual ~X() {}
 
-			virtual void onConnection(Socket* socket) {}
-			virtual void onListening() {}
+			virtual void onConnectionX(nodecpp::net::Socket* socket) {}
+			virtual void onListeningX() {}
 		};
 #endif
 		
+namespace nodecpp {
+
+	namespace net {
+
 		class ServerO : public ServerTBase
 		{
 		public:
@@ -53,9 +53,9 @@ namespace nodecpp {
 			virtual ~ServerO() {}
 
 			virtual void onClose(bool hadError) {}
-#if 0 // [+++]revision required
-			virtual void onConnection(Socket* socket) {}
-			virtual void onListening() {}
+#if 1 // [+++]revision required
+			virtual void onConnectionX(SocketTBase* socket) {}
+			virtual void onListeningX() {}
 #endif
 			virtual void onError(Error& err) {}
 
@@ -132,20 +132,20 @@ namespace nodecpp {
 				else
 					ServerO::onClose(b);
 			}
-#if 0 //[+++] revision required
-			void onConnection() override
+#if 1 //[+++] revision required
+			void onConnectionX(SocketTBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
 					(node->*(Initializer::onConnection))(this->getExtra()); 
 				else
-					ServerO::onConnection();
+					ServerO::onConnectionX(socket);
 			}
-			void onListening(nodecpp::Buffer& b) override
+			void onListeningX(nodecpp::Buffer& b) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
 					(node->*(Initializer::onListening))(this->getExtra(),b); 
 				else
-					ServerO::onListening(b);
+					ServerO::onListeningX(b);
 			}
 #endif
 			void onError(nodecpp::Error& e) override
@@ -173,20 +173,20 @@ namespace nodecpp {
 				else
 					ServerO::onClose(b);
 			}
-#if 0 //[+++] revision required
-			void onConnection() override
+#if 1 //[+++] revision required
+			void onConnectionX(SocketTBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
 					(node->*(Initializer::onConnection))(this->getExtra()); 
 				else
-					ServerO::onConnection();
+					ServerO::onConnectionX(socket);
 			}
-			void onListening(nodecpp::Buffer& b) override
+			void onListeningX(nodecpp::Buffer& b) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
 					(node->*(Initializer::onListening))(this->getExtra(),b); 
 				else
-					ServerO::onListening(b);
+					ServerO::onListeningX(b);
 			}
 #endif
 			void onError(nodecpp::Error& e) override

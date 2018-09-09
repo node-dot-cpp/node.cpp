@@ -52,7 +52,7 @@ namespace nodecpp {
 				onClose(hadError);
 			}
 
-			void emitConnection(Socket* socket) {
+			void emitConnection(SocketTBase* socket) {
 				eConnection.emit(socket);
 #if 0 // [+++]revision required
 				onConnection(socket);
@@ -86,7 +86,7 @@ namespace nodecpp {
 
 			virtual void onClose(bool hadError) {}
 #if 0 // [+++]revision required
-			virtual void onConnection(Socket* socket) {}
+			virtual void onConnection(SocketTBase* socket) {}
 			virtual void onListening() {}
 #endif
 			virtual void onError(Error& err) {}

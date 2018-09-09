@@ -45,9 +45,9 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					;//(static_cast<ServerO*>(ptr->getPtr()))->onConnection();
+					(static_cast<ServerO*>(ptr->getPtr()))->onConnectionX(sock);
 				else if constexpr (std::is_same< T1, Server >::value)
-					;//(static_cast<Server*>(ptr->getPtr()))->emitConnection();
+					(static_cast<Server*>(ptr->getPtr()))->emitConnection(sock);
 				else
 				{
 					if constexpr ( T1::Handlers::onConnection != nullptr )
@@ -97,9 +97,9 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					;//(static_cast<ServerO*>(ptr->getPtr()))->onListening();
+					(static_cast<ServerO*>(ptr->getPtr()))->onListeningX();
 				else if constexpr (std::is_same< T1, Server >::value)
-					;//(static_cast<Server*>(ptr->getPtr()))->emitListening();
+					(static_cast<Server*>(ptr->getPtr()))->emitListening();
 				else
 				{
 					if constexpr ( T1::Handlers::onListening != nullptr )
