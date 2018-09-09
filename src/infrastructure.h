@@ -327,13 +327,13 @@ class Runnable : public RunnableBase
 		{
 			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
 			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
-	//		netSocketManagerBase->setTypeIndexOfSocketO<typename Node::EmitterType>();
-	//		netSocketManagerBase->setTypeIndexOfSocketL<typename Node::EmitterType>();
-		netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
-		netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
-		netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
-		netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
-	//		NodeRegistrator<Runnable<Node>, Infrastructure<typename Node::EmitterType>>::infraPtr = &infra;
+			netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
+			netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
+#ifndef NET_CLIENT_ONLY
+			netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
+			netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
+			netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
+#endif // NET_CLIENT_ONLY
 			node = new Node;
 			node->main();
 			runInfraLoop2<Infrastructure<ClientSocketEmitter, ServerSocketEmitter>>(infra);

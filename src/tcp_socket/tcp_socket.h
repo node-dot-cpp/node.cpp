@@ -126,6 +126,8 @@ public:
 #ifdef USING_T_SOCKETS
 	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId) // TODO: think about template with type checking inside
 	{
+		SocketRiia s( std::move( OSLayer::appAcquireSocket() ) );
+
 		size_t id = addEntry(node, ptr, typeId);
 		if (id == 0)
 		{
@@ -135,7 +137,8 @@ public:
 
 		auto& entry = appGetEntry(id);
 		ptr->dataForCommandProcessing.id = id;
-		NODECPP_ASSERT(entry.getSockData()->state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+		ptr->dataForCommandProcessing.osSocket = s.release();
+		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 
 		return id;
 	}

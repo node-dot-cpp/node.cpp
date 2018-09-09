@@ -507,7 +507,7 @@ public:
 		*( sockNN_1.getExtra() ) = 17;
 //		sockO_1.connect(2000, "127.0.0.1");
 //		*( sockNN1_4.getExtra() ) = 71;
-//		sockNN_1.connect(2000, "127.0.0.1");
+		sockNN_1.connect(2000, "127.0.0.1");
 //		sockNN1_4.connect(2008, "127.0.0.1");
 
 		// lambda staff
@@ -675,34 +675,48 @@ public:
 	}
 
 	// server socket
-	void onCloseSererSocket(const SocketIdType* extra, bool hadError) {};
+	void onCloseSererSocket(const SocketIdType* extra, bool hadError) {print("server socket: onCloseSererSocket!\n");};
 	void onConnectSererSocket(const SocketIdType* extra) {
-		print("onConnect!\n");
+		print("server socket: onConnect!\n");
 	}
 	void onDataSererSocket(const SocketIdType* extra, Buffer& buffer) {
-		print("onData!\n");
+		print("server socket: onData!\n");
 //		++count;
-//		write(buffer.begin(), buffer.size());
+		assert( serversSocks.size() );
+		// todo: find a right sock using extra
+		serversSocks[0]->write(buffer.begin(), buffer.size());
 	}
 	void onDrainSererSocket(const SocketIdType* extra) {
-		print("onDrain!\n");
+		print("server socket: onDrain!\n");
 	}
 	void onEndSererSocket(const SocketIdType* extra) {
-		print("onEnd!\n");
+		print("server socket: onEnd!\n");
 		const char buff[] = "goodbye!";
-//		write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
-//		end();
+		// todo: find a right sock using extra
+		serversSocks[0]->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+		serversSocks[0]->end();
 	}
 	void onErrorSererSocket(const SocketIdType* extra, nodecpp::Error&) {
-		print("onError!\n");
+		print("server socket: onError!\n");
+	}
+	void onAcceptedSererSocket(const SocketIdType* extra) {
+		print("server socket: onAccepted!\n");
 	}
 
 	// server
-	void onCloseServer(const ServerIdType* extra, bool hadError) {}
+private:
+	std::vector<net::SocketTBase*> serversSocks;
+public:
+	void onCloseServer(const ServerIdType* extra, bool hadError) {print("server: onCloseServer()!\n");}
 //	void onConnection(SockTypeServerSocket* socket) { NODECPP_ASSERT( socket != nullptr ); *(socket->getExtra()) = 1;}
-	void onConnection(const ServerIdType* extra, net::SocketTBase* socket) { NODECPP_ASSERT( socket != nullptr ); /**(socket->getExtra()) = 1;*/}
-	void onListening(const ServerIdType* extra) {}
-	void onErrorServer(const ServerIdType* extra, Error& err) {}
+	void onConnection(const ServerIdType* extra, net::SocketTBase* socket) { 
+		print("server: onConnection()!\n");
+		NODECPP_ASSERT( socket != nullptr ); 
+		serversSocks.push_back( socket );
+		/**(socket->getExtra()) = 1;*/
+	}
+	void onListening(const ServerIdType* extra) {print("server: onListening()!\n");}
+	void onErrorServer(const ServerIdType* extra, Error& err) {print("server: onErrorServer!\n");}
 
 	/*	using Initializer = SocketTInitializer<
 		nodecpp::net::OnConnectT<&MySampleTNode::onWhateverConnect>,
@@ -739,7 +753,8 @@ public:
 		nodecpp::net::OnDataT<&MySampleTNode::onDataSererSocket>,
 		nodecpp::net::OnDrainT<&MySampleTNode::onDrainSererSocket>,
 		nodecpp::net::OnErrorT<&MySampleTNode::onErrorSererSocket>,
-		nodecpp::net::OnEndT<&MySampleTNode::onEndSererSocket>
+		nodecpp::net::OnEndT<&MySampleTNode::onEndSererSocket>,
+		nodecpp::net::OnAcceptedT<&MySampleTNode::onAcceptedSererSocket>
 	>;
 	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
 		nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
