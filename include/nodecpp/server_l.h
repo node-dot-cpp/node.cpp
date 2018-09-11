@@ -47,7 +47,8 @@ namespace nodecpp {
 
 			void emitClose(bool hadError) {
 				state = CLOSED;
-				id = 0;
+				//id = 0;
+				dataForCommandProcessing.index = 0;
 				eClose.emit(hadError);
 				onClose(hadError);
 			}
@@ -60,7 +61,8 @@ namespace nodecpp {
 			}
 
 			void emitListening(size_t id, Address addr) {
-				this->id = id;
+				//this->id = id;
+				this->dataForCommandProcessing.index = id;
 				localAddress = std::move(addr);
 				state = LISTENING;
 				eListening.emit();

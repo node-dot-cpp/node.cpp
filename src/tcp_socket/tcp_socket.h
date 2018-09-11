@@ -490,7 +490,7 @@ public:
 //	SOCKET osSocket = INVALID_SOCKET;
 //	short fdEvents = 0;
 
-	NetServerEntry(size_t index) :index(index) {}
+	NetServerEntry(size_t index) : index(index), serverPtr(nullptr), emitter(nullptr, nullptr, -1) {}
 	NetServerEntry(size_t index, NodeBase* node, net::ServerTBase* serverPtr_, int type) : index(index), serverPtr(serverPtr_), emitter(node, serverPtr_, type) {serverPtr_->dataForCommandProcessing.index = index;}
 	
 	NetServerEntry(const NetServerEntry& other) = delete;

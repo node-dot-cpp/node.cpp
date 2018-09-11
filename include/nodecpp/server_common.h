@@ -64,7 +64,7 @@ namespace nodecpp {
 			Address localAddress;
 //			uint16_t localPort = 0;
 
-			size_t id = 0;
+//			size_t id = 0;
 			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
 
 		public:

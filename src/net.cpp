@@ -58,13 +58,13 @@ void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, por
 
 //void ServerBase::ref() { /*getInfra().*/getNetServer().appRef(id); }
 //void ServerBase::unref() { /*getInfra().*/getNetServer().appUnref(id); }
-void ServerBase::ref() { netServerManagerBase->appRef(id); }
-void ServerBase::unref() { netServerManagerBase->appUnref(id); }
+void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing.index); }
+void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing.index); }
 
 void ServerBase::close()
 {
 //	/*getInfra().*/getNetServer().appClose(id);
-	netServerManagerBase->appClose(id);
+	netServerManagerBase->appClose(dataForCommandProcessing.index);
 }
 
 
