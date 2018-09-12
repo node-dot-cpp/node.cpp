@@ -151,7 +151,7 @@ namespace nodecpp {
 				if constexpr (std::is_same< T1, ServerO >::value)
 					return (static_cast<ServerO*>(ptr->getPtr()))->createSocket();
 				else if constexpr (std::is_same< T1, Server >::value)
-					return nullptr;//(static_cast<Server*>(ptr->getPtr()))->createSocket();
+					return (static_cast<Server*>(ptr->getPtr()))->createSocket();
 				else
 					return static_cast<T1*>(ptr->getPtr())->createSocket();
 			}

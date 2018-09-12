@@ -41,8 +41,12 @@ namespace nodecpp {
 			EventEmitter<event::Listening> eListening;
 			EventEmitter<event::Error> eError;
 
+			using createSocketCallback = std::function<nodecpp::net::SocketTBase*()>;
+			createSocketCallback createSocketCB;
+
 		public:
-			Server();
+			Server() = delete;
+			Server(createSocketCallback cb);
 			~Server() {}
 
 			void emitClose(bool hadError) {
@@ -191,6 +195,9 @@ namespace nodecpp {
 				else assert(false);
 			}
 
+			SocketTBase* createSocket() {
+				return createSocketCB();
+			}
 		};
 
 		//TODO don't use naked pointers, think
