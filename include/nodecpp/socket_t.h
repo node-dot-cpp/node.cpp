@@ -140,7 +140,7 @@ namespace nodecpp {
 		public:
 //			Node* node;
 
-			SocketT2(Node* node_) {this->node = node_;}
+			SocketT2(Node* node_) : SocketTBase( node ) {}
 			Extra* getExtra() { return &extra; }
 			const Extra* getExtra() const { return &extra; }
 
@@ -155,7 +155,8 @@ namespace nodecpp {
 				using Handlers = Initializer;
 
 		public:
-			SocketT2() {}
+			SocketT2(Node* node_) {this->node = node_;}
+			SocketT2(Node* node_, OpaqueSocketData& sdata) {this->node = node_;}
 			void* getExtra() { return nullptr; }
 			const void* getExtra() const { return nullptr; }
 
@@ -168,6 +169,7 @@ namespace nodecpp {
 //			int idType1; // we will try to get rid of it later
 		public:
 			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAcquireSocket(this->node, this, idType1); }
+			SocketT(Node* node, OpaqueSocketData& sdata) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAssignSocket(this->node, this, idType1,sdata); }
 			void connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 			SocketT& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(this->dataForCommandProcessing, noDelay); return *this; }
 			SocketT& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(this->dataForCommandProcessing, enable); return *this; }

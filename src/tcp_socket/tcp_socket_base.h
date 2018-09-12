@@ -136,7 +136,10 @@ public:
 	SocketRiia(const SocketRiia&) = delete;
 	SocketRiia& operator=(const SocketRiia&) = delete;
 
-	SocketRiia(SocketRiia&&other) {s = other.s; other.s = INVALID_SOCKET; }
+	SocketRiia(SocketRiia&&other) 
+	{
+		s = other.s; 
+		other.s = INVALID_SOCKET; }
 	SocketRiia& operator=(SocketRiia&&other) {s = other.s; other.s = INVALID_SOCKET; return *this; }
 
 	~SocketRiia();// { if (s != INVALID_SOCKET) internal_close(s); }
@@ -146,6 +149,22 @@ public:
 	explicit operator bool() const noexcept { return s != INVALID_SOCKET; }
 
 };
+
+class NetSocketManagerBase; // forward declaration
+
+class OpaqueSocketData
+{
+	friend class NetSocketManagerBase;
+	SocketRiia s;
+	OpaqueSocketData( SOCKET s_ ) : s(s_) {};
+	OpaqueSocketData( SocketRiia s_ ) : s(s_.release()) {};
+public:
+	OpaqueSocketData( OpaqueSocketData& other ) = delete;
+	OpaqueSocketData& operator=(const OpaqueSocketData&) = delete;
+	OpaqueSocketData( OpaqueSocketData&& other ) : s( std::move( other.s) ) {}
+	OpaqueSocketData& operator=(OpaqueSocketData&&other) {s = std::move( other.s); return *this; }
+};
+
 
 
 namespace nodecpp

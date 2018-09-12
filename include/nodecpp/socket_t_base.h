@@ -44,7 +44,9 @@ namespace nodecpp {
 			NodeBase* node = nullptr;
 
 		public:
-			SocketTBase() {}
+//			SocketTBase() {}
+			SocketTBase(NodeBase* node_) : SocketBase() {node = node_;}
+//			SocketTBase(NodeBase* node_, OpaqueSocketData& sdata) : SocketBase(sdata) {this->node = node_;}
 
 			SocketTBase(const SocketTBase&) = delete;
 			SocketTBase& operator=(const SocketTBase&) = delete;

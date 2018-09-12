@@ -46,10 +46,14 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 	return OSLayer::appWrite(dataForCommandProcessing, data, size);
 }
 
-SocketO::SocketO() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
+//SocketO::SocketO() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
+void SocketO::registerMeAndAcquireSocket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
+void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {registerWithInfraAndAssignSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO, sdata);}
 void SocketO::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
-Socket::Socket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL);}
+void Socket::registerMeAndAcquireSocket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL);}
+void Socket::registerMeAndAssignSocket(OpaqueSocketData& sdata) {registerWithInfraAndAssignSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL, sdata);}
+//Socket::Socket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL);}
 void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -69,7 +73,7 @@ void ServerBase::close()
 
 
 ServerO::ServerO() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerO);}
-Server::Server() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL);}
+Server::Server(createSocketCallback cb) {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL); createSocketCB = std::move(cb);}
 
 void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 {

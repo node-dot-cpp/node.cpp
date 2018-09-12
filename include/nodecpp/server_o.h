@@ -62,9 +62,7 @@ namespace nodecpp {
 /*			virtual Socket* makeSocket() {
 				return new Socket();
 			}*/
-			virtual Socket* makeSocket() = 0;
-
-			virtual SocketTBase* createSocket() = 0;
+			virtual SocketTBase* makeSocket(OpaqueSocketData& sdata) = 0;
 		};
 		
 		template<auto x>

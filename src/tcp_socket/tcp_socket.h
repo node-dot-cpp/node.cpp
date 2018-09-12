@@ -100,6 +100,7 @@ public:
 	{
 		pendingAcceptedEvents.push_back(ptr->dataForCommandProcessing.id);
 		ptr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connected;
+		ptr->dataForCommandProcessing.refed = true;
 	}
 
 /*	template<class SockType>
@@ -124,9 +125,22 @@ public:
 	}*/
 
 #ifdef USING_T_SOCKETS
-	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId) // TODO: think about template with type checking inside
+	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId)
 	{
 		SocketRiia s( std::move( OSLayer::appAcquireSocket() ) );
+		return appAcquireSocket(node, ptr, typeId, s);
+	}
+
+	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, OpaqueSocketData& sdata)
+	{
+		SocketRiia s( sdata.s.release() );
+		return appAcquireSocket(node, ptr, typeId, s);
+	}
+
+private:
+	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, SocketRiia& s)
+	{
+//		SocketRiia s( std::move( OSLayer::appAcquireSocket() ) );
 
 		size_t id = addEntry(node, ptr, typeId);
 		if (id == 0)
@@ -143,13 +157,27 @@ public:
 		return id;
 	}
 
+public:
 	void appConnectSocket(net::SocketTBase* sockPtr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
 		// TODO: check sockPtr validity
 		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket,  ip, port );
 		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
+		sockPtr->dataForCommandProcessing.refed = true;
 	//	entry.connecting = true;
+	}
+	std::pair<bool, OpaqueSocketData&&> getAcceptedSockData(SOCKET s)
+	{
+		Ip4 remoteIp;
+		Port remotePort;
+
+		SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, s));
+		OpaqueSocketData osd( std::move(newSock) );
+		if (!newSock)
+			return std::make_pair( false, std::move( osd ) );
+
+		return std::move( std::make_pair( true, std::move( osd ) ) );
 	}
 #endif // USING_T_SOCKETS
 	
@@ -238,6 +266,7 @@ protected:
 	void closeSocket(NetSocketEntry& entry) //app-infra neutral
 	{
 		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closing;
+		entry.getSockData()->refed = true;
 
 	//	evs.add(&net::Socket::emitError, entry.getPtr(), storeError(Error()));
 	//	pendingCloseEvents.emplace_back(entry.index, std::function<void()>());
@@ -246,6 +275,7 @@ protected:
 	void errorCloseSocket(NetSocketEntry& entry, Error& err) //app-infra neutral
 	{
 		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
+		entry.getSockData()->refed = true;
 
 	//	std::function<void()> ev = std::bind(&net::Socket::emitError, entry.getPtr(), std::ref(err));
 	//	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), std::ref(err));
@@ -532,7 +562,10 @@ public:
 	void appListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog);
 
 	void appRef(size_t id) { appGetEntry(id).getServerData()->refed = true; }
-	void appUnref(size_t id) { appGetEntry(id).getServerData()->refed = false; }
+	void appUnref(size_t id) { 
+		auto& entry = appGetEntry(id);
+		entry.getServerData()->refed = false; 
+	}
 
 
 	//TODO quick workaround until definitive life managment is in place
@@ -691,15 +724,20 @@ public:
 private:
 	void infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& evs)
 	{
-		Ip4 remoteIp;
+/*		Ip4 remoteIp;
 		Port remotePort;
 
 		SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, entry.getServerData()->osSocket));
 		if (!newSock)
+			return;*/
+
+		auto ret = std::move( netSocketManagerBase->getAcceptedSockData(entry.getServerData()->osSocket) );
+		if (!ret.first )
 			return;
+		OpaqueSocketData sdata = std::move(ret.second);
 
 	//	net::Socket* ptr = entry.getPtr()->makeSocket();
-		net::SocketTBase* ptr = EmitterType::makeSocket(entry.getEmitter());
+		net::SocketTBase* ptr = EmitterType::makeSocket(entry.getEmitter(), sdata);
 
 //		auto& man = getInfra().getNetSocket();
 //		bool ok = man.infraAddAccepted(ptr, newSock.release(), evs);
@@ -711,6 +749,7 @@ private:
 
 	//	entry.getPtr()->emitConnection(ptr);
 	//	evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
+		NODECPP_ASSERT( netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
 		EmitterType::emitConnection( entry.getEmitter(), ptr );
 

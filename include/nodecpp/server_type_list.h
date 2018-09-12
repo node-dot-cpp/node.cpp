@@ -144,23 +144,23 @@ namespace nodecpp {
 
 
 		template<class T, class T1, class ... args>
-		SocketTBase* callMakeSocket( void* nodePtr, T* ptr, int type )
+		SocketTBase* callMakeSocket( void* nodePtr, T* ptr, int type, OpaqueSocketData& sdata )
 		{
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					return (static_cast<ServerO*>(ptr->getPtr()))->createSocket();
+					return (static_cast<ServerO*>(ptr->getPtr()))->makeSocket(sdata);
 				else if constexpr (std::is_same< T1, Server >::value)
-					return (static_cast<Server*>(ptr->getPtr()))->createSocket();
+					return (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
 				else
-					return static_cast<T1*>(ptr->getPtr())->createSocket();
+					return static_cast<T1*>(ptr->getPtr())->makeSocket(sdata);
 			}
 			else
-				return callMakeSocket<T, args...>(nodePtr, ptr, type-1);
+				return callMakeSocket<T, args...>(nodePtr, ptr, type-1, sdata);
 		}
 
 		template<class T>
-		SocketTBase* callMakeSocket( void* nodePtr, T* ptr, int type )
+		SocketTBase* callMakeSocket( void* nodePtr, T* ptr, int type, OpaqueSocketData& sdata )
 		{
 			assert( false );
 			return nullptr;
@@ -191,7 +191,7 @@ namespace nodecpp {
 			static void emitListening( const OpaqueEmitterForServer& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnListening<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitError( const OpaqueEmitterForServer& emitter, nodecpp::Error& e ) { Ptr emitter_ptr( emitter.ptr ); callOnErrorServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
 
-			static SocketTBase* makeSocket(const OpaqueEmitterForServer& emitter) { Ptr emitter_ptr( emitter.ptr ); return callMakeSocket<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static SocketTBase* makeSocket(const OpaqueEmitterForServer& emitter, OpaqueSocketData& sdata) { Ptr emitter_ptr( emitter.ptr ); return callMakeSocket<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sdata); }
 		};
 	} // namespace net
 

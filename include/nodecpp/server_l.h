@@ -81,8 +81,8 @@ namespace nodecpp {
 			}
 
 
-			virtual Socket* makeSocket() {
-				return new Socket();
+			SocketTBase* makeSocket(OpaqueSocketData& sdata) {
+				return new Socket(sdata);
 			}
 
 			void close(std::function<void(bool)> cb) {

@@ -296,6 +296,12 @@ size_t registerWithInfraAndAcquireSocket(NodeBase* node, net::SocketTBase* t, in
 }
 
 inline
+size_t registerWithInfraAndAssignSocket(NodeBase* node, net::SocketTBase* t, int typeId, OpaqueSocketData& sdata)
+{
+	return netSocketManagerBase->appAcquireSocket(node, t, typeId, sdata);
+}
+
+inline
 void connectSocket(net::SocketTBase* s, const char* ip, uint16_t port)
 {
 	netSocketManagerBase->appConnectSocket(s, ip, port);

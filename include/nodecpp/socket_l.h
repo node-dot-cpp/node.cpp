@@ -44,8 +44,12 @@ namespace nodecpp {
 			EventEmitter<event::Error> eError;
 			EventEmitter<event::Accepted> eAccepted;
 
+			void registerMeAndAcquireSocket();
+			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
+
 		public:
-			Socket();
+			Socket() : SocketTBase( nullptr ) {registerMeAndAcquireSocket();}
+			Socket(OpaqueSocketData& sdata) : SocketTBase( nullptr ) {registerMeAndAssignSocket(sdata);}
 
 			Socket(const Socket&) = delete;
 			Socket& operator=(const Socket&) = delete;

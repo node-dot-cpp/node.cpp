@@ -37,8 +37,13 @@ namespace nodecpp {
 
 		class SocketO : public SocketTBase {
 
+		private:
+			void registerMeAndAcquireSocket();
+			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
+
 		public:
-			SocketO();
+			SocketO(NodeBase* node) : SocketTBase( node ) {registerMeAndAcquireSocket();}
+			SocketO(OpaqueSocketData& sdata) : SocketTBase( nullptr ) {registerMeAndAssignSocket(sdata);}
 
 			SocketO(const SocketO&) = delete;
 			SocketO& operator=(const SocketO&) = delete;
@@ -166,7 +171,7 @@ namespace nodecpp {
 			Node* node;
 			Extra extra;
 		public:
-			SocketN2(Node* node_) { node = node_;}
+			SocketN2(Node* node) : SocketO( node ) { node = node_;}
 			Extra* getExtra() { return &extra; }
 
 			void onConnect() override
@@ -243,7 +248,7 @@ namespace nodecpp {
 	//		static_assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
 	#endif
 		public:
-			SocketN2(Node* node_) /*: x(nullptr), y(nullptr)*/ { node = node_;}
+			SocketN2(Node* node) : SocketO( node ) {}
 			void* getExtra() { return nullptr; }
 
 			void onConnect() override
@@ -306,7 +311,7 @@ namespace nodecpp {
 		class SocketN : public SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>
 		{
 		public:
-			SocketN(Node* node_) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( node_ ) {}
+			SocketN(Node* node) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( node ) {}
 		
 		};
 
