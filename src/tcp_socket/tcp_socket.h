@@ -128,17 +128,17 @@ public:
 	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId)
 	{
 		SocketRiia s( std::move( OSLayer::appAcquireSocket() ) );
-		return appAcquireSocket(node, ptr, typeId, s);
+		return registerAndAssignSocket(node, ptr, typeId, s);
 	}
 
-	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, OpaqueSocketData& sdata)
+	size_t appAssignSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, OpaqueSocketData& sdata)
 	{
 		SocketRiia s( sdata.s.release() );
-		return appAcquireSocket(node, ptr, typeId, s);
+		return registerAndAssignSocket(node, ptr, typeId, s);
 	}
 
 private:
-	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, SocketRiia& s)
+	size_t registerAndAssignSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, SocketRiia& s)
 	{
 //		SocketRiia s( std::move( OSLayer::appAcquireSocket() ) );
 
@@ -187,6 +187,7 @@ public:
 		assert(sz >= ioSockets.size());
 		bool anyRefed = false;
 	
+	printf( "entering infraSetPollFdSet() for sockets\n" );
 		for (size_t i = 0; i != sz; ++i)
 		{
 			if(i < ioSockets.size() && ioSockets[i].isValid())
@@ -195,6 +196,8 @@ public:
 				NODECPP_ASSERT(current.getSockData()->osSocket != INVALID_SOCKET);
 
 				anyRefed = anyRefed || current.getSockData()->refed;
+if ( current.getSockData()->refed )
+	printf( "sock %zd is still refed\n", current.getSockData()->osSocket );
 
 				begin[i].fd = current.getSockData()->osSocket;
 				begin[i].events = 0;
@@ -738,6 +741,8 @@ private:
 
 	//	net::Socket* ptr = entry.getPtr()->makeSocket();
 		net::SocketTBase* ptr = EmitterType::makeSocket(entry.getEmitter(), sdata);
+
+/*[+++]*///	ptr->dataForCommandProcessing.osSocket = newSock.release();
 
 //		auto& man = getInfra().getNetSocket();
 //		bool ok = man.infraAddAccepted(ptr, newSock.release(), evs);

@@ -123,7 +123,7 @@ public:
 	}
 
 	void didError() {
-		print("onError!\n");
+		print("MySocketLambda::onError!\n");
 	}
 };
 #endif // USING_L_SOCKETS
@@ -711,6 +711,12 @@ private:
 public:
 	void onCloseServer(const ServerIdType* extra, bool hadError) {
 		print("server: onCloseServer()!\n");
+		for ( size_t i=0; i<serversSocks.size(); ++i )
+		{
+			NODECPP_ASSERT( serversSocks[i] != nullptr ); 
+			delete serversSocks[i];
+		}
+		serversSocks.clear();
 	}
 //	void onConnection(SockTypeServerSocket* socket) { NODECPP_ASSERT( socket != nullptr ); *(socket->getExtra()) = 1;}
 	void onConnection(const ServerIdType* extra, net::SocketTBase* socket) { 
