@@ -134,7 +134,7 @@ namespace nodecpp {
 			Extra extra;
 
 		public:
-			SocketT2(Node* node_) : SocketTBase( node ) {}
+			SocketT2(Node* node) : SocketTBase( node ) {}
 			Extra* getExtra() { return &extra; }
 			const Extra* getExtra() const { return &extra; }
 
@@ -149,8 +149,7 @@ namespace nodecpp {
 				using Handlers = Initializer;
 
 		public:
-			SocketT2(Node* node_) {this->node = node_;}
-			SocketT2(Node* node_, OpaqueSocketData& sdata) {this->node = node_;}
+			SocketT2(Node* node) : SocketTBase( node ) {}
 			void* getExtra() { return nullptr; }
 			const void* getExtra() const { return nullptr; }
 

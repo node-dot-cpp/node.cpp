@@ -55,7 +55,7 @@ namespace nodecpp {
 			virtual void onClose(bool hadError) {}
 #if 1 // [+++]revision required
 			virtual void onConnectionX(SocketTBase* socket) {}
-			virtual void onListeningX() {}
+			virtual void onListeningX(size_t id, Address addr) {}
 #endif
 			virtual void onError(Error& err) {}
 
@@ -135,12 +135,12 @@ namespace nodecpp {
 				else
 					ServerO::onConnectionX(socket);
 			}
-			void onListeningX(nodecpp::Buffer& b) override
+			void onListeningX(size_t id, Address addr) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
-					(node->*(Initializer::onListening))(this->getExtra(),b); 
+					(node->*(Initializer::onListening))(this->getExtra(), id, addr); 
 				else
-					ServerO::onListeningX(b);
+					ServerO::onListeningX(id, addr);
 			}
 #endif
 			void onError(nodecpp::Error& e) override
@@ -176,12 +176,12 @@ namespace nodecpp {
 				else
 					ServerO::onConnectionX(socket);
 			}
-			void onListeningX(nodecpp::Buffer& b) override
+			void onListeningX(size_t id, Address addr) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
-					(node->*(Initializer::onListening))(this->getExtra(),b); 
+					(node->*(Initializer::onListening))(this->getExtra()); 
 				else
-					ServerO::onListeningX(b);
+					ServerO::onListeningX(id, addr);
 			}
 #endif
 			void onError(nodecpp::Error& e) override

@@ -159,7 +159,7 @@ namespace nodecpp {
 				bool paused = false;
 				bool allowHalfOpen = true;
 
-				bool refed = true;
+				bool refed = false;
 
 				Buffer writeBuffer = Buffer(64 * 1024);
 				Buffer recvBuffer = Buffer(64 * 1024);

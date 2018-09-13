@@ -92,26 +92,26 @@ namespace nodecpp {
 
 
 		template<class T, class T1, class ... args>
-		void callOnListening( void* nodePtr, T* ptr, int type )
+		void callOnListening( void* nodePtr, T* ptr, int type, size_t id, Address addr )
 		{
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					(static_cast<ServerO*>(ptr->getPtr()))->onListeningX();
+					(static_cast<ServerO*>(ptr->getPtr()))->onListeningX(id, addr);
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->emitListening();
+					(static_cast<Server*>(ptr->getPtr()))->emitListening(id, addr);
 				else
 				{
 					if constexpr ( T1::Handlers::onListening != nullptr )
-						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(static_cast<T1*>(ptr->getPtr())->getExtra());
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(static_cast<T1*>(ptr->getPtr())->getExtra(), id, addr);
 				}
 			}
 			else
-				callOnListening<T, args...>(nodePtr, ptr, type-1);
+				callOnListening<T, args...>(nodePtr, ptr, type-1, id, addr);
 		}
 
 		template<class T>
-		void callOnListening( void* nodePtr, T* ptr, int type )
+		void callOnListening( void* nodePtr, T* ptr, int type, size_t id, Address addr )
 		{
 			assert( false );
 		}
@@ -188,7 +188,7 @@ namespace nodecpp {
 
 			static void emitConnection( const OpaqueEmitterForServer& emitter, SocketTBase* sock ) { Ptr emitter_ptr( emitter.ptr ); callOnConnection<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sock); }
 			static void emitClose( const OpaqueEmitterForServer& emitter, bool hadError ) { Ptr emitter_ptr( emitter.ptr ); callOnCloseServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError); }
-			static void emitListening( const OpaqueEmitterForServer& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnListening<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitListening( const OpaqueEmitterForServer& emitter, size_t id, Address addr ) { Ptr emitter_ptr( emitter.ptr ); callOnListening<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, id, addr); }
 			static void emitError( const OpaqueEmitterForServer& emitter, nodecpp::Error& e ) { Ptr emitter_ptr( emitter.ptr ); callOnErrorServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
 
 			static SocketTBase* makeSocket(const OpaqueEmitterForServer& emitter, OpaqueSocketData& sdata) { Ptr emitter_ptr( emitter.ptr ); return callMakeSocket<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sdata); }
