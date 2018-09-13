@@ -167,17 +167,23 @@ public:
 		sockPtr->dataForCommandProcessing.refed = true;
 	//	entry.connecting = true;
 	}
-	std::pair<bool, OpaqueSocketData&&> getAcceptedSockData(SOCKET s)
+	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
 	{
 		Ip4 remoteIp;
 		Port remotePort;
 
 		SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, s));
-		OpaqueSocketData osd( std::move(newSock) );
-		if (!newSock)
-			return std::make_pair( false, std::move( osd ) );
+		if (newSock.get() == INVALID_SOCKET)
+			return false;
+		osd.s = std::move(newSock);
+		return true;
+/*		{
+			std::pair<bool, OpaqueSocketData> ret = std::make_pair( false, std::move( osd ) );
+			return std::move( std::make_pair( false, std::move( osd ) ) );
+		}
 
-		return std::move( std::make_pair( true, std::move( osd ) ) );
+		std::pair<bool, OpaqueSocketData> ret = std::make_pair( true, std::move( osd ) );
+		return std::move( ret ); */
 	}
 #endif // USING_T_SOCKETS
 	
@@ -727,6 +733,7 @@ public:
 private:
 	void infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& evs)
 	{
+		OpaqueSocketData osd( false );
 /*		Ip4 remoteIp;
 		Port remotePort;
 
@@ -734,13 +741,16 @@ private:
 		if (!newSock)
 			return;*/
 
-		auto ret = std::move( netSocketManagerBase->getAcceptedSockData(entry.getServerData()->osSocket) );
+/*		auto ret = std::move( netSocketManagerBase->getAcceptedSockData(entry.getServerData()->osSocket) );
 		if (!ret.first )
 			return;
-		OpaqueSocketData sdata = std::move(ret.second);
+		OpaqueSocketData sdata = std::move(ret.second);*/
+		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerData()->osSocket, osd) )
+			return;
+
 
 	//	net::Socket* ptr = entry.getPtr()->makeSocket();
-		net::SocketTBase* ptr = EmitterType::makeSocket(entry.getEmitter(), sdata);
+		net::SocketTBase* ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 
 /*[+++]*///	ptr->dataForCommandProcessing.osSocket = newSock.release();
 

@@ -159,6 +159,7 @@ class OpaqueSocketData
 	OpaqueSocketData( SOCKET s_ ) : s(s_) {};
 	OpaqueSocketData( SocketRiia s_ ) : s(s_.release()) {};
 public:
+	OpaqueSocketData( bool ) : s(INVALID_SOCKET) {}
 	OpaqueSocketData( OpaqueSocketData& other ) = delete;
 	OpaqueSocketData& operator=(const OpaqueSocketData&) = delete;
 	OpaqueSocketData( OpaqueSocketData&& other ) : s( std::move( other.s) ) {}
