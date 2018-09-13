@@ -33,7 +33,6 @@
 #include "socket_t.h"
 #include "socket_o.h"
 #include "socket_l.h"
-//#include "../../src/infrastructure.h"
 
 namespace nodecpp {
 

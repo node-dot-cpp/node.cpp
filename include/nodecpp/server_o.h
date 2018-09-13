@@ -59,9 +59,6 @@ namespace nodecpp {
 #endif
 			virtual void onError(Error& err) {}
 
-/*			virtual Socket* makeSocket() {
-				return new Socket();
-			}*/
 			virtual SocketTBase* makeSocket(OpaqueSocketData& sdata) = 0;
 		};
 		

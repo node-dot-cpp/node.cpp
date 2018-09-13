@@ -54,7 +54,9 @@ namespace nodecpp {
 				//id = 0;
 				dataForCommandProcessing.index = 0;
 				eClose.emit(hadError);
+#if 0 // [+++]revision required
 				onClose(hadError);
+#endif
 			}
 
 			void emitConnection(SocketTBase* socket) {
@@ -77,7 +79,9 @@ namespace nodecpp {
 
 			void emitError(Error& err) {
 				eError.emit(err);
+#if 0 // [+++]revision required
 				onError(err);
+#endif
 			}
 
 
@@ -90,12 +94,12 @@ namespace nodecpp {
 				ServerBase::close();
 			}
 
-			virtual void onClose(bool hadError) {}
 #if 0 // [+++]revision required
+			virtual void onClose(bool hadError) {}
 			virtual void onConnection(SocketTBase* socket) {}
 			virtual void onListening() {}
-#endif
 			virtual void onError(Error& err) {}
+#endif
 
 			void listen(uint16_t port, const char* ip, int backlog, std::function<void()> cb) {
 				once(event::listening, std::move(cb));

@@ -39,7 +39,6 @@ namespace nodecpp {
 		class ServerTBase : public ServerBase {
 		
 		public:
-//			UserDefID userDefID;
 			NodeBase* node = nullptr;
 
 		public:

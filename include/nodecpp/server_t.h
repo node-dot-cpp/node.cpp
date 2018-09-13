@@ -46,9 +46,6 @@ namespace nodecpp {
 		template<auto x>
 		struct OnErrorST {};
 
-//		template<auto x>
-//		struct MakeSocketS {};
-
 		template<typename ... args>
 		struct ServerTInitializer;
 
@@ -77,19 +74,12 @@ namespace nodecpp {
 			static constexpr auto onError = F;
 		};
 
-/*		template<auto F, typename ... args>
-		struct ServerTInitializer<MakeSocketS<F>, args...>
-		: public ServerTInitializer<args...> {
-			static constexpr auto makeSocket = F;
-		};*/
-
 		template<>
 		struct ServerTInitializer<> {
 			static constexpr auto onConnection = nullptr;
 			static constexpr auto onClose = nullptr;
 			static constexpr auto onListening = nullptr;
 			static constexpr auto onError = nullptr;
-//			static constexpr auto makeSocket = nullptr;
 		};
 
 		template<class Node, class Socket, class Initializer, class Extra>
@@ -135,7 +125,6 @@ namespace nodecpp {
 		public:
 			ServerT(Node* node) : ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>(node) {int typeId = Node::EmitterTypeForServer::getTypeIndex( this ); registerServer(this->node, this, typeId);}
 			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }
-//			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, idType1, ip, port);}
 		};
 
 	} //namespace net

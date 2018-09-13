@@ -482,7 +482,7 @@ class MySampleTNode : public NodeBase
 	using SocketIdType = int;
 	using ServerIdType = int;
 
-	MySocketO<SocketIdType> sockO_1;
+//	MySocketO<SocketIdType> sockO_1;
 	MySocketLambda* cli;
 
 #ifndef NET_CLIENT_ONLY
@@ -491,7 +491,7 @@ class MySampleTNode : public NodeBase
 //	unique_ptr<MySocketLambda> cli;
 //	MySocketLambda* cli;
 public:
-	MySampleTNode() : sockO_1( this ), cli( new MySocketLambda() ), sockNN_1(this), sockNN_2(this), srv( this )
+	MySampleTNode() : /*sockO_1( this ),*/ cli( new MySocketLambda() )/*, sockNN_1(this), sockNN_2(this)*/, srv( this )
 	{
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
@@ -504,10 +504,10 @@ public:
 		srv.listen(2000, "127.0.0.1", 5);
 #endif // NO_SERVER_STAFF
 
-		*( sockNN_1.getExtra() ) = 17;
+/*		*( sockNN_1.getExtra() ) = 17;
 //		sockO_1.connect(2000, "127.0.0.1");
 //		*( sockNN1_4.getExtra() ) = 71;
-		sockNN_1.connect(2000, "127.0.0.1");
+		sockNN_1.connect(2000, "127.0.0.1");*/
 //		sockNN1_4.connect(2008, "127.0.0.1");
 
 		// lambda staff
@@ -526,7 +526,7 @@ public:
 		cli->connect(2000, "127.0.0.1", [this] {cli->didConnect(); });
 	}
 
-	void onConnect(const void* extra) 
+/*	void onConnect(const void* extra) 
 	{ 
 		printf( "MySampleTNode::onConnect()\n" ); 
 
@@ -672,7 +672,7 @@ public:
 	{
 		NODECPP_ASSERT( extra != nullptr );
 		printf( "MySampleTNode::onWhateverEnd_2(), extra = %d\n", *extra );
-	}
+	}*/
 
 	// server socket
 	void onCloseSererSocket(const SocketIdType* extra, bool hadError) {print("server socket: onCloseSererSocket!\n");};
@@ -738,7 +738,7 @@ public:
 		nodecpp::net::OnEndT<&MySampleTNode::onWhateverEnd>
 	>;*/
 
-	using SockType_1 = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
+/*	using SockType_1 = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
 		nodecpp::net::OnConnectT<&MySampleTNode::onWhateverConnect>,
 		nodecpp::net::OnCloseT<&MySampleTNode::onWhateverClose>,
 		nodecpp::net::OnDataT<&MySampleTNode::onWhateverData>,
@@ -756,7 +756,7 @@ public:
 		nodecpp::net::OnErrorT<&MySampleTNode::onWhateverError_2>,
 		nodecpp::net::OnEndT<&MySampleTNode::onWhateverEnd_2>
 	>;
-	SockType_2 sockNN_2;
+	SockType_2 sockNN_2;*/
 
 	using SockTypeServerSocket = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
 		nodecpp::net::OnConnectT<&MySampleTNode::onConnectSererSocket>,
@@ -776,7 +776,7 @@ public:
 	ServerType srv;
 
 
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockType_1, SockType_2, SockTypeServerSocket>;
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket/*, SockType_1, SockType_2*/, SockTypeServerSocket>;
 //	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ServerType>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server, ServerType>;
 };

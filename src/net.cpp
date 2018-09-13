@@ -25,7 +25,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include "../include/nodecpp/net.h"
+#include "../include/nodecpp/net_common.h"
 
 #include "infrastructure.h"
 #include "../include/nodecpp/socket_o.h"
