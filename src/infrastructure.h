@@ -292,13 +292,15 @@ public:
 inline
 size_t registerWithInfraAndAcquireSocket(NodeBase* node, net::SocketTBase* t, int typeId)
 {
+	NODECPP_ASSERT( t != nullptr );
 	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
 }
 
 inline
 size_t registerWithInfraAndAssignSocket(NodeBase* node, net::SocketTBase* t, int typeId, OpaqueSocketData& sdata)
 {
-	return netSocketManagerBase->appAcquireSocket(node, t, typeId, sdata);
+	NODECPP_ASSERT( t != nullptr );
+	return netSocketManagerBase->appAssignSocket(node, t, typeId, sdata);
 }
 
 inline

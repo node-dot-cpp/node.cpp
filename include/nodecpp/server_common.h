@@ -42,7 +42,7 @@ namespace nodecpp {
 			class DataForCommandProcessing {
 			public:
 				size_t index;
-				bool refed = true;
+				bool refed = false;
 				short fdEvents = 0;
 				//SOCKET osSocket = INVALID_SOCKET;
 				unsigned long long osSocket = 0;
