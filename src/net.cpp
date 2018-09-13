@@ -47,8 +47,8 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 }
 
 //SocketO::SocketO() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
-void SocketO::registerMeAndAcquireSocket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
-void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {registerWithInfraAndAssignSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO, sdata);}
+void SocketO::registerMeAndAcquireSocket() {NODECPP_ASSERT( this->node != nullptr );registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
+void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {NODECPP_ASSERT( this->node != nullptr );registerWithInfraAndAssignSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO, sdata);}
 void SocketO::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
 void Socket::registerMeAndAcquireSocket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL);}

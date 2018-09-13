@@ -161,8 +161,8 @@ namespace nodecpp {
 		class SocketT : public SocketT2<Node, SocketTInitializer<Handlers...>, Extra>
 		{
 		public:
-			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAcquireSocket(this->node, this, idType1); }
-			SocketT(Node* node, OpaqueSocketData& sdata) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAssignSocket(this->node, this, idType1,sdata); }
+			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); NODECPP_ASSERT( this->node != nullptr ); registerWithInfraAndAcquireSocket(this->node, this, idType1); }
+			SocketT(Node* node, OpaqueSocketData& sdata) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); NODECPP_ASSERT( node != nullptr ); registerWithInfraAndAssignSocket(node, this, idType1,sdata); }
 			void connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 			SocketT& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(this->dataForCommandProcessing, noDelay); return *this; }
 			SocketT& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(this->dataForCommandProcessing, enable); return *this; }
