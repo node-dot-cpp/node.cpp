@@ -54,16 +54,10 @@ namespace nodecpp {
 				//id = 0;
 				dataForCommandProcessing.index = 0;
 				eClose.emit(hadError);
-#if 0 // [+++]revision required
-				onClose(hadError);
-#endif
 			}
 
 			void emitConnection(SocketTBase* socket) {
 				eConnection.emit(socket);
-#if 0 // [+++]revision required
-				onConnection(socket);
-#endif
 			}
 
 			void emitListening(size_t id, Address addr) {
@@ -72,16 +66,10 @@ namespace nodecpp {
 				localAddress = std::move(addr);
 				state = LISTENING;
 				eListening.emit();
-#if 0 // [+++]revision required
-				onListening();
-#endif
 			}
 
 			void emitError(Error& err) {
 				eError.emit(err);
-#if 0 // [+++]revision required
-				onError(err);
-#endif
 			}
 
 
@@ -94,27 +82,10 @@ namespace nodecpp {
 				ServerBase::close();
 			}
 
-#if 0 // [+++]revision required
-			virtual void onClose(bool hadError) {}
-			virtual void onConnection(SocketTBase* socket) {}
-			virtual void onListening() {}
-			virtual void onError(Error& err) {}
-#endif
-
 			void listen(uint16_t port, const char* ip, int backlog, std::function<void()> cb) {
 				once(event::listening, std::move(cb));
 				ServerTBase::listen(port, ip, backlog);
 			}
-
-			//template<class EV>
-			//void on(typename EV::callback cb) {
-			//	EventEmitter<EV>::on(std::move(cb));
-			//}
-
-			//template<class EV>
-			//void once(typename EV::callback cb) {
-			//	EventEmitter<EV>::once(std::move(cb));
-			//}
 
 			void on(std::string name, event::Close::callback cb) {
 				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);

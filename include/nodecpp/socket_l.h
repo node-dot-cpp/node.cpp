@@ -110,7 +110,6 @@ namespace nodecpp {
 			}
 
 			void connect(uint16_t port, const char* ip);
-//			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, 1, ip, port);}
 			Socket& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
 			Socket& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
 
