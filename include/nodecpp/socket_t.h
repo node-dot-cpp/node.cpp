@@ -110,8 +110,6 @@ namespace nodecpp {
 			static constexpr auto onAccepted = F;
 		};
 
-		//create similar partial specializations for all the args
-
 		//partial template specialiazation to end recursion
 		template<>
 		struct SocketTInitializer<> {
@@ -124,9 +122,6 @@ namespace nodecpp {
 			static constexpr auto onAccepted = nullptr;
 		};
 
-	//	template <class T, class M> constexpr M get_member_type(M T:: *);
-	//	#define GET_TYPE_OF(mem) decltype(get_member_type((mem)))
-
 		template<class Node, class Initializer, class Extra>
 		class SocketT2 : public SocketTBase
 		{
@@ -137,9 +132,8 @@ namespace nodecpp {
 
 		protected:
 			Extra extra;
-		public:
-//			Node* node;
 
+		public:
 			SocketT2(Node* node_) : SocketTBase( node ) {}
 			Extra* getExtra() { return &extra; }
 			const Extra* getExtra() const { return &extra; }
@@ -166,7 +160,6 @@ namespace nodecpp {
 		template<class Node, class Extra, class ... Handlers>
 		class SocketT : public SocketT2<Node, SocketTInitializer<Handlers...>, Extra>
 		{
-//			int idType1; // we will try to get rid of it later
 		public:
 			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAcquireSocket(this->node, this, idType1); }
 			SocketT(Node* node, OpaqueSocketData& sdata) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); registerWithInfraAndAssignSocket(this->node, this, idType1,sdata); }

@@ -61,7 +61,6 @@ namespace nodecpp {
 			virtual void onAccepted() {}
 			virtual void onError(Error& err) {}
 
-//			void connect(uint16_t port, const char* ip) {connectToInfra(this->node, this, 0, ip, port);}
 			void connect(uint16_t port, const char* ip);
 			SocketO& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
 			SocketO& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
@@ -141,8 +140,6 @@ namespace nodecpp {
 			static constexpr auto onAccepted = F;
 		};
 
-		//create similar partial specializations for all the args
-
 		//partial template specialiazation to end recursion
 		template<>
 		struct SocketOInitializer2<> {
@@ -154,9 +151,6 @@ namespace nodecpp {
 			static constexpr auto onEnd = nullptr;
 			static constexpr auto onAccepted = nullptr;
 		};
-
-	//	template <class T, class M> constexpr M get_member_type(M T:: *);
-	//	#define GET_TYPE_OF(mem) decltype(get_member_type((mem)))
 
 		template<class Node, class Initializer, class Extra>
 		class SocketN2 : public SocketO
@@ -171,7 +165,7 @@ namespace nodecpp {
 			Node* node;
 			Extra extra;
 		public:
-			SocketN2(Node* node) : SocketO( node ) { node = node_;}
+			SocketN2(Node* node) : SocketO( node ) { node = node;}
 			Extra* getExtra() { return &extra; }
 
 			void onConnect() override
@@ -234,7 +228,7 @@ namespace nodecpp {
 		template<class Node, class Initializer>
 		class SocketN2<Node, Initializer, void> : public SocketO
 		{
-			Node* node;
+//			Node* node;
 	//		static constexpr auto x = void (Node::*onConnect)(const void*);
 //			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
 	//		typename void (Node::*)(const void*) y;
