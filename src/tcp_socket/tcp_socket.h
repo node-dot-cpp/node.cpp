@@ -127,7 +127,7 @@ public:
 #ifdef USING_T_SOCKETS
 	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId)
 	{
-		SocketRiia s( std::move( OSLayer::appAcquireSocket() ) );
+		SocketRiia s( OSLayer::appAcquireSocket() );
 		return registerAndAssignSocket(node, ptr, typeId, s);
 	}
 
@@ -203,7 +203,7 @@ public:
 
 				anyRefed = anyRefed || current.getSockData()->refed;
 if ( current.getSockData()->refed )
-	printf( "sock %zd is still refed\n", current.getSockData()->osSocket );
+	printf( "sock %llu is still refed\n", current.getSockData()->osSocket );
 
 				begin[i].fd = current.getSockData()->osSocket;
 				begin[i].events = 0;

@@ -835,6 +835,7 @@ void NetServerManagerBase::appListen(net::ServerTBase* ptr, const char* ip, uint
 	{
 		throw Error();
 	}
+	ptr->dataForCommandProcessing.refed = true;
 
 /*	size_t id = addEntry(node, ptr, typeId);
 	if (id == 0)
