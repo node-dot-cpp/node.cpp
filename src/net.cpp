@@ -81,6 +81,9 @@ void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 	netServerManagerBase->appListen(this, ip, port, backlog);
 }
 
+void ServerTBase::registerServerByID(NodeBase* node, net::ServerTBase* t, int typeId) { registerServer(node, t, typeId); }
+
+
 #endif // NO_SERVER_STAFF
 
 

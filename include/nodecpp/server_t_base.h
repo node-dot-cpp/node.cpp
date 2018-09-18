@@ -30,13 +30,16 @@
 
 #include "template_common.h"
 #include "server_common.h"
-#include "../../src/tcp_socket/tcp_socket_base.h"
 
 namespace nodecpp {
 
 	namespace net {
 
 		class ServerTBase : public ServerBase {
+
+		protected:
+			void registerServerByID(NodeBase* node, net::ServerTBase* t, int typeId);
+
 		
 		public:
 			NodeBase* node = nullptr;
