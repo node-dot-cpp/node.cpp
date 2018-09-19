@@ -21,53 +21,6 @@ using namespace fmt;
 
 class MyServer;
 
-#if 0
-class MySocket :public net::Socket {
-	size_t recvSize = 0;
-	size_t sentSize = 0;
-	std::unique_ptr<uint8_t> ptr;
-	size_t size = 64 * 1024;
-
-public:
-	MySocket() {}
-
-	void onClose(bool hadError) override {
-		print("onClose!\n");
-	}
-
-	void onConnect() override {
-		print("onConnect!\n");
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
-
-		bool ok = true;
-		while (ok) {
-			ok = write(ptr.get(), size);
-			sentSize += size;
-		}
-	}
-
-	void onData(Buffer& buffer) override {
-		print("onData!\n");
-		recvSize += buffer.size();
-
-		if (recvSize >= sentSize)
-			end();
-	}
-
-	void onDrain() override {
-		print("onDrain!\n");
-	}
-
-	void onEnd() override {
-		print("onEnd!\n");
-	}
-
-	void onError(Error&) override {
-		print("onError!\n");
-	}
-};
-#endif
-
 #if 1//def USING_L_SOCKETS
 class MySocketLambda :public net::Socket {
 	size_t recvSize = 0;
@@ -727,15 +680,6 @@ public:
 	}
 	void onListening(const ServerIdType* extra) {print("server: onListening()!\n");}
 	void onErrorServer(const ServerIdType* extra, Error& err) {print("server: onErrorServer!\n");}
-
-	/*	using Initializer = SocketTInitializer<
-		nodecpp::net::OnConnectT<&MySampleTNode::onWhateverConnect>,
-		nodecpp::net::OnCloseT<&MySampleTNode::onWhateverClose>,
-		nodecpp::net::OnDataT<&MySampleTNode::onWhateverData>,
-		nodecpp::net::OnDrainT<&MySampleTNode::onWhateverDrain>,
-		nodecpp::net::OnErrorT<&MySampleTNode::onWhateverError>,
-		nodecpp::net::OnEndT<&MySampleTNode::onWhateverEnd>
-	>;*/
 
 	using SockType_1 = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
 		nodecpp::net::OnConnectT<&MySampleTNode::onWhateverConnect>,

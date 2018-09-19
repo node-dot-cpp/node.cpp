@@ -46,28 +46,23 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 	return OSLayer::appWrite(dataForCommandProcessing, data, size);
 }
 
-//SocketO::SocketO() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
 void SocketO::registerMeAndAcquireSocket() {NODECPP_ASSERT( this->node != nullptr );registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
 void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {NODECPP_ASSERT( this->node != nullptr );registerWithInfraAndAssignSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO, sdata);}
 void SocketO::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
 void Socket::registerMeAndAcquireSocket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL);}
 void Socket::registerMeAndAssignSocket(OpaqueSocketData& sdata) {registerWithInfraAndAssignSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL, sdata);}
-//Socket::Socket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL);}
 void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifndef NET_CLIENT_ONLY
 
-//void ServerBase::ref() { /*getInfra().*/getNetServer().appRef(id); }
-//void ServerBase::unref() { /*getInfra().*/getNetServer().appUnref(id); }
 void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing.index); }
 void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing.index); }
 
 void ServerBase::close()
 {
-//	/*getInfra().*/getNetServer().appClose(id);
 	netServerManagerBase->appClose(dataForCommandProcessing.index);
 }
 
@@ -77,7 +72,6 @@ Server::Server(createSocketCallback cb) {registerServer(this->node, this, netSer
 
 void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 {
-//	/*getInfra().*/getNetServer().appListen(this, port, ip, backlog);
 	netServerManagerBase->appListen(this, ip, port, backlog);
 }
 
