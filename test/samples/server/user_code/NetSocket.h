@@ -56,10 +56,30 @@ public:
 		print("server socket: onConnect!\n");
 	}
 	void onDataSererSocket(const SocketIdType* extra, Buffer& buffer) {
-		print("server socket: onData!\n");
-//		++serverSockCount;
-//		assert( serversSocks.size() );
-		serverSockets.at(*extra)->write(buffer.begin(), buffer.size());
+		if ( buffer.size() < 2 )
+		{
+			printf( "Insufficient data on socket idx = %d\n", *extra );
+			serverSockets.at(*extra)->unref();
+			return;
+		}
+		print("server socket: onData for idx %d!\n", *extra );
+
+		size_t receivedSz = buffer.begin()[0];
+		if ( receivedSz != buffer.size() )
+		{
+			printf( "Corrupted data on socket idx = %d\n", *extra );
+			serverSockets.at(*extra)->unref();
+			return;
+		}
+
+		size_t requestedSz = buffer.begin()[1];
+		if ( requestedSz )
+		{
+			Buffer reply(requestedSz);
+			//buffer.begin()[0] = (uint8_t)requestedSz;
+			memset(reply.begin(), (uint8_t)requestedSz, reply.size());
+			serverSockets.at(*extra)->write(reply.begin(), reply.size());
+		}
 	}
 	void onDrainSererSocket(const SocketIdType* extra) {
 		print("server socket: onDrain!\n");
