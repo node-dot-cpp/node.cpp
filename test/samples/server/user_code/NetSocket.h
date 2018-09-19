@@ -47,7 +47,11 @@ public:
 	}
 
 	// server socket
-	void onCloseSererSocket(const SocketIdType* extra, bool hadError) {print("server socket: onCloseSererSocket!\n");};
+	void onCloseSererSocket(const SocketIdType* extra, bool hadError)
+	{
+		print("server socket: onCloseSererSocket!\n");
+		serverSockets.remove(*extra);
+	}
 	void onConnectSererSocket(const SocketIdType* extra) {
 		print("server socket: onConnect!\n");
 	}
@@ -92,7 +96,7 @@ private:
 			size_t idx;
 			size_t nextFree;
 			std::unique_ptr<net::SocketTBase> socket;
-			ServerSock( net::SocketTBase* sock, size_t idx ) : nextFree( size_t(-1) ), socket( sock )  {}
+			ServerSock( net::SocketTBase* sock, size_t idx_ ) : idx( idx_ ), nextFree( size_t(-1) ), socket( sock )  {}
 		};
 		size_t firstFree = size_t(-1);
 		std::vector<ServerSock> serverSocks;
@@ -105,6 +109,7 @@ private:
 			{
 				NODECPP_ASSERT( firstFree < serverSocks.size() );
 				ServerSock& toUse = serverSocks[firstFree];
+				NODECPP_ASSERT( firstFree == toUse.idx );
 				firstFree = toUse.nextFree;
 				toUse.socket.reset( sock );
 				*(reinterpret_cast<SockTypeServerSocket*>(sock)->getExtra()) = toUse.idx;
@@ -117,13 +122,12 @@ private:
 			}
 			++serverSockCount;
 		}
-		void remove( net::SocketTBase* sock )
+		void remove( size_t idx )
 		{
-			NODECPP_ASSERT( sock != nullptr );
-			size_t idx = *(reinterpret_cast<SockTypeServerSocket*>(sock)->getExtra());
 			NODECPP_ASSERT( idx < serverSocks.size() );
+			NODECPP_ASSERT( *(at(idx)->getExtra()) == idx );
 			ServerSock& toUse = serverSocks[idx];
-			toUse.idx = firstFree;
+			toUse.nextFree = firstFree;
 			toUse.socket.reset();
 			firstFree = idx;
 			--serverSockCount;
@@ -131,7 +135,7 @@ private:
 		SockTypeServerSocket* at(size_t idx)
 		{
 			NODECPP_ASSERT( idx < serverSocks.size() );
-			return reinterpret_cast<SockTypeServerSocket*>(serverSocks[firstFree].socket.get());
+			return reinterpret_cast<SockTypeServerSocket*>(serverSocks[idx].socket.get());
 		}
 		void clear()
 		{
@@ -147,7 +151,6 @@ public:
 		print("server: onCloseServer()!\n");
 		serverSockets.clear();
 	}
-//	void onConnection(SockTypeServerSocket* socket) { NODECPP_ASSERT( socket != nullptr ); *(socket->getExtra()) = 1;}
 	void onConnection(const ServerIdType* extra, net::SocketTBase* socket) { 
 		print("server: onConnection()!\n");
 		//srv.unref();
