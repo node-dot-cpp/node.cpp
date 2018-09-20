@@ -71,7 +71,8 @@ public:
 	{
 		NODECPP_ASSERT( extra != nullptr );
 		++recvReplies;
-		printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
+		if ( ( recvReplies & 0xFFFF ) == 0 )
+			printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
 		recvSize += buffer.size();
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;

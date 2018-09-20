@@ -193,7 +193,7 @@ public:
 		assert(sz >= ioSockets.size());
 		bool anyRefed = false;
 	
-	printf( "entering infraSetPollFdSet() for sockets\n" );
+//	printf( "entering infraSetPollFdSet() for sockets\n" );
 		for (size_t i = 0; i != sz; ++i)
 		{
 			if(i < ioSockets.size() && ioSockets[i].isValid())
@@ -202,8 +202,8 @@ public:
 				NODECPP_ASSERT(current.getSockData()->osSocket != INVALID_SOCKET);
 
 				anyRefed = anyRefed || current.getSockData()->refed;
-if ( current.getSockData()->refed )
-	printf( "sock %llu is still refed\n", current.getSockData()->osSocket );
+//if ( current.getSockData()->refed )
+	//printf( "sock %llu is still refed\n", current.getSockData()->osSocket );
 
 				begin[i].fd = current.getSockData()->osSocket;
 				begin[i].events = 0;
@@ -411,7 +411,7 @@ public:
 					{
 						if (!current.getSockData()->paused)
 						{
-							NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
+							//NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
 							infraProcessReadEvent(current, evs);
 						}
 					}

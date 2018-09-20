@@ -425,7 +425,7 @@ namespace nodecpp
 				sentSize = static_cast<size_t>(bytes_sent);
 				if(sentSize == size)
 				{
-					NODECPP_TRACE("internal_send_packet() on sock {} size {} OK", sock, size);
+					//NODECPP_TRACE("internal_send_packet() on sock {} size {} OK", sock, size);
 
 					return COMMLAYER_RET_OK;
 				}
@@ -463,7 +463,7 @@ namespace nodecpp
 			}
 
 			retSz = static_cast<size_t>(ret);
-			NODECPP_TRACE("internal_get_packet_bytes2() on sock {} size {} OK", sock, retSz);
+			//NODECPP_TRACE("internal_get_packet_bytes2() on sock {} size {} OK", sock, retSz);
 			return COMMLAYER_RET_OK;
 		}
 
