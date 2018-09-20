@@ -22,9 +22,10 @@ using namespace fmt;
 class MySampleTNode : public NodeBase
 {
 	size_t recvSize = 0;
+	size_t recvReplies = 0;
 	size_t sentSize = 0;
 	std::unique_ptr<uint8_t> ptr;
-	size_t size = 64 * 1024;
+	size_t size = 64;// * 1024;
 	bool letOnDrain = false;
 
 	using SocketIdType = int;
@@ -50,12 +51,16 @@ public:
 
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		bool ok = true;
+/*		bool ok = true;
 		while (ok) {
 			ok = clientSock.write(ptr.get(), size);
 			letOnDrain = !ok;
 			sentSize += size;
-		}
+		}*/
+		uint8_t* buff = ptr.get();
+		buff[0] = 2;
+		buff[1] = 1;
+		clientSock.write(buff, 2);
 	}
 	void onWhateverClose(const SocketIdType* extra, bool)
 	{
@@ -65,11 +70,16 @@ public:
 	void onWhateverData(const SocketIdType* extra, nodecpp::Buffer& buffer)
 	{
 		NODECPP_ASSERT( extra != nullptr );
-		printf( "MySampleTNode::onWhateverData(), extra = %d\n", *extra );
+		++recvReplies;
+		printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
 		recvSize += buffer.size();
+		uint8_t* buff = ptr.get();
+		buff[0] = 2;
+		buff[1] = (uint8_t)recvReplies | 1;
+		clientSock.write(buff, 2);
 
-		if (recvSize >= sentSize)
-			clientSock.end();
+//		if (recvSize >= sentSize)
+//			clientSock.end();
 	}
 	void onWhateverDrain(const SocketIdType* extra)
 	{
