@@ -59,9 +59,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\net.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\net_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -72,9 +69,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\server_o.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_l.h">
