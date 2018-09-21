@@ -6,7 +6,6 @@
 
 
 #include "../../../../3rdparty/fmt/include/fmt/format.h"
-//#include "../../../../include/nodecpp/net.h"
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
@@ -26,7 +25,6 @@ class MySampleTNode : public NodeBase
 	size_t sentSize = 0;
 	std::unique_ptr<uint8_t> ptr;
 	size_t size = 64;// * 1024;
-	bool letOnDrain = false;
 
 	using SocketIdType = int;
 
@@ -51,12 +49,6 @@ public:
 
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-/*		bool ok = true;
-		while (ok) {
-			ok = clientSock.write(ptr.get(), size);
-			letOnDrain = !ok;
-			sentSize += size;
-		}*/
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;
 		buff[1] = 1;
@@ -85,8 +77,6 @@ public:
 	void onWhateverDrain(const SocketIdType* extra)
 	{
 		NODECPP_ASSERT( extra != nullptr );
-		if ( letOnDrain )
-			printf( "MySampleTNode::onWhateverDrain(), extra = %d\n", *extra );
 	}
 	void onWhateverError(const SocketIdType* extra, nodecpp::Error&)
 	{

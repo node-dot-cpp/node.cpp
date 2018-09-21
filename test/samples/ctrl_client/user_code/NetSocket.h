@@ -6,7 +6,6 @@
 
 
 #include "../../../../3rdparty/fmt/include/fmt/format.h"
-//#include "../../../../include/nodecpp/net.h"
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
@@ -62,13 +61,6 @@ public:
 		NODECPP_ASSERT( extra != nullptr );
 		printf( "MySampleTNode::onWhateverConnect(), extra = %d\n", *extra );
 
-
-/*		bool ok = true;
-		while (ok) {
-			ok = clientSock.write(ptr.get(), size);
-			letOnDrain = !ok;
-			sentSize += size;
-		}*/
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;
 		buff[1] = 1;
@@ -90,15 +82,11 @@ public:
 
 		NODECPP_ASSERT( extra != nullptr );
 		++recvReplies;
-//		printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
 		recvSize += buffer.size();
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;
 		buff[1] = (uint8_t)recvReplies | 1;
 		clientSock.write(buff, 2);
-
-//		if (recvSize >= sentSize)
-//			clientSock.end();
 	}
 	void onWhateverDrain(const SocketIdType* extra)
 	{

@@ -6,7 +6,6 @@
 
 
 #include "../../../../3rdparty/fmt/include/fmt/format.h"
-//#include "../../../../include/nodecpp/net.h"
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
@@ -34,7 +33,6 @@ class MySampleTNode : public NodeBase
 	size_t size = 64 * 1024;
 	bool letOnDrain = false;
 
-//	using SocketIdType = struct { size_t idx; size_t seq; };
 	using SocketIdType = int;
 	using ServerIdType = int;
 
