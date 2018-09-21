@@ -44,6 +44,8 @@ namespace nodecpp {
 			EventEmitter<event::Error> eError;
 			EventEmitter<event::Accepted> eAccepted;
 
+			std::vector<SocketListener*> listeners;
+
 			void registerMeAndAcquireSocket();
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
 
@@ -69,30 +71,49 @@ namespace nodecpp {
 			// not in node.js
 			void emitAccepted() {
 				state = CONNECTED;
+				eAccepted.emit();
+
+				for ( auto l:listeners )
+					l->onAccepted();
 			}
 
 			void emitConnect() {
 				state = CONNECTED;
 				eConnect.emit();
+
+				for ( auto l:listeners )
+					l->onConnect();
 			}
 
 			void emitData(Buffer& buffer) {
 				_bytesRead += buffer.size();
 				eData.emit(std::ref(buffer));
+
+				for ( auto l:listeners )
+					l->onData(buffer);
 			}
 
 			void emitDrain() {
 				eDrain.emit();
+
+				for ( auto l:listeners )
+					l->onDrain();
 			}
 
 			void emitEnd() {
 				eEnd.emit();
+
+				for ( auto l:listeners )
+					l->onEnd();
 			}
 
 			void emitError(Error& err) {
 				state = DESTROYED;
 				this->dataForCommandProcessing.id = 0;
 				eError.emit(err);
+
+				for ( auto l:listeners )
+					l->onError(err);
 			}
 
 			void connect(uint16_t port, const char* ip, std::function<void()> cb) {
@@ -112,6 +133,12 @@ namespace nodecpp {
 			void connect(uint16_t port, const char* ip);
 			Socket& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
 			Socket& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
+
+
+
+			void addListener( SocketListener* l) {
+				listeners.push_back( l );
+			}
 
 
 

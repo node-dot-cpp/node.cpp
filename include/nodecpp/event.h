@@ -106,6 +106,18 @@ namespace nodecpp
 
 	};
 
+	class SocketListener
+	{
+		public:
+			virtual void onClose(bool hadError) {}
+			virtual void onConnect() {}
+			virtual void onData(Buffer& buffer) {}
+			virtual void onDrain() {}
+			virtual void onEnd() {}
+			virtual void onAccepted() {}
+			virtual void onError(Error& err) {}
+	};
+
 	/*
 		Two important things:
 		1. handlers are called in the same order of registration, both regular and 'once'
