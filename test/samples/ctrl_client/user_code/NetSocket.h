@@ -54,6 +54,7 @@ public:
 
 		*( clientSock.getExtra() ) = 17;
 		clientSock.connect(2001, "127.0.0.1");
+		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 	}
 	
 	void onWhateverConnect(const SocketIdType* extra) 
@@ -61,7 +62,6 @@ public:
 		NODECPP_ASSERT( extra != nullptr );
 		printf( "MySampleTNode::onWhateverConnect(), extra = %d\n", *extra );
 
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 /*		bool ok = true;
 		while (ok) {
