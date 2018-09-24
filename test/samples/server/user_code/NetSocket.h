@@ -129,7 +129,7 @@ public:
 		if ( requestedSz )
 		{
 			Buffer reply(sizeof(stats));
-			stats.connCnt = serverCtrlSockets.getServerSockCount();
+			stats.connCnt = serverSockets.getServerSockCount();
 			size_t replySz = sizeof(Stats);
 			uint8_t* buff = ptr.get();
 			memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
