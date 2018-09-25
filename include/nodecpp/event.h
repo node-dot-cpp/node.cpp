@@ -171,6 +171,82 @@ namespace nodecpp
 			}
 		}
 	};
+
+	template<class EV, class ListenerT, auto onMyEvent>
+	class EventEmitterSupportingListeners
+	{
+//		static constexpr auto onMyEvent = F;
+		struct Element
+		{
+			bool once;
+			bool isLambda; // note: now we have only two options here: lambda and listeners
+			typename EV::callback cb;
+			typename ListenerT* listener;
+			Element(bool once_, typename EV::callback cb_) : once(once_), isLambda(true), cb(cb_), listener(nullptr) {}
+			Element(bool once_, ListenerT* listener_) : once(once_), isLambda(false), listener(listener_) {}
+		};
+		std::vector<Element> callbacks;
+	public:
+		void on(typename EV::callback cb) {
+			callbacks.emplace_back(false,cb);
+		}
+		void once(typename EV::callback cb) {
+			callbacks.emplace_back(true, cb);
+		}
+
+		void prepend(typename EV::callback cb) {
+			callbacks.insert(callbacks.begin(), std::make_pair(false, cb));
+		}
+		void prependOnce(typename EV::callback cb) {
+			callbacks.insert(std::make_pair(true, cb));
+		}
+
+		void on(typename ListenerT* listener) {
+			callbacks.emplace_back(false,listener);
+		}
+		void once(typename ListenerT* listener) {
+			callbacks.emplace_back(true, listener);
+		}
+
+		void prepend(typename ListenerT* listener) {
+			callbacks.insert(callbacks.begin(), std::make_pair(false, listener));
+		}
+		void prependOnce(typename ListenerT* listener) {
+			callbacks.insert(std::make_pair(true, listener));
+		}
+
+		size_t listenerCount() const {
+			return callbacks.size();
+		}
+		const char* eventName() const {
+			return EV::name;
+		}
+
+		template<class... ARGS>
+		void emit(ARGS... args) {
+
+			std::vector<Element> other;
+			
+			//first make a copy of handlers
+			for (auto& current : callbacks) {
+				if (!current.once)
+					other.push_back(current);
+			}
+	
+			std::swap(callbacks, other);
+
+			for (auto& current : other) {
+				if ( current.isLambda )
+					current.cb(args...);
+				else
+				{
+					NODECPP_ASSERT( current.listener != nullptr );
+//					current.listener->*onMyEvent(args...);
+					(current.listener->*onMyEvent)(args...);
+				}
+			}
+		}
+	};
 }
 #endif //EVENT_H
 

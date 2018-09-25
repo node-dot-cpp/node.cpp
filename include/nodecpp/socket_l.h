@@ -36,13 +36,13 @@ namespace nodecpp {
 	namespace net {
 
 		class Socket : public SocketTBase {
-			EventEmitter<event::Close> eClose;
-			EventEmitter<event::Connect> eConnect;
-			EventEmitter<event::Data> eData;
-			EventEmitter<event::Drain> eDrain;
-			EventEmitter<event::End> eEnd;
-			EventEmitter<event::Error> eError;
-			EventEmitter<event::Accepted> eAccepted;
+			 class EventEmitterSupportingListeners<event::Close, SocketListener, &SocketListener::onClose> eClose;
+			 class EventEmitterSupportingListeners<event::Connect, SocketListener, &SocketListener::onConnect> eConnect;
+			 class EventEmitterSupportingListeners<event::Data, SocketListener, &SocketListener::onData> eData;
+			 class EventEmitterSupportingListeners<event::Drain, SocketListener, &SocketListener::onDrain> eDrain;
+			 class EventEmitterSupportingListeners<event::End, SocketListener, &SocketListener::onEnd> eEnd;
+			 class EventEmitterSupportingListeners<event::Error, SocketListener, &SocketListener::onError> eError;
+			 class EventEmitterSupportingListeners<event::Accepted, SocketListener, &SocketListener::onAccepted> eAccepted;
 
 //			std::vector<SocketListener*> listeners;
 
@@ -138,24 +138,38 @@ namespace nodecpp {
 
 			void on( SocketListener* l) {
 //				listeners.push_back( l );
-				on(event::close, [l](bool hadError) { return l->onClose( hadError ); });
+				eClose.on(l);
+				eConnect.on(l);
+				eData.on(l);
+				eDrain.on(l);
+				eError.on(l);
+				eEnd.on(l);
+				eAccepted.on(l);
+/*				on(event::close, [l](bool hadError) { return l->onClose( hadError ); });
 				on(event::connect, [l]() { return l->onConnect(); });
 				on(event::data, [l](Buffer& b) { return l->onData( b ); });
 				on(event::drain, [l]() { return l->onDrain(); });
 				on(event::error, [l](nodecpp::Error& e) { return l->onError( e ); });
 				on(event::end, [l]() { return l->onEnd(); });
-				on(event::accepted, [l]() { return l->onAccepted(); });
+				on(event::accepted, [l]() { return l->onAccepted(); });*/
 			}
 
 			void once( SocketListener* l) {
 //				listeners.push_back( l );
-				once(event::close, [l](bool hadError) { return l->onClose( hadError ); });
+				eClose.on(l);
+				eConnect.on(l);
+				eData.on(l);
+				eDrain.on(l);
+				eError.on(l);
+				eEnd.on(l);
+				eAccepted.on(l);
+/*				once(event::close, [l](bool hadError) { return l->onClose( hadError ); });
 				once(event::connect, [l]() { return l->onConnect(); });
 				once(event::data, [l](Buffer& b) { return l->onData( b ); });
 				once(event::drain, [l]() { return l->onDrain(); });
 				once(event::error, [l](nodecpp::Error& e) { return l->onError( e ); });
 				once(event::end, [l]() { return l->onEnd(); });
-				once(event::accepted, [l]() { return l->onAccepted(); });
+				once(event::accepted, [l]() { return l->onAccepted(); });*/
 			}
 
 
