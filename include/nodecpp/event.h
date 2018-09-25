@@ -181,7 +181,7 @@ namespace nodecpp
 			bool once;
 			bool isLambda; // note: now we have only two options here: lambda and listeners
 			typename EV::callback cb;
-			typename ListenerT* listener;
+			ListenerT* listener;
 			Element(bool once_, typename EV::callback cb_) : once(once_), isLambda(true), cb(cb_), listener(nullptr) {}
 			Element(bool once_, ListenerT* listener_) : once(once_), isLambda(false), listener(listener_) {}
 		};
@@ -201,17 +201,17 @@ namespace nodecpp
 			callbacks.insert(std::make_pair(true, cb));
 		}
 
-		void on(typename ListenerT* listener) {
+		void on(ListenerT* listener) {
 			callbacks.emplace_back(false,listener);
 		}
-		void once(typename ListenerT* listener) {
+		void once(ListenerT* listener) {
 			callbacks.emplace_back(true, listener);
 		}
 
-		void prepend(typename ListenerT* listener) {
+		void prepend(ListenerT* listener) {
 			callbacks.insert(callbacks.begin(), std::make_pair(false, listener));
 		}
-		void prependOnce(typename ListenerT* listener) {
+		void prependOnce(ListenerT* listener) {
 			callbacks.insert(std::make_pair(true, listener));
 		}
 
