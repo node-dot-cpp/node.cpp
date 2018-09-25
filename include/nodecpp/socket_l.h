@@ -44,7 +44,7 @@ namespace nodecpp {
 			EventEmitter<event::Error> eError;
 			EventEmitter<event::Accepted> eAccepted;
 
-			std::vector<SocketListener*> listeners;
+//			std::vector<SocketListener*> listeners;
 
 			void registerMeAndAcquireSocket();
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
@@ -73,38 +73,38 @@ namespace nodecpp {
 				state = CONNECTED;
 				eAccepted.emit();
 
-				for ( auto l:listeners )
-					l->onAccepted();
+//				for ( auto l:listeners )
+//					l->onAccepted();
 			}
 
 			void emitConnect() {
 				state = CONNECTED;
 				eConnect.emit();
 
-				for ( auto l:listeners )
-					l->onConnect();
+//				for ( auto l:listeners )
+//					l->onConnect();
 			}
 
 			void emitData(Buffer& buffer) {
 				_bytesRead += buffer.size();
 				eData.emit(std::ref(buffer));
 
-				for ( auto l:listeners )
-					l->onData(buffer);
+//				for ( auto l:listeners )
+//					l->onData(buffer);
 			}
 
 			void emitDrain() {
 				eDrain.emit();
 
-				for ( auto l:listeners )
-					l->onDrain();
+//				for ( auto l:listeners )
+//					l->onDrain();
 			}
 
 			void emitEnd() {
 				eEnd.emit();
 
-				for ( auto l:listeners )
-					l->onEnd();
+//				for ( auto l:listeners )
+//					l->onEnd();
 			}
 
 			void emitError(Error& err) {
@@ -112,8 +112,8 @@ namespace nodecpp {
 				this->dataForCommandProcessing.id = 0;
 				eError.emit(err);
 
-				for ( auto l:listeners )
-					l->onError(err);
+//				for ( auto l:listeners )
+//					l->onError(err);
 			}
 
 			void connect(uint16_t port, const char* ip, std::function<void()> cb) {
@@ -137,7 +137,25 @@ namespace nodecpp {
 
 
 			void addListener( SocketListener* l) {
-				listeners.push_back( l );
+//				listeners.push_back( l );
+				on(event::close, [l](bool hadError) { return l->onClose( hadError ); });
+				on(event::connect, [l]() { return l->onConnect(); });
+				on(event::data, [l](Buffer& b) { return l->onData( b ); });
+				on(event::drain, [l]() { return l->onDrain(); });
+				on(event::error, [l](nodecpp::Error& e) { return l->onError( e ); });
+				on(event::end, [l]() { return l->onEnd(); });
+				on(event::accepted, [l]() { return l->onAccepted(); });
+			}
+
+			void addListenerOnce( SocketListener* l) {
+//				listeners.push_back( l );
+				once(event::close, [l](bool hadError) { return l->onClose( hadError ); });
+				once(event::connect, [l]() { return l->onConnect(); });
+				once(event::data, [l](Buffer& b) { return l->onData( b ); });
+				once(event::drain, [l]() { return l->onDrain(); });
+				once(event::error, [l](nodecpp::Error& e) { return l->onError( e ); });
+				once(event::end, [l]() { return l->onEnd(); });
+				once(event::accepted, [l]() { return l->onAccepted(); });
 			}
 
 

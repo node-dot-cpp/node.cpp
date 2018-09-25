@@ -6,7 +6,6 @@
 
 
 #include "../../../../3rdparty/fmt/include/fmt/format.h"
-//#include "../../../../include/nodecpp/net.h"
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
@@ -29,24 +28,21 @@ class MySampleTNode : public NodeBase
 
 	using SocketIdType = int;
 
-	class ClientSockListener : public SocketListener
+	class MyListener : public SocketListener
 	{
 		MySampleTNode* myNode;
+		int id;
 	public:
-		ClientSockListener(MySampleTNode* myNode_) : myNode( myNode_ ) {}
-		//void onClose(bool hadError) override {}
-		void onConnect() override {myNode->onConnectWithListener();}
-		void onData(Buffer& buffer) override {myNode->onDataWithListener(buffer);}
-		//void onDrain() override {}
-		//void onEnd() override {}
-		//void onAccepted() override {}
-		//void onError(Error& err) override {}
+		MyListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
+		void onConnect() override { myNode->onWhateverConnect(&id); }
+		void onData(nodecpp::Buffer& buffer) override { myNode->onWhateverData(&id, buffer); }
 	};
-	ClientSockListener listener;
-	net::Socket clientSockWithListener;
+	MyListener myListener;
+
+	net::Socket lsock;
 
 public:
-	MySampleTNode() : listener(this), clientSock(this)
+	MySampleTNode() : myListener(this, 0)
 	{
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
@@ -55,37 +51,10 @@ public:
 	{
 		printf( "MySampleLambdaOneNode::main()\n" );
 
-//		*( clientSock.getExtra() ) = 17;
-//		clientSock.connect(2000, "127.0.0.1");
-		clientSockWithListener.addListener( &listener );
-		clientSockWithListener.connect(2000, "127.0.0.1");
+		lsock.addListener( &myListener );
+		lsock.connect(2000, "127.0.0.1");
 	}
 	
-	// used by Sock with Listeners
-	void onConnectWithListener() 
-	{
-		printf( "MySampleTNode::onConnectWithListener()\n" );
-
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
-
-		uint8_t* buff = ptr.get();
-		buff[0] = 2;
-		buff[1] = 1;
-		clientSockWithListener.write(buff, 2);
-	}
-	void onDataWithListener(nodecpp::Buffer& buffer)
-	{
-		++recvReplies;
-		if ( ( recvReplies & 0xFFFF ) == 0 )
-			printf( "[%zd] MySampleTNode::onDataWithListener(), size = %zd\n", recvReplies, buffer.size() );
-		recvSize += buffer.size();
-		uint8_t* buff = ptr.get();
-		buff[0] = 2;
-		buff[1] = (uint8_t)recvReplies | 1;
-		clientSockWithListener.write(buff, 2);
-	}
-
-	// used by T-sockets
 	void onWhateverConnect(const SocketIdType* extra) 
 	{
 		NODECPP_ASSERT( extra != nullptr );
@@ -96,7 +65,7 @@ public:
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;
 		buff[1] = 1;
-		clientSock.write(buff, 2);
+		lsock.write(buff, 2);
 	}
 	void onWhateverClose(const SocketIdType* extra, bool)
 	{
@@ -113,9 +82,12 @@ public:
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;
 		buff[1] = (uint8_t)recvReplies | 1;
-		clientSock.write(buff, 2);
+		lsock.write(buff, 2);
 	}
-	void onWhateverDrain(const SocketIdType* extra) {}
+	void onWhateverDrain(const SocketIdType* extra)
+	{
+		NODECPP_ASSERT( extra != nullptr );
+	}
 	void onWhateverError(const SocketIdType* extra, nodecpp::Error&)
 	{
 		NODECPP_ASSERT( extra != nullptr );
@@ -127,18 +99,8 @@ public:
 		printf( "MySampleTNode::onWhateverEnd(), extra = %d\n", *extra );
 	}
 
-	using ClientSockType = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
-		nodecpp::net::OnConnectT<&MySampleTNode::onWhateverConnect>,
-		nodecpp::net::OnCloseT<&MySampleTNode::onWhateverClose>,
-		nodecpp::net::OnDataT<&MySampleTNode::onWhateverData>,
-		nodecpp::net::OnDrainT<&MySampleTNode::onWhateverDrain>,
-		nodecpp::net::OnErrorT<&MySampleTNode::onWhateverError>,
-		nodecpp::net::OnEndT<&MySampleTNode::onWhateverEnd>
-	>;
-	ClientSockType clientSock;
 
-
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, ClientSockType>;
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
 };
 
