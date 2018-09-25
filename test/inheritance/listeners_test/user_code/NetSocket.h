@@ -67,11 +67,7 @@ public:
 		buff[1] = 1;
 		lsock.write(buff, 2);
 	}
-	void onWhateverClose(const SocketIdType* extra, bool)
-	{
-		NODECPP_ASSERT( extra != nullptr );
-		printf( "MySampleTNode::onWhateverClose(), extra = %d\n", *extra );
-	}
+
 	void onWhateverData(const SocketIdType* extra, nodecpp::Buffer& buffer)
 	{
 		NODECPP_ASSERT( extra != nullptr );
@@ -84,21 +80,6 @@ public:
 		buff[1] = (uint8_t)recvReplies | 1;
 		lsock.write(buff, 2);
 	}
-	void onWhateverDrain(const SocketIdType* extra)
-	{
-		NODECPP_ASSERT( extra != nullptr );
-	}
-	void onWhateverError(const SocketIdType* extra, nodecpp::Error&)
-	{
-		NODECPP_ASSERT( extra != nullptr );
-		printf( "MySampleTNode::onWhateverError(), extra = %d\n", *extra );
-	}
-	void onWhateverEnd(const SocketIdType* extra)
-	{
-		NODECPP_ASSERT( extra != nullptr );
-		printf( "MySampleTNode::onWhateverEnd(), extra = %d\n", *extra );
-	}
-
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
