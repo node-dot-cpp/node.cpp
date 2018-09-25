@@ -34,8 +34,8 @@ class MySampleTNode : public NodeBase
 		int id;
 	public:
 		MyListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
-		void onConnect() override { myNode->onWhateverConnect(&id); }
-		void onData(nodecpp::Buffer& buffer) override { myNode->onWhateverData(&id, buffer); }
+		void onConnect() override { myNode->onConnect(&id); }
+		void onData(nodecpp::Buffer& buffer) override { myNode->onData(&id, buffer); }
 	};
 	MyListener myListener;
 
@@ -51,14 +51,14 @@ public:
 	{
 		printf( "MySampleLambdaOneNode::main()\n" );
 
-		lsock.addListener( &myListener );
+		lsock.on( &myListener );
 		lsock.connect(2000, "127.0.0.1");
 	}
 	
-	void onWhateverConnect(const SocketIdType* extra) 
+	void onConnect(const SocketIdType* extra) 
 	{
 		NODECPP_ASSERT( extra != nullptr );
-		printf( "MySampleTNode::onWhateverConnect(), extra = %d\n", *extra );
+		printf( "MySampleTNode::onConnect(), extra = %d\n", *extra );
 
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
@@ -68,12 +68,12 @@ public:
 		lsock.write(buff, 2);
 	}
 
-	void onWhateverData(const SocketIdType* extra, nodecpp::Buffer& buffer)
+	void onData(const SocketIdType* extra, nodecpp::Buffer& buffer)
 	{
 		NODECPP_ASSERT( extra != nullptr );
 		++recvReplies;
 		if ( ( recvReplies & 0xFFFF ) == 0 )
-			printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
+			printf( "[%zd] MySampleTNode::onData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
 		recvSize += buffer.size();
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;

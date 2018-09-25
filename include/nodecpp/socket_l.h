@@ -136,7 +136,7 @@ namespace nodecpp {
 
 
 
-			void addListener( SocketListener* l) {
+			void on( SocketListener* l) {
 //				listeners.push_back( l );
 				on(event::close, [l](bool hadError) { return l->onClose( hadError ); });
 				on(event::connect, [l]() { return l->onConnect(); });
@@ -147,7 +147,7 @@ namespace nodecpp {
 				on(event::accepted, [l]() { return l->onAccepted(); });
 			}
 
-			void addListenerOnce( SocketListener* l) {
+			void once( SocketListener* l) {
 //				listeners.push_back( l );
 				once(event::close, [l](bool hadError) { return l->onClose( hadError ); });
 				once(event::connect, [l]() { return l->onConnect(); });
