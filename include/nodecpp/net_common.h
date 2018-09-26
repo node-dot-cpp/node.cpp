@@ -42,6 +42,20 @@ namespace nodecpp {
 		size_t _capacity = 0;
 		std::unique_ptr<uint8_t> _data;
 
+	private:
+		void ensureCapacity(size_t sz) { // NOTE: may invalidate pointers
+			if (_data == nullptr) {
+				reserve(sz);
+			}
+			else if (sz > _capacity) {
+				size_t cp = std::max(sz, MIN_BUFFER);
+				std::unique_ptr<uint8_t> tmp(static_cast<uint8_t*>(malloc(cp)));
+				memcpy(tmp.get(), _data.get(), _size);
+				_capacity = cp;
+				_data = std::move(tmp);
+			}
+		}
+
 	public:
 		Buffer() {}
 		Buffer(size_t res) { reserve(res); }
@@ -78,7 +92,7 @@ namespace nodecpp {
 		}
 
 		void append(const uint8_t* dt, size_t sz) { // NOTE: may invalidate pointers
-			if (_data == nullptr) {
+/*			if (_data == nullptr) {
 				reserve(sz);
 				memcpy(end(), dt, sz);
 				_size += sz;
@@ -98,7 +112,10 @@ namespace nodecpp {
 				_size = sz + _size;
 				_capacity = cp;
 				_data = std::move(tmp);
-			}
+			}*/
+			ensureCapacity(_size + sz);
+			memcpy(end(), dt, sz);
+			_size += sz;
 		}
 
 		void trim(size_t sz) { // NOTE: keeps pointers
@@ -130,6 +147,14 @@ namespace nodecpp {
 			trim(sz);
 		}
 
+		// TODO: revise and add other relevant calls
+		size_t writeInt8( int8_t val, size_t pos ) {
+			ensureCapacity(pos + 1);
+			*reinterpret_cast<uint8_t*>(begin() + pos ) = val;
+			if ( _size < pos + 1 )
+				_size = pos + 1;
+			return pos + 1;
+		}
 	};
 
 
@@ -225,7 +250,8 @@ namespace nodecpp {
 			void resume() { dataForCommandProcessing.paused = false; }
 
 			void unref() { dataForCommandProcessing.refed = false; }
-			/*[!!]*/bool write(const uint8_t* data, uint32_t size);
+			bool write(const uint8_t* data, uint32_t size);
+			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 		};
 
 	} //namespace net

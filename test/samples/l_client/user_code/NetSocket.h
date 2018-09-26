@@ -12,7 +12,6 @@
 #include "../../../../include/nodecpp/server_type_list.h"
 
 
-using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
@@ -20,9 +19,7 @@ class MySampleTNode : public NodeBase
 {
 	size_t recvSize = 0;
 	size_t recvReplies = 0;
-	size_t sentSize = 0;
-	std::unique_ptr<uint8_t> ptr;
-	size_t size = 64;// * 1024;
+	Buffer buf;
 
 	net::Socket clientSock;
 
@@ -36,13 +33,10 @@ public:
 	{
 		printf( "MySampleLambdaOneNode::main()\n" );
 
-		clientSock.once(event::connect, [this]() { 
-			ptr.reset(static_cast<uint8_t*>(malloc(size)));
-
-			uint8_t* buff = ptr.get();
-			buff[0] = 2;
-			buff[1] = 1;
-			clientSock.write(buff, 2);
+		clientSock.on(event::connect, [this]() { 
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( 1, 1 );
+			clientSock.write(buf);
 		});
 
 		clientSock.on(event::data, [this](Buffer& buffer) { 
@@ -50,11 +44,11 @@ public:
 			if ( ( recvReplies & 0xFFFF ) == 0 )
 				printf( "[%zd] MySampleTNode::onData(), size = %zd\n", recvReplies, buffer.size() );
 			recvSize += buffer.size();
-			uint8_t* buff = ptr.get();
-			buff[0] = 2;
-			buff[1] = (uint8_t)recvReplies | 1;
-			clientSock.write(buff, 2);
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+			clientSock.write(buf);
 		});
+
 		clientSock.connect(2000, "127.0.0.1");
 	}
 

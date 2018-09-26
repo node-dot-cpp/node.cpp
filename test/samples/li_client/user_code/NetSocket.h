@@ -11,10 +11,7 @@
 #include "../../../../include/nodecpp/server_t.h"
 #include "../../../../include/nodecpp/server_type_list.h"
 
-#include <functional>
 
-
-using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
@@ -22,11 +19,7 @@ class MySampleTNode : public NodeBase
 {
 	size_t recvSize = 0;
 	size_t recvReplies = 0;
-	size_t sentSize = 0;
-	std::unique_ptr<uint8_t> ptr;
-	size_t size = 64;// * 1024;
-
-	using SocketIdType = int;
+	Buffer buf;
 
 	class MyListener : public SocketListener
 	{
@@ -39,7 +32,7 @@ class MySampleTNode : public NodeBase
 	};
 	MyListener myListener;
 
-	net::Socket lsock;
+	net::Socket clientSock;
 
 public:
 	MySampleTNode() : myListener(this, 0)
@@ -51,34 +44,27 @@ public:
 	{
 		printf( "MySampleLambdaOneNode::main()\n" );
 
-		lsock.on( &myListener );
-		lsock.connect(2000, "127.0.0.1");
+		clientSock.on( &myListener );
+		clientSock.connect(2000, "127.0.0.1");
 	}
 	
-	void onConnect(const SocketIdType* extra) 
+	void onConnect(const int* extra) 
 	{
-		NODECPP_ASSERT( extra != nullptr );
-		printf( "MySampleTNode::onConnect(), extra = %d\n", *extra );
-
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
-
-		uint8_t* buff = ptr.get();
-		buff[0] = 2;
-		buff[1] = 1;
-		lsock.write(buff, 2);
+		buf.writeInt8( 2, 0 );
+		buf.writeInt8( 1, 1 );
+		clientSock.write(buf);
 	}
 
-	void onData(const SocketIdType* extra, nodecpp::Buffer& buffer)
+	void onData(const int* extra, nodecpp::Buffer& buffer)
 	{
 		NODECPP_ASSERT( extra != nullptr );
 		++recvReplies;
 		if ( ( recvReplies & 0xFFFF ) == 0 )
-			printf( "[%zd] MySampleTNode::onData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
+			printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
 		recvSize += buffer.size();
-		uint8_t* buff = ptr.get();
-		buff[0] = 2;
-		buff[1] = (uint8_t)recvReplies | 1;
-		lsock.write(buff, 2);
+		buf.writeInt8( 2, 0 );
+		buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+		clientSock.write(buf);
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;

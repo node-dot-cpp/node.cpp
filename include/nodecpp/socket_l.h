@@ -121,6 +121,7 @@ namespace nodecpp {
 				connect(port, ip);
 			}
 
+			bool write(Buffer& buff) { return SocketBase::write( buff ); }
 			bool write(const uint8_t* data, uint32_t size) { return SocketBase::write( data, size ); }
 			bool write(const uint8_t* data, uint32_t size, std::function<void()> cb) {
 				bool b = SocketBase::write(data, size);
