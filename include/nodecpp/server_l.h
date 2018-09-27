@@ -41,7 +41,7 @@ namespace nodecpp {
 			EventEmitter<event::Listening> eListening;
 			EventEmitter<event::Error> eError;
 
-			using createSocketCallback = std::function<nodecpp::net::SocketTBase*()>;
+			using createSocketCallback = std::function<nodecpp::net::SocketTBase*(OpaqueSocketData& sdata)>;
 			createSocketCallback createSocketCB;
 
 		public:
@@ -168,10 +168,6 @@ namespace nodecpp {
 				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.once(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Error >::value) { eError.once(std::move(cb)); }
 				else assert(false);
-			}
-
-			SocketTBase* createSocket() {
-				return createSocketCB();
 			}
 		};
 
