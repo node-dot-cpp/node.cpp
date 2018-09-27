@@ -200,8 +200,8 @@ namespace nodecpp {
 		{
 		public:
 			ServerN(Node* node_) : ServerN2<Node, ServerOInitializer<Handlers...>, Extra>( node_ ) {}
-//			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }		
-			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( sdata ); }		
+			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }		
+//			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( sdata ); }		
 		};
 	} //namespace net
 } //namespace nodecpp

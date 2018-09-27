@@ -166,7 +166,7 @@ namespace nodecpp {
 			Extra extra;
 		public:
 			SocketN2(Node* node_) : SocketO( node_ ) { node = node_;}
-			SocketN2(OpaqueSocketData& sdata) : SocketO( sdata ) { node = nullptr;}
+			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
 			Extra* getExtra() { return &extra; }
 
 			void onConnect() override
@@ -229,7 +229,7 @@ namespace nodecpp {
 		template<class Node, class Initializer>
 		class SocketN2<Node, Initializer, void> : public SocketO
 		{
-//			Node* node;
+			Node* node;
 	//		static constexpr auto x = void (Node::*onConnect)(const void*);
 //			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
 	//		typename void (Node::*)(const void*) y;
@@ -244,6 +244,7 @@ namespace nodecpp {
 	#endif
 		public:
 			SocketN2(Node* node) : SocketO( node ) {}
+			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
 			void* getExtra() { return nullptr; }
 
 			void onConnect() override
@@ -307,7 +308,7 @@ namespace nodecpp {
 		{
 		public:
 			SocketN(Node* node) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( node ) {}
-			SocketN(OpaqueSocketData& sdata) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( sdata ) {}
+			SocketN(Node* node, OpaqueSocketData& sdata) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( node, sdata ) {}
 		
 		};
 
