@@ -114,6 +114,7 @@ namespace nodecpp {
 		template<class Node, class Initializer, class Extra>
 		class ServerN2 : public ServerO
 		{
+		protected:
 			Node* node;
 			Extra extra;
 		public:
@@ -131,7 +132,7 @@ namespace nodecpp {
 			void onConnectionX(SocketTBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
-					(node->*(Initializer::onConnection))(this->getExtra()); 
+					(node->*(Initializer::onConnection))(this->getExtra(), socket); 
 				else
 					ServerO::onConnectionX(socket);
 			}
@@ -194,12 +195,13 @@ namespace nodecpp {
 		};
 
 
-		template<class Node, class Extra, class ... Handlers>
+		template<class Node, class Socket, class Extra, class ... Handlers>
 		class ServerN : public ServerN2<Node, ServerOInitializer<Handlers...>, Extra>
 		{
 		public:
 			ServerN(Node* node_) : ServerN2<Node, ServerOInitializer<Handlers...>, Extra>( node_ ) {}
-		
+//			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }		
+			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( sdata ); }		
 		};
 	} //namespace net
 } //namespace nodecpp

@@ -165,7 +165,8 @@ namespace nodecpp {
 			Node* node;
 			Extra extra;
 		public:
-			SocketN2(Node* node) : SocketO( node ) { node = node;}
+			SocketN2(Node* node_) : SocketO( node_ ) { node = node_;}
+			SocketN2(OpaqueSocketData& sdata) : SocketO( sdata ) { node = nullptr;}
 			Extra* getExtra() { return &extra; }
 
 			void onConnect() override
@@ -306,6 +307,7 @@ namespace nodecpp {
 		{
 		public:
 			SocketN(Node* node) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( node ) {}
+			SocketN(OpaqueSocketData& sdata) : SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>( sdata ) {}
 		
 		};
 
