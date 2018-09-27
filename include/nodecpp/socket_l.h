@@ -157,13 +157,13 @@ namespace nodecpp {
 
 			void once( SocketListener* l) {
 //				listeners.push_back( l );
-				eClose.on(l);
-				eConnect.on(l);
-				eData.on(l);
-				eDrain.on(l);
-				eError.on(l);
-				eEnd.on(l);
-				eAccepted.on(l);
+				eClose.once(l);
+				eConnect.once(l);
+				eData.once(l);
+				eDrain.once(l);
+				eError.once(l);
+				eEnd.once(l);
+				eAccepted.once(l);
 /*				once(event::close, [l](bool hadError) { return l->onClose( hadError ); });
 				once(event::connect, [l]() { return l->onConnect(); });
 				once(event::data, [l](Buffer& b) { return l->onData( b ); });
