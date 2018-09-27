@@ -117,7 +117,6 @@ public:
 
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, ClientSockType>;
-	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
 };
 
 #endif // NET_SOCKET_H

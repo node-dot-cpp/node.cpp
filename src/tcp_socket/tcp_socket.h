@@ -784,6 +784,11 @@ private:
 	}
 };
 
+template<>
+class NetServerManager<void>
+{
+};
+
 #endif // !NET_CLIENT_ONLY
 
 

@@ -65,6 +65,9 @@ class NodeBase
 public:
 	NodeBase() {}
 	virtual void main() = 0;
+
+	using EmitterType = void;
+	using EmitterTypeForServer = void;
 };
 
 #ifdef USING_T_SOCKETS
