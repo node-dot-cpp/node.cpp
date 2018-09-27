@@ -36,10 +36,10 @@ namespace nodecpp {
 
 		class Server : public ServerTBase
 		{
-			EventEmitter<event::Close> eClose;
-			EventEmitter<event::Connection> eConnection;
-			EventEmitter<event::Listening> eListening;
-			EventEmitter<event::Error> eError;
+			EventEmitterSupportingListeners<event::Close, ServerListener, &ServerListener::onClose> eClose;
+			EventEmitterSupportingListeners<event::Connection, ServerListener, &ServerListener::onConnection> eConnection;
+			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
+			EventEmitterSupportingListeners<event::Error, ServerListener, &ServerListener::onError> eError;
 
 			using createSocketCallback = std::function<nodecpp::net::SocketTBase*(OpaqueSocketData& sdata)>;
 			createSocketCallback createSocketCB;
@@ -85,6 +85,20 @@ namespace nodecpp {
 			void listen(uint16_t port, const char* ip, int backlog, std::function<void()> cb) {
 				once(event::listening, std::move(cb));
 				ServerTBase::listen(port, ip, backlog);
+			}
+
+			void on( ServerListener* l) {
+				eClose.on(l);
+				eConnection.on(l);
+				eListening.on(l);
+				eError.on(l);
+			}
+
+			void once( ServerListener* l) {
+				eClose.once(l);
+				eConnection.once(l);
+				eListening.once(l);
+				eError.once(l);
 			}
 
 			void on(std::string name, event::Close::callback cb) {

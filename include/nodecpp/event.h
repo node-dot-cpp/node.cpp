@@ -118,6 +118,16 @@ namespace nodecpp
 			virtual void onError(Error& err) {}
 	};
 
+	class ServerListener
+	{
+		public:
+			virtual void onClose(bool hadError) {}
+			virtual void onConnection(net::SocketTBase* socket) {}
+			//virtual void onListening(size_t id, net::Address addr) {}
+			virtual void onListening() {}
+			virtual void onError(Error& err) {}
+	};
+
 	/*
 		Two important things:
 		1. handlers are called in the same order of registration, both regular and 'once'
