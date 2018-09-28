@@ -43,7 +43,7 @@ namespace nodecpp {
 
 		public:
 			SocketO(NodeBase* node) : SocketTBase( node ) {registerMeAndAcquireSocket();}
-			SocketO(OpaqueSocketData& sdata) : SocketTBase( nullptr ) {registerMeAndAssignSocket(sdata);}
+			SocketO(NodeBase* node, OpaqueSocketData& sdata) : SocketTBase( node ) {registerMeAndAssignSocket(sdata);}
 
 			SocketO(const SocketO&) = delete;
 			SocketO& operator=(const SocketO&) = delete;
@@ -162,11 +162,13 @@ namespace nodecpp {
 			static_assert( std::is_same< decltype(Initializer::onConnect), void (Node::*)() >::value );
 			static_assert( Initializer::onConnect == nullptr || (is_void_extra && std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value) || ( (!is_void_extra) && std::is_same< decltype(Initializer::onConnect), void (Node::*)(const Extra*) >::value ) );
 	#endif
-			Node* node;
+			//Node* node;
 			Extra extra;
 		public:
-			SocketN2(Node* node_) : SocketO( node_ ) { node = node_;}
-			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
+//			SocketN2(Node* node_) : SocketO( node_ ) { node = node_;}
+//			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
+			SocketN2(Node* node) : SocketO( node ) {}
+			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketO( node, sdata ) {}
 			Extra* getExtra() { return &extra; }
 
 			void onConnect() override
@@ -174,7 +176,7 @@ namespace nodecpp {
 				if constexpr ( Initializer::onConnect != nullptr )
 				{
 	//				static_assert( Initializer::onConnect == nullptr || std::is_same< decltype(Initializer::onConnect), void (Node::*)(const Extra*) >::value );
-					(node->*(Initializer::onConnect))(this->getExtra()); 
+					((static_cast<Node*>(this->node))->*(Initializer::onConnect))(this->getExtra()); 
 				}
 				else
 				{
@@ -185,42 +187,42 @@ namespace nodecpp {
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
-					(node->*(Initializer::onClose))(this->getExtra(),b); 
+					((static_cast<Node*>(this->node))->*(Initializer::onClose))(this->getExtra(),b); 
 				else
 					SocketO::onClose(b);
 			}
 			void onData(nodecpp::Buffer& b) override
 			{ 
 				if constexpr ( Initializer::onData != nullptr )
-					(node->*(Initializer::onData))(this->getExtra(),b); 
+					((static_cast<Node*>(this->node))->*(Initializer::onData))(this->getExtra(),b); 
 				else
 					SocketO::onData(b);
 			}
 			void onDrain() override
 			{
 				if constexpr ( Initializer::onDrain != nullptr )
-					(node->*(Initializer::onDrain))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onDrain))(this->getExtra());
 				else
 					SocketO::onDrain();
 			}
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )
-					(node->*(Initializer::onError))(this->getExtra(),e);
+					((static_cast<Node*>(this->node))->*(Initializer::onError))(this->getExtra(),e);
 				else
 					SocketO::onError(e);
 			}
 			void onEnd() override
 			{
 				if constexpr ( Initializer::onEnd != nullptr )
-					(node->*(Initializer::onEnd))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onEnd))(this->getExtra());
 				else
 					SocketO::onEnd();
 			}
 			void onAccepted() override
 			{
 				if constexpr ( Initializer::onAccepted != nullptr )
-					(node->*(Initializer::onAccepted))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onAccepted))(this->getExtra());
 				else
 					SocketO::onAccepted();
 			}
@@ -229,7 +231,7 @@ namespace nodecpp {
 		template<class Node, class Initializer>
 		class SocketN2<Node, Initializer, void> : public SocketO
 		{
-			Node* node;
+	//		Node* node;
 	//		static constexpr auto x = void (Node::*onConnect)(const void*);
 //			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
 	//		typename void (Node::*)(const void*) y;
@@ -243,8 +245,10 @@ namespace nodecpp {
 	//		static_assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
 	#endif
 		public:
+	//		SocketN2(Node* node) : SocketO( node ) {}
+	//		SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
 			SocketN2(Node* node) : SocketO( node ) {}
-			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
+			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketO( node, sdata ) {}
 			void* getExtra() { return nullptr; }
 
 			void onConnect() override
@@ -254,49 +258,49 @@ namespace nodecpp {
 				//printf("type 2 = \'%s\', hash = 0x%zx\n", typeid(void (Node::*)(const void*)).name(), typeid(x).hash_code() );
 				//printf("type 3 = \'%s\', hash = 0x%zx\n", typeid(Initializer::onConnect).name(), typeid(x).hash_code() );
 				if constexpr ( Initializer::onConnect != nullptr )
-					(node->*(Initializer::onConnect))(this->getExtra()); 
+					((static_cast<Node*>(this->node))->*(Initializer::onConnect))(this->getExtra()); 
 				else
 					SocketO::onConnect();
 			}
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
-					(node->*(Initializer::onClose))(this->getExtra(),b); 
+					((static_cast<Node*>(this->node))->*(Initializer::onClose))(this->getExtra(),b); 
 				else
 					SocketO::onClose(b);
 			}
 			void onData(nodecpp::Buffer& b) override
 			{ 
 				if constexpr ( Initializer::onData != nullptr )
-					(node->*(Initializer::onData))(this->getExtra(),b); 
+					((static_cast<Node*>(this->node))->*(Initializer::onData))(this->getExtra(),b); 
 				else
 					SocketO::onData(b);
 			}
 			void onDrain() override
 			{
 				if constexpr ( Initializer::onDrain != nullptr )
-					(node->*(Initializer::onDrain))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onDrain))(this->getExtra());
 				else
 					SocketO::onDrain();
 			}
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )
-					(node->*(Initializer::onError))(this->getExtra(),e);
+					((static_cast<Node*>(this->node))->*(Initializer::onError))(this->getExtra(),e);
 				else
 					SocketO::onError(e);
 			}
 			void onEnd() override
 			{
 				if constexpr ( Initializer::onEnd != nullptr )
-					(node->*(Initializer::onEnd))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onEnd))(this->getExtra());
 				else
 					SocketO::onEnd();
 			}
 			void onAccepted() override
 			{
 				if constexpr ( Initializer::onAccepted != nullptr )
-					(node->*(Initializer::onAccepted))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onAccepted))(this->getExtra());
 				else
 					SocketO::onAccepted();
 			}
