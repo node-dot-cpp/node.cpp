@@ -65,7 +65,7 @@ namespace nodecpp {
 				this->dataForCommandProcessing.index = id;
 				localAddress = std::move(addr);
 				state = LISTENING;
-				eListening.emit();
+				eListening.emit(id, addr);
 			}
 
 			void emitError(Error& err) {
@@ -82,7 +82,7 @@ namespace nodecpp {
 				ServerBase::close();
 			}
 
-			void listen(uint16_t port, const char* ip, int backlog, std::function<void()> cb) {
+			void listen(uint16_t port, const char* ip, int backlog, std::function<void(size_t, net::Address)> cb) {
 				once(event::listening, std::move(cb));
 				ServerTBase::listen(port, ip, backlog);
 			}

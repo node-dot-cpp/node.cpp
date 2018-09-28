@@ -29,7 +29,7 @@
 #define NET_COMMON_H
 
 #include "common.h"
-#include "event.h"
+//#include "event.h"
 
 namespace nodecpp {
 

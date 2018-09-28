@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "error.h"
+#include "net_common.h"
 
 namespace nodecpp
 {
@@ -99,7 +100,7 @@ namespace nodecpp
 
 		struct Listening
 		{
-			using callback = std::function<void()>;
+			using callback = std::function<void(size_t, net::Address)>;
 			static constexpr const char* name = "listening";
 		};
 		static constexpr Listening listening = Listening();
@@ -123,8 +124,8 @@ namespace nodecpp
 		public:
 			virtual void onClose(bool hadError) {}
 			virtual void onConnection(net::SocketTBase* socket) {}
-			//virtual void onListening(size_t id, net::Address addr) {}
-			virtual void onListening() {}
+			virtual void onListening(size_t id, net::Address addr) {}
+			//virtual void onListening() {}
 			virtual void onError(Error& err) {}
 	};
 
