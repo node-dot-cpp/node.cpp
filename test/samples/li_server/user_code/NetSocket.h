@@ -36,12 +36,102 @@ class MySampleTNode : public NodeBase
 	using SocketIdType = int;
 	using ServerIdType = int;
 
+	class MyServerSocketListener : public SocketListener
+	{
+		MySampleTNode* myNode;
+		int id;
+	public:
+		MyServerSocketListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
+		void onClose(bool hadError) override
+		{
+			print("server socket: onCloseServerSocket!\n");
+			myNode->serverSockets.remove(id);
+		}
+		void onData(Buffer& buffer) override {
+			if ( buffer.size() < 2 )
+			{
+				printf( "Insufficient data on socket idx = %d\n", id );
+				myNode->serverSockets.at(id)->unref();
+				return;
+			}
+	//		print("server socket: onData for idx %d !\n", *extra );
+
+			size_t receivedSz = buffer.begin()[0];
+			if ( receivedSz != buffer.size() )
+			{
+				printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", id, receivedSz, buffer.size() );
+				myNode->serverSockets.at(id)->unref();
+				return;
+			}
+
+			size_t requestedSz = buffer.begin()[1];
+			if ( requestedSz )
+			{
+				Buffer reply(requestedSz);
+				//buffer.begin()[0] = (uint8_t)requestedSz;
+				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
+				myNode->serverSockets.at(id)->write(reply.begin(), requestedSz);
+			}
+
+			myNode->stats.recvSize += receivedSz;
+			myNode->stats.sentSize += requestedSz;
+			++(myNode->stats.rqCnt);
+		}
+		void onEnd() override {
+			print("server socket: onEnd!\n");
+			const char buff[] = "goodbye!";
+			myNode->serverSockets.at(id)->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			myNode->serverSockets.at(id)->end();
+		}
+	};
+
+	class MyServerCtrlSocketListener : public SocketListener
+	{
+		MySampleTNode* myNode;
+		int id;
+	public:
+		MyServerCtrlSocketListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
+		void onClose(bool hadError) override
+		{
+			print("server socket: onCloseServerSocket!\n");
+			myNode->serverCtrlSockets.remove(id);
+		}
+		void onData(Buffer& buffer) override {
+			size_t requestedSz = buffer.begin()[1];
+			if ( requestedSz )
+			{
+				Buffer reply(sizeof(stats));
+				myNode->stats.connCnt = myNode->serverSockets.getServerSockCount();
+				size_t replySz = sizeof(Stats);
+				uint8_t* buff = myNode->ptr.get();
+				memcpy( buff, &(myNode->stats), replySz); // naive marshalling will work for a limited number of cases
+				myNode->serverCtrlSockets.at(id)->write(buff, replySz);
+			}
+		}
+		void onEnd() override {
+			print("server socket: onEnd!\n");
+			const char buff[] = "goodbye!";
+			myNode->serverCtrlSockets.at(id)->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			myNode->serverCtrlSockets.at(id)->end();
+		}
+	};
+
 	class MyServerListener : public ServerListener
 	{
 		MySampleTNode* myNode;
 		int id;
 	public:
 		MyServerListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
+		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
+			print("server: onCloseServer()!\n");
+			myNode->serverSockets.clear();
+		}
+		void onConnection(/*const ServerIdType* extra,*/ net::SocketTBase* socket) override { 
+			print("server: onConnection()!\n");
+			//srv.unref();
+			NODECPP_ASSERT( socket != nullptr ); 
+			myNode->serverSockets.add( socket );
+		}
 	};
 	MyServerListener myServerListener;
 
@@ -51,6 +141,16 @@ class MySampleTNode : public NodeBase
 		int id;
 	public:
 		MyCtrlServerListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
+		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
+			print("server: onCloseServerCtrl()!\n");
+			myNode->serverCtrlSockets.clear();
+		}
+		void onConnection(/*const ServerIdType* extra,*/ net::SocketTBase* socket) override { 
+			print("server: onConnectionCtrl()!\n");
+			//srv.unref();
+			NODECPP_ASSERT( socket != nullptr ); 
+			myNode->serverCtrlSockets.add( socket );
+		}
 	};
 	MyCtrlServerListener myCtrlServerListener;
 
@@ -65,32 +165,14 @@ public:
 		printf( "MySampleLambdaOneNode::main()\n" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		srv.on( event::close, [this](bool hadError) {
-			print("server: onCloseServer()!\n");
-			serverSockets.clear();
-		});
-		srv.on( event::connection, [this](net::SocketTBase* socket) {
-			print("server: onConnection()!\n");
-			//srv.unref();
-			NODECPP_ASSERT( socket != nullptr ); 
-			serverSockets.add( socket );
-		});
-
-		srvCtrl.on( event::close, [this](bool hadError) {
-			print("server: onCloseServerCtrl()!\n");
-			serverCtrlSockets.clear();
-		});
-		srvCtrl.on( event::connection, [this](net::SocketTBase* socket) {
-			print("server: onConnectionCtrl()!\n");
-			//srv.unref();
-			NODECPP_ASSERT( socket != nullptr ); 
-			serverCtrlSockets.add( socket );
-		});
+		srv.on( &myCtrlServerListener );
+		srvCtrl.on( &myCtrlServerListener );
 
 		srv.listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
 		srvCtrl.listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
 	}
 
+#if 0
 	// server socket
 	void onCloseServerSocket(const SocketIdType* extra, bool hadError)
 	{
@@ -189,6 +271,7 @@ public:
 		nodecpp::net::OnEndT<&MySampleTNode::onEndCtrlServerSocket>,
 		nodecpp::net::OnAcceptedT<&MySampleTNode::onAcceptedServerSocket>
 	>;
+#endif // 0
 
 	// server
 private:
@@ -216,20 +299,20 @@ private:
 				NODECPP_ASSERT( firstFree == toUse.idx );
 				firstFree = toUse.nextFree;
 				toUse.socket.reset( sock );
-				*(reinterpret_cast<Socket*>(sock)->getExtra()) = toUse.idx;
+//				*(reinterpret_cast<Socket*>(sock)->getExtra()) = toUse.idx;
 			}
 			else
 			{
 				size_t idx = serverSocks.size();
 				serverSocks.emplace_back( sock, idx );
-				*(reinterpret_cast<Socket*>(sock)->getExtra()) = idx;
+//				*(reinterpret_cast<Socket*>(sock)->getExtra()) = idx;
 			}
 			++serverSockCount;
 		}
 		void remove( size_t idx )
 		{
 			NODECPP_ASSERT( idx < serverSocks.size() );
-			NODECPP_ASSERT( *(at(idx)->getExtra()) == idx );
+//			NODECPP_ASSERT( *(at(idx)->getExtra()) == idx );
 			ServerSock& toUse = serverSocks[idx];
 			toUse.nextFree = firstFree;
 			toUse.socket.reset();
@@ -249,29 +332,23 @@ private:
 		}
 		size_t getServerSockCount() { return serverSockCount; }
 	};
-	ServerSockets<SockTypeServerSocket> serverSockets;
-	net::SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new SockTypeServerSocket( this, sdata ); }
+	ServerSockets<net::Socket> serverSockets;
+	net::SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
 
 public:
 
-/*	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
-		nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
-		nodecpp::net::OnCloseST<&MySampleTNode::onCloseServer>,
-		nodecpp::net::OnListeningST<&MySampleTNode::onListening>,
-		nodecpp::net::OnErrorST<&MySampleTNode::onErrorServer>
-	>;*/
 	net::Server srv;
 
 	// ctrl server
 private:
-	ServerSockets<SockTypeServerCtrlSocket> serverCtrlSockets;
-	net::SocketTBase* makeCtrlSocket(OpaqueSocketData& sdata) { return new SockTypeServerCtrlSocket( this, sdata ); }
+	ServerSockets<net::Socket> serverCtrlSockets;
+	net::SocketTBase* makeCtrlSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
 
 public:
 	net::Server srvCtrl;
 
 
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockTypeServerSocket, SockTypeServerCtrlSocket>;
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
 };
 

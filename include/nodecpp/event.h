@@ -125,7 +125,6 @@ namespace nodecpp
 			virtual void onClose(bool hadError) {}
 			virtual void onConnection(net::SocketTBase* socket) {}
 			virtual void onListening(size_t id, net::Address addr) {}
-			//virtual void onListening() {}
 			virtual void onError(Error& err) {}
 	};
 
