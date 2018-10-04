@@ -59,8 +59,6 @@ public:
 			net::Socket* s = static_cast<net::Socket*>(socket);
 			s->on( event::close, [this, s](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
-				//serverSockets.remove(*extra);
-				//delete s;
 				srv.removeSocket( s );
 			});
 			s->on( event::data, [this, s](Buffer& buffer) {
@@ -91,7 +89,7 @@ public:
 				}
 	
 				stats.recvSize += receivedSz;
-				stats.sentSize += requestedSz;/**/
+				stats.sentSize += requestedSz;
 				++(stats.rqCnt);
 			});
 			s->on( event::end, [this, s]() {
@@ -111,12 +109,9 @@ public:
 			print("server: onConnectionCtrl()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket != nullptr ); 
-			//serverCtrlSockets.add( socket );
 			net::Socket* s = static_cast<net::Socket*>(socket);
 			s->on( event::close, [this, s](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
-				//serverSockets.remove(*extra);
-				//delete s;
 				srvCtrl.removeSocket( s );
 			});
 			s->on( event::data, [this, s](Buffer& buffer) {
@@ -124,7 +119,7 @@ public:
 				if ( requestedSz )
 				{
 					Buffer reply(sizeof(stats));
-					stats.connCnt = 0;//serverSockets.getServerSockCount();
+					stats.connCnt = srv.getSockCount();
 					size_t replySz = sizeof(Stats);
 					uint8_t* buff = ptr.get();
 					memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases

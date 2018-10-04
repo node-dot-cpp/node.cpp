@@ -61,8 +61,9 @@ namespace nodecpp {
 				size_t _size = 0;
 				SocketForserver* _begin = nullptr;
 			public:
-				void add( SocketForserver* sock )
+				SocketForserver* getNewSocket(OpaqueSocketData& sdata)
 				{
+					SocketForserver* sock = new SocketForserver(sdata);
 					NODECPP_ASSERT( sock != nullptr );
 					if ( _begin == nullptr )
 					{
@@ -77,8 +78,9 @@ namespace nodecpp {
 						_begin = sock;
 					}
 					++_size;
+					return sock;
 				}
-				void remove( SocketForserver* sock )
+				void removeAndDelete( SocketForserver* sock )
 				{
 					NODECPP_ASSERT( sock != nullptr );
 					if ( sock->_prevSock )
@@ -86,6 +88,7 @@ namespace nodecpp {
 					if ( sock->_nextSock )
 						sock->_nextSock = sock->_prevSock;
 					--_size;
+					delete sock;
 				}
 				void clear()
 				{
@@ -112,7 +115,7 @@ namespace nodecpp {
 		public:
 			Server() = delete;
 			Server(createSocketCallback cb);
-			~Server() {}
+			~Server() {socketList.clear();}
 
 			void emitClose(bool hadError) {
 				state = CLOSED;
@@ -140,12 +143,11 @@ namespace nodecpp {
 
 			SocketTBase* makeSocket(OpaqueSocketData& sdata) {
 //				return new Socket(sdata);
-				SocketForserver* sock = new SocketForserver(sdata);
-				socketList.add( sock );
+				SocketForserver* sock = socketList.getNewSocket(sdata);
 				return sock;
 			}
 			void removeSocket( net::Socket* sock ) {
-				socketList.remove( static_cast<SocketForserver*>(sock) );
+				socketList.removeAndDelete( static_cast<SocketForserver*>(sock) );
 			}
 			size_t getSockCount() {return socketList.getServerSockCount();}
 
