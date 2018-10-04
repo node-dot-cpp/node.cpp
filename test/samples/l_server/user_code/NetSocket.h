@@ -49,31 +49,100 @@ public:
 
 		srv.on( event::close, [this](bool hadError) {
 			print("server: onCloseServer()!\n");
-			serverSockets.clear();
+			//serverSockets.clear();
 		});
 		srv.on( event::connection, [this](net::SocketTBase* socket) {
 			print("server: onConnection()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket != nullptr ); 
-			serverSockets.add( socket );
+//			serverSockets.add( socket );
+			net::Socket* s = static_cast<net::Socket*>(socket);
+			s->on( event::close, [this, s](bool hadError) {
+				print("server socket: onCloseServerSocket!\n");
+				//serverSockets.remove(*extra);
+				delete s;
+			});
+			s->on( event::data, [this, s](Buffer& buffer) {
+				if ( buffer.size() < 2 )
+				{
+					//printf( "Insufficient data on socket idx = %d\n", *extra );
+					s->unref();
+					return;
+				}
+		//		print("server socket: onData for idx %d !\n", *extra );
+	
+				size_t receivedSz = buffer.begin()[0];
+				if ( receivedSz != buffer.size() )
+				{
+//					printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", *extra, receivedSz, buffer.size() );
+					printf( "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes\n", receivedSz, buffer.size() );
+					s->unref();
+					return;
+				}
+	
+				size_t requestedSz = buffer.begin()[1];
+				if ( requestedSz )
+				{
+					Buffer reply(requestedSz);
+					//buffer.begin()[0] = (uint8_t)requestedSz;
+					memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
+					s->write(reply.begin(), requestedSz);
+				}
+	
+				stats.recvSize += receivedSz;
+				stats.sentSize += requestedSz;/**/
+				++(stats.rqCnt);
+			});
+			s->on( event::end, [this, s]() {
+				print("server socket: onEnd!\n");
+				const char buff[] = "goodbye!";
+				s->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+				s->end();
+			});
+
 		});
 
 		srvCtrl.on( event::close, [this](bool hadError) {
 			print("server: onCloseServerCtrl()!\n");
-			serverCtrlSockets.clear();
+			//serverCtrlSockets.clear();
 		});
 		srvCtrl.on( event::connection, [this](net::SocketTBase* socket) {
 			print("server: onConnectionCtrl()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket != nullptr ); 
-			serverCtrlSockets.add( socket );
+			//serverCtrlSockets.add( socket );
+			net::Socket* s = static_cast<net::Socket*>(socket);
+			s->on( event::close, [this, s](bool hadError) {
+				print("server socket: onCloseServerSocket!\n");
+				//serverSockets.remove(*extra);
+				delete s;
+			});
+			s->on( event::data, [this, s](Buffer& buffer) {
+				size_t requestedSz = buffer.begin()[1];
+				if ( requestedSz )
+				{
+					Buffer reply(sizeof(stats));
+					stats.connCnt = 0;//serverSockets.getServerSockCount();
+					size_t replySz = sizeof(Stats);
+					uint8_t* buff = ptr.get();
+					memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
+					s->write(buff, replySz);
+				}
+			});
+			s->on( event::end, [this, s]() {
+				print("server socket: onEnd!\n");
+				const char buff[] = "goodbye!";
+				s->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+				s->end();
+			});
 		});
 
-		srv.listen(2000, "127.0.0.1", 5, [](){});
-		srvCtrl.listen(2001, "127.0.0.1", 5, [](){});
+		srv.listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
+		srvCtrl.listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
 	}
 
 	// server socket
+#if 0
 	void onCloseServerSocket(const SocketIdType* extra, bool hadError)
 	{
 		print("server socket: onCloseServerSocket!\n");
@@ -231,29 +300,25 @@ private:
 		}
 		size_t getServerSockCount() { return serverSockCount; }
 	};
-	ServerSockets<SockTypeServerSocket> serverSockets;
-	net::SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new SockTypeServerSocket( this, sdata ); }
+#endif // 0
 
-public:
-
-/*	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
-		nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
-		nodecpp::net::OnCloseST<&MySampleTNode::onCloseServer>,
-		nodecpp::net::OnListeningST<&MySampleTNode::onListening>,
-		nodecpp::net::OnErrorST<&MySampleTNode::onErrorServer>
-	>;*/
-	net::Server srv;
+private:
+//	ServerSockets<SockTypeServerSocket> serverSockets;
+//	net::SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new SockTypeServerSocket( this, sdata ); }
+	net::SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
 
 	// ctrl server
-private:
-	ServerSockets<SockTypeServerCtrlSocket> serverCtrlSockets;
-	net::SocketTBase* makeCtrlSocket(OpaqueSocketData& sdata) { return new SockTypeServerCtrlSocket( this, sdata ); }
+//	ServerSockets<SockTypeServerCtrlSocket> serverCtrlSockets;
+//	net::SocketTBase* makeCtrlSocket(OpaqueSocketData& sdata) { return new SockTypeServerCtrlSocket( this, sdata ); }
+	net::SocketTBase* makeCtrlSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
 
 public:
+	net::Server srv;
 	net::Server srvCtrl;
 
 
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockTypeServerSocket, SockTypeServerCtrlSocket>;
+//	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockTypeServerSocket, SockTypeServerCtrlSocket>;
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
 };
 
