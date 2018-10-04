@@ -29,6 +29,7 @@
 #define SERVER_L_H
 
 #include "server_t_base.h"
+#include "socket_l.h"
 
 namespace nodecpp {
 
@@ -36,6 +37,70 @@ namespace nodecpp {
 
 		class Server : public ServerTBase
 		{
+			// support for a list of accepted sockets
+			class SocketList;
+			class SocketForserver : public Socket
+			{
+				friend class Server;
+				friend class SocketList;
+				SocketForserver* _prevSock;
+				SocketForserver* _nextSock;
+			public:
+				SocketForserver() : Socket() {}
+				SocketForserver(OpaqueSocketData& sdata) : Socket( sdata ) {}
+
+				SocketForserver(const SocketForserver&) = delete;
+				SocketForserver& operator=(const SocketForserver&) = delete;
+
+				SocketForserver(SocketForserver&&) = default;
+				SocketForserver& operator=(SocketForserver&&) = default;
+			};
+
+			class SocketList
+			{
+				size_t _size = 0;
+				SocketForserver* _begin = nullptr;
+			public:
+				void add( SocketForserver* sock )
+				{
+					NODECPP_ASSERT( sock != nullptr );
+					if ( _begin == nullptr )
+					{
+						_begin = sock;
+						sock->_nextSock = nullptr;
+						sock->_prevSock = nullptr;
+					}
+					else
+					{
+						sock->_nextSock = _begin->_nextSock;
+						sock->_prevSock = nullptr;
+						_begin = sock;
+					}
+					++_size;
+				}
+				void remove( SocketForserver* sock )
+				{
+					NODECPP_ASSERT( sock != nullptr );
+					if ( sock->_prevSock )
+						sock->_prevSock = sock->_nextSock;
+					if ( sock->_nextSock )
+						sock->_nextSock = sock->_prevSock;
+					--_size;
+				}
+				void clear()
+				{
+					while ( _begin )
+					{
+						SocketForserver* tmp = _begin;
+						delete _begin;
+						_begin = tmp;
+
+					}
+				}
+				size_t getServerSockCount() { return _size; }
+			};
+			SocketList socketList;
+			// event emitters
 			EventEmitterSupportingListeners<event::Close, ServerListener, &ServerListener::onClose> eClose;
 			EventEmitterSupportingListeners<event::Connection, ServerListener, &ServerListener::onConnection> eConnection;
 			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
@@ -74,8 +139,15 @@ namespace nodecpp {
 
 
 			SocketTBase* makeSocket(OpaqueSocketData& sdata) {
-				return new Socket(sdata);
+//				return new Socket(sdata);
+				SocketForserver* sock = new SocketForserver(sdata);
+				socketList.add( sock );
+				return sock;
 			}
+			void removeSocket( net::Socket* sock ) {
+				socketList.remove( static_cast<SocketForserver*>(sock) );
+			}
+			size_t getSockCount() {return socketList.getServerSockCount();}
 
 			void close(std::function<void(bool)> cb) {
 				once(event::close, std::move(cb));

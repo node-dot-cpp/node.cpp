@@ -60,7 +60,8 @@ public:
 			s->on( event::close, [this, s](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
 				//serverSockets.remove(*extra);
-				delete s;
+				//delete s;
+				srv.removeSocket( s );
 			});
 			s->on( event::data, [this, s](Buffer& buffer) {
 				if ( buffer.size() < 2 )
@@ -115,7 +116,8 @@ public:
 			s->on( event::close, [this, s](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
 				//serverSockets.remove(*extra);
-				delete s;
+				//delete s;
+				srvCtrl.removeSocket( s );
 			});
 			s->on( event::data, [this, s](Buffer& buffer) {
 				size_t requestedSz = buffer.begin()[1];
