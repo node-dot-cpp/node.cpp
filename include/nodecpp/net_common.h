@@ -225,6 +225,8 @@ namespace nodecpp {
 			SocketBase(SocketBase&&) = default;
 			SocketBase& operator=(SocketBase&&) = default;
 
+			~SocketBase() {unref(); /*or assert that is must already be unrefed*/}
+
 		public:
 
 			const Address& address() const { return _local; }
@@ -234,22 +236,26 @@ namespace nodecpp {
 			size_t bytesWritten() const { return _bytesWritten; }
 
 			bool connecting() const { return state == CONNECTING; }
-			/*[!!]*/void destroy();
+			void destroy();
 			bool destroyed() const { return state == DESTROYED; };
-			/*[!!]*/void end();
+			void end();
 			const std::string& localAddress() const { return _local.address; }
 			uint16_t localPort() const { return _local.port; }
 
-			void pause() { dataForCommandProcessing.paused = true; }
 
 			const std::string& remoteAddress() const { return _remote.address; }
 			const std::string& remoteFamily() const { return _remote.family; }
 			uint16_t remotePort() const { return _remote.port; }
 
-			void ref() { dataForCommandProcessing.refed = true; }
-			void resume() { dataForCommandProcessing.paused = false; }
+//			void ref() { dataForCommandProcessing.refed = true; }
+//			void resume() { dataForCommandProcessing.paused = false; }
+//			void unref() { dataForCommandProcessing.refed = false; }
+//			void pause() { dataForCommandProcessing.paused = true; }
+			void ref();
+			void unref();
+			void pause();
+			void resume();
 
-			void unref() { dataForCommandProcessing.refed = false; }
 			bool write(const uint8_t* data, uint32_t size);
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 		};

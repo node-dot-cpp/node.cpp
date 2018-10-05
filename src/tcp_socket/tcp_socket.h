@@ -35,8 +35,10 @@
 using namespace nodecpp;
 
 class NetSocketEntry {
+	// TODO: revise everything around being 'refed'
 public:
 	size_t index;
+	bool refed = false;
 
 	net::SocketBase* sockPtr = nullptr;
 	OpaqueEmitter emitter;
@@ -56,7 +58,7 @@ public:
 	NetSocketEntry(NetSocketEntry&& other) = default;
 	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
 
-	bool isValid() const { return emitter.isValid(); }
+	bool isValid() const { return refed && emitter.isValid(); }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
 	net::SocketBase::DataForCommandProcessing* getSockData() const { assert(sockPtr != nullptr); return sockPtr ? &(sockPtr->dataForCommandProcessing) : nullptr; }
@@ -101,6 +103,8 @@ public:
 		pendingAcceptedEvents.push_back(ptr->dataForCommandProcessing.id);
 		ptr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connected;
 		ptr->dataForCommandProcessing.refed = true;
+		auto& entry = appGetEntry(ptr->dataForCommandProcessing.id);
+		entry.refed = true; 
 	}
 
 /*	template<class SockType>
@@ -165,6 +169,8 @@ public:
 		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket,  ip, port );
 		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
 		sockPtr->dataForCommandProcessing.refed = true;
+		auto& entry = appGetEntry(sockPtr->dataForCommandProcessing.id);
+		entry.refed = true; 
 	//	entry.connecting = true;
 	}
 	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
@@ -290,6 +296,25 @@ protected:
 	//	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), std::ref(err));
 	//	pendingCloseEvents.emplace_back(entry.index, std::move(ev));
 		pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
+	}
+
+public:
+	void appRef(size_t id) { 
+		auto& entry = appGetEntry(id);
+		entry.getSockData()->refed = true;
+		entry.refed = true; 
+	}
+	void appUnref(size_t id) { 
+		auto& entry = appGetEntry(id);
+		entry.getSockData()->refed = false; 
+		entry.refed = false; 
+	}
+	void appPause(size_t id) { 
+		auto& entry = appGetEntry(id);
+		entry.getSockData()->paused = true; }
+	void appResume(size_t id) { 
+		auto& entry = appGetEntry(id);
+		entry.getSockData()->paused = false; 
 	}
 };
 

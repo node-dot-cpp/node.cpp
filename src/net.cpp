@@ -38,6 +38,15 @@ using namespace nodecpp;
 using namespace nodecpp::net;
 
 
+void SocketBase::ref() {netSocketManagerBase->appRef(dataForCommandProcessing.id); }
+void SocketBase::unref() { netSocketManagerBase->appUnref(dataForCommandProcessing.id); }
+void SocketBase::resume() { netSocketManagerBase->appResume(dataForCommandProcessing.id); }
+void SocketBase::pause() { netSocketManagerBase->appPause(dataForCommandProcessing.id); }
+/*void SocketBase::ref() { dataForCommandProcessing.refed = true; }
+void SocketBase::unref() { dataForCommandProcessing.refed = false; }
+void SocketBase::resume() { dataForCommandProcessing.paused = false; }
+void SocketBase::pause() { dataForCommandProcessing.paused = true; }*/
+
 void SocketBase::destroy() { OSLayer::appDestroy(dataForCommandProcessing); }
 void SocketBase::end() { OSLayer::appEnd(dataForCommandProcessing); }
 bool SocketBase::write(const uint8_t* data, uint32_t size)
