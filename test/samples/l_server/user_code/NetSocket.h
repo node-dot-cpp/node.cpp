@@ -59,6 +59,7 @@ public:
 			net::Socket* s = static_cast<net::Socket*>(socket);
 			s->on( event::close, [this, s](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
+				s->unref();
 				srv.removeSocket( s );
 			});
 			s->on( event::data, [this, s](Buffer& buffer) {

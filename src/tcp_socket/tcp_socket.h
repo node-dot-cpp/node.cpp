@@ -207,7 +207,8 @@ public:
 				const auto& current = ioSockets[i];
 				NODECPP_ASSERT(current.getSockData()->osSocket != INVALID_SOCKET);
 
-				anyRefed = anyRefed || current.getSockData()->refed;
+//				anyRefed = anyRefed || current.getSockData()->refed;
+				anyRefed = anyRefed || current.refed;
 //if ( current.getSockData()->refed )
 	//printf( "sock %llu is still refed\n", current.getSockData()->osSocket );
 
@@ -281,7 +282,8 @@ protected:
 	void closeSocket(NetSocketEntry& entry) //app-infra neutral
 	{
 		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closing;
-		entry.getSockData()->refed = true;
+		//entry.getSockData()->refed = true;
+		//entry.refed = false;
 
 	//	evs.add(&net::Socket::emitError, entry.getPtr(), storeError(Error()));
 	//	pendingCloseEvents.emplace_back(entry.index, std::function<void()>());
@@ -290,7 +292,8 @@ protected:
 	void errorCloseSocket(NetSocketEntry& entry, Error& err) //app-infra neutral
 	{
 		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
-		entry.getSockData()->refed = true;
+		//entry.getSockData()->refed = true;
+		//entry.refed = false;
 
 	//	std::function<void()> ev = std::bind(&net::Socket::emitError, entry.getPtr(), std::ref(err));
 	//	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), std::ref(err));
@@ -301,12 +304,12 @@ protected:
 public:
 	void appRef(size_t id) { 
 		auto& entry = appGetEntry(id);
-		entry.getSockData()->refed = true;
+		//entry.getSockData()->refed = true;
 		entry.refed = true; 
 	}
 	void appUnref(size_t id) { 
 		auto& entry = appGetEntry(id);
-		entry.getSockData()->refed = false; 
+		//entry.getSockData()->refed = false; 
 		entry.refed = false; 
 	}
 	void appPause(size_t id) { 
