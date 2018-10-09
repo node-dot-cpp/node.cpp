@@ -61,6 +61,7 @@ namespace nodecpp {
 
 			void emitClose(bool hadError) {
 				state = DESTROYED;
+				unref();
 				this->dataForCommandProcessing.id = 0;
 				//handler may release, put virtual onClose first.
 				eClose.emit(hadError);

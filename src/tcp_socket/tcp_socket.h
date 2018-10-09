@@ -376,6 +376,7 @@ public:
 						internal_usage_only::internal_close(entry.getSockData()->osSocket);
 					}
 
+#if 0 // old version (note that emitClose is before emiterror in both cases; whether it is OK or not, is a separate question)
 					if (err) //if error closing, then first error event
 					{
 	//					evs.add(std::move(current.second));
@@ -388,6 +389,12 @@ public:
 	//				entry.getPtr()->emitClose(err);
 					EmitterType::emitClose(entry.getEmitter(), err);
 					entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closed;
+#else // new version
+					EmitterType::emitClose(entry.getEmitter(), err);
+					entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Closed;
+					if (err && entry.isValid()) //if error closing, then first error event
+						EmitterType::emitError(entry.getEmitter(), current.second.second);
+#endif // 0
 				}
 				entry = NetSocketEntry(current.first); 
 			}
