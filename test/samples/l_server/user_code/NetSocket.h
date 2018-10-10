@@ -37,7 +37,7 @@ class MySampleTNode : public NodeBase
 	using ServerIdType = int;
 
 public:
-	MySampleTNode() : srv( [this](OpaqueSocketData& sdata) { return makeSocket(sdata);} ), srvCtrl( [this](OpaqueSocketData& sdata) { return makeCtrlSocket(sdata);} )
+	MySampleTNode()
 	{
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}

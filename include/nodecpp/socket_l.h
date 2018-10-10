@@ -36,13 +36,15 @@ namespace nodecpp {
 	namespace net {
 
 		class Socket : public SocketTBase {
-			 class EventEmitterSupportingListeners<event::Close, SocketListener, &SocketListener::onClose> eClose;
-			 class EventEmitterSupportingListeners<event::Connect, SocketListener, &SocketListener::onConnect> eConnect;
-			 class EventEmitterSupportingListeners<event::Data, SocketListener, &SocketListener::onData> eData;
-			 class EventEmitterSupportingListeners<event::Drain, SocketListener, &SocketListener::onDrain> eDrain;
-			 class EventEmitterSupportingListeners<event::End, SocketListener, &SocketListener::onEnd> eEnd;
-			 class EventEmitterSupportingListeners<event::Error, SocketListener, &SocketListener::onError> eError;
-			 class EventEmitterSupportingListeners<event::Accepted, SocketListener, &SocketListener::onAccepted> eAccepted;
+			class EventEmitterSupportingListeners<event::Close, SocketListener, &SocketListener::onClose> eClose;
+			class EventEmitterSupportingListeners<event::Connect, SocketListener, &SocketListener::onConnect> eConnect;
+			class EventEmitterSupportingListeners<event::Data, SocketListener, &SocketListener::onData> eData;
+			class EventEmitterSupportingListeners<event::Drain, SocketListener, &SocketListener::onDrain> eDrain;
+			class EventEmitterSupportingListeners<event::End, SocketListener, &SocketListener::onEnd> eEnd;
+			class EventEmitterSupportingListeners<event::Error, SocketListener, &SocketListener::onError> eError;
+			class EventEmitterSupportingListeners<event::Accepted, SocketListener, &SocketListener::onAccepted> eAccepted;
+
+			std::vector<std::unique_ptr<SocketListener>> ownedListeners;
 
 			void registerMeAndAcquireSocket();
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
@@ -136,6 +138,16 @@ namespace nodecpp {
 				eError.once(l);
 				eEnd.once(l);
 				eAccepted.once(l);
+			}
+
+			void on( std::unique_ptr<SocketListener>& l) {
+				ownedListeners.emplace_back( std::move( l ) );
+				on( l.get() );
+			}
+
+			void once( std::unique_ptr<SocketListener>& l) {
+				ownedListeners.emplace_back( std::move( l ) );
+				once( l.get() );
 			}
 
 			void on( std::string name, event::Close::callback cb) {

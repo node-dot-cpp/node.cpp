@@ -39,19 +39,20 @@ class MySampleTNode : public NodeBase
 	class MyServerSocketListener : public SocketListener
 	{
 		MySampleTNode* myNode;
+		net::Socket* mySocket;
 		int id;
 	public:
-		MyServerSocketListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
+		MyServerSocketListener(MySampleTNode* node, net::Socket* mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
 		void onClose(bool hadError) override
 		{
 			print("server socket: onCloseServerSocket!\n");
-			myNode->serverSockets.remove(id);
+			myNode->srv.removeSocket(mySocket);
 		}
 		void onData(Buffer& buffer) override {
 			if ( buffer.size() < 2 )
 			{
 				printf( "Insufficient data on socket idx = %d\n", id );
-				myNode->serverSockets.at(id)->unref();
+				mySocket->unref();
 				return;
 			}
 	//		print("server socket: onData for idx %d !\n", *extra );
@@ -60,7 +61,7 @@ class MySampleTNode : public NodeBase
 			if ( receivedSz != buffer.size() )
 			{
 				printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", id, receivedSz, buffer.size() );
-				myNode->serverSockets.at(id)->unref();
+				mySocket->unref();
 				return;
 			}
 
@@ -70,7 +71,7 @@ class MySampleTNode : public NodeBase
 				Buffer reply(requestedSz);
 				//buffer.begin()[0] = (uint8_t)requestedSz;
 				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-				myNode->serverSockets.at(id)->write(reply.begin(), requestedSz);
+				mySocket->write(reply.begin(), requestedSz);
 			}
 
 			myNode->stats.recvSize += receivedSz;
@@ -80,39 +81,40 @@ class MySampleTNode : public NodeBase
 		void onEnd() override {
 			print("server socket: onEnd!\n");
 			const char buff[] = "goodbye!";
-			myNode->serverSockets.at(id)->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
-			myNode->serverSockets.at(id)->end();
+			mySocket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			mySocket->end();
 		}
 	};
 
 	class MyServerCtrlSocketListener : public SocketListener
 	{
 		MySampleTNode* myNode;
+		net::Socket* mySocket;
 		int id;
 	public:
-		MyServerCtrlSocketListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
+		MyServerCtrlSocketListener(MySampleTNode* node, net::Socket* mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
 		void onClose(bool hadError) override
 		{
 			print("server socket: onCloseServerSocket!\n");
-			myNode->serverCtrlSockets.remove(id);
+			myNode->srvCtrl.removeSocket(mySocket);
 		}
 		void onData(Buffer& buffer) override {
 			size_t requestedSz = buffer.begin()[1];
 			if ( requestedSz )
 			{
 				Buffer reply(sizeof(stats));
-				myNode->stats.connCnt = myNode->serverSockets.getServerSockCount();
+				myNode->stats.connCnt = myNode->srv.getSockCount();
 				size_t replySz = sizeof(Stats);
 				uint8_t* buff = myNode->ptr.get();
 				memcpy( buff, &(myNode->stats), replySz); // naive marshalling will work for a limited number of cases
-				myNode->serverCtrlSockets.at(id)->write(buff, replySz);
+				mySocket->write(buff, replySz);
 			}
 		}
 		void onEnd() override {
 			print("server socket: onEnd!\n");
 			const char buff[] = "goodbye!";
-			myNode->serverCtrlSockets.at(id)->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
-			myNode->serverCtrlSockets.at(id)->end();
+			mySocket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			mySocket->end();
 		}
 	};
 
@@ -120,17 +122,19 @@ class MySampleTNode : public NodeBase
 	{
 		MySampleTNode* myNode;
 		int id;
+		int sockIDBase = 0;
 	public:
 		MyServerListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
 			print("server: onCloseServer()!\n");
-			myNode->serverSockets.clear();
 		}
 		void onConnection(/*const ServerIdType* extra,*/ net::SocketTBase* socket) override { 
 			print("server: onConnection()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket != nullptr ); 
-			myNode->serverSockets.add( socket );
+			net::Socket* s = static_cast<net::Socket*>( socket );
+			std::unique_ptr<SocketListener> l( new MyServerCtrlSocketListener( myNode, s, sockIDBase++ ) );
+			s->on( l );
 		}
 	};
 	MyServerListener myServerListener;
@@ -139,23 +143,26 @@ class MySampleTNode : public NodeBase
 	{
 		MySampleTNode* myNode;
 		int id;
+		int sockIDBase = 0;
 	public:
 		MyCtrlServerListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
 			print("server: onCloseServerCtrl()!\n");
-			myNode->serverCtrlSockets.clear();
 		}
 		void onConnection(/*const ServerIdType* extra,*/ net::SocketTBase* socket) override { 
 			print("server: onConnectionCtrl()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket != nullptr ); 
-			myNode->serverCtrlSockets.add( socket );
+			net::Socket* s = static_cast<net::Socket*>( socket );
+			std::unique_ptr<SocketListener> l( new MyServerSocketListener( myNode, s, sockIDBase++ ) );
+			s->on( l );
+//			myNode->serverCtrlSockets.add( socket );
 		}
 	};
 	MyCtrlServerListener myCtrlServerListener;
 
 public:
-	MySampleTNode() : myServerListener(this, 0), myCtrlServerListener(this, 1), srv( [this](OpaqueSocketData& sdata) { return makeSocket(sdata);} ), srvCtrl( [this](OpaqueSocketData& sdata) { return makeCtrlSocket(sdata);} )
+	MySampleTNode() : myServerListener(this, 0), myCtrlServerListener(this, 1)
 	{
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
@@ -275,6 +282,7 @@ public:
 
 	// server
 private:
+#if 0
 	template<class Socket>
 	class ServerSockets
 	{
@@ -334,6 +342,7 @@ private:
 	};
 	ServerSockets<net::Socket> serverSockets;
 	net::SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
+#endif // 0
 
 public:
 
@@ -341,8 +350,8 @@ public:
 
 	// ctrl server
 private:
-	ServerSockets<net::Socket> serverCtrlSockets;
-	net::SocketTBase* makeCtrlSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
+//	ServerSockets<net::Socket> serverCtrlSockets;
+//	net::SocketTBase* makeCtrlSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
 
 public:
 	net::Server srvCtrl;

@@ -77,7 +77,8 @@ void ServerBase::close()
 
 
 ServerO::ServerO() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerO);}
-Server::Server(createSocketCallback cb) {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL); createSocketCB = std::move(cb);}
+//Server::Server(createSocketCallback cb) {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL); createSocketCB = std::move(cb);}
+Server::Server() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL);}
 
 void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 {

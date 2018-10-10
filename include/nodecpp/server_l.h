@@ -109,12 +109,15 @@ namespace nodecpp {
 			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
 			EventEmitterSupportingListeners<event::Error, ServerListener, &ServerListener::onError> eError;
 
-			using createSocketCallback = std::function<nodecpp::net::SocketTBase*(OpaqueSocketData& sdata)>;
-			createSocketCallback createSocketCB;
+			std::vector<std::unique_ptr<ServerListener>> ownedListeners;
+
+			//using createSocketCallback = std::function<nodecpp::net::SocketTBase*(OpaqueSocketData& sdata)>;
+			//createSocketCallback createSocketCB;
 
 		public:
-			Server() = delete;
-			Server(createSocketCallback cb);
+			//Server() = delete;
+			Server();
+			//Server(createSocketCallback cb);
 			~Server() {socketList.clear();}
 
 			void emitClose(bool hadError) {
@@ -173,6 +176,16 @@ namespace nodecpp {
 				eConnection.once(l);
 				eListening.once(l);
 				eError.once(l);
+			}
+
+			void on( std::unique_ptr<ServerListener>& l) {
+				ownedListeners.emplace_back( std::move( l ) );
+				on( l.get() );
+			}
+
+			void once( std::unique_ptr<ServerListener>& l) {
+				ownedListeners.emplace_back( std::move( l ) );
+				once( l.get() );
 			}
 
 			void on(std::string name, event::Close::callback cb) {
