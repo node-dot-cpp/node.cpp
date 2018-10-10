@@ -107,7 +107,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 #endif
 		;*/
 	size_t fds_sz;
-	if constexpr ( !std::is_same< Infra::ServerEmitterTypeT, void >::value )
+	if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManagerBase::MAX_SOCKETS;
 	else
 		fds_sz = NetSocketManagerBase::MAX_SOCKETS;
@@ -133,7 +133,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 #endif
 		)
 		return false; //stop here*/
-	if constexpr ( !std::is_same< Infra::ServerEmitterTypeT, void >::value )
+	if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 	{
 		fds_end += NetServerManagerBase::MAX_SOCKETS;
 	//	pollfdsz = NetServerManager::MAX_SOCKETS;
@@ -187,7 +187,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 		fds_begin = fds_end;
 //		fds_begin += pollfdsz;
 #ifndef NET_CLIENT_ONLY
-		if constexpr ( !std::is_same< Infra::ServerEmitterTypeT, void >::value )
+		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			fds_end += NetServerManagerBase::MAX_SOCKETS;
 			infra.netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
@@ -221,7 +221,7 @@ void runInfraLoop2( Infra& infra )
 
 		EvQueue queue;
 #ifndef NET_CLIENT_ONLY
-		if constexpr ( !std::is_same< Infra::ServerEmitterTypeT, void >::value )
+		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			infra.netServer.infraGetPendingEvents(queue);
 			queue.emit();
@@ -243,7 +243,7 @@ void runInfraLoop2( Infra& infra )
 		infra.netSocket.infraGetCloseEvent(queue);
 		infra.netSocket.infraProcessSockAcceptedEvents();
 #ifndef NET_CLIENT_ONLY
-		if constexpr ( !std::is_same< Infra::ServerEmitterTypeT, void >::value )
+		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			infra.netServer.infraGetCloseEvents(queue);
 		}
@@ -252,7 +252,7 @@ void runInfraLoop2( Infra& infra )
 
 		infra.netSocket.infraClearStores();
 #ifndef NET_CLIENT_ONLY
-		if constexpr ( !std::is_same< Infra::ServerEmitterTypeT, void >::value )
+		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			infra.netServer.infraClearStores();
 		}
