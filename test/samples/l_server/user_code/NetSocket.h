@@ -33,9 +33,6 @@ class MySampleTNode : public NodeBase
 	size_t size = 64 * 1024;
 	bool letOnDrain = false;
 
-	using SocketIdType = int;
-	using ServerIdType = int;
-
 public:
 	MySampleTNode()
 	{
@@ -138,10 +135,6 @@ public:
 		srv.listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
 		srvCtrl.listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
 	}
-
-private:
-	net::SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
-	net::SocketTBase* makeCtrlSocket(OpaqueSocketData& sdata) { return new net::Socket( sdata ); }
 
 public:
 	net::Server srv;

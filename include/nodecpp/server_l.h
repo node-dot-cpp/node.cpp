@@ -103,6 +103,7 @@ namespace nodecpp {
 				size_t getServerSockCount() { return _size; }
 			};
 			SocketList socketList;
+
 			// event emitters
 			EventEmitterSupportingListeners<event::Close, ServerListener, &ServerListener::onClose> eClose;
 			EventEmitterSupportingListeners<event::Connection, ServerListener, &ServerListener::onConnection> eConnection;
@@ -111,13 +112,8 @@ namespace nodecpp {
 
 			std::vector<std::unique_ptr<ServerListener>> ownedListeners;
 
-			//using createSocketCallback = std::function<nodecpp::net::SocketTBase*(OpaqueSocketData& sdata)>;
-			//createSocketCallback createSocketCB;
-
 		public:
-			//Server() = delete;
 			Server();
-			//Server(createSocketCallback cb);
 			~Server() {socketList.clear();}
 
 			void emitClose(bool hadError) {
@@ -145,7 +141,6 @@ namespace nodecpp {
 
 
 			SocketTBase* makeSocket(OpaqueSocketData& sdata) {
-//				return new Socket(sdata);
 				SocketForserver* sock = socketList.getNewSocket(sdata);
 				return sock;
 			}
