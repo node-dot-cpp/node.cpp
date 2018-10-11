@@ -270,7 +270,7 @@ public:
 	NetSocketManager() {}
 
 	// to help with 'poll'
-	void infraGetCloseEvent(EvQueue& evs)
+	void infraGetCloseEvent(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to appClose it,
 		// and push an event here to notify autom later.
@@ -331,7 +331,7 @@ public:
 			pendingAcceptedEvents.clear();
 		}
 	}
-	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs)
+	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end/*, EvQueue& evs*/)
 	{
 		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
 		for (size_t i = 0; i != ioSockets.size(); ++i)
@@ -362,19 +362,19 @@ public:
 						if (!current.getSockData()->paused)
 						{
 							//NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
-							infraProcessReadEvent(current, evs);
+							infraProcessReadEvent(current/*, evs*/);
 						}
 					}
 					else if ((begin[i].revents & POLLHUP) != 0)
 					{
 						NODECPP_TRACE("POLLHUP event at {}", begin[i].fd);
-						infraProcessRemoteEnded(current, evs);
+						infraProcessRemoteEnded(current/*, evs*/);
 					}
 				
 					if ((begin[i].revents & POLLOUT) != 0)
 					{
 						NODECPP_TRACE("POLLOUT event at {}", begin[i].fd);
-						infraProcessWriteEvent(current, evs);
+						infraProcessWriteEvent(current/*, evs*/);
 					}
 				}
 				//else if (begin[i].revents != 0)
@@ -388,7 +388,7 @@ public:
 	}
 
 private:
-	void infraProcessReadEvent(NetSocketEntry& entry, EvQueue& evs)
+	void infraProcessReadEvent(NetSocketEntry& entry/*, EvQueue& evs*/)
 	{
 		auto res = OSLayer::infraGetPacketBytes(entry.getSockData()->recvBuffer, entry.getSockData()->osSocket);
 		if (res.first)
@@ -403,7 +403,7 @@ private:
 			}
 			else //if (!entry.remoteEnded)
 			{
-				infraProcessRemoteEnded(entry, evs);
+				infraProcessRemoteEnded(entry/*, evs*/);
 			}
 		}
 		else
@@ -415,7 +415,7 @@ private:
 		}
 	}
 
-	void infraProcessRemoteEnded(NetSocketEntry& entry, EvQueue& evs)
+	void infraProcessRemoteEnded(NetSocketEntry& entry/*, EvQueue& evs*/)
 	{
 		if (!entry.getSockData()->remoteEnded)
 		{
@@ -449,7 +449,7 @@ private:
 
 	}
 
-	void infraProcessWriteEvent(NetSocketEntry& current, EvQueue& evs)
+	void infraProcessWriteEvent(NetSocketEntry& current/*, EvQueue& evs*/)
 	{
 		OSLayer::ShouldEmit status = OSLayer::infraProcessWriteEvent(*current.getSockData());
 		switch ( status )
@@ -544,8 +544,6 @@ protected:
 	size_t addEntry(NodeBase* node, net::ServerTBase* ptr, int typeId);
 	NetServerEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetServerEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
-
-//	void infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs);
 };
 
 extern thread_local NetServerManagerBase* netServerManagerBase;
@@ -605,7 +603,7 @@ public:
 
 		return anyRefed;
 	}
-	void infraGetCloseEvents(EvQueue& evs)
+	void infraGetCloseEvents(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to close it,
 		// and push an event here to notify later.
@@ -631,7 +629,7 @@ public:
 		pendingCloseEvents.clear();
 	}
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
-	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs)
+	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end/*, EvQueue& evs*/)
 	{
 		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
 		for (size_t i = 0; i != ioSockets.size(); ++i)
@@ -643,25 +641,25 @@ public:
 				{
 					NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
 					internal_usage_only::internal_getsockopt_so_error(current.getServerData()->osSocket);
-					infraMakeErrorEventAndClose(current, evs);
+					infraMakeErrorEventAndClose(current/*, evs*/);
 				}
 				else if ((begin[i].revents & POLLIN) != 0)
 				{
 					NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
-					infraProcessAcceptEvent(current, evs);
+					infraProcessAcceptEvent(current/*, evs*/);
 				}
 				else if (begin[i].revents != 0)
 				{
 					NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
 					internal_usage_only::internal_getsockopt_so_error(current.getServerData()->osSocket);
-					infraMakeErrorEventAndClose(current, evs);
+					infraMakeErrorEventAndClose(current/*, evs*/);
 				}
 			}
 		}
 	}
 
 private:
-	void infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& evs)
+	void infraProcessAcceptEvent(NetServerEntry& entry/*, EvQueue& evs*/)
 	{
 		OpaqueSocketData osd( false );
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerData()->osSocket, osd) )
@@ -674,7 +672,7 @@ private:
 		return;
 	}
 
-	void infraMakeErrorEventAndClose(NetServerEntry& entry, EvQueue& evs)
+	void infraMakeErrorEventAndClose(NetServerEntry& entry/*, EvQueue& evs*/)
 	{
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 		Error e;

@@ -98,7 +98,7 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
 template<class Infra>
-bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
+bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now/*, EvQueue& evs*/)
 {
 	size_t fds_sz;
 	if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
@@ -162,7 +162,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 		fds_begin = fds.get();
 		fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
 //		pollfdsz = NetSocketManagerBase::MAX_SOCKETS;
-		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end, evs);
+		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end/*, evs*/);
 //		infra.netSocket.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
 
 		fds_begin = fds_end;
@@ -170,7 +170,7 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			fds_end += NetServerManagerBase::MAX_SOCKETS;
-			infra.netServer.infraCheckPollFdSet(fds_begin, fds_end, evs);
+			infra.netServer.infraCheckPollFdSet(fds_begin, fds_end/*, evs*/);
 	//		pollfdsz = NetServerManager::MAX_SOCKETS;
 	//		infra.netServer.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
 		}
@@ -211,14 +211,14 @@ void runInfraLoop2( Infra& infra )
 		queue.emit();
 
 		now = infraGetCurrentTime();
-		bool refed = /*infra.*/pollPhase2(infra, infra.refedTimeout(), infra.nextTimeout(), now, queue);
+		bool refed = /*infra.*/pollPhase2(infra, infra.refedTimeout(), infra.nextTimeout(), now/*, queue*/);
 		if(!refed)
 			return;
 
 		queue.emit();
 //		infra.emitInmediates();
 
-		infra.netSocket.infraGetCloseEvent(queue);
+		infra.netSocket.infraGetCloseEvent(/*queue*/);
 		infra.netSocket.infraProcessSockAcceptedEvents();
 		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
@@ -250,7 +250,7 @@ class Infrastructure
 	template<class T> 
 	friend void runInfraLoop2( T& );
 	template<class T>
-	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
+	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now/*, EvQueue& evs*/);
 #endif // USING_T_SOCKETS
 
 
