@@ -42,10 +42,6 @@ void SocketBase::ref() {netSocketManagerBase->appRef(dataForCommandProcessing.id
 void SocketBase::unref() { netSocketManagerBase->appUnref(dataForCommandProcessing.id); }
 void SocketBase::resume() { netSocketManagerBase->appResume(dataForCommandProcessing.id); }
 void SocketBase::pause() { netSocketManagerBase->appPause(dataForCommandProcessing.id); }
-/*void SocketBase::ref() { dataForCommandProcessing.refed = true; }
-void SocketBase::unref() { dataForCommandProcessing.refed = false; }
-void SocketBase::resume() { dataForCommandProcessing.paused = false; }
-void SocketBase::pause() { dataForCommandProcessing.paused = true; }*/
 
 void SocketBase::destroy() { OSLayer::appDestroy(dataForCommandProcessing); }
 void SocketBase::end() { OSLayer::appEnd(dataForCommandProcessing); }
@@ -65,7 +61,6 @@ void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, por
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef NET_CLIENT_ONLY
 
 void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing.index); }
 void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing.index); }
@@ -77,7 +72,6 @@ void ServerBase::close()
 
 
 ServerO::ServerO() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerO);}
-//Server::Server(createSocketCallback cb) {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL); createSocketCB = std::move(cb);}
 Server::Server() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL);}
 
 void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
@@ -86,9 +80,6 @@ void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 }
 
 void ServerTBase::registerServerByID(NodeBase* node, net::ServerTBase* t, int typeId) { registerServer(node, t, typeId); }
-
-
-#endif // NO_SERVER_STAFF
 
 
 

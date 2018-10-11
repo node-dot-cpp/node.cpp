@@ -329,31 +329,6 @@ class NetSocketManager : public NetSocketManagerBase {
 public:
 	NetSocketManager() {}
 
-#ifndef NET_CLIENT_ONLY
-/*	template<class SocketType>
-	bool infraAddAccepted(SocketType* ptr, SOCKET sock, EvQueue& evs)
-	{
-		SocketRiia s(sock);
-		size_t ix = addEntry(ptr);
-		if (ix == 0)
-		{
-			NODECPP_TRACE("Couldn't allocate new StreamSocket, closing {}", s.get());
-			return false;
-		}
-
-		auto& entry = appGetEntry(ix);
-		entry.getSockData()->osSocket = s.release();
-		entry.getSockData()->state = net::SocketBase::DataForCommandProcessing::Connected;
-
-		//[+++]evs.add(&net::Socket::emitAccepted, ptr, ix);
-
-		return true;
-	}*/
-#endif // !NET_CLIENT_ONLY
-
-	
-	
-public:
 	// to help with 'poll'
 	void infraGetCloseEvent(EvQueue& evs)
 	{
@@ -553,7 +528,6 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef NET_CLIENT_ONLY
 class NetServerEntry {
 public:
 	size_t index;
@@ -823,8 +797,6 @@ template<>
 class NetServerManager<void>
 {
 };
-
-#endif // !NET_CLIENT_ONLY
 
 
 #endif // TCP_SOCKET_H

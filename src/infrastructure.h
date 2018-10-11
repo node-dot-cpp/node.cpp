@@ -97,15 +97,9 @@ public:
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
-#if 1
 template<class Infra>
 bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs)
 {
-/*	size_t fds_sz = NetSocketManagerBase::MAX_SOCKETS 
-#ifndef NET_CLIENT_ONLY
-		+ NetServerManagerBase::MAX_SOCKETS
-#endif
-		;*/
 	size_t fds_sz;
 	if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManagerBase::MAX_SOCKETS;
@@ -118,21 +112,8 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
 	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
 
-//	fds_begin += pollfdsz;
 	fds_begin = fds_end;
-#ifndef NET_CLIENT_ONLY
-/*		fds_end += NetServerManagerBase::MAX_SOCKETS;
-	//	pollfdsz = NetServerManager::MAX_SOCKETS;
-		bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
-	//	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, pollfdsz);*/
-#endif
 
-/*	if (refed == false && refedSocket == false 
-#ifndef NET_CLIENT_ONLY
-		&& refedServer == false
-#endif
-		)
-		return false; //stop here*/
 	if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 	{
 		fds_end += NetServerManagerBase::MAX_SOCKETS;
@@ -186,7 +167,6 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 
 		fds_begin = fds_end;
 //		fds_begin += pollfdsz;
-#ifndef NET_CLIENT_ONLY
 		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			fds_end += NetServerManagerBase::MAX_SOCKETS;
@@ -194,7 +174,6 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 	//		pollfdsz = NetServerManager::MAX_SOCKETS;
 	//		infra.netServer.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
 		}
-#endif
 
 		//if (queue.empty())
 		//{
@@ -220,13 +199,12 @@ void runInfraLoop2( Infra& infra )
 	{
 
 		EvQueue queue;
-#ifndef NET_CLIENT_ONLY
+
 		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			infra.netServer.infraGetPendingEvents(queue);
 			queue.emit();
 		}
-#endif
 
 		uint64_t now = infraGetCurrentTime();
 		infra.timeout.infraTimeoutEvents(now, queue);
@@ -242,24 +220,19 @@ void runInfraLoop2( Infra& infra )
 
 		infra.netSocket.infraGetCloseEvent(queue);
 		infra.netSocket.infraProcessSockAcceptedEvents();
-#ifndef NET_CLIENT_ONLY
 		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			infra.netServer.infraGetCloseEvents(queue);
 		}
-#endif
 		queue.emit();
 
 		infra.netSocket.infraClearStores();
-#ifndef NET_CLIENT_ONLY
 		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
 			infra.netServer.infraClearStores();
 		}
-#endif
 	}
 }
-#endif
 
 
 #ifndef USING_T_SOCKETS
@@ -282,9 +255,7 @@ class Infrastructure
 
 
 	NetSocketManager<EmitterType> netSocket;
-#ifndef NET_CLIENT_ONLY
 	NetServerManager<ServerEmitterType> netServer;
-#endif
 	TimeoutManager timeout;
 //	EvQueue inmediateQueue;
 
@@ -298,9 +269,7 @@ public:
 	bool running = true;
 	uint64_t nextTimeoutAt = 0;
 	NetSocketManager<EmitterType>& getNetSocket() { return netSocket; }
-#ifndef NET_CLIENT_ONLY
 	NetServerManager<ServerEmitterType>& getNetServer() { return netServer; }
-#endif
 	TimeoutManager& getTimeout() { return timeout; }
 //	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
 //	void emitInmediates() { inmediateQueue.emit(); }
@@ -342,8 +311,6 @@ void connectSocket(net::SocketTBase* s, const char* ip, uint16_t port)
 	netSocketManagerBase->appConnectSocket(s, ip, port);
 }
 
-#ifndef NET_CLIENT_ONLY
-
 inline
 void registerServer(NodeBase* node, net::ServerTBase* t, int typeId)
 {
@@ -355,7 +322,6 @@ void serverListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int back
 {
 	return netServerManagerBase->appListen(ptr, ip, port, backlog);
 }*/
-#endif // NET_CLIENT_ONLY
 
 template<class Node>
 class Runnable : public RunnableBase
@@ -364,28 +330,19 @@ class Runnable : public RunnableBase
 	template<class ClientSocketEmitter, class ServerSocketEmitter>
 	void internalRun()
 	{
-//		if( !std::is_same< ServerSocketEmitter, void >::value )
+		Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
+		netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
+		netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
+		netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
+		if constexpr( !std::is_same< ServerSocketEmitter, void >::value )
 		{
-			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
-			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
-			netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
-			netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
-#ifndef NET_CLIENT_ONLY
-			if constexpr( !std::is_same< ServerSocketEmitter, void >::value )
-			{
-				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
-				netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
-				netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
-			}
-#endif // NET_CLIENT_ONLY
-			node = new Node;
-			node->main();
-			runInfraLoop2<Infrastructure<ClientSocketEmitter, ServerSocketEmitter>>(infra);
-	//		nodecpp::runLoop();
+			netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
+			netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
+			netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
 		}
-/*		else
-		{
-		}*/
+		node = new Node;
+		node->main();
+		runInfraLoop2<Infrastructure<ClientSocketEmitter, ServerSocketEmitter>>(infra);
 	}
 public:
 	using NodeType = Node;
@@ -401,23 +358,5 @@ extern thread_local Infrastructure<net::SocketEmitter> infra;
 inline
 NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
 #endif // USING_T_SOCKETS
-
-#ifndef NET_CLIENT_ONLY
-//inline
-//Infrastructure<net::SocketEmitter>& getInfra() { return infra; }
-#endif
-
-//NetSocketManagerBase& getNetSocket();
-
-#ifndef NET_CLIENT_ONLY
-//inline
-//NetServerManager& getNetServer() { return infra.getNetServer(); }
-#endif
-
-//template<class T>
-//size_t connectToInfra(T* t, const char* ip, uint16_t port) { return infra.getNetSocket().appConnect(t, ip, port); }
-//size_t connectToInfra(T* t, const char* ip, uint16_t port) { return /*getNetSocket().appConnect(t, ip, port)*/0; }
-
-//using EvQueue = std::vector<std::function<void()>>;
 
 #endif //INFRASTRUCTURE_H
