@@ -153,10 +153,10 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\3rdparty\fmt\src\format.cc" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
+    <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\..\src\loop.cpp" />
     <ClCompile Include="..\..\..\..\src\net.cpp" />
     <ClCompile Include="..\..\..\..\src\tcp_socket\tcp_socket.cpp" />
-    <ClCompile Include="..\infra_code\infra_main.cpp" />
     <ClCompile Include="..\user_code\NetSocket.cpp" />
   </ItemGroup>
   <ItemGroup>

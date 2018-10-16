@@ -153,11 +153,16 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\3rdparty\fmt\src\format.cc" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
+    <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\..\src\loop.cpp" />
     <ClCompile Include="..\..\..\..\src\net.cpp" />
     <ClCompile Include="..\..\..\..\src\tcp_socket\tcp_socket.cpp" />
-    <ClCompile Include="..\infra_code\infra_main.cpp" />
-    <ClCompile Include="..\user_code\NetSocket.cpp" />
+    <ClCompile Include="..\user_code\NetSocket.cpp">
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</PreprocessToFile>
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</PreprocessToFile>
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</PreprocessToFile>
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</PreprocessToFile>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\assert.h" />
@@ -186,6 +191,9 @@
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket_base.h" />
     <ClInclude Include="..\user_code\NetSocket.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="x64\Release\NetSocket1.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
