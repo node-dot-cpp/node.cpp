@@ -59,7 +59,7 @@ namespace nodecpp {
 		};
 
 
-		struct OpaqueEmitterForServer
+/*		struct OpaqueEmitterForServer
 		{
 			using PtrType = nodecpp::net::ServerTBase*;
 			PtrType ptr = nullptr;
@@ -68,7 +68,7 @@ namespace nodecpp {
 			OpaqueEmitterForServer() : ptr( nullptr), type(-1) {}
 			OpaqueEmitterForServer( NodeBase* node, PtrType ptr_, int type_ ) : ptr( ptr_), type(type_), nodePtr( node ) {}
 			bool isValid() const { return ptr != nullptr; }
-		};
+		};*/
 
 	} // namespace net
 

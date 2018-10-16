@@ -40,13 +40,14 @@ public:
 	size_t index;
 	bool refed = false;
 
-	net::SocketBase* sockPtr = nullptr;
+//	net::SocketBase* sockPtr = nullptr;
+	void* sockPtr = nullptr;
 	OpaqueEmitter emitter;
 
 
 	NetSocketEntry(size_t index) : index(index) {}
 #ifdef USING_T_SOCKETS
-	NetSocketEntry(NodeBase* node, size_t index, net::SocketTBase* ptr_, int type) : index(index), sockPtr(ptr_), emitter(node, ptr_, type) {}
+	NetSocketEntry(NodeBase* node, size_t index, net::SocketTBase* ptr_, int type) : index(index), sockPtr(ptr_), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr_, type) {}
 #else
 	template<class SocketType>
 	NetSocketEntry(size_t index, SocketType* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
@@ -61,7 +62,7 @@ public:
 	bool isValid() const { return refed && emitter.isValid(); }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::SocketBase::DataForCommandProcessing* getSockData() const { assert(sockPtr != nullptr); return sockPtr ? &(sockPtr->dataForCommandProcessing) : nullptr; }
+	net::SocketBase::DataForCommandProcessing* getSockData() const { NODECPP_ASSERT(sockPtr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return sockPtr ? &( (static_cast<net::SocketTBase*>(sockPtr))->dataForCommandProcessing ) : nullptr; }
 };
 
 class NetSocketManagerBase
@@ -471,15 +472,16 @@ private:
 class NetServerEntry {
 public:
 	size_t index;
-	net::ServerTBase* serverPtr = nullptr;
-	net::OpaqueEmitterForServer emitter;
+//	net::ServerTBase* serverPtr = nullptr;
+	void* serverPtr = nullptr;
+	OpaqueEmitter emitter;
 
 //	bool refed = true;
 //	SOCKET osSocket = INVALID_SOCKET;
 //	short fdEvents = 0;
 
-	NetServerEntry(size_t index) : index(index), serverPtr(nullptr), emitter(nullptr, nullptr, -1) {}
-	NetServerEntry(size_t index, NodeBase* node, net::ServerTBase* serverPtr_, int type) : index(index), serverPtr(serverPtr_), emitter(node, serverPtr_, type) {serverPtr_->dataForCommandProcessing.index = index;}
+	NetServerEntry(size_t index) : index(index), serverPtr(nullptr), emitter(OpaqueEmitter::ObjectType::Undefined, nullptr, nullptr, -1) {}
+	NetServerEntry(size_t index, NodeBase* node, net::ServerTBase* serverPtr_, int type) : index(index), serverPtr(serverPtr_), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, serverPtr_, type) {serverPtr_->dataForCommandProcessing.index = index;}
 	
 	NetServerEntry(const NetServerEntry& other) = delete;
 	NetServerEntry& operator=(const NetServerEntry& other) = delete;
@@ -490,8 +492,8 @@ public:
 	bool isValid() const { return serverPtr != nullptr; }
 
 //	net::ServerTBase* getPtr() const { return serverPtr; }
-	const net::OpaqueEmitterForServer& getEmitter() const { return emitter; }
-	net::ServerTBase::DataForCommandProcessing* getServerData() const { assert(serverPtr != nullptr); return serverPtr ? &(serverPtr->dataForCommandProcessing) : nullptr; }
+	const OpaqueEmitter& getEmitter() const { return emitter; }
+	net::ServerTBase::DataForCommandProcessing* getServerData() const { NODECPP_ASSERT(serverPtr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return serverPtr ? &( (static_cast<net::ServerTBase*>(serverPtr))->dataForCommandProcessing ) : nullptr; }
 };
 
 class NetServerManagerBase
@@ -628,7 +630,6 @@ public:
 		}
 		pendingCloseEvents.clear();
 	}
-	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end/*, EvQueue& evs*/)
 	{
 		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));

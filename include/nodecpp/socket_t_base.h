@@ -63,12 +63,15 @@ namespace nodecpp {
 
 struct OpaqueEmitter
 {
-	using PtrType = nodecpp::net::SocketTBase*;
+//	using PtrType = nodecpp::net::SocketTBase*;
+	using PtrType = void*;
+	enum ObjectType { Undefined, ClientSocket, ServerSocket };
+	ObjectType objectType;
 	PtrType ptr = nullptr;
 	int type = -1;
 	NodeBase* nodePtr = nullptr;
-	OpaqueEmitter() : ptr( nullptr), type(-1) {}
-	OpaqueEmitter( NodeBase* node, PtrType ptr_, int type_ ) : ptr( ptr_), type(type_), nodePtr( node ) {}
+	OpaqueEmitter() : ptr( nullptr), type(-1), objectType(ObjectType::Undefined) {}
+	OpaqueEmitter( ObjectType ot, NodeBase* node, PtrType ptr_, int type_ ) : objectType(ot), ptr( ptr_), type(type_), nodePtr( node ) {}
 	bool isValid() const { return ptr != nullptr; }
 };
 
