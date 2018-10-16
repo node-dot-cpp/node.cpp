@@ -222,7 +222,7 @@ void runInfraLoop2( Infra& infra )
 		infra.netSocket.infraProcessSockAcceptedEvents();
 		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
 		{
-			infra.netServer.infraGetCloseEvents(queue);
+			infra.netServer.infraGetCloseEvents(/*queue*/);
 		}
 		queue.emit();
 
