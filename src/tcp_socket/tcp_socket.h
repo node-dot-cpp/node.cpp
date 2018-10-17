@@ -41,13 +41,13 @@ public:
 	bool refed = false;
 
 //	net::SocketBase* sockPtr = nullptr;
-	void* sockPtr = nullptr;
+//	void* sockPtr = nullptr;
 	OpaqueEmitter emitter;
 
 
 	NetSocketEntry(size_t index) : index(index) {}
 #ifdef USING_T_SOCKETS
-	NetSocketEntry(NodeBase* node, size_t index, net::SocketTBase* ptr_, int type) : index(index), sockPtr(ptr_), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr_, type) {}
+	NetSocketEntry(NodeBase* node, size_t index, net::SocketTBase* ptr_, int type) : index(index)/*, sockPtr(ptr_)*/, emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr_, type) {}
 #else
 	template<class SocketType>
 	NetSocketEntry(size_t index, SocketType* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
@@ -62,7 +62,7 @@ public:
 	bool isValid() const { return refed && emitter.isValid(); }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::SocketBase::DataForCommandProcessing* getSockData() const { NODECPP_ASSERT(sockPtr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return sockPtr ? &( (static_cast<net::SocketTBase*>(sockPtr))->dataForCommandProcessing ) : nullptr; }
+	net::SocketBase::DataForCommandProcessing* getSockData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.ptr ? &( (static_cast<net::SocketTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
 };
 
 class NetSocketManagerBase
@@ -470,18 +470,20 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class NetServerEntry {
+	// TODO: revise everything around being 'refed'
 public:
 	size_t index;
+	bool refed = false;
 //	net::ServerTBase* serverPtr = nullptr;
-	void* serverPtr = nullptr;
+//	void* serverPtr = nullptr;
 	OpaqueEmitter emitter;
 
 //	bool refed = true;
 //	SOCKET osSocket = INVALID_SOCKET;
 //	short fdEvents = 0;
 
-	NetServerEntry(size_t index) : index(index), serverPtr(nullptr), emitter(OpaqueEmitter::ObjectType::Undefined, nullptr, nullptr, -1) {}
-	NetServerEntry(size_t index, NodeBase* node, net::ServerTBase* serverPtr_, int type) : index(index), serverPtr(serverPtr_), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, serverPtr_, type) {serverPtr_->dataForCommandProcessing.index = index;}
+	NetServerEntry(size_t index) : index(index)/*, serverPtr(nullptr)*/, emitter(OpaqueEmitter::ObjectType::Undefined, nullptr, nullptr, -1) {}
+	NetServerEntry(size_t index, NodeBase* node, net::ServerTBase* serverPtr_, int type) : index(index)/*, serverPtr(serverPtr_)*/, emitter(OpaqueEmitter::ObjectType::ServerSocket, node, serverPtr_, type) {serverPtr_->dataForCommandProcessing.index = index;}
 	
 	NetServerEntry(const NetServerEntry& other) = delete;
 	NetServerEntry& operator=(const NetServerEntry& other) = delete;
@@ -489,11 +491,11 @@ public:
 	NetServerEntry(NetServerEntry&& other) = default;
 	NetServerEntry& operator=(NetServerEntry&& other) = default;
 
-	bool isValid() const { return serverPtr != nullptr; }
+	bool isValid() const { return emitter.isValid(); }
 
 //	net::ServerTBase* getPtr() const { return serverPtr; }
 	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::ServerTBase::DataForCommandProcessing* getServerData() const { NODECPP_ASSERT(serverPtr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return serverPtr ? &( (static_cast<net::ServerTBase*>(serverPtr))->dataForCommandProcessing ) : nullptr; }
+	net::ServerTBase::DataForCommandProcessing* getServerData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.ptr ? &( (static_cast<net::ServerTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
 };
 
 class NetServerManagerBase
@@ -543,7 +545,7 @@ public:
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 
 protected:
-	size_t addEntry(NodeBase* node, net::ServerTBase* ptr, int typeId);
+	size_t addServerEntry(NodeBase* node, net::ServerTBase* ptr, int typeId);
 	NetServerEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetServerEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };

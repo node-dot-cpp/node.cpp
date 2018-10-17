@@ -798,7 +798,7 @@ void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerTBase* ptr, i
 		throw Error();
 	}*/
 
-	size_t id = addEntry(node, ptr, typeId);
+	size_t id = addServerEntry(node, ptr, typeId);
 	if (id == 0)
 	{
 		NODECPP_TRACE0("Failed to addEntry at NetServerManager::appAddServer");
@@ -836,6 +836,9 @@ void NetServerManagerBase::appListen(net::ServerTBase* ptr, const char* ip, uint
 		throw Error();
 	}
 	ptr->dataForCommandProcessing.refed = true;
+	NetServerEntry& entry = appGetEntry(ptr->dataForCommandProcessing.index);
+	NODECPP_ASSERT( ptr->dataForCommandProcessing.index != 0 );
+	entry.refed = true;
 
 /*	size_t id = addEntry(node, ptr, typeId);
 	if (id == 0)
@@ -988,7 +991,7 @@ void NetServerManager::infraProcessAcceptEvent(NetServerEntry& entry, EvQueue& e
 	return;
 }*/
 
-size_t NetServerManagerBase::addEntry(NodeBase* node, net::ServerTBase* ptr, int typeId)
+size_t NetServerManagerBase::addServerEntry(NodeBase* node, net::ServerTBase* ptr, int typeId)
 {
 	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 	{
