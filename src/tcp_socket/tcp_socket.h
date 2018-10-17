@@ -34,41 +34,6 @@
 
 using namespace nodecpp;
 
-#if 0
-class NetSocketEntry {
-	// TODO: revise everything around being 'refed'
-	enum State { Unused, SockIssued, SockAssociated }; // TODO: revise!
-	State state = State::Unused;
-public:
-	size_t index;
-	bool refed = false;
-	OpaqueEmitter emitter;
-
-	NetSocketEntry(size_t index) : index(index), state(State::Unused) {}
-#ifdef USING_T_SOCKETS
-	NetSocketEntry(NodeBase* node, size_t index, net::SocketTBase* ptr_, int type) : index(index), state(State::Unused), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr_, type) {ptr_->dataForCommandProcessing.index = index;}
-#else
-	template<class SocketType>
-	NetSocketEntry(size_t index, SocketType* ptr_) : index(index), sockPtr(ptr_), emitter(ptr_) {}
-#endif // USING_T_SOCKETS
-
-	NetSocketEntry(const NetSocketEntry& other) = delete;
-	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
-
-	NetSocketEntry(NetSocketEntry&& other) = default;
-	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
-
-//	bool isValid() const { return refed && emitter.isValid(); }
-	bool isUsed() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.ptr != nullptr) ); return state != State::Unused; }
-	bool isAssociated() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.ptr != nullptr) ); return state == State::SockAssociated; }
-	void setSockIssued() {NODECPP_ASSERT( state == State::Unused && emitter.ptr != nullptr ); state = State::SockIssued;}
-	void setAssociated() {NODECPP_ASSERT( state == State::SockIssued && emitter.ptr != nullptr ); state = State::SockAssociated;}
-	void setUnused() {state = State::Unused; }
-
-	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.ptr ? &( (static_cast<net::SocketTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
-};
-#else
 class NetSocketEntry {
 	// TODO: revise everything around being 'refed'
 	enum State { Unused, SockIssued, SockAssociated }; // TODO: revise!
@@ -99,7 +64,7 @@ public:
 	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.ptr ? &( (static_cast<net::SocketTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
 	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.ptr ? &( (static_cast<net::ServerTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
 };
-#endif // 0
+
 class NetSocketManagerBase
 {
 	friend class OSLayer;
@@ -516,41 +481,6 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-class NetSocketEntry {
-	// TODO: revise everything around being 'refed'
-	enum State { Unused, SockIssued, SockAssociated }; // TODO: revise!
-	State state = State::Unused;
-
-public:
-	size_t index;
-	bool refed = false;
-	OpaqueEmitter emitter;
-
-//	bool refed = true;
-//	SOCKET osSocket = INVALID_SOCKET;
-//	short fdEvents = 0;
-
-	NetSocketEntry(size_t index) : index(index), state(State::Unused), emitter(OpaqueEmitter::ObjectType::Undefined, nullptr, nullptr, -1) {}
-	NetSocketEntry(size_t index, NodeBase* node, net::ServerTBase* serverPtr_, int type) : index(index), state(State::Unused), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, serverPtr_, type) {NODECPP_ASSERT( (static_cast<net::SocketTBase*>(emitter.ptr))->dataForCommandProcessing.osSocket != 0 ); serverPtr_->dataForCommandProcessing.index = index;}
-	
-	NetSocketEntry(const NetSocketEntry& other) = delete;
-	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
-
-	NetSocketEntry(NetSocketEntry&& other) = default;
-	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
-
-//	bool isValid() const { printf( "id = %d: refed = %s\n", index, refed ? "TRUE" : "FALSE" ); return refed && emitter.isValid(); }
-	bool isUsed() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.ptr != nullptr) ); return state != State::Unused; }
-	bool isAssociated() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.ptr != nullptr) ); return state == State::SockAssociated; }
-	void setSockIssued() {NODECPP_ASSERT( state == State::Unused && emitter.ptr != nullptr ); state = State::SockIssued;}
-	void setAssociated() {NODECPP_ASSERT( state == State::SockIssued && emitter.ptr != nullptr ); state = State::SockAssociated;}
-	void setUnused() {state = State::Unused; }
-
-//	net::ServerTBase* getPtr() const { return serverPtr; }
-	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.ptr ? &( (static_cast<net::ServerTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
-};*/
 
 class NetServerManagerBase
 {
