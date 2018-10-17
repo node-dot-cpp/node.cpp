@@ -69,7 +69,7 @@ namespace nodecpp {
 
 		public:
 			ServerBase() {}
-			~ServerBase() {}
+			~ServerBase() {reportBeingDestructed();}
 
 			const Address& address() const { return localAddress; }
 			void close();
@@ -77,6 +77,7 @@ namespace nodecpp {
 			bool listening() const { return state == LISTENING; }
 			void ref();
 			void unref();
+			void reportBeingDestructed();
 
 		};
 

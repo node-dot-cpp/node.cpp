@@ -38,10 +38,11 @@ using namespace nodecpp;
 using namespace nodecpp::net;
 
 
-void SocketBase::ref() {netSocketManagerBase->appRef(dataForCommandProcessing.id); }
-void SocketBase::unref() { netSocketManagerBase->appUnref(dataForCommandProcessing.id); }
-void SocketBase::resume() { netSocketManagerBase->appResume(dataForCommandProcessing.id); }
-void SocketBase::pause() { netSocketManagerBase->appPause(dataForCommandProcessing.id); }
+void SocketBase::ref() {netSocketManagerBase->appRef(dataForCommandProcessing.index); }
+void SocketBase::unref() { netSocketManagerBase->appUnref(dataForCommandProcessing.index); }
+void SocketBase::resume() { netSocketManagerBase->appResume(dataForCommandProcessing.index); }
+void SocketBase::pause() { netSocketManagerBase->appPause(dataForCommandProcessing.index); }
+void SocketBase::reportBeingDestructed() { netSocketManagerBase->appReportBeingDestructed(dataForCommandProcessing.index); }
 
 void SocketBase::destroy() { OSLayer::appDestroy(dataForCommandProcessing); }
 void SocketBase::end() { OSLayer::appEnd(dataForCommandProcessing); }
@@ -64,6 +65,7 @@ void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, por
 
 void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing.index); }
 void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing.index); }
+void ServerBase::reportBeingDestructed() { netServerManagerBase->appReportBeingDestructed(dataForCommandProcessing.index); }
 
 void ServerBase::close()
 {

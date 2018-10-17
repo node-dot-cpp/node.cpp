@@ -536,7 +536,7 @@ void OSLayer::appDestroy(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	if (!sockData.isValid())
 	{
-		NODECPP_TRACE("Unexpected id {} on NetSocketManager::destroy", sockData.id);
+		NODECPP_TRACE("Unexpected id {} on NetSocketManager::destroy", sockData.index);
 		throw Error();
 	}
 	//	
@@ -551,7 +551,7 @@ void OSLayer::appEnd(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	if (!sockData.isValid())
 	{
-		NODECPP_TRACE("Unexpected id {} on NetSocketManager::end", sockData.id);
+		NODECPP_TRACE("Unexpected id {} on NetSocketManager::end", sockData.index);
 		throw Error();
 	}
 
@@ -582,7 +582,7 @@ void OSLayer::appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockDat
 {
 	if (!sockData.isValid())
 	{
-		NODECPP_TRACE("Unexpected id {} on NetSocketManager::setKeepAlive", sockData.id);
+		NODECPP_TRACE("Unexpected id {} on NetSocketManager::setKeepAlive", sockData.index);
 		throw Error();
 	}
 
@@ -598,7 +598,7 @@ void OSLayer::appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData,
 {
 	if (!sockData.isValid())
 	{
-		NODECPP_TRACE("Unexpected id {} on NetSocketManager::setNoDelay", sockData.id);
+		NODECPP_TRACE("Unexpected id {} on NetSocketManager::setNoDelay", sockData.index);
 		throw Error();
 	}
 
@@ -614,13 +614,13 @@ bool OSLayer::appWrite(net::SocketBase::DataForCommandProcessing& sockData, cons
 {
 	if (!sockData.isValid())
 	{
-		NODECPP_TRACE("Unexpected StreamSocket {} on sendStreamSegment", sockData.id);
+		NODECPP_TRACE("Unexpected StreamSocket {} on sendStreamSegment", sockData.index);
 		throw Error();
 	}
 
 	if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding || sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 	{
-		NODECPP_TRACE("StreamSocket {} already ended", sockData.id);
+		NODECPP_TRACE("StreamSocket {} already ended", sockData.index);
 //		errorCloseSocket(sockData, storeError(Error()));
 		Error e;
 		errorCloseSocket(sockData, e);
@@ -763,14 +763,14 @@ void OSLayer::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
 	NODECPP_ASSERT( netSocketManagerBase != nullptr );
-	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( false, Error())));
+	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( false, Error())));
 }
 
 void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
 	NODECPP_ASSERT( netSocketManagerBase != nullptr );
-	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.id, std::make_pair( true, err)));
+	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
 }
 
 
@@ -807,6 +807,7 @@ void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerTBase* ptr, i
 
 	auto& entry = appGetEntry(id);
 	entry.getServerData()->osSocket = s.release();
+	entry.setSockIssued();
 
 /*	net::Address addr;
 
@@ -838,6 +839,7 @@ void NetServerManagerBase::appListen(net::ServerTBase* ptr, const char* ip, uint
 	ptr->dataForCommandProcessing.refed = true;
 	NetServerEntry& entry = appGetEntry(ptr->dataForCommandProcessing.index);
 	NODECPP_ASSERT( ptr->dataForCommandProcessing.index != 0 );
+	entry.setAssociated();
 	entry.refed = true;
 
 /*	size_t id = addEntry(node, ptr, typeId);
@@ -862,7 +864,8 @@ void NetServerManagerBase::appListen(net::ServerTBase* ptr, const char* ip, uint
 void NetServerManagerBase::appClose(size_t id)
 {
 	auto& entry = appGetEntry(id);
-	if (!entry.isValid())
+//	if (!entry.isValid())
+	if (!entry.isUsed())
 	{
 		NODECPP_TRACE("Unexpected id {} on NetServerManager::close", id);
 		return;
@@ -995,7 +998,8 @@ size_t NetServerManagerBase::addServerEntry(NodeBase* node, net::ServerTBase* pt
 {
 	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 	{
-		if (!ioSockets[i].isValid())
+//		if (!ioSockets[i].isValid())
+		if (!ioSockets[i].isUsed())
 		{
 			NetServerEntry entry(i, node, ptr, typeId);
 			ioSockets[i] = std::move(entry);

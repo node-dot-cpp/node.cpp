@@ -175,7 +175,7 @@ namespace nodecpp {
 			public:
 				enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
 				state = Uninitialized;
-				size_t id = 0;
+				size_t index = 0;
 
 			//	bool connecting = false;
 				bool remoteEnded = false;
@@ -225,7 +225,10 @@ namespace nodecpp {
 			SocketBase(SocketBase&&) = default;
 			SocketBase& operator=(SocketBase&&) = default;
 
-			~SocketBase() {unref(); /*or assert that is must already be unrefed*/}
+			~SocketBase() {
+				reportBeingDestructed(); 
+				unref(); /*or assert that is must already be unrefed*/
+			}
 
 		public:
 
@@ -255,6 +258,7 @@ namespace nodecpp {
 			void unref();
 			void pause();
 			void resume();
+			void reportBeingDestructed();
 
 			bool write(const uint8_t* data, uint32_t size);
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
