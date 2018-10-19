@@ -160,154 +160,11 @@ bool infraSetPollFdSet___Server(const std::vector<NetSocketEntry>& ioSockets, po
 	return anyRefed;
 }
 
-template<class Infra>
-bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now)
-{
-	size_t fds_sz;
-	if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
-		fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManagerBase::MAX_SOCKETS;
-	else
-		fds_sz = NetSocketManagerBase::MAX_SOCKETS;
-	std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
-
-	
-	pollfd* fds_begin = fds.get();
-	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
-//	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
-	bool refedSocket = infraSetPollFdSet___Client(infra.ioSockets, fds_begin, fds_end);
-
-	fds_begin = fds_end;
-
-	if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
-	{
-		fds_end += NetServerManagerBase::MAX_SOCKETS;
-	//	pollfdsz = NetServerManager::MAX_SOCKETS;
-//		bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
-		bool refedServer = infraSetPollFdSet___Server(infra.ioSockets, fds_begin, fds_end);
-	//	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, pollfdsz);
-		if (refed == false && refedSocket == false && refedServer == false) return false; //stop here
-	}
-	else
-	{
-		if (refed == false && refedSocket == false) return false; //stop here
-	}
-
-	int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
-
-#ifdef _MSC_VER
-	int retval = WSAPoll(fds.get(), static_cast<ULONG>(fds_sz), timeoutToUse);
-#else
-	int retval = poll(fds.get(), fds_sz, timeoutToUse);
-#endif
-
-
-	if (retval < 0)
-	{
-#ifdef _MSC_VER
-		int error = WSAGetLastError();
-		//		if ( error == WSAEWOULDBLOCK )
-		NODECPP_TRACE("error {}", error);
-#else
-		perror("select()");
-		//		int error = errno;
-		//		if ( error == EAGAIN || error == EWOULDBLOCK )
-#endif
-		/*        return WAIT_RESULTED_IN_TIMEOUT;*/
-		NODECPP_ASSERT(false);
-		NODECPP_TRACE0("COMMLAYER_RET_FAILED");
-		return false;
-	}
-	else if (retval == 0)
-	{
-		//timeout, just return with empty queue
-		return true; 
-	}
-	else //if(retval)
-	{
-		fds_begin = fds.get();
-		fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
-//		pollfdsz = NetSocketManagerBase::MAX_SOCKETS;
-		infra.netSocket.infraCheckPollFdSet(fds_begin, fds_end/*, evs*/);
-//		infra.netSocket.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
-
-		fds_begin = fds_end;
-//		fds_begin += pollfdsz;
-		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
-		{
-			fds_end += NetServerManagerBase::MAX_SOCKETS;
-			infra.netServer.infraCheckPollFdSet(fds_begin, fds_end/*, evs*/);
-	//		pollfdsz = NetServerManager::MAX_SOCKETS;
-	//		infra.netServer.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
-		}
-
-		//if (queue.empty())
-		//{
-		//	NODECPP_TRACE("No event generated from poll wake up (non timeout)");
-		//	for (size_t i = 0; i != fds_sz; ++i)
-		//	{
-		//		if (fds[i].fd >= 0 && fds[i].revents != 0)
-		//		{
-		//			NODECPP_TRACE("At id {}, socket {}, revent {:x}", i, fds[i].fd, fds[i].revents);
-		//		}
-		//	}
-		//}
-		return true;
-	}
-}
-
-template<class Infra>
-void runInfraLoop2( Infra& infra )
-{
-	NODECPP_ASSERT(isNetInitialized());
-
-	while (infra.running)
-	{
-
-		EvQueue queue;
-
-		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
-		{
-			infra.netServer.infraGetPendingEvents(queue);
-			queue.emit();
-		}
-
-		uint64_t now = infraGetCurrentTime();
-		infra.timeout.infraTimeoutEvents(now, queue);
-		queue.emit();
-
-		now = infraGetCurrentTime();
-		bool refed = /*infra.*/pollPhase2(infra, infra.refedTimeout(), infra.nextTimeout(), now/*, queue*/);
-		if(!refed)
-			return;
-
-		queue.emit();
-//		infra.emitInmediates();
-
-		infra.netSocket.infraGetCloseEvent(/*queue*/);
-		infra.netSocket.infraProcessSockAcceptedEvents();
-		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
-		{
-			infra.netServer.infraGetCloseEvents(/*queue*/);
-		}
-		queue.emit();
-
-		infra.netSocket.infraClearStores();
-		if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
-		{
-			infra.netServer.infraClearStores();
-		}
-	}
-}
 
 
 template<class EmitterType, class ServerEmitterType>
 class Infrastructure
 {
-	template<class T> 
-	friend void runInfraLoop2( T& );
-	template<class T>
-	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now);
-
 	std::vector<NetSocketEntry> ioSockets;
 	NetSocketManager<EmitterType> netSocket;
 	NetServerManager<ServerEmitterType> netServer;
@@ -341,6 +198,143 @@ public:
 	{
 //		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
 		return timeout.infraNextTimeout();
+	}
+
+	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
+	{
+		size_t fds_sz;
+		if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+			fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManagerBase::MAX_SOCKETS;
+		else
+			fds_sz = NetSocketManagerBase::MAX_SOCKETS;
+		std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
+
+	
+		pollfd* fds_begin = fds.get();
+		pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
+	//	bool refedSocket = netSocket.infraSetPollFdSet(fds_begin, fds_end);
+		bool refedSocket = infraSetPollFdSet___Client(ioSockets, fds_begin, fds_end);
+
+		fds_begin = fds_end;
+
+		if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+		{
+			fds_end += NetServerManagerBase::MAX_SOCKETS;
+		//	pollfdsz = NetServerManager::MAX_SOCKETS;
+	//		bool refedServer = netServer.infraSetPollFdSet(fds_begin, fds_end);
+			bool refedServer = infraSetPollFdSet___Server(ioSockets, fds_begin, fds_end);
+		//	bool refedServer = netServer.infraSetPollFdSet(fds_begin, pollfdsz);
+			if (refed == false && refedSocket == false && refedServer == false) return false; //stop here
+		}
+		else
+		{
+			if (refed == false && refedSocket == false) return false; //stop here
+		}
+
+		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
+
+	#ifdef _MSC_VER
+		int retval = WSAPoll(fds.get(), static_cast<ULONG>(fds_sz), timeoutToUse);
+	#else
+		int retval = poll(fds.get(), fds_sz, timeoutToUse);
+	#endif
+
+
+		if (retval < 0)
+		{
+	#ifdef _MSC_VER
+			int error = WSAGetLastError();
+			//		if ( error == WSAEWOULDBLOCK )
+			NODECPP_TRACE("error {}", error);
+	#else
+			perror("select()");
+			//		int error = errno;
+			//		if ( error == EAGAIN || error == EWOULDBLOCK )
+	#endif
+			/*        return WAIT_RESULTED_IN_TIMEOUT;*/
+			NODECPP_ASSERT(false);
+			NODECPP_TRACE0("COMMLAYER_RET_FAILED");
+			return false;
+		}
+		else if (retval == 0)
+		{
+			//timeout, just return with empty queue
+			return true; 
+		}
+		else //if(retval)
+		{
+			fds_begin = fds.get();
+			fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
+	//		pollfdsz = NetSocketManagerBase::MAX_SOCKETS;
+			netSocket.infraCheckPollFdSet(fds_begin, fds_end/*, evs*/);
+	//		netSocket.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
+
+			fds_begin = fds_end;
+	//		fds_begin += pollfdsz;
+			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+			{
+				fds_end += NetServerManagerBase::MAX_SOCKETS;
+				netServer.infraCheckPollFdSet(fds_begin, fds_end/*, evs*/);
+		//		pollfdsz = NetServerManager::MAX_SOCKETS;
+		//		netServer.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
+			}
+
+			//if (queue.empty())
+			//{
+			//	NODECPP_TRACE("No event generated from poll wake up (non timeout)");
+			//	for (size_t i = 0; i != fds_sz; ++i)
+			//	{
+			//		if (fds[i].fd >= 0 && fds[i].revents != 0)
+			//		{
+			//			NODECPP_TRACE("At id {}, socket {}, revent {:x}", i, fds[i].fd, fds[i].revents);
+			//		}
+			//	}
+			//}
+			return true;
+		}
+	}
+
+	void runInfraLoop2()
+	{
+		NODECPP_ASSERT(isNetInitialized());
+
+		while (running)
+		{
+
+			EvQueue queue;
+
+			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+			{
+				netServer.infraGetPendingEvents(queue);
+				queue.emit();
+			}
+
+			uint64_t now = infraGetCurrentTime();
+			timeout.infraTimeoutEvents(now, queue);
+			queue.emit();
+
+			now = infraGetCurrentTime();
+			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now/*, queue*/);
+			if(!refed)
+				return;
+
+			queue.emit();
+	//		emitInmediates();
+
+			netSocket.infraGetCloseEvent(/*queue*/);
+			netSocket.infraProcessSockAcceptedEvents();
+			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+			{
+				netServer.infraGetCloseEvents(/*queue*/);
+			}
+			queue.emit();
+
+			netSocket.infraClearStores();
+			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+			{
+				netServer.infraClearStores();
+			}
+		}
 	}
 };
 
@@ -390,7 +384,7 @@ class Runnable : public RunnableBase
 		}
 		node = new Node;
 		node->main();
-		runInfraLoop2<Infrastructure<ClientSocketEmitter, ServerSocketEmitter>>(infra);
+		infra.runInfraLoop2();
 	}
 public:
 	using NodeType = Node;
