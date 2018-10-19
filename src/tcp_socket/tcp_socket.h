@@ -76,7 +76,7 @@ public:
 	int typeIndexOfSocketL = -1;
 
 protected:
-	std::vector<NetSocketEntry> ioSockets; // TODO: improve
+	std::vector<NetSocketEntry>& ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 	std::vector<size_t> pendingAcceptedEvents;
 
@@ -84,7 +84,7 @@ public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 
 public:
-	NetSocketManagerBase() { ioSockets.emplace_back(0); }
+	NetSocketManagerBase(std::vector<NetSocketEntry>& ioSockets_) : ioSockets( ioSockets_) {}
 
 	//TODO quick workaround until definitive life managment is in place
 	Buffer& infraStoreBuffer(Buffer buff) {
@@ -165,7 +165,8 @@ public:
 		return true;
 	}
 #endif // USING_T_SOCKETS
-	
+
+#if 0
 	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 	{
 		size_t sz = end - begin;
@@ -196,6 +197,7 @@ public:
 		}
 		return anyRefed;
 	}
+#endif // 0
 
 protected:
 	size_t addEntry(NodeBase* node, net::SocketTBase* ptr, int typeId) //app-infra neutral
@@ -277,7 +279,7 @@ template<class EmitterType>
 class NetSocketManager : public NetSocketManagerBase {
 
 public:
-	NetSocketManager() {}
+	NetSocketManager(std::vector<NetSocketEntry>& ioSockets) : NetSocketManagerBase(ioSockets) {}
 
 	// to help with 'poll'
 	void infraGetCloseEvent(/*EvQueue& evs*/)
@@ -487,7 +489,7 @@ class NetServerManagerBase
 	friend class OSLayer;
 protected:
 	//mb: ioSockets[0] is always reserved and invalid.
-	std::vector<NetSocketEntry> ioSockets; // TODO: improve
+	std::vector<NetSocketEntry>& ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
 	PendingEvQueue pendingEvents;
 	std::vector<Error> errorStore;
@@ -501,7 +503,7 @@ public:
 
 public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
-	NetServerManagerBase() { ioSockets.emplace_back(0); }
+	NetServerManagerBase(std::vector<NetSocketEntry>& ioSockets_ ) : ioSockets( ioSockets_) {}
 
 	void appClose(size_t id);
 	void appAddServer(NodeBase* node, net::ServerTBase* ptr, int typeId);
@@ -547,7 +549,7 @@ class NetServerManager : public NetServerManagerBase
 	std::string family = "IPv4";
 
 public:
-	NetServerManager() {}
+	NetServerManager(std::vector<NetSocketEntry>& ioSockets) : NetServerManagerBase(ioSockets) {}
 
 	//TODO quick workaround until definitive life managment is in place
 	Error& infraStoreError(Error err) {
@@ -567,6 +569,7 @@ public:
 	* Avoid to have to write it all over again every time
 	*
 	*/
+#if 0
 	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const
 	{ 
 		size_t sz = end - begin;
@@ -596,6 +599,7 @@ public:
 
 		return anyRefed;
 	}
+#endif // 0
 	void infraGetCloseEvents(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to close it,
@@ -677,6 +681,8 @@ private:
 template<>
 class NetServerManager<void>
 {
+public:
+	NetServerManager(std::vector<NetSocketEntry>&) {}
 };
 
 

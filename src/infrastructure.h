@@ -97,6 +97,69 @@ public:
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
+inline
+bool infraSetPollFdSet___Client(const std::vector<NetSocketEntry>& ioSockets, pollfd* begin, const pollfd* end)
+{
+	size_t sz = end - begin;
+	assert(sz >= ioSockets.size());
+	bool anyRefed = false;
+	
+	for (size_t i = 0; i != sz; ++i)
+	{
+//			if(i < ioSockets.size() && ioSockets[i].isValid())
+		if(i < ioSockets.size() && ioSockets[i].isAssociated())
+		{
+			const auto& current = ioSockets[i];
+			NODECPP_ASSERT(current.getClientSocketData()->osSocket != INVALID_SOCKET);
+
+//				anyRefed = anyRefed || current.getClientSocketData()->refed;
+			anyRefed = anyRefed || current.refed;
+
+			begin[i].fd = current.getClientSocketData()->osSocket;
+			begin[i].events = 0;
+
+			if(!current.getClientSocketData()->remoteEnded && !current.getClientSocketData()->paused)
+				begin[i].events |= POLLIN;
+			if (current.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Connecting || !current.getClientSocketData()->writeBuffer.empty())
+				begin[i].events |= POLLOUT;
+		}
+		else
+			begin[i].fd = INVALID_SOCKET;
+	}
+	return anyRefed;
+}
+
+inline
+bool infraSetPollFdSet___Server(const std::vector<NetSocketEntry>& ioSockets, pollfd* begin, const pollfd* end)
+{ 
+	size_t sz = end - begin;
+	assert(sz >= ioSockets.size());
+	bool anyRefed = false;
+
+	for (size_t i = 0; i != sz; ++i)
+	{
+//			if (i < ioSockets.size() && ioSockets[i].isValid())
+		if (i < ioSockets.size() && ioSockets[i].isAssociated())
+		{
+			const auto& current = ioSockets[i];
+			NODECPP_ASSERT(current.getServerSocketData()->osSocket != INVALID_SOCKET);
+
+			anyRefed = anyRefed || current.getServerSocketData()->refed;
+
+			begin[i].fd = current.getServerSocketData()->osSocket;
+			begin[i].events = 0;
+
+			bool f2 = true;
+			if (f2)
+				begin[i].events |= POLLIN;
+		}
+		else
+			begin[i].fd = INVALID_SOCKET;
+	}
+
+	return anyRefed;
+}
+
 template<class Infra>
 bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now/*, EvQueue& evs*/)
 {
@@ -110,7 +173,8 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 	
 	pollfd* fds_begin = fds.get();
 	pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
-	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
+//	bool refedSocket = infra.netSocket.infraSetPollFdSet(fds_begin, fds_end);
+	bool refedSocket = infraSetPollFdSet___Client(infra.ioSockets, fds_begin, fds_end);
 
 	fds_begin = fds_end;
 
@@ -118,7 +182,8 @@ bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeo
 	{
 		fds_end += NetServerManagerBase::MAX_SOCKETS;
 	//	pollfdsz = NetServerManager::MAX_SOCKETS;
-		bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
+//		bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, fds_end);
+		bool refedServer = infraSetPollFdSet___Server(infra.ioSockets, fds_begin, fds_end);
 	//	bool refedServer = infra.netServer.infraSetPollFdSet(fds_begin, pollfdsz);
 		if (refed == false && refedSocket == false && refedServer == false) return false; //stop here
 	}
@@ -253,7 +318,7 @@ class Infrastructure
 	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now/*, EvQueue& evs*/);
 #endif // USING_T_SOCKETS
 
-
+	std::vector<NetSocketEntry> ioSockets;
 	NetSocketManager<EmitterType> netSocket;
 	NetServerManager<ServerEmitterType> netServer;
 	TimeoutManager timeout;
@@ -262,6 +327,8 @@ class Infrastructure
 public:
 	using EmitterTypeT = EmitterType;
 	using ServerEmitterTypeT = ServerEmitterType;
+
+	Infrastructure() : netSocket(ioSockets), netServer(ioSockets) {ioSockets.emplace_back(0);}
 
 public:
 	NetSocketManagerBase& getNetSocketBase() { return netSocket; }
