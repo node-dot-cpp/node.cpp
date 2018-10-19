@@ -161,7 +161,7 @@ bool infraSetPollFdSet___Server(const std::vector<NetSocketEntry>& ioSockets, po
 }
 
 template<class Infra>
-bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now/*, EvQueue& evs*/)
+bool /*Infrastructure::*/pollPhase2(Infra& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now)
 {
 	size_t fds_sz;
 	if constexpr ( !std::is_same< typename Infra::ServerEmitterTypeT, void >::value )
@@ -300,23 +300,13 @@ void runInfraLoop2( Infra& infra )
 }
 
 
-#ifndef USING_T_SOCKETS
-void runInfraLoop();
-bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
-#endif // !USING_T_SOCKETS
-
 template<class EmitterType, class ServerEmitterType>
 class Infrastructure
 {
-#ifndef USING_T_SOCKETS
-	friend void runInfraLoop();
-	friend bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
-#else
 	template<class T> 
 	friend void runInfraLoop2( T& );
 	template<class T>
-	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now/*, EvQueue& evs*/);
-#endif // USING_T_SOCKETS
+	friend bool pollPhase2(T& infra, bool refed, uint64_t nextTimeoutAt, uint64_t now);
 
 	std::vector<NetSocketEntry> ioSockets;
 	NetSocketManager<EmitterType> netSocket;
@@ -352,9 +342,6 @@ public:
 //		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
 		return timeout.infraNextTimeout();
 	}
-
-//	bool pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t now, EvQueue& evs);
-//	void runLoop();
 };
 
 #ifdef USING_T_SOCKETS
@@ -383,12 +370,6 @@ void registerServer(NodeBase* node, net::ServerTBase* t, int typeId)
 {
 	return netServerManagerBase->appAddServer(node, t, typeId);
 }
-
-/*inline
-void serverListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog)
-{
-	return netServerManagerBase->appListen(ptr, ip, port, backlog);
-}*/
 
 template<class Node>
 class Runnable : public RunnableBase

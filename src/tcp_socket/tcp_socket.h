@@ -347,7 +347,7 @@ public:
 			pendingAcceptedEvents.clear();
 		}
 	}
-	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end/*, EvQueue& evs*/)
+	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end)
 	{
 		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
 		for (size_t i = 0; i != ioSockets.size(); ++i)
@@ -404,7 +404,7 @@ public:
 	}
 
 private:
-	void infraProcessReadEvent(NetSocketEntry& entry/*, EvQueue& evs*/)
+	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
 		auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
 		if (res.first)
@@ -431,7 +431,7 @@ private:
 		}
 	}
 
-	void infraProcessRemoteEnded(NetSocketEntry& entry/*, EvQueue& evs*/)
+	void infraProcessRemoteEnded(NetSocketEntry& entry)
 	{
 		if (!entry.getClientSocketData()->remoteEnded)
 		{
@@ -465,7 +465,7 @@ private:
 
 	}
 
-	void infraProcessWriteEvent(NetSocketEntry& current/*, EvQueue& evs*/)
+	void infraProcessWriteEvent(NetSocketEntry& current)
 	{
 		OSLayer::ShouldEmit status = OSLayer::infraProcessWriteEvent(*current.getClientSocketData());
 		switch ( status )
@@ -626,7 +626,7 @@ public:
 		}
 		pendingCloseEvents.clear();
 	}
-	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end/*, EvQueue& evs*/)
+	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end)
 	{
 		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
 		for (size_t i = 0; i != ioSockets.size(); ++i)
@@ -656,7 +656,7 @@ public:
 	}
 
 private:
-	void infraProcessAcceptEvent(NetSocketEntry& entry/*, EvQueue& evs*/)
+	void infraProcessAcceptEvent(NetSocketEntry& entry)
 	{
 		OpaqueSocketData osd( false );
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
@@ -669,7 +669,7 @@ private:
 		return;
 	}
 
-	void infraMakeErrorEventAndClose(NetSocketEntry& entry/*, EvQueue& evs*/)
+	void infraMakeErrorEventAndClose(NetSocketEntry& entry)
 	{
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 		Error e;
