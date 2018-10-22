@@ -45,8 +45,8 @@ public:
 	OpaqueEmitter emitter;
 
 	NetSocketEntry(size_t index) : index(index), state(State::Unused), emitter(OpaqueEmitter::ObjectType::Undefined, nullptr, nullptr, -1) {}
-	NetSocketEntry(NodeBase* node, size_t index, net::SocketTBase* ptr_, int type) : index(index), state(State::Unused), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr_, type) {ptr_->dataForCommandProcessing.index = index;}
-	NetSocketEntry(size_t index, NodeBase* node, net::ServerTBase* serverPtr_, int type) : index(index), state(State::Unused), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, serverPtr_, type) {NODECPP_ASSERT( (static_cast<net::SocketTBase*>(emitter.ptr))->dataForCommandProcessing.osSocket != 0 ); serverPtr_->dataForCommandProcessing.index = index;}
+	NetSocketEntry(size_t index, NodeBase* node, net::SocketTBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, NodeBase* node, net::ServerTBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -56,27 +56,78 @@ public:
 
 	bool isUsed() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.ptr != nullptr) ); return state != State::Unused; }
 	bool isAssociated() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.ptr != nullptr) ); return state == State::SockAssociated; }
-	void setSockIssued() {NODECPP_ASSERT( state == State::Unused && emitter.ptr != nullptr ); state = State::SockIssued;}
+	//void setSockIssued(SOCKET s) {NODECPP_ASSERT( state == State::Unused && emitter.ptr != nullptr ); state = State::SockIssued;}
 	void setAssociated() {NODECPP_ASSERT( state == State::SockIssued && emitter.ptr != nullptr ); state = State::SockAssociated;}
 	void setUnused() {state = State::Unused; }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.ptr ? &( (static_cast<net::SocketTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
+	net::SocketTBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.ptr ? &( (static_cast<net::SocketTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
 	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.ptr ? &( (static_cast<net::ServerTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
+};
+
+class NetSockets
+{
+	std::vector<NetSocketEntry> ourSide;
+	std::vector<pollfd> osSide;
+	//mb: xxxSide[0] is always reserved and invalid.
+public:
+	NetSockets() {ourSide.emplace_back(0); osSide.emplace_back();}
+	template<class SocketType>
+	size_t addEntry(NodeBase* node, SocketType* ptr, int typeId) {
+		NODECPP_ASSERT( ourSide.size() == osSide.size() );
+		NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );
+		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
+		{
+			if (!ourSide[i].isUsed())
+			{
+				NetSocketEntry entry(i, node, ptr, typeId);
+				ourSide[i] = std::move(entry);
+				osSide[i].fd = -(ptr->dataForCommandProcessing.osSocket);
+				return i;
+			}
+		}
+
+		size_t ix = ourSide.size();
+		ourSide.emplace_back(node, ix, ptr, typeId);
+		pollfd p;
+		p.fd = -(ptr->dataForCommandProcessing.osSocket);
+		osSide.push_back( p );
+		return ix;
+	}
+	//void setSockIssued( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() );}
+	void setAssociated( size_t idx, pollfd p ) {
+		NODECPP_ASSERT( idx && idx <= ourSide.size() );
+		ourSide[idx].setAssociated();
+		osSide[idx].fd = -(osSide[idx].fd);
+		NODECPP_ASSERT( osSide[idx].fd > 0 );
+		osSide[idx].events = p.events;
+		osSide[idx].revents = p.revents;
+		/*switch ( ourSide[idx].emitter.objectType ) {
+			case OpaqueEmitter::ObjectType::ClientSocket:
+				break;
+			case OpaqueEmitter::ObjectType::ServerSocket:
+				break;
+			default:
+				NODECPP_ASSERT( false );
+		}*/
+
+	}
+	void setRefed( size_t idx, bool refed ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); ourSide[idx].refed = refed; }
+	void setUnused( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() );}
+	std::pair<pollfd*, size_t> getPollfd() { return osSide.size() > 1 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ); }
 };
 
 class NetSocketManagerBase
 {
 	friend class OSLayer;
 	std::vector<Buffer> bufferStore; // TODO: improve
-	//mb: ioSockets[0] is always reserved and invalid.
 
 public:
 	int typeIndexOfSocketO = -1;
 	int typeIndexOfSocketL = -1;
 
 protected:
-	std::vector<NetSocketEntry>& ioSockets; // TODO: improve
+	NetSockets& ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 	std::vector<size_t> pendingAcceptedEvents;
 
@@ -84,7 +135,7 @@ public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 
 public:
-	NetSocketManagerBase(std::vector<NetSocketEntry>& ioSockets_) : ioSockets( ioSockets_) {}
+	NetSocketManagerBase(NetSockets& ioSockets_) : ioSockets( ioSockets_) {}
 
 	//TODO quick workaround until definitive life managment is in place
 	Buffer& infraStoreBuffer(Buffer buff) {
@@ -97,7 +148,7 @@ public:
 	}
 
 public:
-	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
+//	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
 
 	void infraAddAccepted(net::SocketTBase* ptr)
 	{
@@ -124,7 +175,7 @@ public:
 private:
 	size_t registerAndAssignSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, SocketRiia& s)
 	{
-		size_t id = addEntry(node, ptr, typeId);
+		/*size_t id = addEntry(node, ptr, typeId);
 		if (id == 0)
 		{
 			NODECPP_TRACE0("Failed to add entry on NetSocketManager::connect");
@@ -132,11 +183,15 @@ private:
 		}
 
 		auto& entry = appGetEntry(id);
-		ptr->dataForCommandProcessing.index = id;
+		//ptr->dataForCommandProcessing.index = id;
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		entry.setSockIssued();
-		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);*/
 
+		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+		ptr->dataForCommandProcessing.osSocket = s.release();
+		size_t id = addEntry(node, ptr, typeId);
+		NODECPP_ASSERT(id != 0);
 		return id;
 	}
 
@@ -144,14 +199,24 @@ public:
 	void appConnectSocket(net::SocketTBase* sockPtr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
 		// TODO: check sockPtr validity
+		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.osSocket != INVALID_SOCKET);
 		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
-		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket,  ip, port );
+		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
 		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
 		sockPtr->dataForCommandProcessing.refed = true;
-		auto& entry = appGetEntry(sockPtr->dataForCommandProcessing.index);
+		/*auto& entry = appGetEntry(sockPtr->dataForCommandProcessing.index);
 		entry.setAssociated();
 		entry.refed = true; 
-	//	entry.connecting = true;
+	//	entry.connecting = true;*/
+		pollfd p;
+		p.fd = sockPtr->dataForCommandProcessing.osSocket;
+		p.events = 0;
+		if(!sockPtr->dataForCommandProcessing.remoteEnded && !sockPtr->dataForCommandProcessing.paused)
+			p.events |= POLLIN;
+		if (sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting || !sockPtr->dataForCommandProcessing.writeBuffer.empty())
+			p.events |= POLLOUT;
+		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index, p );
+		ioSockets.setRefed( true );
 	}
 	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
 	{
@@ -200,7 +265,7 @@ public:
 #endif // 0
 
 protected:
-	size_t addEntry(NodeBase* node, net::SocketTBase* ptr, int typeId) //app-infra neutral
+	/*size_t addEntry(NodeBase* node, net::SocketTBase* ptr, int typeId) //app-infra neutral
 	{
 		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 		{
@@ -221,7 +286,7 @@ protected:
 		size_t ix = ioSockets.size();
 		ioSockets.emplace_back(node, ix, ptr, typeId);
 		return ix;
-	}
+	}*/
 
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
@@ -279,7 +344,7 @@ template<class EmitterType>
 class NetSocketManager : public NetSocketManagerBase {
 
 public:
-	NetSocketManager(std::vector<NetSocketEntry>& ioSockets) : NetSocketManagerBase(ioSockets) {}
+	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets) {}
 
 	// to help with 'poll'
 	void infraGetCloseEvent(/*EvQueue& evs*/)
@@ -489,7 +554,7 @@ class NetServerManagerBase
 	friend class OSLayer;
 protected:
 	//mb: ioSockets[0] is always reserved and invalid.
-	std::vector<NetSocketEntry>& ioSockets; // TODO: improve
+	NetSockets& ioSockets; // TODO: improve
 	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
 	PendingEvQueue pendingEvents;
 	std::vector<Error> errorStore;
@@ -503,11 +568,34 @@ public:
 
 public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
-	NetServerManagerBase(std::vector<NetSocketEntry>& ioSockets_ ) : ioSockets( ioSockets_) {}
+	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
 	void appClose(size_t id);
-	void appAddServer(NodeBase* node, net::ServerTBase* ptr, int typeId);
-	void appListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog);
+	void appAddServer(NodeBase* node, net::ServerTBase* ptr, int typeId) {
+		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
+		if (!s)
+		{
+			throw Error();
+		}
+		ptr->dataForCommandProcessing.osSocket = s.release();
+		size_t id = addServerEntry(node, ptr, typeId);
+		NODECPP_ASSERT(id != 0);
+	}
+	void appListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog) {
+		Ip4 myIp = Ip4::parse(ip);
+		Port myPort = Port::fromHost(port);
+		if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort)) {
+			throw Error();
+		}
+		if (!internal_usage_only::internal_listen_tcp_socket(ptr->dataForCommandProcessing.osSocket)) {
+			throw Error();
+		}
+		ptr->dataForCommandProcessing.refed = true;
+		NODECPP_ASSERT( ptr->dataForCommandProcessing.index != 0 );
+		ioSockets.setAssociated(ptr->dataForCommandProcessing.index);
+		ioSockets.setRefed(ptr->dataForCommandProcessing.index, true);
+		pendingListenEvents.push_back( ptr->dataForCommandProcessing.index );
+	}
 
 	void appRef(size_t id) { appGetEntry(id).getServerSocketData()->refed = true; }
 	void appUnref(size_t id) { 
@@ -531,13 +619,13 @@ public:
 	}
 
 	// to help with 'poll'
-	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
+	//size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 
 protected:
 	size_t addServerEntry(NodeBase* node, net::ServerTBase* ptr, int typeId);
-	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
-	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
+	//NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
+	//const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };
 
 extern thread_local NetServerManagerBase* netServerManagerBase;
@@ -549,7 +637,7 @@ class NetServerManager : public NetServerManagerBase
 	std::string family = "IPv4";
 
 public:
-	NetServerManager(std::vector<NetSocketEntry>& ioSockets) : NetServerManagerBase(ioSockets) {}
+	NetServerManager(NetSockets& ioSockets) : NetServerManagerBase(ioSockets) {}
 
 	//TODO quick workaround until definitive life managment is in place
 	Error& infraStoreError(Error err) {
@@ -682,7 +770,7 @@ template<>
 class NetServerManager<void>
 {
 public:
-	NetServerManager(std::vector<NetSocketEntry>&) {}
+	NetServerManager(NetSockets&) {}
 };
 
 

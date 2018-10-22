@@ -775,6 +775,7 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 
 
 #ifndef NET_CLIENT_ONLY
+#if 0 // moved to .h
 void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerTBase* ptr, int typeId)
 {
 //	Ip4 myIp = Ip4::parse(ip);
@@ -859,6 +860,7 @@ void NetServerManagerBase::appListen(net::ServerTBase* ptr, const char* ip, uint
 //	EmitterType::emitError( entry.getEmitter(), Error() );
 	pendingListenEvents.push_back( ptr->dataForCommandProcessing.index );
 }
+#endif // 0
 
 
 void NetServerManagerBase::appClose(size_t id)
