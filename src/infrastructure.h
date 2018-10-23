@@ -118,6 +118,7 @@ bool infraSetPollFdSet___Client(const NetSockets& ioSockets, pollfd* begin, cons
 			begin[i].fd = current.getClientSocketData()->osSocket;
 			begin[i].events = 0;
 
+			// TODOY: revide!
 			if(!current.getClientSocketData()->remoteEnded && !current.getClientSocketData()->paused)
 				begin[i].events |= POLLIN;
 			if (current.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Connecting || !current.getClientSocketData()->writeBuffer.empty())
@@ -203,6 +204,7 @@ public:
 
 	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
 	{
+#if 0 // old version
 		size_t fds_sz;
 		if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManagerBase::MAX_SOCKETS;
@@ -232,13 +234,30 @@ public:
 			if (refed == false && refedSocket == false) return false; //stop here
 		}
 
+#else
+		// TODOY: '			if (refed == false && refedSocket == false) return false; //stop here'
+		size_t fds_sz;
+		pollfd* fds_begin;
+		auto pollfdRet = ioSockets.getPollfd();
+		fds_sz = pollfdRet.second;
+		fds_begin = pollfdRet.first;
+#endif
+
 		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
 
+#if 0 // old version
 	#ifdef _MSC_VER
 		int retval = WSAPoll(fds.get(), static_cast<ULONG>(fds_sz), timeoutToUse);
 	#else
 		int retval = poll(fds.get(), fds_sz, timeoutToUse);
 	#endif
+#else
+	#ifdef _MSC_VER
+		int retval = WSAPoll(fds_begin, static_cast<ULONG>(fds_sz), timeoutToUse);
+	#else
+		int retval = poll(fds_begin, fds_sz, timeoutToUse);
+	#endif
+#endif // 0
 
 
 		if (retval < 0)
@@ -264,6 +283,7 @@ public:
 		}
 		else //if(retval)
 		{
+#if 0 // old version
 			fds_begin = fds.get();
 			fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
 	//		pollfdsz = NetSocketManagerBase::MAX_SOCKETS;
@@ -291,6 +311,35 @@ public:
 			//		}
 			//	}
 			//}
+#else
+			for ( size_t i=0; i<fds_sz; ++i)
+			{
+				if ( fds_begin[i].fd > 0 )
+				{
+					NetSocketEntry& current = ioSockets.at( i );
+					switch ( current.emitter.objectType )
+					{
+						case OpaqueEmitter::ObjectType::ClientSocket:
+							netSocket.infraCheckPollFdSet(current, fds_begin[i]);
+							break;
+						case OpaqueEmitter::ObjectType::ServerSocket:
+							if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+							{
+								netServer.infraCheckPollFdSet(current, fds_begin[i]);
+								break;
+							}
+							else
+							{
+								NODECPP_ASSERT( false );
+								break;
+							}
+						default:
+							NODECPP_ASSERT( false );
+							break;
+					}
+				}
+			}
+#endif
 			return true;
 		}
 	}
