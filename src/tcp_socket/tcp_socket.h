@@ -117,6 +117,9 @@ public:
 		}*/
 
 	}
+	//short getEvents( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); return osSide[idx].events; }
+	void setPollout( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events |= POLLOUT; }
+	void unsetPollout( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events ^= ~POLLOUT; }
 	void setRefed( size_t idx, bool refed ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); ourSide[idx].refed = refed; }
 	void setUnused( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() );}
 	std::pair<pollfd*, size_t> getPollfd() { return osSide.size() > 1 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ); }
@@ -342,6 +345,10 @@ public:
 		//entry.getClientSocketData()->refed = false; 
 		entry.setUnused(); 
 	}
+
+protected:
+	enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
+	ShouldEmit _infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);
 };
 
 extern thread_local NetSocketManagerBase* netSocketManagerBase;
@@ -539,17 +546,17 @@ private:
 
 	void infraProcessWriteEvent(NetSocketEntry& current)
 	{
-		OSLayer::ShouldEmit status = OSLayer::infraProcessWriteEvent(*current.getClientSocketData());
+		NetSocketManagerBase::ShouldEmit status = this->_infraProcessWriteEvent(*current.getClientSocketData());
 		switch ( status )
 		{
-			case OSLayer::ShouldEmit::EmitConnect:
+			case NetSocketManagerBase::ShouldEmit::EmitConnect:
 				EmitterType::emitConnect(current.getEmitter());
 				break;
-			case OSLayer::ShouldEmit::EmitDrain:
+			case NetSocketManagerBase::ShouldEmit::EmitDrain:
 				EmitterType::emitDrain(current.getEmitter());
 				break;
 			default:
-				NODECPP_ASSERT(status == OSLayer::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
+				NODECPP_ASSERT(status == NetSocketManagerBase::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
 		}
 	}
 };

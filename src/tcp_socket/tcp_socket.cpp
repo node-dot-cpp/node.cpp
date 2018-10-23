@@ -647,7 +647,7 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 		{
 			NODECPP_ASSERT(sentSize < size);
 			sockData.writeBuffer.append(data + sentSize, size - sentSize);
-			//updateEventMaskOnWriteBufferStatusChanged( sockData.index, false );
+			ioSockets.setPollout( sockData.index );
 			return false;
 		}
 	}
@@ -675,9 +675,9 @@ std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 	return make_pair(true, std::move(res));
 }
 
-OSLayer::ShouldEmit OSLayer::infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData)
+NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData)
 {
-	OSLayer::ShouldEmit ret = EmitNone;
+	NetSocketManagerBase::ShouldEmit ret = EmitNone;
 //	if (current.connecting)
 	if(sockData.state == net::SocketBase::DataForCommandProcessing::Connecting)
 	{
@@ -701,7 +701,7 @@ OSLayer::ShouldEmit OSLayer::infraProcessWriteEvent(net::SocketBase::DataForComm
 		{
 //			errorCloseSocket(current, storeError(Error()));
 			Error e;
-			errorCloseSocket(sockData, e);
+			OSLayer::errorCloseSocket(sockData, e);
 		}
 	}
 	else if (!sockData.writeBuffer.empty())
@@ -714,7 +714,7 @@ OSLayer::ShouldEmit OSLayer::infraProcessWriteEvent(net::SocketBase::DataForComm
 			//			pendingCloseEvents.push_back(entry.id);
 //			errorCloseSocket(current, storeError(Error()));
 			Error e;
-			errorCloseSocket(sockData, e);
+			OSLayer::errorCloseSocket(sockData, e);
 		}
 		else if (sentSize == sockData.writeBuffer.size())
 		{
@@ -731,11 +731,12 @@ OSLayer::ShouldEmit OSLayer::infraProcessWriteEvent(net::SocketBase::DataForComm
 				{
 					//current.state = net::SocketBase::DataForCommandProcessing::Closing;
 					//pendingCloseEvents.emplace_back(current.index, false);
-					closeSocket(sockData);
+					OSLayer::closeSocket(sockData);
 				}
 				else
 					sockData.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
 			}
+			ioSockets.unsetPollout( sockData.index );
 				
 //			entry.ptr->emitDrain();
 //			evs.add(&net::Socket::emitDrain, current.getPtr());

@@ -220,8 +220,8 @@ public:
 
 	static std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
 
-	enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
-	static ShouldEmit infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);
+	//enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
+	//static ShouldEmit infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);
 
 public:
 
