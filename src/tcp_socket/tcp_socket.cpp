@@ -693,6 +693,8 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 		{
 //			entry.ptr->emitConnect();
 			sockData.state = net::SocketBase::DataForCommandProcessing::Connected;
+			NODECPP_ASSERT (sockData.writeBuffer.empty());
+			ioSockets.unsetPollout(sockData.index);
 //			evs.add(&net::Socket::emitConnect, current.getPtr());
 //			current.getEmitter().emitConnect();
 			ret = EmitConnect;

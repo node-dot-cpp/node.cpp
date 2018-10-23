@@ -316,7 +316,7 @@ public:
 			{
 				if ( fds_begin[i].fd > 0 )
 				{
-					NetSocketEntry& current = ioSockets.at( i );
+					NetSocketEntry& current = ioSockets.at( 1 + i );
 					switch ( current.emitter.objectType )
 					{
 						case OpaqueEmitter::ObjectType::ClientSocket:

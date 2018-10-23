@@ -69,13 +69,14 @@ class NetSockets
 {
 	std::vector<NetSocketEntry> ourSide;
 	std::vector<pollfd> osSide;
+	size_t associatedCount = 0;
 	//mb: xxxSide[0] is always reserved and invalid.
 public:
 	NetSockets() {ourSide.emplace_back(0); osSide.emplace_back();}
 
 	NetSocketEntry& at(size_t idx) { return ourSide.at(idx);}
 	const NetSocketEntry& at(size_t idx) const { return ourSide.at(idx);}
-	size_t size() const {return ourSide.size(); }
+	size_t size() const {return ourSide.size() - 1; }
 
 	template<class SocketType>
 	size_t addEntry(NodeBase* node, SocketType* ptr, int typeId) {
@@ -88,6 +89,7 @@ public:
 				NetSocketEntry entry(i, node, ptr, typeId);
 				ourSide[i] = std::move(entry);
 				osSide[i].fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
+				osSide[i].events = 0;
 				return i;
 			}
 		}
@@ -96,6 +98,7 @@ public:
 		ourSide.emplace_back(ix, node, ptr, typeId);
 		pollfd p;
 		p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
+		p.events = 0;
 		osSide.push_back( p );
 		return ix;
 	}
@@ -105,6 +108,7 @@ public:
 		ourSide[idx].setAssociated();
 		osSide[idx].fd = (SOCKET)(-((int64_t)(osSide[idx].fd)));
 		NODECPP_ASSERT( osSide[idx].fd > 0 );
+		++associatedCount;
 		/*osSide[idx].events = p.events;
 		osSide[idx].revents = p.revents;
 		switch ( ourSide[idx].emitter.objectType ) {
@@ -123,8 +127,15 @@ public:
 	void setPollin( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events |= POLLIN; }
 	void unsetPollin( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events ^= ~POLLIN; }
 	void setRefed( size_t idx, bool refed ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); ourSide[idx].refed = refed; }
-	void setUnused( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() );}
-	std::pair<pollfd*, size_t> getPollfd() { return osSide.size() > 1 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ); }
+	void setUnused( size_t idx ) {
+		NODECPP_ASSERT( idx && idx <= ourSide.size() );
+		osSide[idx].fd = INVALID_SOCKET; 
+		ourSide[idx].setUnused();
+		--associatedCount;
+	}
+	std::pair<pollfd*, size_t> getPollfd() { 
+		return osSide.size() > 1 ? ( associatedCount > 0 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ) ) : std::make_pair( nullptr, 0 ); 
+	}
 };
 
 class NetSocketManagerBase : protected OSLayer
