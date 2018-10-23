@@ -243,7 +243,7 @@ namespace nodecpp
 		}
 
 
-		static
+		//static
 		SOCKET internal_make_tcp_socket()
 		{
 			SOCKET sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -265,7 +265,7 @@ namespace nodecpp
 			return sock;
 		}
 
-		static
+		//static
 		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self)
 		{
 			int res = ::bind(sock, (struct sockaddr *)(&sa_self), sizeof(struct sockaddr_in));
@@ -304,7 +304,7 @@ namespace nodecpp
 		}
 
 
-		static
+		//static
 		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port)
 		{
 			NODECPP_TRACE("internal_bind_socket() on sock {} to {}:{}", sock, ip.toStr(), port.toStr());
@@ -317,7 +317,7 @@ namespace nodecpp
 			return internal_bind_socket(sock, sa);
 		}
 
-		static
+		//static
 		bool internal_listen_tcp_socket(SOCKET sock)
 		{
 			int res = listen(sock, tcpListenBacklogSize);
@@ -610,7 +610,8 @@ void OSLayer::appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData,
 	}
 }
 
-bool OSLayer::appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size)
+//bool OSLayer::appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size)
+bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size)
 {
 	if (!sockData.isValid())
 	{
@@ -623,7 +624,7 @@ bool OSLayer::appWrite(net::SocketBase::DataForCommandProcessing& sockData, cons
 		NODECPP_TRACE("StreamSocket {} already ended", sockData.index);
 //		errorCloseSocket(sockData, storeError(Error()));
 		Error e;
-		errorCloseSocket(sockData, e);
+		OSLayer::errorCloseSocket(sockData, e);
 		return false;
 	}
 
@@ -635,7 +636,7 @@ bool OSLayer::appWrite(net::SocketBase::DataForCommandProcessing& sockData, cons
 		{
 //			errorCloseSocket(sockData, storeError(Error()));
 			Error e;
-			errorCloseSocket(sockData, e);
+			OSLayer::errorCloseSocket(sockData, e);
 			return false;
 		}
 		else if (sentSize == size)
@@ -646,6 +647,7 @@ bool OSLayer::appWrite(net::SocketBase::DataForCommandProcessing& sockData, cons
 		{
 			NODECPP_ASSERT(sentSize < size);
 			sockData.writeBuffer.append(data + sentSize, size - sentSize);
+			//updateEventMaskOnWriteBufferStatusChanged( sockData.index, false );
 			return false;
 		}
 	}
@@ -718,6 +720,7 @@ OSLayer::ShouldEmit OSLayer::infraProcessWriteEvent(net::SocketBase::DataForComm
 		{
 //			entry.writeEvents = false;
 			sockData.writeBuffer.clear();
+			//updateEventMaskOnWriteBufferStatusChanged( sockData.index, true );
 			if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
 			{
 				internal_usage_only::internal_shutdown_send(sockData.osSocket);
@@ -998,13 +1001,15 @@ void NetServerManager::infraProcessAcceptEvent(NetSocketEntry& entry, EvQueue& e
 
 size_t NetServerManagerBase::addServerEntry(NodeBase* node, net::ServerTBase* ptr, int typeId)
 {
-	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
+	return ioSockets.addEntry( node, ptr, typeId );
+/*	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
 	{
 //		if (!ioSockets[i].isValid())
-		if (!ioSockets[i].isUsed())
+//		if (!ioSockets[i].isUsed())
+		if (!ioSockets.at(i).isUsed())
 		{
 			NetSocketEntry entry(i, node, ptr, typeId);
-			ioSockets[i] = std::move(entry);
+			ioSockets.at(i) = std::move(entry);
 			return i;
 		}
 	}
@@ -1016,7 +1021,7 @@ size_t NetServerManagerBase::addServerEntry(NodeBase* node, net::ServerTBase* pt
 
 	size_t ix = ioSockets.size();
 	ioSockets.emplace_back(ix, node, ptr, typeId);
-	return ix;
+	return ix;*/
 }
 
 /*NetSocketEntry& NetServerManager::appGetEntry(size_t id)

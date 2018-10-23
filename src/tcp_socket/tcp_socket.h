@@ -72,6 +72,11 @@ class NetSockets
 	//mb: xxxSide[0] is always reserved and invalid.
 public:
 	NetSockets() {ourSide.emplace_back(0); osSide.emplace_back();}
+
+	NetSocketEntry& at(size_t idx) { return ourSide.at(idx);}
+	const NetSocketEntry& at(size_t idx) const { return ourSide.at(idx);}
+	size_t size() const {return ourSide.size(); }
+
 	template<class SocketType>
 	size_t addEntry(NodeBase* node, SocketType* ptr, int typeId) {
 		NODECPP_ASSERT( ourSide.size() == osSide.size() );
@@ -82,15 +87,15 @@ public:
 			{
 				NetSocketEntry entry(i, node, ptr, typeId);
 				ourSide[i] = std::move(entry);
-				osSide[i].fd = -(ptr->dataForCommandProcessing.osSocket);
+				osSide[i].fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 				return i;
 			}
 		}
 
 		size_t ix = ourSide.size();
-		ourSide.emplace_back(node, ix, ptr, typeId);
+		ourSide.emplace_back(ix, node, ptr, typeId);
 		pollfd p;
-		p.fd = -(ptr->dataForCommandProcessing.osSocket);
+		p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 		osSide.push_back( p );
 		return ix;
 	}
@@ -98,7 +103,7 @@ public:
 	void setAssociated( size_t idx, pollfd p ) {
 		NODECPP_ASSERT( idx && idx <= ourSide.size() );
 		ourSide[idx].setAssociated();
-		osSide[idx].fd = -(osSide[idx].fd);
+		osSide[idx].fd = (SOCKET)(-((int64_t)(osSide[idx].fd)));
 		NODECPP_ASSERT( osSide[idx].fd > 0 );
 		osSide[idx].events = p.events;
 		osSide[idx].revents = p.revents;
@@ -117,7 +122,7 @@ public:
 	std::pair<pollfd*, size_t> getPollfd() { return osSide.size() > 1 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ); }
 };
 
-class NetSocketManagerBase
+class NetSocketManagerBase : protected OSLayer
 {
 	friend class OSLayer;
 	std::vector<Buffer> bufferStore; // TODO: improve
@@ -190,7 +195,7 @@ private:
 
 		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		size_t id = addEntry(node, ptr, typeId);
+		size_t id = ioSockets.addEntry(node, ptr, typeId);
 		NODECPP_ASSERT(id != 0);
 		return id;
 	}
@@ -216,8 +221,9 @@ public:
 		if (sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting || !sockPtr->dataForCommandProcessing.writeBuffer.empty())
 			p.events |= POLLOUT;
 		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index, p );
-		ioSockets.setRefed( true );
+		ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
 	}
+	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
 	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
 	{
 		Ip4 remoteIp;
@@ -356,7 +362,8 @@ public:
 		{
 			if (current.first < ioSockets.size())
 			{
-				auto& entry = ioSockets[current.first];
+//				auto& entry = ioSockets[current.first];
+				auto& entry = ioSockets.at(current.first);
 //				if (entry.isValid())
 				if (entry.isUsed())
 				{
@@ -401,7 +408,7 @@ public:
 		{
 			if (idx < ioSockets.size())
 			{
-				auto& entry = ioSockets[idx];
+				auto& entry = ioSockets.at(idx);
 //				if (entry.isValid())
 				if (entry.isUsed())
 				{
@@ -417,7 +424,7 @@ public:
 		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
 		for (size_t i = 0; i != ioSockets.size(); ++i)
 		{
-			auto& current = ioSockets[i];
+			auto& current = ioSockets.at(i);
 			if (begin[i].fd != INVALID_SOCKET)
 			{
 				if ((begin[i].revents & (POLLERR | POLLNVAL)) != 0) // check errors first
@@ -592,7 +599,10 @@ public:
 		}
 		ptr->dataForCommandProcessing.refed = true;
 		NODECPP_ASSERT( ptr->dataForCommandProcessing.index != 0 );
-		ioSockets.setAssociated(ptr->dataForCommandProcessing.index);
+		pollfd p;
+		p.fd = ptr->dataForCommandProcessing.osSocket;
+		p.events = POLLIN;
+		ioSockets.setAssociated(ptr->dataForCommandProcessing.index, p);
 		ioSockets.setRefed(ptr->dataForCommandProcessing.index, true);
 		pendingListenEvents.push_back( ptr->dataForCommandProcessing.index );
 	}
@@ -624,8 +634,8 @@ public:
 
 protected:
 	size_t addServerEntry(NodeBase* node, net::ServerTBase* ptr, int typeId);
-	//NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
-	//const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
+	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
+	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };
 
 extern thread_local NetServerManagerBase* netServerManagerBase;

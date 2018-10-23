@@ -172,6 +172,10 @@ namespace nodecpp
 {
 	namespace internal_usage_only
 	{
+		SOCKET internal_make_tcp_socket();
+		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self);
+		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port);
+		bool internal_listen_tcp_socket(SOCKET sock);
 		bool internal_getsockopt_so_error(SOCKET sock);
 		void internal_shutdown_send(SOCKET sock);
 		bool internal_linger_zero_socket(SOCKET sock);
@@ -210,7 +214,7 @@ public:
 public:
 	static void appDestroy(net::SocketBase::DataForCommandProcessing& sockData);
 	static void appEnd(net::SocketBase::DataForCommandProcessing& sockData);
-	static bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
+	//static bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
 	static void appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable);
 	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 

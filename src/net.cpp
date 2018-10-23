@@ -49,7 +49,8 @@ void SocketBase::end() { OSLayer::appEnd(dataForCommandProcessing); }
 bool SocketBase::write(const uint8_t* data, uint32_t size)
 {
 	_bytesWritten += size;
-	return OSLayer::appWrite(dataForCommandProcessing, data, size);
+//	return OSLayer::appWrite(dataForCommandProcessing, data, size);
+	return netSocketManagerBase->appWrite(dataForCommandProcessing, data, size);
 }
 
 void SocketO::registerMeAndAcquireSocket() {NODECPP_ASSERT( this->node != nullptr );registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}

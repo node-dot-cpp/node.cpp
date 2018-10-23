@@ -98,7 +98,7 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
 inline
-bool infraSetPollFdSet___Client(const std::vector<NetSocketEntry>& ioSockets, pollfd* begin, const pollfd* end)
+bool infraSetPollFdSet___Client(const NetSockets& ioSockets, pollfd* begin, const pollfd* end)
 {
 	size_t sz = end - begin;
 	assert(sz >= ioSockets.size());
@@ -107,9 +107,9 @@ bool infraSetPollFdSet___Client(const std::vector<NetSocketEntry>& ioSockets, po
 	for (size_t i = 0; i != sz; ++i)
 	{
 //			if(i < ioSockets.size() && ioSockets[i].isValid())
-		if(i < ioSockets.size() && ioSockets[i].isAssociated())
+		if(i < ioSockets.size() && ioSockets.at(i).isAssociated())
 		{
-			const auto& current = ioSockets[i];
+			const auto& current = ioSockets.at(i);
 			NODECPP_ASSERT(current.getClientSocketData()->osSocket != INVALID_SOCKET);
 
 //				anyRefed = anyRefed || current.getClientSocketData()->refed;
@@ -130,7 +130,7 @@ bool infraSetPollFdSet___Client(const std::vector<NetSocketEntry>& ioSockets, po
 }
 
 inline
-bool infraSetPollFdSet___Server(const std::vector<NetSocketEntry>& ioSockets, pollfd* begin, const pollfd* end)
+bool infraSetPollFdSet___Server(const NetSockets& ioSockets, pollfd* begin, const pollfd* end)
 { 
 	size_t sz = end - begin;
 	assert(sz >= ioSockets.size());
@@ -139,9 +139,9 @@ bool infraSetPollFdSet___Server(const std::vector<NetSocketEntry>& ioSockets, po
 	for (size_t i = 0; i != sz; ++i)
 	{
 //			if (i < ioSockets.size() && ioSockets[i].isValid())
-		if (i < ioSockets.size() && ioSockets[i].isAssociated())
+		if (i < ioSockets.size() && ioSockets.at(i).isAssociated())
 		{
-			const auto& current = ioSockets[i];
+			const auto& current = ioSockets.at(i);
 			NODECPP_ASSERT(current.getServerSocketData()->osSocket != INVALID_SOCKET);
 
 			anyRefed = anyRefed || current.getServerSocketData()->refed;
@@ -165,7 +165,8 @@ bool infraSetPollFdSet___Server(const std::vector<NetSocketEntry>& ioSockets, po
 template<class EmitterType, class ServerEmitterType>
 class Infrastructure
 {
-	std::vector<NetSocketEntry> ioSockets;
+	//std::vector<NetSocketEntry> ioSockets;
+	NetSockets ioSockets;
 	NetSocketManager<EmitterType> netSocket;
 	NetServerManager<ServerEmitterType> netServer;
 	TimeoutManager timeout;
@@ -175,7 +176,7 @@ public:
 	using EmitterTypeT = EmitterType;
 	using ServerEmitterTypeT = ServerEmitterType;
 
-	Infrastructure() : netSocket(ioSockets), netServer(ioSockets) {ioSockets.emplace_back(0);}
+	Infrastructure() : netSocket(ioSockets), netServer(ioSockets) {}
 
 public:
 	NetSocketManagerBase& getNetSocketBase() { return netSocket; }
