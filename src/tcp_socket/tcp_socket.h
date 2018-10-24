@@ -44,7 +44,7 @@ public:
 	bool refed = false;
 	OpaqueEmitter emitter;
 
-	NetSocketEntry(size_t index) : index(index), state(State::Unused), emitter(OpaqueEmitter::ObjectType::Undefined, nullptr, nullptr, -1) {}
+	NetSocketEntry(size_t index) : index(index), state(State::Unused) {}
 	NetSocketEntry(size_t index, NodeBase* node, net::SocketTBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
 	NetSocketEntry(size_t index, NodeBase* node, net::ServerTBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
 	
@@ -54,15 +54,15 @@ public:
 	NetSocketEntry(NetSocketEntry&& other) = default;
 	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
 
-	bool isUsed() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.ptr != nullptr) ); return state != State::Unused; }
-	bool isAssociated() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.ptr != nullptr) ); return state == State::SockAssociated; }
+	bool isUsed() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state != State::Unused; }
+	bool isAssociated() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state == State::SockAssociated; }
 	//void setSockIssued(SOCKET s) {NODECPP_ASSERT( state == State::Unused && emitter.ptr != nullptr ); state = State::SockIssued;}
-	void setAssociated() {NODECPP_ASSERT( state == State::SockIssued && emitter.ptr != nullptr ); state = State::SockAssociated;}
+	void setAssociated() {NODECPP_ASSERT( state == State::SockIssued && emitter.isValid() ); state = State::SockAssociated;}
 	void setUnused() {state = State::Unused; }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::SocketTBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.ptr ? &( (static_cast<net::SocketTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
-	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT(emitter.ptr != nullptr); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.ptr ? &( (static_cast<net::ServerTBase*>(emitter.ptr))->dataForCommandProcessing ) : nullptr; }
+	net::SocketTBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.isValid()); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
+	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT(emitter.isValid()); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
 };
 
 class NetSockets
@@ -72,7 +72,7 @@ class NetSockets
 	size_t associatedCount = 0;
 	//mb: xxxSide[0] is always reserved and invalid.
 public:
-	NetSockets() {ourSide.emplace_back(0); osSide.emplace_back();}
+	NetSockets() {ourSide.reserve(1000); osSide.reserve(1000); ourSide.emplace_back(0); osSide.emplace_back();}
 
 	NetSocketEntry& at(size_t idx) { return ourSide.at(idx);}
 	const NetSocketEntry& at(size_t idx) const { return ourSide.at(idx);}

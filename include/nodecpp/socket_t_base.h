@@ -57,22 +57,30 @@ namespace nodecpp {
 			~SocketTBase() { if (state == CONNECTING || state == CONNECTED) destroy(); }
 		};
 
+		class ServerTBase; // forward declaration
+
 	} // namespace net
 
-} // namespace nodecpp
 
-struct OpaqueEmitter
-{
-//	using PtrType = nodecpp::net::SocketTBase*;
-	using PtrType = void*;
-	enum ObjectType { Undefined, ClientSocket, ServerSocket };
-	ObjectType objectType;
-	PtrType ptr = nullptr;
-	int type = -1;
-	NodeBase* nodePtr = nullptr;
-	OpaqueEmitter() : ptr( nullptr), type(-1), objectType(ObjectType::Undefined) {}
-	OpaqueEmitter( ObjectType ot, NodeBase* node, PtrType ptr_, int type_ ) : objectType(ot), ptr( ptr_), type(type_), nodePtr( node ) {}
-	bool isValid() const { return ptr != nullptr; }
-};
+	class OpaqueEmitter
+	{
+		using PtrType = void*;
+		PtrType ptr = nullptr;
+	public:
+	//	using PtrType = nodecpp::net::SocketTBase*;
+		enum ObjectType { Undefined, ClientSocket, ServerSocket };
+		ObjectType objectType;
+		int type = -1;
+		NodeBase* nodePtr = nullptr;
+		OpaqueEmitter() : ptr( nullptr), type(-1), objectType(ObjectType::Undefined) {}
+		OpaqueEmitter( ObjectType ot, NodeBase* node, net::SocketTBase* ptr_, int type_ ) : objectType(ot), ptr( static_cast<PtrType>(ptr_)), type(type_), nodePtr( node ) {}
+		OpaqueEmitter( ObjectType ot, NodeBase* node, net::ServerTBase* ptr_, int type_ ) : objectType(ot), ptr( static_cast<PtrType>(ptr_)), type(type_), nodePtr( node ) {}
+		bool isValid() const { return ptr != nullptr; }
+		net::SocketTBase* getClientSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ClientSocket ); return static_cast<net::SocketTBase*>(ptr); }
+//		const net::SocketTBase* getClientSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ClientSocket ); return static_cast<const net::SocketTBase*>(ptr); }
+		net::ServerTBase* getServerSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ServerSocket ); return static_cast<net::ServerTBase*>(ptr); }
+//		const net::ServerTBase* getServerSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ServerSocket ); return static_cast<const net::ServerTBase*>(ptr); }
+	};
+} // namespace nodecpp
 
 #endif // SOCKET_T_BASE_H
