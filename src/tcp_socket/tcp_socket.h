@@ -123,9 +123,9 @@ public:
 	}
 	//short getEvents( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); return osSide[idx].events; }
 	void setPollout( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events |= POLLOUT; }
-	void unsetPollout( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events ^= ~POLLOUT; }
+	void unsetPollout( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events &= ~POLLOUT; }
 	void setPollin( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events |= POLLIN; }
-	void unsetPollin( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events ^= ~POLLIN; }
+	void unsetPollin( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events &= ~POLLIN; }
 	void setRefed( size_t idx, bool refed ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); ourSide[idx].refed = refed; }
 	void setUnused( size_t idx ) {
 		NODECPP_ASSERT( idx && idx <= ourSide.size() );
