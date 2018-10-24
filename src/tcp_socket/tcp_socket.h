@@ -173,13 +173,20 @@ public:
 
 	void infraAddAccepted(net::SocketTBase* ptr)
 	{
-		pendingAcceptedEvents.push_back(ptr->dataForCommandProcessing.index);
+		size_t id = ptr->dataForCommandProcessing.index;
+		pendingAcceptedEvents.push_back(id);
 		ptr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connected;
 		NODECPP_ASSERT( ptr->dataForCommandProcessing.writeBuffer.size() == 0 );
-		ioSockets.unsetPollout(ptr->dataForCommandProcessing.index);
+		ioSockets.unsetPollout(id);
 		ptr->dataForCommandProcessing.refed = true;
-		auto& entry = appGetEntry(ptr->dataForCommandProcessing.index);
+		auto& entry = appGetEntry(id);
 		entry.refed = true; 
+		ioSockets.setAssociated(id);
+		NODECPP_ASSERT(ptr->dataForCommandProcessing.remoteEnded == false);
+		NODECPP_ASSERT(ptr->dataForCommandProcessing.paused == false);
+		NODECPP_ASSERT(ptr->dataForCommandProcessing.state != net::SocketBase::DataForCommandProcessing::Connecting);
+		NODECPP_ASSERT(ptr->dataForCommandProcessing.writeBuffer.empty());
+		ioSockets.setPollin(id);
 	}
 
 #ifdef USING_T_SOCKETS
