@@ -243,6 +243,7 @@ public:
 		ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
 		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index/*, p*/ );
 		ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
+		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting);
 		ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
 	}
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
