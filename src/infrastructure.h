@@ -241,6 +241,8 @@ public:
 		auto pollfdRet = ioSockets.getPollfd();
 		fds_sz = pollfdRet.second;
 		fds_begin = pollfdRet.first;
+		if ( fds_sz == 0 ) // if (refed == false && refedSocket == false) return false; //stop here'
+			return false;
 #endif
 
 		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
@@ -314,7 +316,7 @@ public:
 #else
 			for ( size_t i=0; i<fds_sz; ++i)
 			{
-				if ( fds_begin[i].fd > 0 )
+				if ( (int64_t)(fds_begin[i].fd) > 0 )
 				{
 					NetSocketEntry& current = ioSockets.at( 1 + i );
 					switch ( current.emitter.objectType )

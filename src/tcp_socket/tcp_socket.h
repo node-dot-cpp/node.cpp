@@ -36,7 +36,7 @@ using namespace nodecpp;
 
 class NetSocketEntry {
 	// TODO: revise everything around being 'refed'
-	enum State { Unused, SockIssued, SockAssociated }; // TODO: revise!
+	enum State { Unused, SockIssued, SockAssociated, SockClosed }; // TODO: revise!
 	State state = State::Unused;
 
 public:
@@ -58,6 +58,7 @@ public:
 	bool isAssociated() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state == State::SockAssociated; }
 	//void setSockIssued(SOCKET s) {NODECPP_ASSERT( state == State::Unused && emitter.ptr != nullptr ); state = State::SockIssued;}
 	void setAssociated() {NODECPP_ASSERT( state == State::SockIssued && emitter.isValid() ); state = State::SockAssociated;}
+	void setSocketClosed() {NODECPP_ASSERT( state != State::Unused ); state = State::SockClosed;}
 	void setUnused() {state = State::Unused; }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
@@ -77,6 +78,7 @@ public:
 	NetSocketEntry& at(size_t idx) { return ourSide.at(idx);}
 	const NetSocketEntry& at(size_t idx) const { return ourSide.at(idx);}
 	size_t size() const {return ourSide.size() - 1; }
+	bool isValidId( size_t idx ) { return idx && idx < ourSide.size(); };
 
 	template<class SocketType>
 	size_t addEntry(NodeBase* node, SocketType* ptr, int typeId) {
@@ -129,8 +131,17 @@ public:
 	void setRefed( size_t idx, bool refed ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); ourSide[idx].refed = refed; }
 	void setUnused( size_t idx ) {
 		NODECPP_ASSERT( idx && idx <= ourSide.size() );
-		osSide[idx].fd = INVALID_SOCKET; 
+		if ( osSide[idx].fd != INVALID_SOCKET )
+		{
+			osSide[idx].fd = INVALID_SOCKET; 
+			--associatedCount;
+		}
 		ourSide[idx].setUnused();
+	}
+	void setSocketClosed( size_t idx ) {
+		NODECPP_ASSERT( idx && idx <= ourSide.size() ); 
+		osSide[idx].fd = INVALID_SOCKET; 
+		ourSide[idx].setSocketClosed();
 		--associatedCount;
 	}
 	std::pair<pollfd*, size_t> getPollfd() { 
@@ -368,9 +379,10 @@ public:
 		entry.getClientSocketData()->paused = false; 
 	}
 	void appReportBeingDestructed(size_t id) { 
-		auto& entry = appGetEntry(id);
+		/*auto& entry = appGetEntry(id);
 		//entry.getClientSocketData()->refed = false; 
-		entry.setUnused(); 
+		entry.setUnused(); */
+		ioSockets.setUnused( id );
 	}
 
 protected:
@@ -394,7 +406,8 @@ public:
 
 		for (auto& current : pendingCloseEvents)
 		{
-			if (current.first < ioSockets.size())
+//			if (current.first < ioSockets.size())
+			if (ioSockets.isValidId(current.first))
 			{
 //				auto& entry = ioSockets[current.first];
 				auto& entry = ioSockets.at(current.first);
@@ -408,6 +421,7 @@ public:
 							internal_usage_only::internal_linger_zero_socket(entry.getClientSocketData()->osSocket);
 
 						internal_usage_only::internal_close(entry.getClientSocketData()->osSocket);
+						ioSockets.setSocketClosed( entry.index );
 					}
 
 #if 0 // old version (note that emitClose is before emiterror in both cases; whether it is OK or not, is a separate question)
