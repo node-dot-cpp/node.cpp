@@ -65,6 +65,7 @@ namespace nodecpp {
 				{
 					SocketForserver* sock = new SocketForserver(sdata);
 					NODECPP_ASSERT( sock != nullptr );
+					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
 					if ( _begin == nullptr )
 					{
 						_begin = sock;
@@ -73,21 +74,30 @@ namespace nodecpp {
 					}
 					else
 					{
-						sock->_nextSock = _begin->_nextSock;
+						sock->_nextSock = _begin;
+						_begin->_prevSock = sock;
 						sock->_prevSock = nullptr;
 						_begin = sock;
 					}
+					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
 					++_size;
 					return sock;
 				}
 				void removeAndDelete( SocketForserver* sock )
 				{
 					NODECPP_ASSERT( sock != nullptr );
+					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
+					if ( _begin == sock )
+					{
+						NODECPP_ASSERT( sock == _begin );
+						_begin = sock->_nextSock;
+					}
 					if ( sock->_prevSock )
-						sock->_prevSock = sock->_nextSock;
+						sock->_prevSock->_nextSock = sock->_nextSock;
 					if ( sock->_nextSock )
-						sock->_nextSock = sock->_prevSock;
+						sock->_nextSock->_prevSock = sock->_prevSock;
 					--_size;
+					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
 					delete sock;
 				}
 				void clear()

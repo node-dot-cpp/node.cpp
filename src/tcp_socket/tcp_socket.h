@@ -92,6 +92,7 @@ public:
 				ourSide[i] = std::move(entry);
 				osSide[i].fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 				osSide[i].events = 0;
+				osSide[i].revents = 0;
 				return i;
 			}
 		}
@@ -101,6 +102,7 @@ public:
 		pollfd p;
 		p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 		p.events = 0;
+		p.revents = 0;
 		osSide.push_back( p );
 		return ix;
 	}
@@ -109,6 +111,8 @@ public:
 		NODECPP_ASSERT( idx && idx <= ourSide.size() );
 		ourSide[idx].setAssociated();
 		osSide[idx].fd = (SOCKET)(-((int64_t)(osSide[idx].fd)));
+		NODECPP_ASSERT( osSide[idx].events == 0 );
+		NODECPP_ASSERT( osSide[idx].revents == 0 );
 		NODECPP_ASSERT( osSide[idx].fd > 0 );
 		++associatedCount;
 		/*osSide[idx].events = p.events;
@@ -461,7 +465,8 @@ public:
 				if (entry.isUsed())
 				{
 					EmitterType::emitAccepted(entry.getEmitter());
-					entry.setAssociated();
+					//entry.setAssociated();
+					ioSockets.setAssociated( idx );
 				}
 			}
 			pendingAcceptedEvents.clear();
