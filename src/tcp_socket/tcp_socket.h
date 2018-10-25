@@ -466,7 +466,7 @@ public:
 				{
 					EmitterType::emitAccepted(entry.getEmitter());
 					//entry.setAssociated();
-					ioSockets.setAssociated( idx );
+					//ioSockets.setAssociated( idx );
 				}
 			}
 			pendingAcceptedEvents.clear();
