@@ -56,7 +56,6 @@ public:
 
 	bool isUsed() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state != State::Unused; }
 	bool isAssociated() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state == State::SockAssociated; }
-	//void setSockIssued(SOCKET s) {NODECPP_ASSERT( state == State::Unused && emitter.ptr != nullptr ); state = State::SockIssued;}
 	void setAssociated() {NODECPP_ASSERT( state == State::SockIssued && emitter.isValid() ); state = State::SockAssociated;}
 	void setSocketClosed() {NODECPP_ASSERT( state != State::Unused ); state = State::SockClosed;}
 	void setUnused() {state = State::Unused; }
@@ -106,7 +105,6 @@ public:
 		osSide.push_back( p );
 		return ix;
 	}
-	//void setSockIssued( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() );}
 	void setAssociated( size_t idx/*, pollfd p*/ ) {
 		NODECPP_ASSERT( idx && idx <= ourSide.size() );
 		ourSide[idx].setAssociated();
@@ -115,17 +113,6 @@ public:
 		NODECPP_ASSERT( osSide[idx].revents == 0 );
 		NODECPP_ASSERT( osSide[idx].fd > 0 );
 		++associatedCount;
-		/*osSide[idx].events = p.events;
-		osSide[idx].revents = p.revents;
-		switch ( ourSide[idx].emitter.objectType ) {
-			case OpaqueEmitter::ObjectType::ClientSocket:
-				break;
-			case OpaqueEmitter::ObjectType::ServerSocket:
-				break;
-			default:
-				NODECPP_ASSERT( false );
-		}*/
-
 	}
 	//short getEvents( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); return osSide[idx].events; }
 	void setPollout( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events |= POLLOUT; }
@@ -184,8 +171,6 @@ public:
 	}
 
 public:
-//	size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
-
 	void infraAddAccepted(net::SocketTBase* ptr)
 	{
 		size_t id = ptr->dataForCommandProcessing.index;
@@ -220,19 +205,6 @@ public:
 private:
 	size_t registerAndAssignSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, SocketRiia& s)
 	{
-		/*size_t id = addEntry(node, ptr, typeId);
-		if (id == 0)
-		{
-			NODECPP_TRACE0("Failed to add entry on NetSocketManager::connect");
-			throw Error();
-		}
-
-		auto& entry = appGetEntry(id);
-		//ptr->dataForCommandProcessing.index = id;
-		ptr->dataForCommandProcessing.osSocket = s.release();
-		entry.setSockIssued();
-		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);*/
-
 		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		size_t id = ioSockets.addEntry(node, ptr, typeId);
@@ -249,19 +221,6 @@ public:
 		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
 		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
 		sockPtr->dataForCommandProcessing.refed = true;
-		/*auto& entry = appGetEntry(sockPtr->dataForCommandProcessing.index);
-		entry.setAssociated();
-		entry.refed = true; 
-	//	entry.connecting = true;*/
-
-		// TODOY: revise!
-		/* p;
-		p.fd = sockPtr->dataForCommandProcessing.osSocket;
-		p.events = 0;
-		if(!sockPtr->dataForCommandProcessing.remoteEnded && !sockPtr->dataForCommandProcessing.paused)
-			p.events |= POLLIN;
-		if (sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting || !sockPtr->dataForCommandProcessing.writeBuffer.empty())
-			p.events |= POLLOUT;*/
 		ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
 		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index/*, p*/ );
 		ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
@@ -282,63 +241,7 @@ public:
 	}
 #endif // USING_T_SOCKETS
 
-#if 0
-	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const
-	{
-		size_t sz = end - begin;
-		assert(sz >= ioSockets.size());
-		bool anyRefed = false;
-	
-		for (size_t i = 0; i != sz; ++i)
-		{
-//			if(i < ioSockets.size() && ioSockets[i].isValid())
-			if(i < ioSockets.size() && ioSockets[i].isAssociated())
-			{
-				const auto& current = ioSockets[i];
-				NODECPP_ASSERT(current.getClientSocketData()->osSocket != INVALID_SOCKET);
-
-//				anyRefed = anyRefed || current.getClientSocketData()->refed;
-				anyRefed = anyRefed || current.refed;
-
-				begin[i].fd = current.getClientSocketData()->osSocket;
-				begin[i].events = 0;
-
-				if(!current.getClientSocketData()->remoteEnded && !current.getClientSocketData()->paused)
-					begin[i].events |= POLLIN;
-				if (current.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Connecting || !current.getClientSocketData()->writeBuffer.empty())
-					begin[i].events |= POLLOUT;
-			}
-			else
-				begin[i].fd = INVALID_SOCKET;
-		}
-		return anyRefed;
-	}
-#endif // 0
-
 protected:
-	/*size_t addEntry(NodeBase* node, net::SocketTBase* ptr, int typeId) //app-infra neutral
-	{
-		for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
-		{
-//			if (!ioSockets[i].isValid())
-			if (!ioSockets[i].isUsed())
-			{
-				NetSocketEntry entry(node, i, ptr, typeId);
-				ioSockets[i] = std::move(entry);
-				return i;
-			}
-		}
-
-		if (ioSockets.size() >= MAX_SOCKETS)
-		{
-			return 0;
-		}
-
-		size_t ix = ioSockets.size();
-		ioSockets.emplace_back(node, ix, ptr, typeId);
-		return ix;
-	}*/
-
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 
@@ -472,119 +375,54 @@ public:
 			pendingAcceptedEvents.clear();
 		}
 	}
-#if 0 // old code
-	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end)
-	{
-		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
-		for (size_t i = 0; i != ioSockets.size(); ++i)
-		{
-			auto& current = ioSockets.at(i);
-			if (begin[i].fd != INVALID_SOCKET)
-			{
-				if ((begin[i].revents & (POLLERR | POLLNVAL)) != 0) // check errors first
-				{
-					NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
-					internal_usage_only::internal_getsockopt_so_error(current.getClientSocketData()->osSocket);
-					//errorCloseSocket(current, storeError(Error()));
-					Error e;
-					errorCloseSocket(current, e);
-				}
-				else {
-					/*
-						on Windows when the other appEnd sends a FIN,
-						POLLHUP goes up, if we still have data pending to read
-						both POLLHUP and POLLIN are up. POLLHUP continues to be up
-						for the socket as long as the socket lives.
-						on Linux, when remote appEnd sends a FIN, we get a zero size read
-						after all pending data is read.
-					*/
 
-					if ((begin[i].revents & POLLIN) != 0)
-					{
-						if (!current.getClientSocketData()->paused)
-						{
-							//NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
-							infraProcessReadEvent(current/*, evs*/);
-						}
-					}
-					else if ((begin[i].revents & POLLHUP) != 0)
-					{
-						NODECPP_TRACE("POLLHUP event at {}", begin[i].fd);
-						infraProcessRemoteEnded(current/*, evs*/);
-					}
-				
-					if ((begin[i].revents & POLLOUT) != 0)
-					{
-						NODECPP_TRACE("POLLOUT event at {}", begin[i].fd);
-						infraProcessWriteEvent(current/*, evs*/);
-					}
-				}
-				//else if (begin[i].revents != 0)
-				//{
-				//	NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
-				//	internal_getsockopt_so_error(entry.osSocket);
-				//	errorCloseSocket(entry);
-				//}
-			}
-		}
-	}
-#else
 	void infraCheckPollFdSet(NetSocketEntry& current, pollfd p)
 	{
-//		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
-//		for (size_t i = 0; i != ioSockets.size(); ++i)
+		if ((p.revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
-//			NetSocketEntry& current = ioSockets.at(i);
-//			if (begin[i].fd != INVALID_SOCKET)
-			{
-				if ((p.revents & (POLLERR | POLLNVAL)) != 0) // check errors first
-				{
-					NODECPP_TRACE("POLLERR event at {}", p.fd);
-					internal_usage_only::internal_getsockopt_so_error(current.getClientSocketData()->osSocket);
-					//errorCloseSocket(current, storeError(Error()));
-					Error e;
-					errorCloseSocket(current, e);
-				}
-				else {
-					/*
-						on Windows when the other appEnd sends a FIN,
-						POLLHUP goes up, if we still have data pending to read
-						both POLLHUP and POLLIN are up. POLLHUP continues to be up
-						for the socket as long as the socket lives.
-						on Linux, when remote appEnd sends a FIN, we get a zero size read
-						after all pending data is read.
-					*/
+			NODECPP_TRACE("POLLERR event at {}", p.fd);
+			internal_usage_only::internal_getsockopt_so_error(current.getClientSocketData()->osSocket);
+			//errorCloseSocket(current, storeError(Error()));
+			Error e;
+			errorCloseSocket(current, e);
+		}
+		else {
+			/*
+				on Windows when the other appEnd sends a FIN,
+				POLLHUP goes up, if we still have data pending to read
+				both POLLHUP and POLLIN are up. POLLHUP continues to be up
+				for the socket as long as the socket lives.
+				on Linux, when remote appEnd sends a FIN, we get a zero size read
+				after all pending data is read.
+			*/
 
-					if ((p.revents & POLLIN) != 0)
-					{
-						if (!current.getClientSocketData()->paused)
-						{
-							//NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
-							infraProcessReadEvent(current/*, evs*/);
-						}
-					}
-					else if ((p.revents & POLLHUP) != 0)
-					{
-						NODECPP_TRACE("POLLHUP event at {}", p.fd);
-						infraProcessRemoteEnded(current/*, evs*/);
-					}
-				
-					if ((p.revents & POLLOUT) != 0)
-					{
-						NODECPP_TRACE("POLLOUT event at {}", p.fd);
-						infraProcessWriteEvent(current/*, evs*/);
-					}
+			if ((p.revents & POLLIN) != 0)
+			{
+				if (!current.getClientSocketData()->paused)
+				{
+					//NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
+					infraProcessReadEvent(current/*, evs*/);
 				}
-				//else if (revents != 0)
-				//{
-				//	NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, revents);
-				//	internal_getsockopt_so_error(entry.osSocket);
-				//	errorCloseSocket(entry);
-				//}
+			}
+			else if ((p.revents & POLLHUP) != 0)
+			{
+				NODECPP_TRACE("POLLHUP event at {}", p.fd);
+				infraProcessRemoteEnded(current/*, evs*/);
+			}
+				
+			if ((p.revents & POLLOUT) != 0)
+			{
+				NODECPP_TRACE("POLLOUT event at {}", p.fd);
+				infraProcessWriteEvent(current/*, evs*/);
 			}
 		}
+		//else if (revents != 0)
+		//{
+		//	NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, revents);
+		//	internal_getsockopt_so_error(entry.osSocket);
+		//	errorCloseSocket(entry);
+		//}
 	}
-#endif // 0
 
 private:
 	void infraProcessReadEvent(NetSocketEntry& entry)
@@ -772,45 +610,6 @@ public:
 		errorStore.clear();
 	}
 
-	// to help with 'poll'
-//	size_t infraGetPollFdSetSize() const;
-	/*
-	* TODO: for performace reasons, the poll data should be cached inside NetSocketManager
-	* and updated at the same time that StreamSocketEntry.
-	* Avoid to have to write it all over again every time
-	*
-	*/
-#if 0
-	bool infraSetPollFdSet(pollfd* begin, const pollfd* end) const
-	{ 
-		size_t sz = end - begin;
-		assert(sz >= ioSockets.size());
-		bool anyRefed = false;
-
-		for (size_t i = 0; i != sz; ++i)
-		{
-//			if (i < ioSockets.size() && ioSockets[i].isValid())
-			if (i < ioSockets.size() && ioSockets[i].isAssociated())
-			{
-				const auto& current = ioSockets[i];
-				NODECPP_ASSERT(current.getServerSocketData()->osSocket != INVALID_SOCKET);
-
-				anyRefed = anyRefed || current.getServerSocketData()->refed;
-
-				begin[i].fd = current.getServerSocketData()->osSocket;
-				begin[i].events = 0;
-
-				bool f2 = true;
-				if (f2)
-					begin[i].events |= POLLIN;
-			}
-			else
-				begin[i].fd = INVALID_SOCKET;
-		}
-
-		return anyRefed;
-	}
-#endif // 0
 	void infraGetCloseEvents(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to close it,
@@ -837,65 +636,27 @@ public:
 		}
 		pendingCloseEvents.clear();
 	}
-#if 0 // old version
-	void infraCheckPollFdSet(const pollfd* begin, const pollfd* end)
-	{
-		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
-		for (size_t i = 0; i != ioSockets.size(); ++i)
-		{
-			auto& current = ioSockets[i];
-			if (begin[i].fd != INVALID_SOCKET)
-			{
-				if ((begin[i].revents & (POLLERR | POLLNVAL)) != 0) // check errors first
-				{
-					NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
-					internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-					infraMakeErrorEventAndClose(current/*, evs*/);
-				}
-				else if ((begin[i].revents & POLLIN) != 0)
-				{
-					NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
-					infraProcessAcceptEvent(current/*, evs*/);
-				}
-				else if (begin[i].revents != 0)
-				{
-					NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
-					internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-					infraMakeErrorEventAndClose(current/*, evs*/);
-				}
-			}
-		}
-	}
-#else
+
 	void infraCheckPollFdSet(NetSocketEntry& current, pollfd p)
 	{
-//		assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
-//		for (size_t i = 0; i != ioSockets.size(); ++i)
+		if ((p.revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
-//			auto& current = ioSockets[i];
-//			if (begin[i].fd != INVALID_SOCKET)
-			{
-				if ((p.revents & (POLLERR | POLLNVAL)) != 0) // check errors first
-				{
-					NODECPP_TRACE("POLLERR event at {}", p.fd);
-					internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-					infraMakeErrorEventAndClose(current/*, evs*/);
-				}
-				else if ((p.revents & POLLIN) != 0)
-				{
-					NODECPP_TRACE("POLLIN event at {}", p.fd);
-					infraProcessAcceptEvent(current/*, evs*/);
-				}
-				else if (p.revents != 0)
-				{
-					NODECPP_TRACE("Unexpected event at {}, value {:x}", p.fd, p.revents);
-					internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-					infraMakeErrorEventAndClose(current/*, evs*/);
-				}
-			}
+			NODECPP_TRACE("POLLERR event at {}", p.fd);
+			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
+			infraMakeErrorEventAndClose(current/*, evs*/);
+		}
+		else if ((p.revents & POLLIN) != 0)
+		{
+			NODECPP_TRACE("POLLIN event at {}", p.fd);
+			infraProcessAcceptEvent(current/*, evs*/);
+		}
+		else if (p.revents != 0)
+		{
+			NODECPP_TRACE("Unexpected event at {}, value {:x}", p.fd, p.revents);
+			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
+			infraMakeErrorEventAndClose(current/*, evs*/);
 		}
 	}
-#endif
 private:
 	void infraProcessAcceptEvent(NetSocketEntry& entry)
 	{

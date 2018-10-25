@@ -93,74 +93,8 @@ public:
 };
 
 
-
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
-
-inline
-bool infraSetPollFdSet___Client(const NetSockets& ioSockets, pollfd* begin, const pollfd* end)
-{
-	size_t sz = end - begin;
-	assert(sz >= ioSockets.size());
-	bool anyRefed = false;
-	
-	for (size_t i = 0; i != sz; ++i)
-	{
-//			if(i < ioSockets.size() && ioSockets[i].isValid())
-		if(i < ioSockets.size() && ioSockets.at(i).isAssociated())
-		{
-			const auto& current = ioSockets.at(i);
-			NODECPP_ASSERT(current.getClientSocketData()->osSocket != INVALID_SOCKET);
-
-//				anyRefed = anyRefed || current.getClientSocketData()->refed;
-			anyRefed = anyRefed || current.refed;
-
-			begin[i].fd = current.getClientSocketData()->osSocket;
-			begin[i].events = 0;
-
-			// TODOY: revide!
-			if(!current.getClientSocketData()->remoteEnded && !current.getClientSocketData()->paused)
-				begin[i].events |= POLLIN;
-			if (current.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Connecting || !current.getClientSocketData()->writeBuffer.empty())
-				begin[i].events |= POLLOUT;
-		}
-		else
-			begin[i].fd = INVALID_SOCKET;
-	}
-	return anyRefed;
-}
-
-inline
-bool infraSetPollFdSet___Server(const NetSockets& ioSockets, pollfd* begin, const pollfd* end)
-{ 
-	size_t sz = end - begin;
-	assert(sz >= ioSockets.size());
-	bool anyRefed = false;
-
-	for (size_t i = 0; i != sz; ++i)
-	{
-//			if (i < ioSockets.size() && ioSockets[i].isValid())
-		if (i < ioSockets.size() && ioSockets.at(i).isAssociated())
-		{
-			const auto& current = ioSockets.at(i);
-			NODECPP_ASSERT(current.getServerSocketData()->osSocket != INVALID_SOCKET);
-
-			anyRefed = anyRefed || current.getServerSocketData()->refed;
-
-			begin[i].fd = current.getServerSocketData()->osSocket;
-			begin[i].events = 0;
-
-			bool f2 = true;
-			if (f2)
-				begin[i].events |= POLLIN;
-		}
-		else
-			begin[i].fd = INVALID_SOCKET;
-	}
-
-	return anyRefed;
-}
-
 
 
 template<class EmitterType, class ServerEmitterType>
@@ -204,38 +138,6 @@ public:
 
 	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
 	{
-#if 0 // old version
-		size_t fds_sz;
-		if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-			fds_sz = NetSocketManagerBase::MAX_SOCKETS + NetServerManagerBase::MAX_SOCKETS;
-		else
-			fds_sz = NetSocketManagerBase::MAX_SOCKETS;
-		std::unique_ptr<pollfd[]> fds(new pollfd[fds_sz]);
-
-	
-		pollfd* fds_begin = fds.get();
-		pollfd* fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
-	//	bool refedSocket = netSocket.infraSetPollFdSet(fds_begin, fds_end);
-		bool refedSocket = infraSetPollFdSet___Client(ioSockets, fds_begin, fds_end);
-
-		fds_begin = fds_end;
-
-		if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-		{
-			fds_end += NetServerManagerBase::MAX_SOCKETS;
-		//	pollfdsz = NetServerManager::MAX_SOCKETS;
-	//		bool refedServer = netServer.infraSetPollFdSet(fds_begin, fds_end);
-			bool refedServer = infraSetPollFdSet___Server(ioSockets, fds_begin, fds_end);
-		//	bool refedServer = netServer.infraSetPollFdSet(fds_begin, pollfdsz);
-			if (refed == false && refedSocket == false && refedServer == false) return false; //stop here
-		}
-		else
-		{
-			if (refed == false && refedSocket == false) return false; //stop here
-		}
-
-#else
-		// TODOY: '			if (refed == false && refedSocket == false) return false; //stop here'
 		size_t fds_sz;
 		pollfd* fds_begin;
 		auto pollfdRet = ioSockets.getPollfd();
@@ -243,36 +145,27 @@ public:
 		fds_begin = pollfdRet.first;
 		if ( fds_sz == 0 ) // if (refed == false && refedSocket == false) return false; //stop here'
 			return false;
-#endif
 
 		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
 
-#if 0 // old version
-	#ifdef _MSC_VER
-		int retval = WSAPoll(fds.get(), static_cast<ULONG>(fds_sz), timeoutToUse);
-	#else
-		int retval = poll(fds.get(), fds_sz, timeoutToUse);
-	#endif
-#else
-	#ifdef _MSC_VER
+#ifdef _MSC_VER
 		int retval = WSAPoll(fds_begin, static_cast<ULONG>(fds_sz), timeoutToUse);
-	#else
+#else
 		int retval = poll(fds_begin, fds_sz, timeoutToUse);
-	#endif
-#endif // 0
+#endif
 
 
 		if (retval < 0)
 		{
-	#ifdef _MSC_VER
+#ifdef _MSC_VER
 			int error = WSAGetLastError();
 			//		if ( error == WSAEWOULDBLOCK )
 			NODECPP_TRACE("error {}", error);
-	#else
+#else
 			perror("select()");
 			//		int error = errno;
 			//		if ( error == EAGAIN || error == EWOULDBLOCK )
-	#endif
+#endif
 			/*        return WAIT_RESULTED_IN_TIMEOUT;*/
 			NODECPP_ASSERT(false);
 			NODECPP_TRACE0("COMMLAYER_RET_FAILED");
@@ -285,35 +178,6 @@ public:
 		}
 		else //if(retval)
 		{
-#if 0 // old version
-			fds_begin = fds.get();
-			fds_end = fds_begin + NetSocketManagerBase::MAX_SOCKETS;
-	//		pollfdsz = NetSocketManagerBase::MAX_SOCKETS;
-			netSocket.infraCheckPollFdSet(fds_begin, fds_end/*, evs*/);
-	//		netSocket.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
-
-			fds_begin = fds_end;
-	//		fds_begin += pollfdsz;
-			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-			{
-				fds_end += NetServerManagerBase::MAX_SOCKETS;
-				netServer.infraCheckPollFdSet(fds_begin, fds_end/*, evs*/);
-		//		pollfdsz = NetServerManager::MAX_SOCKETS;
-		//		netServer.infraCheckPollFdSet(fds_begin, pollfdsz, evs);
-			}
-
-			//if (queue.empty())
-			//{
-			//	NODECPP_TRACE("No event generated from poll wake up (non timeout)");
-			//	for (size_t i = 0; i != fds_sz; ++i)
-			//	{
-			//		if (fds[i].fd >= 0 && fds[i].revents != 0)
-			//		{
-			//			NODECPP_TRACE("At id {}, socket {}, revent {:x}", i, fds[i].fd, fds[i].revents);
-			//		}
-			//	}
-			//}
-#else
 			for ( size_t i=0; i<fds_sz; ++i)
 			{
 				if ( (int64_t)(fds_begin[i].fd) > 0 )
@@ -341,7 +205,6 @@ public:
 					}
 				}
 			}
-#endif
 			return true;
 		}
 	}

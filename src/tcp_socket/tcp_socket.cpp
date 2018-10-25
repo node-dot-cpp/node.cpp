@@ -127,14 +127,12 @@ namespace nodecpp
 {
 	namespace internal_usage_only
 	{
-		//static
 		void internal_close(SOCKET sock)
 		{
 			NODECPP_TRACE("internal_close() on sock {}", sock);
 			CLOSE_SOCKET(sock);
 		}
 
-		//static
 		void internal_shutdown_send(SOCKET sock)
 		{
 		#ifdef _MSC_VER
@@ -152,7 +150,6 @@ namespace nodecpp
 				NODECPP_TRACE("shutdown on sock {} failed; error {}", sock, error);
 			}
 		}
-
 
 		static
 		bool internal_async_socket(SOCKET sock)
@@ -196,8 +193,6 @@ namespace nodecpp
 			return true;
 		}
 
-
-
 		static
 		bool internal_socket_keep_alive(SOCKET sock, bool enable)
 		{
@@ -220,7 +215,6 @@ namespace nodecpp
 			return true;
 		}
 
-		//static
 		bool internal_linger_zero_socket(SOCKET sock)
 		{
 			linger value;
@@ -242,8 +236,6 @@ namespace nodecpp
 			return true;
 		}
 
-
-		//static
 		SOCKET internal_make_tcp_socket()
 		{
 			SOCKET sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -265,7 +257,6 @@ namespace nodecpp
 			return sock;
 		}
 
-		//static
 		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self)
 		{
 			int res = ::bind(sock, (struct sockaddr *)(&sa_self), sizeof(struct sockaddr_in));
@@ -303,8 +294,6 @@ namespace nodecpp
 			return COMMLAYER_RET_OK;
 		}
 
-
-		//static
 		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port)
 		{
 			NODECPP_TRACE("internal_bind_socket() on sock {} to {}:{}", sock, ip.toStr(), port.toStr());
@@ -317,7 +306,6 @@ namespace nodecpp
 			return internal_bind_socket(sock, sa);
 		}
 
-		//static
 		bool internal_listen_tcp_socket(SOCKET sock)
 		{
 			int res = listen(sock, tcpListenBacklogSize);
@@ -345,7 +333,6 @@ namespace nodecpp
 			return internal_connect_socket(saOther, sock);
 		}
 
-		//static
 		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
 		{
 			NODECPP_TRACE("internal_tcp_accept() on sock {}", sock);
@@ -375,7 +362,6 @@ namespace nodecpp
 			return outSock;
 		}
 
-		//static
 		bool internal_getsockopt_so_error(SOCKET sock)
 		{
 			int result;
@@ -758,13 +744,6 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 	return ret;
 }
 
-/*
- * TODO: for performace reasons, the poll data should be cached inside NetSocketManager
- * and updated at the same time that StreamSocketEntry.
- * Avoid to have to appWrite it all over again every time
- * 
- */
-
 void OSLayer::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
@@ -781,93 +760,6 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 
 
 #ifndef NET_CLIENT_ONLY
-#if 0 // moved to .h
-void NetServerManagerBase::appAddServer(NodeBase* node, net::ServerTBase* ptr, int typeId)
-{
-//	Ip4 myIp = Ip4::parse(ip);
-
-//	Port myPort = Port::fromHost(port);
-
-
-	SocketRiia s(internal_usage_only::internal_make_tcp_socket());
-	if (!s)
-	{
-		throw Error();
-	}
-
-/*	if (!internal_usage_only::internal_bind_socket(s.get(), myIp, myPort))
-	{
-		throw Error();
-	}
-
-	if (!internal_usage_only::internal_listen_tcp_socket(s.get()))
-	{
-		throw Error();
-	}*/
-
-	size_t id = addServerEntry(node, ptr, typeId);
-	if (id == 0)
-	{
-		NODECPP_TRACE0("Failed to addEntry at NetServerManager::appAddServer");
-		throw Error();
-	}
-
-	auto& entry = appGetEntry(id);
-	entry.getServerSocketData()->osSocket = s.release();
-	entry.setSockIssued();
-
-/*	net::Address addr;
-
-	pendingEvents.add(id, &net::Server::emitListening, ptr, id, std::move(addr));*/
-}
-
-void NetServerManagerBase::appListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog)
-{
-	Ip4 myIp = Ip4::parse(ip);
-
-	Port myPort = Port::fromHost(port);
-
-
-/*	SocketRiia s(internal_usage_only::internal_make_tcp_socket());
-	if (!s)
-	{
-		throw Error();
-	}*/
-
-	if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort))
-	{
-		throw Error();
-	}
-
-	if (!internal_usage_only::internal_listen_tcp_socket(ptr->dataForCommandProcessing.osSocket))
-	{
-		throw Error();
-	}
-	ptr->dataForCommandProcessing.refed = true;
-	NetSocketEntry& entry = appGetEntry(ptr->dataForCommandProcessing.index);
-	NODECPP_ASSERT( ptr->dataForCommandProcessing.index != 0 );
-	entry.setAssociated();
-	entry.refed = true;
-
-/*	size_t id = addEntry(node, ptr, typeId);
-	if (id == 0)
-	{
-		NODECPP_TRACE0("Failed to addEntry at NetServerManager::listen");
-		throw Error();
-	}
-
-	auto& entry = appGetEntry(id);
-	entry.getServerSocketData()->osSocket = s.release();*/
-
-	net::Address addr;
-
-//	auto& entry = appGetEntry(ptr->dataForCommandProcessing.index);
-//	pendingEvents.add(id, &net::Server::emitListening, ptr, id, std::move(addr));
-//	EmitterType::emitError( entry.getEmitter(), Error() );
-	pendingListenEvents.push_back( ptr->dataForCommandProcessing.index );
-}
-#endif // 0
-
 
 void NetServerManagerBase::appClose(size_t id)
 {
@@ -882,166 +774,9 @@ void NetServerManagerBase::appClose(size_t id)
 	pendingCloseEvents.emplace_back(entry.index, false);
 }
 
-/*size_t NetServerManager::infraGetPollFdSetSize() const
-{
-	return ioSockets.size();
-}*/
-
-/*
-* TODO: for performace reasons, the poll data should be cached inside NetSocketManager
-* and updated at the same time that StreamSocketEntry.
-* Avoid to have to write it all over again every time
-*
-*/
-/*bool NetServerManager::infraSetPollFdSet(pollfd* begin, const pollfd* end) const
-{ 
-	size_t sz = end - begin;
-	assert(sz >= ioSockets.size());
-	bool anyRefed = false;
-
-	for (size_t i = 0; i != sz; ++i)
-	{
-		if (i < ioSockets.size() && ioSockets[i].isValid())
-		{
-			const auto& current = ioSockets[i];
-			NODECPP_ASSERT(current.getServerSocketData()->osSocket != INVALID_SOCKET);
-
-			anyRefed = anyRefed || current.getServerSocketData()->refed;
-
-			begin[i].fd = current.getServerSocketData()->osSocket;
-			begin[i].events = 0;
-
-			bool f2 = true;
-			if (f2)
-				begin[i].events |= POLLIN;
-		}
-		else
-			begin[i].fd = INVALID_SOCKET;
-	}
-
-	return anyRefed;
-}
-
-void NetServerManager::infraGetCloseEvents(EvQueue& evs)
-{
-	// if there is an issue with a socket, we may need to close it,
-	// and push an event here to notify later.
-
-	for (auto& current : pendingCloseEvents)
-	{
-		//first remove any pending event for this socket
-		pendingEvents.remove(current.first);
-		if (current.first < ioSockets.size())
-		{
-			auto& entry = ioSockets[current.first];
-			if (entry.isValid())
-			{
-				if (entry.getServerSocketData()->osSocket != INVALID_SOCKET)
-					internal_usage_only::internal_close(entry.getServerSocketData()->osSocket);
-				//			entry.getPtr()->emitClose(entry.second);
-				evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
-			}
-			entry = NetSocketEntry(current.first);
-		}
-	}
-	pendingCloseEvents.clear();
-}
-
-
-void NetServerManager::infraCheckPollFdSet(const pollfd* begin, const pollfd* end, EvQueue& evs)
-{
-	assert(end - begin >= static_cast<ptrdiff_t>(ioSockets.size()));
-	for (size_t i = 0; i != ioSockets.size(); ++i)
-	{
-		auto& current = ioSockets[i];
-		if (begin[i].fd != INVALID_SOCKET)
-		{
-			if ((begin[i].revents & (POLLERR | POLLNVAL)) != 0) // check errors first
-			{
-				NODECPP_TRACE("POLLERR event at {}", begin[i].fd);
-				internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-				infraMakeErrorEventAndClose(current, evs);
-			}
-			else if ((begin[i].revents & POLLIN) != 0)
-			{
-				NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
-				infraProcessAcceptEvent(current, evs);
-			}
-			else if (begin[i].revents != 0)
-			{
-				NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, begin[i].revents);
-				internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-				infraMakeErrorEventAndClose(current, evs);
-			}
-		}
-	}
-}
-
-
-void NetServerManager::infraProcessAcceptEvent(NetSocketEntry& entry, EvQueue& evs)
-{
-	Ip4 remoteIp;
-	Port remotePort;
-
-	SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, entry.getServerSocketData()->osSocket));
-	if (!newSock)
-		return;
-
-//	net::Socket* ptr = entry.getPtr()->makeSocket();
-	net::Socket* ptr = entry.getEmitter()->makeSocket();
-	auto& man = getInfra().getNetSocket();
-
-	bool ok = man.infraAddAccepted(ptr, newSock.release(), evs);
-
-	if (!ok)
-		return;
-
-//	entry.getPtr()->emitConnection(ptr);
-	evs.add(&net::Server::emitConnection, entry.getPtr(), ptr);
-
-	return;
-}*/
-
 size_t NetServerManagerBase::addServerEntry(NodeBase* node, net::ServerTBase* ptr, int typeId)
 {
 	return ioSockets.addEntry( node, ptr, typeId );
-/*	for (size_t i = 1; i != ioSockets.size(); ++i) // skip ioSockets[0]
-	{
-//		if (!ioSockets[i].isValid())
-//		if (!ioSockets[i].isUsed())
-		if (!ioSockets.at(i).isUsed())
-		{
-			NetSocketEntry entry(i, node, ptr, typeId);
-			ioSockets.at(i) = std::move(entry);
-			return i;
-		}
-	}
-
-	if (ioSockets.size() == MAX_SOCKETS)
-	{
-		return 0;
-	}
-
-	size_t ix = ioSockets.size();
-	ioSockets.emplace_back(ix, node, ptr, typeId);
-	return ix;*/
 }
 
-/*NetSocketEntry& NetServerManager::appGetEntry(size_t id)
-{
-	return ioSockets.at(id);
-}
-
-const NetSocketEntry& NetServerManager::appGetEntry(size_t id) const
-{
-	return ioSockets.at(id);
-}
-
-
-
-void NetServerManager::infraMakeErrorEventAndClose(NetSocketEntry& entry, EvQueue& evs)
-{
-	evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
-	pendingCloseEvents.emplace_back(entry.index, true);
-}*/
 #endif // NO_SERVER_STAFF
