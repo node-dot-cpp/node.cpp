@@ -257,9 +257,9 @@ namespace nodecpp
 			return sock;
 		}
 
-		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self)
+		bool internal_bind_socket(SOCKET sock, struct ::sockaddr_in& sa_self)
 		{
-			int res = ::bind(sock, (struct sockaddr *)(&sa_self), sizeof(struct sockaddr_in));
+			int res = ::bind(sock, (struct sockaddr *)(&sa_self), sizeof(struct ::sockaddr_in));
 			if (0 != res)
 			{
 				int error = getSockError();
@@ -271,9 +271,9 @@ namespace nodecpp
 		}
 
 		static
-		uint8_t internal_connect_socket(struct sockaddr_in& sa_other, SOCKET sock)
+		uint8_t internal_connect_socket(struct ::sockaddr_in& sa_other, SOCKET sock)
 		{
-			int res = connect(sock, (struct sockaddr *)(&sa_other), sizeof(struct sockaddr_in));
+			int res = connect(sock, (struct sockaddr *)(&sa_other), sizeof(struct ::sockaddr_in));
 			if (0 != res)
 			{
 				int error = getSockError();
@@ -297,8 +297,8 @@ namespace nodecpp
 		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port)
 		{
 			NODECPP_TRACE("internal_bind_socket() on sock {} to {}:{}", sock, ip.toStr(), port.toStr());
-			struct sockaddr_in sa;
-			memset(&sa, 0, sizeof(struct sockaddr_in));
+			struct ::sockaddr_in sa;
+			memset(&sa, 0, sizeof(struct ::sockaddr_in));
 			sa.sin_family = AF_INET;
 			sa.sin_addr.s_addr = ip.getNetwork();
 			sa.sin_port = port.getNetwork();
@@ -324,8 +324,8 @@ namespace nodecpp
 		{
 			NODECPP_TRACE("internal_connect_for_address() on sock {} to {}:{}", sock, peerIp.toStr(), peerPort.toStr());
 
-			struct sockaddr_in saOther;
-			memset(&saOther, 0, sizeof(struct sockaddr_in));
+			struct ::sockaddr_in saOther;
+			memset(&saOther, 0, sizeof(struct ::sockaddr_in));
 			saOther.sin_family = AF_INET;
 			saOther.sin_addr.s_addr = peerIp.getNetwork();
 			saOther.sin_port = peerPort.getNetwork();
@@ -336,8 +336,8 @@ namespace nodecpp
 		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
 		{
 			NODECPP_TRACE("internal_tcp_accept() on sock {}", sock);
-			struct sockaddr_in sa;
-			socklen_t sz = sizeof(struct sockaddr_in);
+			struct ::sockaddr_in sa;
+			socklen_t sz = sizeof(struct ::sockaddr_in);
 			memset(&sa, 0, sz);
 
 			SOCKET outSock = accept(sock, (struct sockaddr *)&sa, &sz);
@@ -425,7 +425,7 @@ namespace nodecpp
 		}
 
 		static
-		uint8_t internal_get_packet_bytes2(SOCKET sock, uint8_t* buff, size_t buffSz, size_t& retSz, struct sockaddr_in& sa_other, socklen_t& fromlen)
+		uint8_t internal_get_packet_bytes2(SOCKET sock, uint8_t* buff, size_t buffSz, size_t& retSz, struct ::sockaddr_in& sa_other, socklen_t& fromlen)
 		{
 			retSz = 0;
 	
@@ -646,8 +646,8 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 
 std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
-	socklen_t fromlen = sizeof(struct sockaddr_in);
-	struct sockaddr_in sa_other;
+	socklen_t fromlen = sizeof(struct ::sockaddr_in);
+	struct ::sockaddr_in sa_other;
 	size_t sz = 0;
 	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
 
