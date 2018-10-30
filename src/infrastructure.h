@@ -138,7 +138,7 @@ public:
 
 	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
 	{
-		size_t fds_sz;
+/*		size_t fds_sz;
 		pollfd* fds_begin;
 		auto pollfdRet = ioSockets.getPollfd();
 		fds_sz = pollfdRet.second;
@@ -153,7 +153,14 @@ public:
 #else
 		int retval = poll(fds_begin, fds_sz, timeoutToUse);
 #endif
+*/
+		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
+		auto ret = ioSockets.wait( timeoutToUse );
 
+		if ( !ret.first )
+			return false;
+
+		int retval = ret.second;
 
 		if (retval < 0)
 		{
@@ -178,20 +185,21 @@ public:
 		}
 		else //if(retval)
 		{
-			for ( size_t i=0; i<fds_sz; ++i)
+			for ( size_t i=0; i<ioSockets.size(); ++i)
 			{
-				if ( (int64_t)(fds_begin[i].fd) > 0 )
+				if ( (int64_t)(ioSockets.socketsAt(i + 1)) > 0 )
 				{
 					NetSocketEntry& current = ioSockets.at( 1 + i );
+					short revents = ioSockets.reventsAt( 1 + i );
 					switch ( current.emitter.objectType )
 					{
 						case OpaqueEmitter::ObjectType::ClientSocket:
-							netSocket.infraCheckPollFdSet(current, fds_begin[i]);
+							netSocket.infraCheckPollFdSet(current, revents);
 							break;
 						case OpaqueEmitter::ObjectType::ServerSocket:
 							if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 							{
-								netServer.infraCheckPollFdSet(current, fds_begin[i]);
+								netServer.infraCheckPollFdSet(current, revents);
 								break;
 							}
 							else
