@@ -13,6 +13,8 @@
 
 #include <functional>
 
+#define DO_INTEGRITY_CHECKING // TODO: consider making project-level definition
+
 
 using namespace std;
 using namespace nodecpp;
@@ -33,6 +35,25 @@ class MySampleTNode : public NodeBase
 	size_t size = 64 * 1024;
 	bool letOnDrain = false;
 
+#ifdef DO_INTEGRITY_CHECKING
+	uint16_t Fletcher16( uint8_t *data, int count )
+	{
+	   uint16_t sum1 = 0;
+	   uint16_t sum2 = 0;
+	   int index;
+
+	   for( index = 0; index < count; ++index )
+	   {
+		  sum1 = (sum1 + data[index]) % 255;
+		  sum2 = (sum2 + sum1) % 255;
+	   }
+
+	   return (sum2 << 8) | sum1;
+	}
+
+	uint32_t clientIDBase = 0; // uint32 is quite sufficient for testing purposes
+#endif
+
 public:
 	MySampleTNode()
 	{
@@ -46,19 +67,60 @@ public:
 
 		srv.on( event::close, [this](bool hadError) {
 			print("server: onCloseServer()!\n");
-			//serverSockets.clear();
 		});
 		srv.on( event::connection, [this](net::SocketTBase* socket) {
 			print("server: onConnection()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket != nullptr ); 
-//			serverSockets.add( socket );
 			net::Socket* s = static_cast<net::Socket*>(socket);
 			s->on( event::close, [this, s](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
 				s->unref();
 				srv.removeSocket( s );
 			});
+#ifdef DO_INTEGRITY_CHECKING
+			uint32_t clientID = ++clientIDBase;
+			s->on( event::data, [this, s, clientID](Buffer& buffer) {
+				if ( buffer.size() < 10 )
+				{
+					NODECPP_TRACE( "Insufficient data on socket id = {}", clientID );
+					s->unref();
+					return;
+				}
+		//		print("server socket: onData for idx %d !\n", *extra );
+	
+				size_t receivedSz = buffer.begin()[0];
+				if ( receivedSz != buffer.size() )
+				{
+					NODECPP_TRACE( "Corrupted data on socket id = {}: received {}, expected: {} bytes", clientID, receivedSz, buffer.size() );
+					s->unref();
+					return;
+				}
+	
+				size_t requestedSz = buffer.begin()[1];
+				uint32_t receivedID = *reinterpret_cast<uint32_t*>(buffer.begin()+2); // yes, we do not care about endiannes... it is just what we've sent them
+				if ( !(receivedID == 0 || receivedID == clientID) )
+				{
+					NODECPP_TRACE( "Corrupted data on socket with client id = {}: received client id is: {}", clientID, receivedID );
+					s->unref();
+					return;
+				}
+				uint32_t receivedPN = *reinterpret_cast<uint32_t*>(buffer.begin()+6); // yes, we do not care about endiannes... it is just what we've sent them
+				size_t replySz = requestedSz + 11;
+				Buffer reply(replySz);
+				reply.begin()[2] = (uint8_t)requestedSz;
+				*reinterpret_cast<uint32_t*>(reply.begin()+3) = clientID;
+				*reinterpret_cast<uint32_t*>(reply.begin()+7) = receivedPN;
+				if ( requestedSz )
+					memset(reply.begin() + 11, (uint8_t)requestedSz, requestedSz);
+				*reinterpret_cast<uint16_t*>(reply.begin()) = Fletcher16( reply.begin() + 2, requestedSz + 9 ); // TODO: endianness
+				s->write(reply.begin(), replySz);
+	
+				stats.recvSize += receivedSz;
+				stats.sentSize += requestedSz + 9;
+				++(stats.rqCnt);
+			});
+#else
 			s->on( event::data, [this, s](Buffer& buffer) {
 				if ( buffer.size() < 2 )
 				{
@@ -90,6 +152,7 @@ public:
 				stats.sentSize += requestedSz;
 				++(stats.rqCnt);
 			});
+#endif
 			s->on( event::end, [this, s]() {
 				print("server socket: onEnd!\n");
 				const char buff[] = "goodbye!";
