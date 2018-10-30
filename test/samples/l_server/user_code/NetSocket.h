@@ -13,7 +13,7 @@
 
 #include <functional>
 
-#define DO_INTEGRITY_CHECKING // TODO: consider making project-level definition
+//#define DO_INTEGRITY_CHECKING // TODO: consider making project-level definition
 
 
 using namespace std;

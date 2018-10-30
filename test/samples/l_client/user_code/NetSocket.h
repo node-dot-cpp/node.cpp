@@ -11,7 +11,7 @@
 #include "../../../../include/nodecpp/server_t.h"
 #include "../../../../include/nodecpp/server_type_list.h"
 
-#define DO_INTEGRITY_CHECKING // TODO: consider making project-level definition
+//#define DO_INTEGRITY_CHECKING // TODO: consider making project-level definition
 
 
 using namespace nodecpp;
@@ -82,7 +82,7 @@ public:
 			uint16_t chS = Fletcher16( buffer.begin() + 2, buffer.size() - 2 );
 			if ( *reinterpret_cast<uint16_t*>(buffer.begin()) != chS )
 			{
-				NODECPP_TRACE( "Checksum failed" );
+				NODECPP_TRACE0( "Checksum failed" );
 				clientSock.unref();
 				return;
 			}
