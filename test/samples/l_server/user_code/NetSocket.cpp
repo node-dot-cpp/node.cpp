@@ -1,7 +1,7 @@
 // NetSocket.cpp : sample of user-defined code
 
 
-#include "../../../../src/infrastructure.h"
+#include <infrastructure.h>
 #include "NetSocket.h"
 
 #if (defined USING_L_SOCKETS) || (defined USING_O_SOCKETS)
