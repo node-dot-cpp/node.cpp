@@ -47,7 +47,10 @@ namespace nodecpp {
 				if constexpr (std::is_same< T1, ServerO >::value)
 					(static_cast<ServerO*>(ptr->getPtr()))->onConnectionX(sock);
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->emitConnection(sock);
+				{
+					net::Socket* s = static_cast<net::Socket*>(sock);
+					(static_cast<Server*>(ptr->getPtr()))->emitConnection(s);
+				}
 				else
 				{
 					if constexpr ( T1::Handlers::onConnection != nullptr )

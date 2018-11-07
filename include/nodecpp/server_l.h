@@ -133,7 +133,7 @@ namespace nodecpp {
 				eClose.emit(hadError);
 			}
 
-			void emitConnection(SocketTBase* socket) {
+			void emitConnection(Socket* socket) {
 				eConnection.emit(socket);
 			}
 
