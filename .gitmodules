@@ -1,0 +1,3 @@
+[submodule "safe_memory"]
+	path = safe_memory
+	url = https://github.com/node-dot-cpp/safe-memory.git
