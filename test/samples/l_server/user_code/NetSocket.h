@@ -31,8 +31,8 @@ class MySampleTNode : public NodeBase
 	};
 	Stats stats;
 
-	std::unique_ptr<uint8_t> ptr;
-	size_t size = 64 * 1024;
+	/*std::unique_ptr<uint8_t[]> ptr;
+	size_t size = 64 * 1024;*/
 	bool letOnDrain = false;
 
 #ifdef DO_INTEGRITY_CHECKING
@@ -63,7 +63,8 @@ public:
 	virtual void main()
 	{
 		printf( "MySampleLambdaOneNode::main()\n" );
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
+//		ptr.reset(static_cast<uint8_t*>(malloc(size)));
+//		ptr.reset(new uint8_t[size]);
 
 		srv.on( event::close, [this](bool hadError) {
 			print("server: onCloseServer()!\n");
@@ -129,7 +130,7 @@ public:
 				}
 		//		print("server socket: onData for idx %d !\n", *extra );
 	
-				size_t receivedSz = buffer.begin()[0];
+				size_t receivedSz = buffer.readUInt8(0);
 				if ( receivedSz != buffer.size() )
 				{
 //					printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", *extra, receivedSz, buffer.size() );
@@ -138,13 +139,16 @@ public:
 					return;
 				}
 	
-				size_t requestedSz = buffer.begin()[1];
+				size_t requestedSz = buffer.readUInt8(1);
 				if ( requestedSz )
 				{
 					Buffer reply(requestedSz);
+					for ( size_t i=0; i<(uint8_t)requestedSz; ++i )
+						reply.appendUint8( 0 );
 					//buffer.begin()[0] = (uint8_t)requestedSz;
-					memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-					socket->write(reply.begin(), requestedSz);
+					//memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
+//					socket->write(reply.begin(), requestedSz);
+					socket->write(reply);
 				}
 	
 				stats.recvSize += receivedSz;
@@ -154,8 +158,11 @@ public:
 #endif
 			socket->on( event::end, [this, socket]() {
 				print("server socket: onEnd!\n");
-				const char buff[] = "goodbye!";
-				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+//				const char buff[] = "goodbye!";
+//				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+				Buffer b;
+				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
+				socket->write( b );
 				socket->end();
 			});
 
@@ -174,21 +181,25 @@ public:
 				srvCtrl.removeSocket( socket );
 			});
 			socket->on( event::data, [this, socket](Buffer& buffer) {
-				size_t requestedSz = buffer.begin()[1];
+				size_t requestedSz = buffer.readUInt8(1);
 				if ( requestedSz )
 				{
 					Buffer reply(sizeof(stats));
 					stats.connCnt = srv.getSockCount();
 					size_t replySz = sizeof(Stats);
-					uint8_t* buff = ptr.get();
-					memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
-					socket->write(buff, replySz);
+					//uint8_t* buff = ptr.get();
+					//memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
+					reply.append( &stats, replySz );
+					socket->write(reply);
 				}
 			});
 			socket->on( event::end, [this, socket]() {
 				print("server socket: onEnd!\n");
-				const char buff[] = "goodbye!";
-				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+//				const char buff[] = "goodbye!";
+//				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+				Buffer b;
+				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
+				socket->write( b );
 				socket->end();
 			});
 		});

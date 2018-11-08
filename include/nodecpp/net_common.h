@@ -91,7 +91,7 @@ namespace nodecpp {
 			_data = std::move(tmp);
 		}
 
-		void append(const uint8_t* dt, size_t sz) { // NOTE: may invalidate pointers
+		void append(const void* dt, size_t sz) { // NOTE: may invalidate pointers
 /*			if (_data == nullptr) {
 				reserve(sz);
 				memcpy(end(), dt, sz);
@@ -154,6 +154,50 @@ namespace nodecpp {
 			if ( _size < pos + 1 )
 				_size = pos + 1;
 			return pos + 1;
+		}
+		size_t appendUint8( int8_t val ) {
+			ensureCapacity(size() + 1);
+			*reinterpret_cast<uint8_t*>(begin() + size() ) = val;
+			return ++_size;
+		}
+		size_t appendString( const char* str, size_t sz ) { // TODO: revision required
+			if ( str )
+			{
+				ensureCapacity(size() + sz + 1);
+				memcpy(begin() + size(), str, sz );
+				_size += sz;
+			}
+			*reinterpret_cast<uint8_t*>(begin() + size() ) = 0;
+			return ++_size;
+		}
+
+		// an attempt to follow node.js buffer-related interface
+		void writeUInt32LE(uint8_t value, size_t offset) {
+			assert( offset + 1 <= _capacity );
+			*(begin() + size()) = value;
+			if ( _size < offset + 4 )
+				_size = offset + 4;
+		}
+		void writeUInt32BE(uint32_t value, size_t offset) {
+			assert( false ); // TODO: implement
+		}
+		void writeUInt32LE(uint32_t value, size_t offset) {
+			assert( offset + 4 <= _capacity );
+			memcpy(begin() + size(), &value, 4 );
+			if ( _size < offset + 4 )
+				_size = offset + 4;
+		}
+		uint32_t readUInt8(size_t offset) {
+			assert( offset + 1 <= _size );
+			return *(begin() + offset);
+		}
+		uint32_t readUInt32BE(size_t offset) {
+			assert( false ); // TODO: implement
+			return 0;
+		}
+		uint8_t readUInt32LE(size_t offset) {
+			assert( offset + 4 <= _size );
+			return *reinterpret_cast<uint32_t*>(begin() + offset);
 		}
 	};
 
