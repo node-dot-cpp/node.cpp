@@ -41,6 +41,8 @@
 #define NODECPP_UNUSED_VAR 
 #endif
 
+#include <src/safe_ptr.h>
+
 #include <utility>
 
 #include <vector>

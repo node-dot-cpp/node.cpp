@@ -64,6 +64,7 @@ namespace nodecpp {
 				SocketForserver* getNewSocket(OpaqueSocketData& sdata)
 				{
 					SocketForserver* sock = new SocketForserver(sdata);
+					owning_ptr<SocketForserver> p1 = make_owning<SocketForserver>(sdata);
 					NODECPP_ASSERT( sock != nullptr );
 					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
 					if ( _begin == nullptr )
