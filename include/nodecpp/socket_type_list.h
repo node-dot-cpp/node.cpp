@@ -229,10 +229,10 @@ namespace nodecpp {
 		public:
 			class Ptr
 			{
-				SocketTBase* ptr;
+				SocketBase* ptr;
 			public:
-				Ptr( SocketTBase* ptr_ ) { ptr = ptr_; }
-				SocketTBase* getPtr() const {return ptr;}
+				Ptr( SocketBase* ptr_ ) { ptr = ptr_; }
+				SocketBase* getPtr() const {return ptr;}
 			};
 
 		public:
@@ -250,13 +250,13 @@ namespace nodecpp {
 			static void emitEnd( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnEnd<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitAccepted( const OpaqueEmitter& emitter ) { Ptr emitter_ptr( emitter.ptr ); callOnAccepted<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 #else
-			static void emitConnect( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketTBase*>(emitter.getClientSocketPtr()) ); callOnConnect<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
-			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketTBase*>(emitter.getClientSocketPtr()) ); callOnClose<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError); }
-			static void emitData( const OpaqueEmitter& emitter, nodecpp::Buffer& b ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketTBase*>(emitter.getClientSocketPtr()) ); callOnData<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, b); }
-			static void emitDrain( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketTBase*>(emitter.getClientSocketPtr()) ); callOnDrain<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
-			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketTBase*>(emitter.getClientSocketPtr()) ); callOnError<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
-			static void emitEnd( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketTBase*>(emitter.getClientSocketPtr()) ); callOnEnd<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
-			static void emitAccepted( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketTBase*>(emitter.getClientSocketPtr()) ); callOnAccepted<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitConnect( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketBase*>(emitter.getClientSocketPtr()) ); callOnConnect<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketBase*>(emitter.getClientSocketPtr()) ); callOnClose<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError); }
+			static void emitData( const OpaqueEmitter& emitter, nodecpp::Buffer& b ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketBase*>(emitter.getClientSocketPtr()) ); callOnData<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, b); }
+			static void emitDrain( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketBase*>(emitter.getClientSocketPtr()) ); callOnDrain<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketBase*>(emitter.getClientSocketPtr()) ); callOnError<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
+			static void emitEnd( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketBase*>(emitter.getClientSocketPtr()) ); callOnEnd<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+			static void emitAccepted( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( static_cast<SocketBase*>(emitter.getClientSocketPtr()) ); callOnAccepted<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 #endif // 0
 		};
 	} // namespace net

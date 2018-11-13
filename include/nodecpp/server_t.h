@@ -124,7 +124,7 @@ namespace nodecpp {
 			//int idType1; // we will try to get rid of it later
 		public:
 			ServerT(Node* node) : ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>(node) {int typeId = Node::EmitterTypeForServer::getTypeIndex( this ); this->registerServerByID(this->node, this, typeId);}
-			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }
+			SocketBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }
 		};
 
 	} //namespace net

@@ -162,15 +162,15 @@ private:
 		{
 			size_t idx;
 			size_t nextFree;
-			std::unique_ptr<net::SocketTBase> socket;
-			ServerSock( net::SocketTBase* sock, size_t idx_ ) : idx( idx_ ), nextFree( size_t(-1) ), socket( sock )  {}
+			std::unique_ptr<net::SocketBase> socket;
+			ServerSock( net::SocketBase* sock, size_t idx_ ) : idx( idx_ ), nextFree( size_t(-1) ), socket( sock )  {}
 		};
 		size_t firstFree = size_t(-1);
 		std::vector<ServerSock> serverSocks;
 		size_t serverSockCount = 0;
 	public:
 		ServerSockets() {}
-		void add( net::SocketTBase* sock )
+		void add( net::SocketBase* sock )
 		{
 			if ( firstFree != size_t(-1) )
 			{
@@ -195,7 +195,7 @@ private:
 			NODECPP_ASSERT( *(at(idx)->getExtra()) == idx );
 			ServerSock& toUse = serverSocks[idx];
 			toUse.nextFree = firstFree;
-			net::SocketTBase* s = serverSocks[idx].socket.release();
+			net::SocketBase* s = serverSocks[idx].socket.release();
 			Socket* sockToDelete = static_cast<Socket*>(s);
 			delete sockToDelete;
 			firstFree = idx;
@@ -204,7 +204,7 @@ private:
 		Socket* at(size_t idx)
 		{
 			NODECPP_ASSERT( idx < serverSocks.size() );
-			net::SocketTBase* s = serverSocks[idx].socket.get();
+			net::SocketBase* s = serverSocks[idx].socket.get();
 			return static_cast<Socket*>(s);
 		}
 		void clear()
@@ -222,7 +222,7 @@ public:
 		print("server: onCloseServer()!\n");
 		serverSockets.clear();
 	}
-	void onConnectionx(const ServerIdType* extra, net::SocketTBase* socket) { 
+	void onConnectionx(const ServerIdType* extra, net::SocketBase* socket) { 
 		print("server: onConnection()!\n");
 		//srv.unref();
 		NODECPP_ASSERT( socket != nullptr ); 
@@ -248,7 +248,7 @@ public:
 		print("server: onCloseServerCtrl()!\n");
 		serverCtrlSockets.clear();
 	}
-	void onConnectionCtrl(const ServerIdType* extra, net::SocketTBase* socket) { 
+	void onConnectionCtrl(const ServerIdType* extra, net::SocketBase* socket) { 
 		print("server: onConnectionCtrl()!\n");
 		//srv.unref();
 		NODECPP_ASSERT( socket != nullptr ); 

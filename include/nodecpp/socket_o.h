@@ -35,15 +35,15 @@ namespace nodecpp {
 
 	namespace net {
 
-		class SocketO : public SocketTBase {
+		class SocketO : public SocketBase {
 
 		private:
 			void registerMeAndAcquireSocket();
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
 
 		public:
-			SocketO(NodeBase* node) : SocketTBase( node ) {registerMeAndAcquireSocket();}
-			SocketO(NodeBase* node, OpaqueSocketData& sdata) : SocketTBase( node ) {registerMeAndAssignSocket(sdata);}
+			SocketO(NodeBase* node) : SocketBase( node ) {registerMeAndAcquireSocket();}
+			SocketO(NodeBase* node, OpaqueSocketData& sdata) : SocketBase( node ) {registerMeAndAssignSocket(sdata);}
 
 			SocketO(const SocketO&) = delete;
 			SocketO& operator=(const SocketO&) = delete;

@@ -37,7 +37,7 @@ namespace nodecpp {
 
 		class Server : public ServerTBase
 		{
-			IntrusiveList<net::SocketTBase> socketList;
+			IntrusiveList<net::SocketBase> socketList;
 
 			// event emitters
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
@@ -82,11 +82,11 @@ namespace nodecpp {
 			}
 
 
-			SocketTBase* makeSocket(OpaqueSocketData& sdata) {
+			SocketBase* makeSocket(OpaqueSocketData& sdata) {
 //				SocketForserver* sock = socketList.getNewSocket(sdata);
 					net::Socket* sock_ = new Socket(sdata);
 					//owning_ptr<SocketForserver> p1 = make_owning<SocketForserver>(sdata);
-				SocketTBase* sock = socketList.add(sock_);
+				SocketBase* sock = socketList.add(sock_);
 				return sock;
 			}
 			void removeSocket( net::Socket* sock ) {

@@ -36,7 +36,7 @@
 namespace nodecpp
 {
 	class Buffer;
-	namespace net { class SocketTBase; class Socket;}
+	namespace net { class SocketBase; class Socket;}
 
 
 	struct event
@@ -124,7 +124,7 @@ namespace nodecpp
 	{
 		public:
 			virtual void onClose(bool hadError) {}
-			virtual void onConnection(net::SocketTBase* socket) {}
+			virtual void onConnection(net::SocketBase* socket) {}
 			virtual void onListening(size_t id, net::Address addr) {}
 			virtual void onError(Error& err) {}
 	};

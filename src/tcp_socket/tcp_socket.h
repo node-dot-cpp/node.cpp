@@ -45,7 +45,7 @@ public:
 	OpaqueEmitter emitter;
 
 	NetSocketEntry(size_t index) : index(index), state(State::Unused) {}
-	NetSocketEntry(size_t index, NodeBase* node, net::SocketTBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, NodeBase* node, net::SocketBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
 	NetSocketEntry(size_t index, NodeBase* node, net::ServerTBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
@@ -61,7 +61,7 @@ public:
 	void setUnused() {state = State::Unused; }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::SocketTBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.isValid()); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
+	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.isValid()); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
 	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT(emitter.isValid()); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
 };
 
@@ -183,7 +183,7 @@ public:
 	}
 
 public:
-	void infraAddAccepted(net::SocketTBase* ptr)
+	void infraAddAccepted(net::SocketBase* ptr)
 	{
 		size_t id = ptr->dataForCommandProcessing.index;
 		pendingAcceptedEvents.push_back(id);
@@ -202,20 +202,20 @@ public:
 	}
 
 #ifdef USING_T_SOCKETS
-	size_t appAcquireSocket(NodeBase* node, net::SocketTBase* ptr, int typeId)
+	size_t appAcquireSocket(NodeBase* node, net::SocketBase* ptr, int typeId)
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
 		return registerAndAssignSocket(node, ptr, typeId, s);
 	}
 
-	size_t appAssignSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, OpaqueSocketData& sdata)
+	size_t appAssignSocket(NodeBase* node, net::SocketBase* ptr, int typeId, OpaqueSocketData& sdata)
 	{
 		SocketRiia s( sdata.s.release() );
 		return registerAndAssignSocket(node, ptr, typeId, s);
 	}
 
 private:
-	size_t registerAndAssignSocket(NodeBase* node, net::SocketTBase* ptr, int typeId, SocketRiia& s)
+	size_t registerAndAssignSocket(NodeBase* node, net::SocketBase* ptr, int typeId, SocketRiia& s)
 	{
 		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		ptr->dataForCommandProcessing.osSocket = s.release();
@@ -225,7 +225,7 @@ private:
 	}
 
 public:
-	void appConnectSocket(net::SocketTBase* sockPtr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
+	void appConnectSocket(net::SocketBase* sockPtr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
 		// TODO: check sockPtr validity
 		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.osSocket != INVALID_SOCKET);
@@ -675,7 +675,7 @@ private:
 		OpaqueSocketData osd( false );
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
 			return;
-		net::SocketTBase* ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+		net::SocketBase* ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		NODECPP_ASSERT( netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
 		EmitterType::emitConnection( entry.getEmitter(), ptr );

@@ -263,21 +263,21 @@ public:
 
 #ifdef USING_T_SOCKETS
 inline
-size_t registerWithInfraAndAcquireSocket(NodeBase* node, net::SocketTBase* t, int typeId)
+size_t registerWithInfraAndAcquireSocket(NodeBase* node, net::SocketBase* t, int typeId)
 {
 	NODECPP_ASSERT( t != nullptr );
 	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
 }
 
 inline
-size_t registerWithInfraAndAssignSocket(NodeBase* node, net::SocketTBase* t, int typeId, OpaqueSocketData& sdata)
+size_t registerWithInfraAndAssignSocket(NodeBase* node, net::SocketBase* t, int typeId, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( t != nullptr );
 	return netSocketManagerBase->appAssignSocket(node, t, typeId, sdata);
 }
 
 inline
-void connectSocket(net::SocketTBase* s, const char* ip, uint16_t port)
+void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 {
 	netSocketManagerBase->appConnectSocket(s, ip, port);
 }

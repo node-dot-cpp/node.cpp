@@ -37,29 +37,7 @@ namespace nodecpp {
 
 	namespace net {
 
-		class SocketTBase : public SocketBase {
-		public:
-			SocketTBase* prev_;
-			SocketTBase* next_;
-
-		
-		public:
-//			UserDefID userDefID;
-			NodeBase* node = nullptr;
-
-		public:
-//			SocketTBase() {}
-			SocketTBase(NodeBase* node_) : SocketBase() {node = node_;}
-//			SocketTBase(NodeBase* node_, OpaqueSocketData& sdata) : SocketBase(sdata) {this->node = node_;}
-
-			SocketTBase(const SocketTBase&) = delete;
-			SocketTBase& operator=(const SocketTBase&) = delete;
-
-			SocketTBase(SocketTBase&&) = default;
-			SocketTBase& operator=(SocketTBase&&) = default;
-
-			~SocketTBase() { if (state == CONNECTING || state == CONNECTED) destroy(); }
-		};
+		//class SocketBase; // forward declaration
 
 		class ServerTBase; // forward declaration
 
@@ -71,17 +49,17 @@ namespace nodecpp {
 		using PtrType = void*;
 		PtrType ptr = nullptr;
 	public:
-	//	using PtrType = nodecpp::net::SocketTBase*;
+	//	using PtrType = nodecpp::net::SocketBase*;
 		enum ObjectType { Undefined, ClientSocket, ServerSocket };
 		ObjectType objectType;
 		int type = -1;
 		NodeBase* nodePtr = nullptr;
 		OpaqueEmitter() : ptr( nullptr), type(-1), objectType(ObjectType::Undefined) {}
-		OpaqueEmitter( ObjectType ot, NodeBase* node, net::SocketTBase* ptr_, int type_ ) : objectType(ot), ptr( static_cast<PtrType>(ptr_)), type(type_), nodePtr( node ) {}
+		OpaqueEmitter( ObjectType ot, NodeBase* node, net::SocketBase* ptr_, int type_ ) : objectType(ot), ptr( static_cast<PtrType>(ptr_)), type(type_), nodePtr( node ) {}
 		OpaqueEmitter( ObjectType ot, NodeBase* node, net::ServerTBase* ptr_, int type_ ) : objectType(ot), ptr( static_cast<PtrType>(ptr_)), type(type_), nodePtr( node ) {}
 		bool isValid() const { return ptr != nullptr; }
-		net::SocketTBase* getClientSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ClientSocket ); return static_cast<net::SocketTBase*>(ptr); }
-//		const net::SocketTBase* getClientSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ClientSocket ); return static_cast<const net::SocketTBase*>(ptr); }
+		net::SocketBase* getClientSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ClientSocket ); return static_cast<net::SocketBase*>(ptr); }
+//		const net::SocketBase* getClientSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ClientSocket ); return static_cast<const net::SocketBase*>(ptr); }
 		net::ServerTBase* getServerSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ServerSocket ); return static_cast<net::ServerTBase*>(ptr); }
 //		const net::ServerTBase* getServerSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ServerSocket ); return static_cast<const net::ServerTBase*>(ptr); }
 	};

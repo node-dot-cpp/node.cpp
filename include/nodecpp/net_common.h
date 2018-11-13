@@ -272,6 +272,14 @@ namespace nodecpp {
 
 		class SocketBase
 		{
+		public:
+			SocketBase* prev_;
+			SocketBase* next_;
+
+		public:
+//			UserDefID userDefID;
+			NodeBase* node = nullptr;
+
 			public:
 			class DataForCommandProcessing {
 			public:
@@ -308,7 +316,7 @@ namespace nodecpp {
 		//protected:
 			DataForCommandProcessing dataForCommandProcessing;
 
-		protected:
+		public:
 			Address _local;
 			Address _remote;
 			//std::string _remoteAddress;
@@ -319,7 +327,7 @@ namespace nodecpp {
 
 			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
 
-			SocketBase() {}
+			SocketBase(NodeBase* node_) {node = node_;}
 
 			SocketBase(const SocketBase&) = delete;
 			SocketBase& operator=(const SocketBase&) = delete;
@@ -327,7 +335,8 @@ namespace nodecpp {
 			SocketBase(SocketBase&&) = default;
 			SocketBase& operator=(SocketBase&&) = default;
 
-			~SocketBase() {
+			virtual ~SocketBase() {
+				if (state == CONNECTING || state == CONNECTED) destroy();
 				reportBeingDestructed(); 
 				unref(); /*or assert that is must already be unrefed*/
 			}

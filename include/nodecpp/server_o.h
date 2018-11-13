@@ -41,11 +41,11 @@ namespace nodecpp {
 			virtual ~ServerO() {}
 
 			virtual void onClose(bool hadError) {}
-			virtual void onConnection(SocketTBase* socket) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
+			virtual void onConnection(SocketBase* socket) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
 			virtual void onListening(size_t id, Address addr) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
 			virtual void onError(Error& err) {}
 
-			virtual SocketTBase* makeSocket(OpaqueSocketData& sdata) = 0;
+			virtual SocketBase* makeSocket(OpaqueSocketData& sdata) = 0;
 		};
 		
 		template<auto x>
@@ -114,7 +114,7 @@ namespace nodecpp {
 				else
 					ServerO::onClose(b);
 			}
-			void onConnection(SocketTBase* socket) override
+			void onConnection(SocketBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
 					(node->*(Initializer::onConnection))(this->getExtra(), socket); 
@@ -154,7 +154,7 @@ namespace nodecpp {
 					ServerO::onClose(b);
 			}
 #if 1 //[+++] revision required
-			void onConnectionX(SocketTBase* socket) override
+			void onConnectionX(SocketBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
 					(node->*(Initializer::onConnection))(this->getExtra()); 
@@ -184,8 +184,8 @@ namespace nodecpp {
 		{
 		public:
 			ServerN(Node* node_) : ServerN2<Node, ServerOInitializer<Handlers...>, Extra>( node_ ) {}
-			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }		
-//			SocketTBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( sdata ); }		
+			SocketBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }		
+//			SocketBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( sdata ); }		
 		};
 	} //namespace net
 } //namespace nodecpp

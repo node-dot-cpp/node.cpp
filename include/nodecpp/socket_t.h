@@ -123,7 +123,7 @@ namespace nodecpp {
 		};
 
 		template<class Node, class Initializer, class Extra>
-		class SocketT2 : public SocketTBase
+		class SocketT2 : public SocketBase
 		{
 		public:
 			using userIdType = Extra;
@@ -134,14 +134,14 @@ namespace nodecpp {
 			Extra extra;
 
 		public:
-			SocketT2(Node* node) : SocketTBase( node ) {}
+			SocketT2(Node* node) : SocketBase( node ) {}
 			Extra* getExtra() { return &extra; }
 			const Extra* getExtra() const { return &extra; }
 
 		};
 
 		template<class Node, class Initializer>
-		class SocketT2<Node, Initializer, void> : public SocketTBase
+		class SocketT2<Node, Initializer, void> : public SocketBase
 		{
 			public:
 				using userIdType = void;
@@ -149,7 +149,7 @@ namespace nodecpp {
 				using Handlers = Initializer;
 
 		public:
-			SocketT2(Node* node) : SocketTBase( node ) {}
+			SocketT2(Node* node) : SocketBase( node ) {}
 			void* getExtra() { return nullptr; }
 			const void* getExtra() const { return nullptr; }
 

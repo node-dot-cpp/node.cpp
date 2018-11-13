@@ -35,7 +35,7 @@ namespace nodecpp {
 
 	namespace net {
 
-		class Socket : public SocketTBase {
+		class Socket : public SocketBase {
 			class EventEmitterSupportingListeners<event::Close, SocketListener, &SocketListener::onClose> eClose;
 			class EventEmitterSupportingListeners<event::Connect, SocketListener, &SocketListener::onConnect> eConnect;
 			class EventEmitterSupportingListeners<event::Data, SocketListener, &SocketListener::onData> eData;
@@ -50,8 +50,8 @@ namespace nodecpp {
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
 
 		public:
-			Socket() : SocketTBase( nullptr ) {registerMeAndAcquireSocket();}
-			Socket(OpaqueSocketData& sdata) : SocketTBase( nullptr ) {registerMeAndAssignSocket(sdata);}
+			Socket() : SocketBase( nullptr ) {registerMeAndAcquireSocket();}
+			Socket(OpaqueSocketData& sdata) : SocketBase( nullptr ) {registerMeAndAssignSocket(sdata);}
 
 			Socket(const Socket&) = delete;
 			Socket& operator=(const Socket&) = delete;
