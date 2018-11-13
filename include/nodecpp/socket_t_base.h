@@ -38,6 +38,10 @@ namespace nodecpp {
 	namespace net {
 
 		class SocketTBase : public SocketBase {
+		public:
+			SocketTBase* prev_;
+			SocketTBase* next_;
+
 		
 		public:
 //			UserDefID userDefID;

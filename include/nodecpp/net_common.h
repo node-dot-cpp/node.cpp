@@ -201,6 +201,64 @@ namespace nodecpp {
 		}
 	};
 
+	template <class ListItem>
+	class IntrusiveList
+	{
+		size_t _size = 0;
+		ListItem* _begin = nullptr;
+	public:
+		ListItem* add(ListItem* item)
+		{
+			//ListItem* item = new ListItem(sdata);
+			//owning_ptr<ListItem> p1 = make_owning<ListItem>(sdata);
+			NODECPP_ASSERT( item != nullptr );
+			NODECPP_ASSERT( _begin == nullptr || _begin->prev_ == nullptr );
+			if ( _begin == nullptr )
+			{
+				_begin = item;
+				item->next_ = nullptr;
+				item->prev_ = nullptr;
+			}
+			else
+			{
+				item->next_ = _begin;
+				_begin->prev_ = item;
+				item->prev_ = nullptr;
+				_begin = item;
+			}
+			NODECPP_ASSERT( _begin == nullptr || _begin->prev_ == nullptr );
+			++_size;
+			return item;
+		}
+		void removeAndDelete( ListItem* item )
+		{
+			NODECPP_ASSERT( item != nullptr );
+			NODECPP_ASSERT( _begin == nullptr || _begin->prev_ == nullptr );
+			if ( _begin == item )
+			{
+				NODECPP_ASSERT( item == _begin );
+				_begin = item->next_;
+			}
+			if ( item->prev_ )
+				item->prev_->next_ = item->next_;
+			if ( item->next_ )
+				item->next_->prev_ = item->prev_;
+			--_size;
+			NODECPP_ASSERT( _begin == nullptr || _begin->prev_ == nullptr );
+			delete item;
+		}
+		void clear()
+		{
+			while ( _begin )
+			{
+				ListItem* tmp = _begin;
+				delete _begin;
+				_begin = tmp;
+
+			}
+		}
+		size_t getCount() { return _size; }
+	};
 
 
 	namespace net {

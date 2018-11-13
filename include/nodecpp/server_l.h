@@ -37,83 +37,7 @@ namespace nodecpp {
 
 		class Server : public ServerTBase
 		{
-			// support for a list of accepted sockets
-			class SocketList;
-			class SocketForserver : public Socket
-			{
-				friend class Server;
-				friend class SocketList;
-				SocketForserver* _prevSock;
-				SocketForserver* _nextSock;
-			public:
-				SocketForserver() : Socket() {}
-				SocketForserver(OpaqueSocketData& sdata) : Socket( sdata ) {}
-
-				SocketForserver(const SocketForserver&) = delete;
-				SocketForserver& operator=(const SocketForserver&) = delete;
-
-				SocketForserver(SocketForserver&&) = default;
-				SocketForserver& operator=(SocketForserver&&) = default;
-			};
-
-			class SocketList
-			{
-				size_t _size = 0;
-				SocketForserver* _begin = nullptr;
-			public:
-				SocketForserver* getNewSocket(OpaqueSocketData& sdata)
-				{
-					SocketForserver* sock = new SocketForserver(sdata);
-					owning_ptr<SocketForserver> p1 = make_owning<SocketForserver>(sdata);
-					NODECPP_ASSERT( sock != nullptr );
-					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
-					if ( _begin == nullptr )
-					{
-						_begin = sock;
-						sock->_nextSock = nullptr;
-						sock->_prevSock = nullptr;
-					}
-					else
-					{
-						sock->_nextSock = _begin;
-						_begin->_prevSock = sock;
-						sock->_prevSock = nullptr;
-						_begin = sock;
-					}
-					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
-					++_size;
-					return sock;
-				}
-				void removeAndDelete( SocketForserver* sock )
-				{
-					NODECPP_ASSERT( sock != nullptr );
-					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
-					if ( _begin == sock )
-					{
-						NODECPP_ASSERT( sock == _begin );
-						_begin = sock->_nextSock;
-					}
-					if ( sock->_prevSock )
-						sock->_prevSock->_nextSock = sock->_nextSock;
-					if ( sock->_nextSock )
-						sock->_nextSock->_prevSock = sock->_prevSock;
-					--_size;
-					NODECPP_ASSERT( _begin == nullptr || _begin->_prevSock == nullptr );
-					delete sock;
-				}
-				void clear()
-				{
-					while ( _begin )
-					{
-						SocketForserver* tmp = _begin;
-						delete _begin;
-						_begin = tmp;
-
-					}
-				}
-				size_t getServerSockCount() { return _size; }
-			};
-			SocketList socketList;
+			IntrusiveList<net::SocketTBase> socketList;
 
 			// event emitters
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
@@ -159,13 +83,17 @@ namespace nodecpp {
 
 
 			SocketTBase* makeSocket(OpaqueSocketData& sdata) {
-				SocketForserver* sock = socketList.getNewSocket(sdata);
+//				SocketForserver* sock = socketList.getNewSocket(sdata);
+					net::Socket* sock_ = new Socket(sdata);
+					//owning_ptr<SocketForserver> p1 = make_owning<SocketForserver>(sdata);
+				SocketTBase* sock = socketList.add(sock_);
 				return sock;
 			}
 			void removeSocket( net::Socket* sock ) {
-				socketList.removeAndDelete( static_cast<SocketForserver*>(sock) );
+//				socketList.removeAndDelete( static_cast<SocketForserver*>(sock) );
+				socketList.removeAndDelete( sock );
 			}
-			size_t getSockCount() {return socketList.getServerSockCount();}
+			size_t getSockCount() {return socketList.getCount();}
 
 			void close(std::function<void(bool)> cb) {
 				once(event::close, std::move(cb));
