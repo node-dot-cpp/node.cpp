@@ -30,18 +30,6 @@
 
 #include "server_t_base.h"
 
-#if 1 // [+++]sample code preventing from being compilable
-		class X //: public ServerBase
-		{
-		public:
-			X() {}
-			virtual ~X() {}
-
-			virtual void onConnectionX(nodecpp::net::Socket* socket) {}
-			virtual void onListeningX() {}
-		};
-#endif
-		
 namespace nodecpp {
 
 	namespace net {
@@ -53,10 +41,8 @@ namespace nodecpp {
 			virtual ~ServerO() {}
 
 			virtual void onClose(bool hadError) {}
-#if 1 // [+++]revision required
-			virtual void onConnectionX(SocketTBase* socket) {}
-			virtual void onListeningX(size_t id, Address addr) {}
-#endif
+			virtual void onConnection(SocketTBase* socket) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
+			virtual void onListening(size_t id, Address addr) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
 			virtual void onError(Error& err) {}
 
 			virtual SocketTBase* makeSocket(OpaqueSocketData& sdata) = 0;
@@ -128,22 +114,20 @@ namespace nodecpp {
 				else
 					ServerO::onClose(b);
 			}
-#if 1 //[+++] revision required
-			void onConnectionX(SocketTBase* socket) override
+			void onConnection(SocketTBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
 					(node->*(Initializer::onConnection))(this->getExtra(), socket); 
 				else
-					ServerO::onConnectionX(socket);
+					ServerO::onConnection(socket);
 			}
-			void onListeningX(size_t id, Address addr) override
+			void onListening(size_t id, Address addr) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
 					(node->*(Initializer::onListening))(this->getExtra(), id, addr); 
 				else
-					ServerO::onListeningX(id, addr);
+					ServerO::onListening(id, addr);
 			}
-#endif
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )

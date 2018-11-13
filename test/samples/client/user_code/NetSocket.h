@@ -40,19 +40,19 @@ public:
 		clientSock.connect(2000, "127.0.0.1");
 	}
 	
-	void onConnect(const SocketIdType* extra) 
+	void onWhateverConnect(const SocketIdType* extra) 
 	{
 		buf.writeInt8( 2, 0 );
 		buf.writeInt8( 1, 1 );
 		clientSock.write(buf);
 	}
-	void onData(const SocketIdType* extra, nodecpp::Buffer& buffer)
+	void onWhateverData(const SocketIdType* extra, nodecpp::Buffer& buffer)
 	{
 		NODECPP_ASSERT( extra != nullptr );
 		++recvReplies;
 		if ( ( recvReplies & 0xFFFF ) == 0 )
 //			printf( "[%zd] MySampleTNode::onData(), size = %zd\n", recvReplies, buffer.size() );
-			printf( "[%zd] MySampleTNode::onData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
+			printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
 		recvSize += buffer.size();
 		buf.writeInt8( 2, 0 );
 		buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -60,8 +60,8 @@ public:
 	}
 
 	using ClientSockType = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
-		nodecpp::net::OnConnectT<&MySampleTNode::onConnect>,
-		nodecpp::net::OnDataT<&MySampleTNode::onData>
+		nodecpp::net::OnConnectT<&MySampleTNode::onWhateverConnect>,
+		nodecpp::net::OnDataT<&MySampleTNode::onWhateverData>
 	>;
 	ClientSockType clientSock;
 

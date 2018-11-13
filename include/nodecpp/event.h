@@ -119,6 +119,7 @@ namespace nodecpp
 			virtual void onError(Error& err) {}
 	};
 
+#ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
 	class ServerListener
 	{
 		public:
@@ -127,6 +128,7 @@ namespace nodecpp
 			virtual void onListening(size_t id, net::Address addr) {}
 			virtual void onError(Error& err) {}
 	};
+#endif
 
 	/*
 		Two important things:
@@ -250,9 +252,13 @@ namespace nodecpp
 					current.cb(args...);
 				else
 				{
+#ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
 					NODECPP_ASSERT( current.listener != nullptr );
 //					current.listener->*onMyEvent(args...);
 					(current.listener->*onMyEvent)(args...);
+#else
+					NODECPP_ASSERT( false );
+#endif
 				}
 			}
 		}

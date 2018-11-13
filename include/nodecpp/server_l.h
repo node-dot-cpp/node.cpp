@@ -116,12 +116,19 @@ namespace nodecpp {
 			SocketList socketList;
 
 			// event emitters
+#ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
 			EventEmitterSupportingListeners<event::Close, ServerListener, &ServerListener::onClose> eClose;
 			EventEmitterSupportingListeners<event::Connection, ServerListener, &ServerListener::onConnection> eConnection;
 			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
 			EventEmitterSupportingListeners<event::Error, ServerListener, &ServerListener::onError> eError;
 
 			std::vector<std::unique_ptr<ServerListener>> ownedListeners;
+#else
+			EventEmitter<event::Close> eClose;
+			EventEmitter<event::Connection> eConnection;
+			EventEmitter<event::Listening> eListening;
+			EventEmitter<event::Error> eError;
+#endif
 
 		public:
 			Server();
@@ -170,6 +177,7 @@ namespace nodecpp {
 				ServerTBase::listen(port, ip, backlog);
 			}
 
+#ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
 			void on( ServerListener* l) {
 				eClose.on(l);
 				eConnection.on(l);
@@ -193,7 +201,7 @@ namespace nodecpp {
 				ownedListeners.emplace_back( std::move( l ) );
 				once( l.get() );
 			}
-
+#endif
 			void on(std::string name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);

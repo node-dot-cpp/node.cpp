@@ -218,19 +218,19 @@ public:
 		print("server: onCloseServer()!\n");
 		serverSockets.clear();
 	}
-	void onConnection(const ServerIdType* extra, net::SocketTBase* socket) { 
+	void onConnectionServer(const ServerIdType* extra, net::SocketTBase* socket) { 
 		print("server: onConnection()!\n");
 		//srv.unref();
 		NODECPP_ASSERT( socket != nullptr ); 
 		serverSockets.add( socket );
 	}
-	void onListening(const ServerIdType* extra) {print("server: onListening()!\n");}
+	void onListeningServer(const ServerIdType* extra) {print("server: onListening()!\n");}
 	void onErrorServer(const ServerIdType* extra, Error& err) {print("server: onErrorServer!\n");}
 
 	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
-		nodecpp::net::OnConnectionST<&MySampleTNode::onConnection>,
+		nodecpp::net::OnConnectionST<&MySampleTNode::onConnectionServer>,
 		nodecpp::net::OnCloseST<&MySampleTNode::onCloseServer>,
-		nodecpp::net::OnListeningST<&MySampleTNode::onListening>,
+		nodecpp::net::OnListeningST<&MySampleTNode::onListeningServer>,
 		nodecpp::net::OnErrorST<&MySampleTNode::onErrorServer>
 	>;
 	ServerType srv;

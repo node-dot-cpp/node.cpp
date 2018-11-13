@@ -125,7 +125,7 @@ class MySampleTNode : public NodeBase
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
 			print("server: onCloseServer()!\n");
 		}
-		void onConnection(/*const ServerIdType* extra,*/ net::SocketTBase* socket) override { 
+		void onConnectionS(/*const ServerIdType* extra,*/ net::SocketTBase* socket) override { 
 			print("server: onConnection()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket != nullptr ); 
@@ -146,7 +146,7 @@ class MySampleTNode : public NodeBase
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
 			print("server: onCloseServerCtrl()!\n");
 		}
-		void onConnection(/*const ServerIdType* extra,*/ net::SocketTBase* socket) override { 
+		void onConnectionS(/*const ServerIdType* extra,*/ net::SocketTBase* socket) override { 
 			print("server: onConnectionCtrl()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket != nullptr ); 
