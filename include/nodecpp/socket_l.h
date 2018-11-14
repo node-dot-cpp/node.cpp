@@ -59,8 +59,6 @@ namespace nodecpp {
 			Socket(Socket&&) = default;
 			Socket& operator=(Socket&&) = default;
 
-			~Socket() { if (state == CONNECTING || state == CONNECTED) destroy(); }
-
 			void emitClose(bool hadError) {
 				state = DESTROYED;
 				unref();

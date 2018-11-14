@@ -675,9 +675,10 @@ private:
 		OpaqueSocketData osd( false );
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
 			return;
-		net::SocketBase* ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+//		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		NODECPP_ASSERT( netSocketManagerBase != nullptr );
-		netSocketManagerBase->infraAddAccepted(ptr);
+		netSocketManagerBase->infraAddAccepted(ptr.get());
 		EmitterType::emitConnection( entry.getEmitter(), ptr );
 
 		return;

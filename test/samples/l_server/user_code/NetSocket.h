@@ -69,13 +69,13 @@ public:
 		srv.on( event::close, [this](bool hadError) {
 			print("server: onCloseServer()!\n");
 		});
-		srv.on( event::connection, [this](net::Socket* socket) {
+		srv.on( event::connection, [this](soft_ptr<net::Socket> socket) {
 			print("server: onConnection()!\n");
 			//srv.unref();
-			NODECPP_ASSERT( socket != nullptr ); 
-			socket->on( event::close, [this, socket](bool hadError) {
+			NODECPP_ASSERT( socket ); 
+			socket.get()->on( event::close, [this, socket](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
-				socket->unref();
+				socket.get()->unref();
 				srv.removeSocket( socket );
 			});
 #ifdef DO_INTEGRITY_CHECKING
@@ -121,11 +121,11 @@ public:
 				++(stats.rqCnt);
 			});
 #else
-			socket->on( event::data, [this, socket](Buffer& buffer) {
+			socket.get()->on( event::data, [this, socket](Buffer& buffer) {
 				if ( buffer.size() < 2 )
 				{
 					//printf( "Insufficient data on socket idx = %d\n", *extra );
-					socket->unref();
+					socket.get()->unref();
 					return;
 				}
 		//		print("server socket: onData for idx %d !\n", *extra );
@@ -135,7 +135,7 @@ public:
 				{
 //					printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", *extra, receivedSz, buffer.size() );
 					printf( "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes\n", receivedSz, buffer.size() );
-					socket->unref();
+					socket.get()->unref();
 					return;
 				}
 	
@@ -148,7 +148,7 @@ public:
 					//buffer.begin()[0] = (uint8_t)requestedSz;
 					//memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
 //					socket->write(reply.begin(), requestedSz);
-					socket->write(reply);
+					socket.get()->write(reply);
 				}
 	
 				stats.recvSize += receivedSz;
@@ -156,14 +156,14 @@ public:
 				++(stats.rqCnt);
 			});
 #endif
-			socket->on( event::end, [this, socket]() {
+			socket.get()->on( event::end, [this, socket]() {
 				print("server socket: onEnd!\n");
 //				const char buff[] = "goodbye!";
 //				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
-				socket->write( b );
-				socket->end();
+				socket.get()->write( b );
+				socket.get()->end();
 			});
 
 		});
@@ -172,15 +172,15 @@ public:
 			print("server: onCloseServerCtrl()!\n");
 			//serverCtrlSockets.clear();
 		});
-		srvCtrl.on( event::connection, [this](net::Socket* socket) {
+		srvCtrl.on( event::connection, [this](soft_ptr<net::Socket> socket) {
 			print("server: onConnectionCtrl()!\n");
 			//srv.unref();
-			NODECPP_ASSERT( socket != nullptr ); 
-			socket->on( event::close, [this, socket](bool hadError) {
+			NODECPP_ASSERT( socket ); 
+			socket.get()->on( event::close, [this, socket](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
 				srvCtrl.removeSocket( socket );
 			});
-			socket->on( event::data, [this, socket](Buffer& buffer) {
+			socket.get()->on( event::data, [this, socket](Buffer& buffer) {
 				size_t requestedSz = buffer.readUInt8(1);
 				if ( requestedSz )
 				{
@@ -190,17 +190,17 @@ public:
 					//uint8_t* buff = ptr.get();
 					//memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
 					reply.append( &stats, replySz );
-					socket->write(reply);
+					socket.get()->write(reply);
 				}
 			});
-			socket->on( event::end, [this, socket]() {
+			socket.get()->on( event::end, [this, socket]() {
 				print("server socket: onEnd!\n");
 //				const char buff[] = "goodbye!";
 //				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
-				socket->write( b );
-				socket->end();
+				socket.get()->write( b );
+				socket.get()->end();
 			});
 		});
 

@@ -37,7 +37,8 @@ namespace nodecpp {
 
 		class Server : public ServerTBase
 		{
-			IntrusiveList<net::SocketBase> socketList;
+//			IntrusiveList<net::SocketBase> socketList;
+			MultiOwner<net::Socket> socketList;
 
 			// event emitters
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
@@ -65,7 +66,7 @@ namespace nodecpp {
 				eClose.emit(hadError);
 			}
 
-			void emitConnection(Socket* socket) {
+			void emitConnection(soft_ptr<Socket> socket) {
 				eConnection.emit(socket);
 			}
 
@@ -82,14 +83,15 @@ namespace nodecpp {
 			}
 
 
-			SocketBase* makeSocket(OpaqueSocketData& sdata) {
+			soft_ptr<net::Socket> makeSocket(OpaqueSocketData& sdata) {
 //				SocketForserver* sock = socketList.getNewSocket(sdata);
-					net::Socket* sock_ = new Socket(sdata);
-					//owning_ptr<SocketForserver> p1 = make_owning<SocketForserver>(sdata);
-				SocketBase* sock = socketList.add(sock_);
-				return sock;
+					//net::Socket* sock_ = new Socket(sdata);
+					owning_ptr<Socket> sock_ = make_owning<Socket>(sdata);
+					soft_ptr<Socket> retSock( sock_ );
+				socketList.add( std::move(sock_) );
+				return retSock;
 			}
-			void removeSocket( net::Socket* sock ) {
+			void removeSocket( soft_ptr<net::Socket> sock ) {
 //				socketList.removeAndDelete( static_cast<SocketForserver*>(sock) );
 				socketList.removeAndDelete( sock );
 			}

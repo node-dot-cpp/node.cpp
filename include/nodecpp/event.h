@@ -93,7 +93,7 @@ namespace nodecpp
 
 		struct Connection
 		{
-			using callback = std::function<void(net::Socket*)>;
+			using callback = std::function<void(soft_ptr<net::Socket>)>;
 			static constexpr const char* name = "connection";
 		};
 		static constexpr Connection connection = Connection();
@@ -124,7 +124,7 @@ namespace nodecpp
 	{
 		public:
 			virtual void onClose(bool hadError) {}
-			virtual void onConnection(net::SocketBase* socket) {}
+			virtual void onConnection(soft_ptr<net::SocketBase> socket) {}
 			virtual void onListening(size_t id, net::Address addr) {}
 			virtual void onError(Error& err) {}
 	};
