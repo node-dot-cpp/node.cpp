@@ -264,30 +264,44 @@ namespace nodecpp {
 	class MultiOwner
 	{
 		std::vector<owning_ptr<ItemT>> items;
+		size_t cnt;
 	public:
-//		soft_ptr<ItemT> add(owning_ptr<ItemT>&& item)
-		void add(owning_ptr<ItemT>&& item)
+		soft_ptr<ItemT> add(owning_ptr<ItemT>&& item)
+//		void add(owning_ptr<ItemT>&& item)
 		{
 			//ItemT* item = new ItemT(sdata);
 			//owning_ptr<ItemT> p1 = make_owning<ItemT>(sdata);
 			NODECPP_ASSERT( item );
+			for ( size_t idx=0; idx<items.size(); ++idx )
+				if ( !items[idx] )
+				{
+					items[idx] = std::move( item );
+					++cnt;
+					soft_ptr<ItemT> ret(items[idx]);
+					return ret;
+				}
 			size_t idx = items.size();
 			items.emplace_back( std::move( item ) );
-			//soft_ptr<ItemT> ret(items[idx]);
-			//return ret;
+			++cnt;
+			soft_ptr<ItemT> ret(items[idx]);
+			return ret;
 		}
 		void removeAndDelete( soft_ptr<ItemT> item )
 		{
 			NODECPP_ASSERT( item );
 			for ( size_t idx=0; idx<items.size(); ++idx )
 				if ( items[idx].get() == item.get() )
+				{
 					items[idx].reset();
+					--cnt;
+				}
 		}
 		void clear()
 		{
 			items.clear();
+			cnt = 0;
 		}
-		size_t getCount() { return items.size(); }
+		size_t getCount() { return cnt; }
 	};
 
 
