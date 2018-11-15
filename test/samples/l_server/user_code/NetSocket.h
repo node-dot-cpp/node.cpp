@@ -73,9 +73,9 @@ public:
 			print("server: onConnection()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket ); 
-			socket.get()->on( event::close, [this, socket](bool hadError) {
+			socket->on( event::close, [this, socket](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
-				socket.get()->unref();
+				socket->unref();
 				srv.removeSocket( socket );
 			});
 #ifdef DO_INTEGRITY_CHECKING
@@ -121,11 +121,11 @@ public:
 				++(stats.rqCnt);
 			});
 #else
-			socket.get()->on( event::data, [this, socket](Buffer& buffer) {
+			socket->on( event::data, [this, socket](Buffer& buffer) {
 				if ( buffer.size() < 2 )
 				{
 					//printf( "Insufficient data on socket idx = %d\n", *extra );
-					socket.get()->unref();
+					socket->unref();
 					return;
 				}
 		//		print("server socket: onData for idx %d !\n", *extra );
@@ -135,7 +135,7 @@ public:
 				{
 //					printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", *extra, receivedSz, buffer.size() );
 					printf( "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes\n", receivedSz, buffer.size() );
-					socket.get()->unref();
+					socket->unref();
 					return;
 				}
 	
@@ -148,7 +148,7 @@ public:
 					//buffer.begin()[0] = (uint8_t)requestedSz;
 					//memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
 //					socket->write(reply.begin(), requestedSz);
-					socket.get()->write(reply);
+					socket->write(reply);
 				}
 	
 				stats.recvSize += receivedSz;
@@ -156,14 +156,14 @@ public:
 				++(stats.rqCnt);
 			});
 #endif
-			socket.get()->on( event::end, [this, socket]() {
+			socket->on( event::end, [this, socket]() {
 				print("server socket: onEnd!\n");
 //				const char buff[] = "goodbye!";
 //				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
-				socket.get()->write( b );
-				socket.get()->end();
+				socket->write( b );
+				socket->end();
 			});
 
 		});
@@ -176,11 +176,11 @@ public:
 			print("server: onConnectionCtrl()!\n");
 			//srv.unref();
 			NODECPP_ASSERT( socket ); 
-			socket.get()->on( event::close, [this, socket](bool hadError) {
+			socket->on( event::close, [this, socket](bool hadError) {
 				print("server socket: onCloseServerSocket!\n");
 				srvCtrl.removeSocket( socket );
 			});
-			socket.get()->on( event::data, [this, socket](Buffer& buffer) {
+			socket->on( event::data, [this, socket](Buffer& buffer) {
 				size_t requestedSz = buffer.readUInt8(1);
 				if ( requestedSz )
 				{
@@ -190,17 +190,17 @@ public:
 					//uint8_t* buff = ptr.get();
 					//memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
 					reply.append( &stats, replySz );
-					socket.get()->write(reply);
+					socket->write(reply);
 				}
 			});
-			socket.get()->on( event::end, [this, socket]() {
+			socket->on( event::end, [this, socket]() {
 				print("server socket: onEnd!\n");
 //				const char buff[] = "goodbye!";
 //				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
-				socket.get()->write( b );
-				socket.get()->end();
+				socket->write( b );
+				socket->end();
 			});
 		});
 
