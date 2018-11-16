@@ -183,7 +183,7 @@ public:
 	}
 
 public:
-	void infraAddAccepted(net::SocketBase* ptr)
+	void infraAddAccepted(soft_ptr<net::SocketBase> ptr)
 	{
 		size_t id = ptr->dataForCommandProcessing.index;
 		pendingAcceptedEvents.push_back(id);
@@ -678,7 +678,7 @@ private:
 //		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		NODECPP_ASSERT( netSocketManagerBase != nullptr );
-		netSocketManagerBase->infraAddAccepted(ptr.get());
+		netSocketManagerBase->infraAddAccepted(ptr);
 		EmitterType::emitConnection( entry.getEmitter(), ptr );
 
 		return;
