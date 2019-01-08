@@ -17,3 +17,10 @@ static NodeRegistrator<MySampleInheritanceOneNode> noname( "MySampleInheritanceO
 static NodeRegistrator<Runnable<MySampleTNode>> noname( "MySampleTemplateNode" );
 
 #endif // USING_T_SOCKETS
+
+/*void test()
+{
+	owning_ptr<nodecpp::net::Socket> p = make_owning<nodecpp::net::Socket>();
+	soft_ptr<nodecpp::net::SocketBase> p1 = p;
+	soft_ptr<nodecpp::net::Socket> p2 = soft_ptr_static_cast<nodecpp::net::Socket,nodecpp::net::SocketBase>(p1);
+}*/

@@ -156,6 +156,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\3rdparty\fmt\src\format.cc" />
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\iibmalloc_windows.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\page_allocator_windows.cpp" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\..\src\loop.cpp" />

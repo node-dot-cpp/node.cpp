@@ -36,6 +36,12 @@
     <ClCompile Include="..\..\..\..\src\infra_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\iibmalloc_windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\page_allocator_windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\user_code\NetSocket.h">
