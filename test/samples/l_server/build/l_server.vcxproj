@@ -73,25 +73,25 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>E:\CURRENT\NODE_DOT_CPP\node_cpp\safe_memory;E:\CURRENT\NODE_DOT_CPP\node_cpp\src;E:\CURRENT\NODE_DOT_CPP\node_cpp\3rdparty\fmt\include;E:\CURRENT\NODE_DOT_CPP\node_cpp\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory;../../../../src;../../../../3rdparty\fmt\include;../../../../include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>E:\CURRENT\NODE_DOT_CPP\node_cpp\safe_memory;E:\CURRENT\NODE_DOT_CPP\node_cpp\src;E:\CURRENT\NODE_DOT_CPP\node_cpp\3rdparty\fmt\include;E:\CURRENT\NODE_DOT_CPP\node_cpp\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory;../../../../src;../../../../3rdparty\fmt\include;../../../../include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>E:\CURRENT\NODE_DOT_CPP\node_cpp\safe_memory;E:\CURRENT\NODE_DOT_CPP\node_cpp\src;E:\CURRENT\NODE_DOT_CPP\node_cpp\3rdparty\fmt\include;E:\CURRENT\NODE_DOT_CPP\node_cpp\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory;../../../../src;../../../../3rdparty\fmt\include;../../../../include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>E:\CURRENT\NODE_DOT_CPP\node_cpp\safe_memory;E:\CURRENT\NODE_DOT_CPP\node_cpp\src;E:\CURRENT\NODE_DOT_CPP\node_cpp\3rdparty\fmt\include;E:\CURRENT\NODE_DOT_CPP\node_cpp\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory;../../../../src;../../../../3rdparty\fmt\include;../../../../include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -164,6 +164,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\3rdparty\fmt\src\format.cc" />
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\iibmalloc_windows.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\page_allocator_windows.cpp" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\..\src\loop.cpp" />
