@@ -131,7 +131,7 @@ class MySampleTNode : public NodeBase
 			NODECPP_ASSERT( socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
-			std::unique_ptr<SocketListener> l( new MyServerCtrlSocketListener( myNode, socket, sockIDBase++ ) );
+			std::unique_ptr<SocketListener> l( new MyServerCtrlSocketListener( myNode, s, sockIDBase++ ) );
 			s->on( l );
 		}
 	};
@@ -153,7 +153,7 @@ class MySampleTNode : public NodeBase
 			NODECPP_ASSERT( socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
-			std::unique_ptr<SocketListener> l( new MyServerSocketListener( myNode, socket, sockIDBase++ ) );
+			std::unique_ptr<SocketListener> l( new MyServerSocketListener( myNode, s, sockIDBase++ ) );
 			s->on( l );
 //			myNode->serverCtrlSockets.add( socket );
 		}
