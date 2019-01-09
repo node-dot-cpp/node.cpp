@@ -73,25 +73,25 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>../../../../safe_memory;../../../../src;../../../../3rdparty\fmt\include;../../../../include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory/src/iibmalloc/src/foundation/include;../../../../safe_memory/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/src/iibmalloc/src;../../../../safe_memory/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>../../../../safe_memory;../../../../src;../../../../3rdparty\fmt\include;../../../../include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory/src/iibmalloc/src/foundation/include;../../../../safe_memory/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/src/iibmalloc/src;../../../../safe_memory/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>../../../../safe_memory;../../../../src;../../../../3rdparty\fmt\include;../../../../include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory/src/iibmalloc/src/foundation/include;../../../../safe_memory/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/src/iibmalloc/src;../../../../safe_memory/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>../../../../safe_memory;../../../../src;../../../../3rdparty\fmt\include;../../../../include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory/src/iibmalloc/src/foundation/include;../../../../safe_memory/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/src/iibmalloc/src;../../../../safe_memory/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

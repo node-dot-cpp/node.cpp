@@ -86,10 +86,10 @@ class MySampleTNode : public NodeBase
 	class MyServerCtrlSocketListener : public SocketListener
 	{
 		MySampleTNode* myNode;
-		net::Socket* mySocket;
+		soft_ptr<net::Socket> mySocket;
 		int id;
 	public:
-		MyServerCtrlSocketListener(MySampleTNode* node, net::Socket* mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
+		MyServerCtrlSocketListener(MySampleTNode* node, soft_ptr<net::Socket> mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
 		void onClose(bool hadError) override
 		{
 			print("server socket: onCloseServerSocket!\n");
@@ -125,12 +125,13 @@ class MySampleTNode : public NodeBase
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
 			print("server: onCloseServer()!\n");
 		}
-		void onConnection(/*const ServerIdType* extra,*/ net::SocketBase* socket) override { 
+		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
 			print("server: onConnection()!\n");
 			//srv.unref();
-			NODECPP_ASSERT( socket != nullptr ); 
-			net::Socket* s = static_cast<net::Socket*>( socket );
-			std::unique_ptr<SocketListener> l( new MyServerCtrlSocketListener( myNode, s, sockIDBase++ ) );
+			NODECPP_ASSERT( socket ); 
+			//net::Socket* s = static_cast<net::Socket*>( socket );
+			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
+			std::unique_ptr<SocketListener> l( new MyServerCtrlSocketListener( myNode, socket, sockIDBase++ ) );
 			s->on( l );
 		}
 	};
@@ -146,12 +147,13 @@ class MySampleTNode : public NodeBase
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
 			print("server: onCloseServerCtrl()!\n");
 		}
-		void onConnection(/*const ServerIdType* extra,*/ net::SocketBase* socket) override { 
+		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
 			print("server: onConnectionCtrl()!\n");
 			//srv.unref();
-			NODECPP_ASSERT( socket != nullptr ); 
-			net::Socket* s = static_cast<net::Socket*>( socket );
-			std::unique_ptr<SocketListener> l( new MyServerSocketListener( myNode, s, sockIDBase++ ) );
+			NODECPP_ASSERT( socket ); 
+			//net::Socket* s = static_cast<net::Socket*>( socket );
+			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
+			std::unique_ptr<SocketListener> l( new MyServerSocketListener( myNode, socket, sockIDBase++ ) );
 			s->on( l );
 //			myNode->serverCtrlSockets.add( socket );
 		}

@@ -122,5 +122,8 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\server_type_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\safe_memory\src\safe_ptr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
