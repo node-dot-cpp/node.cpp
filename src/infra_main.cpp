@@ -28,6 +28,11 @@
 #include "../include/nodecpp/common.h"
 #include "../include/nodecpp/loop.h"
 
+#ifdef NODECPP_ENABLE_ONSTACK_SOFTPTR_COUNTING
+thread_local size_t onStackSafePtrCreationCount; 
+thread_local size_t onStackSafePtrDestructionCount;
+#endif // NODECPP_ENABLE_ONSTACK_SOFTPTR_COUNTING
+
 class NodeFactoryMap{
 	typedef std::basic_string<char, std::char_traits<char>, GlobalObjectAllocator<char>> StringT;
 	typedef std::map<StringT, RunnableFactoryBase*, std::less<StringT>, GlobalObjectAllocator<std::pair<const StringT, RunnableFactoryBase*>>> MapT;

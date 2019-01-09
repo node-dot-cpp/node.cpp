@@ -36,10 +36,10 @@ class MySampleTNode : public NodeBase
 	class MyServerSocketListener : public SocketListener
 	{
 		MySampleTNode* myNode;
-		net::Socket* mySocket;
+		soft_ptr<net::Socket> mySocket;
 		int id;
 	public:
-		MyServerSocketListener(MySampleTNode* node, net::Socket* mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
+		MyServerSocketListener(MySampleTNode* node, soft_ptr<net::Socket> mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
 		void onClose(bool hadError) override
 		{
 			print("server socket: onCloseServerSocket!\n");
