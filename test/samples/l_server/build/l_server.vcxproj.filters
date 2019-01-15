@@ -18,9 +18,6 @@
     <ClCompile Include="..\user_code\NetSocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\3rdparty\fmt\src\format.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,6 +37,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\page_allocator_windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\foundation\src\log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -163,7 +163,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\3rdparty\fmt\src\format.cc" />
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc" />
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\foundation\src\log.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\iibmalloc_windows.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\page_allocator_windows.cpp" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
