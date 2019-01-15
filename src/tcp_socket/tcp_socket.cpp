@@ -429,8 +429,8 @@ namespace nodecpp
 		{
 			retSz = 0;
 	
-			NODECPP_ASSERT(buff);
-			NODECPP_ASSERT(buffSz != 0);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,buff);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,buffSz != 0);
 			ssize_t ret = recvfrom(sock, (char*)buff, (int)buffSz, 0, (struct sockaddr *)(&sa_other), &fromlen);
 
 			if (ret < 0)
@@ -541,7 +541,7 @@ void OSLayer::appEnd(net::SocketBase::DataForCommandProcessing& sockData)
 		throw Error();
 	}
 
-//	NODECPP_ASSERT(entry.state == net::SocketBase::DataForCommandProcessing::Connected);
+//	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.state == net::SocketBase::DataForCommandProcessing::Connected);
 	
 	if (sockData.writeBuffer.empty())
 	{
@@ -631,7 +631,7 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 		}
 		else 
 		{
-			NODECPP_ASSERT(sentSize < size);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < size);
 			sockData.writeBuffer.append(data + sentSize, size - sentSize);
 			ioSockets.setPollout( sockData.index );
 			return false;
@@ -679,7 +679,7 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 		{
 //			entry.ptr->emitConnect();
 			sockData.state = net::SocketBase::DataForCommandProcessing::Connected;
-			NODECPP_ASSERT (sockData.writeBuffer.empty());
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sockData.writeBuffer.empty());
 			ioSockets.unsetPollout(sockData.index);
 //			evs.add(&net::Socket::emitConnect, current.getPtr());
 //			current.getEmitter().emitConnect();
@@ -733,13 +733,13 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 		}
 		else
 		{
-			NODECPP_ASSERT(sentSize < sockData.writeBuffer.size());
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < sockData.writeBuffer.size());
 //			entry.writeEvents = true;
 			sockData.writeBuffer.popFront(sentSize);
 		}
 	}
 	else //ignore?
-		NODECPP_ASSERT(false, "Not supported yet!");
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,false, "Not supported yet!");
 
 	return ret;
 }
@@ -747,14 +747,14 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 void OSLayer::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
-	NODECPP_ASSERT( netSocketManagerBase != nullptr );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( false, Error())));
 }
 
 void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err)
 {
 	sockData.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
-	NODECPP_ASSERT( netSocketManagerBase != nullptr );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
 }
 

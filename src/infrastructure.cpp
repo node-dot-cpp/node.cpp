@@ -52,7 +52,7 @@ uint64_t infraGetCurrentTime()
 
 void TimeoutManager::appSetTimeout(TimeoutEntry& entry)
 {
-	NODECPP_ASSERT(entry.active == false);
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
 
 	entry.lastSchedule = infraGetCurrentTime();
 
@@ -82,7 +82,7 @@ void TimeoutManager::appClearTimeout(TimeoutEntry& entry)
 	}
 
 	//if it was active, we must have deactivated it
-	NODECPP_ASSERT(entry.active == false);
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
 }
 
 
@@ -160,8 +160,8 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	{
 		auto it2 = timers.find(it->second);
 
-		NODECPP_ASSERT(it2 != timers.end());
-		NODECPP_ASSERT(it2->second.active);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,it2 != timers.end());
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,it2->second.active);
 		
 		it2->second.active = false;
 			
@@ -241,7 +241,7 @@ bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t 
 		//		if ( error == EAGAIN || error == EWOULDBLOCK )
 #endif
 		/*        return WAIT_RESULTED_IN_TIMEOUT;*/
-		NODECPP_ASSERT(false);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,false);
 		NODECPP_TRACE0("COMMLAYER_RET_FAILED");
 		return false;
 	}
@@ -279,7 +279,7 @@ bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t 
 
 /*void Infrastructure::runLoop()
 {
-	NODECPP_ASSERT(isNetInitialized());
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
 
 	while (running)
 	{
@@ -311,7 +311,7 @@ bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t 
 
 void runInfraLoop()
 {
-	NODECPP_ASSERT(isNetInitialized());
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
 
 	while (infra.running)
 	{

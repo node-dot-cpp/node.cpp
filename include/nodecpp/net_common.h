@@ -211,8 +211,8 @@ namespace nodecpp {
 		{
 			//ListItem* item = new ListItem(sdata);
 			//owning_ptr<ListItem> p1 = make_owning<ListItem>(sdata);
-			NODECPP_ASSERT( item != nullptr );
-			NODECPP_ASSERT( _begin == nullptr || _begin->prev_ == nullptr );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item != nullptr );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _begin == nullptr || _begin->prev_ == nullptr );
 			if ( _begin == nullptr )
 			{
 				_begin = item;
@@ -226,17 +226,17 @@ namespace nodecpp {
 				item->prev_ = nullptr;
 				_begin = item;
 			}
-			NODECPP_ASSERT( _begin == nullptr || _begin->prev_ == nullptr );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _begin == nullptr || _begin->prev_ == nullptr );
 			++_size;
 			return item;
 		}
 		void removeAndDelete( ListItem* item )
 		{
-			NODECPP_ASSERT( item != nullptr );
-			NODECPP_ASSERT( _begin == nullptr || _begin->prev_ == nullptr );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item != nullptr );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _begin == nullptr || _begin->prev_ == nullptr );
 			if ( _begin == item )
 			{
-				NODECPP_ASSERT( item == _begin );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item == _begin );
 				_begin = item->next_;
 			}
 			if ( item->prev_ )
@@ -244,7 +244,7 @@ namespace nodecpp {
 			if ( item->next_ )
 				item->next_->prev_ = item->prev_;
 			--_size;
-			NODECPP_ASSERT( _begin == nullptr || _begin->prev_ == nullptr );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _begin == nullptr || _begin->prev_ == nullptr );
 			delete item;
 		}
 		void clear()
@@ -271,7 +271,7 @@ namespace nodecpp {
 		{
 			//ItemT* item = new ItemT(sdata);
 			//owning_ptr<ItemT> p1 = make_owning<ItemT>(sdata);
-			NODECPP_ASSERT( item );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item );
 			for ( size_t idx=0; idx<items.size(); ++idx )
 				if ( !items[idx] )
 				{
@@ -288,7 +288,7 @@ namespace nodecpp {
 		}
 		void removeAndDelete( soft_ptr<ItemT> item )
 		{
-			NODECPP_ASSERT( item );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item );
 			for ( size_t idx=0; idx<items.size(); ++idx )
 				if ( items[idx].get() == item.get() )
 				{

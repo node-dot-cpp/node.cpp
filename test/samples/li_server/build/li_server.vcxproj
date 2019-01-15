@@ -155,7 +155,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\3rdparty\fmt\src\format.cc" />
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc" />
+    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\foundation\src\log.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\iibmalloc_windows.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\page_allocator_windows.cpp" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
@@ -166,7 +167,6 @@
     <ClCompile Include="..\user_code\NetSocket.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\include\nodecpp\assert.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\error.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\event.h" />

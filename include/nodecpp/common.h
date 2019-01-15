@@ -41,6 +41,9 @@
 #define NODECPP_UNUSED_VAR 
 #endif
 
+#include <foundation.h>
+#include <nodecpp_assert.h>
+#include <iibmalloc.h>
 #include <safe_ptr.h>
 
 #include <utility>
@@ -51,13 +54,17 @@
 #include <array>
 #include <algorithm>
 
-#include <cassert>
-#include "../../3rdparty/fmt/include/fmt/format.h"
-
+//#include <cassert>
+#include <fmt/format.h>
 #include "trace.h"
-#include "assert.h"
+//#include "assert.h"
 #include "mallocator.h"
 
+namespace nodecpp {
+	constexpr uint64_t module_id = 4;
+} // namespace ::nodecpp
+
+using namespace ::nodecpp::safememory;
 
 template<class T>
 using GlobalObjectAllocator = Mallocator<T>;

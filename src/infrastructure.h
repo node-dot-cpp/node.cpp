@@ -174,7 +174,7 @@ public:
 			//		if ( error == EAGAIN || error == EWOULDBLOCK )
 #endif
 			/*        return WAIT_RESULTED_IN_TIMEOUT;*/
-			NODECPP_ASSERT(false);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,false);
 			NODECPP_TRACE0("COMMLAYER_RET_FAILED");
 			return false;
 		}
@@ -204,11 +204,11 @@ public:
 							}
 							else
 							{
-								NODECPP_ASSERT( false );
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
 								break;
 							}
 						default:
-							NODECPP_ASSERT( false );
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
 							break;
 					}
 				}
@@ -219,7 +219,7 @@ public:
 
 	void runInfraLoop2()
 	{
-		NODECPP_ASSERT(isNetInitialized());
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
 
 		while (running)
 		{
@@ -265,14 +265,14 @@ public:
 inline
 size_t registerWithInfraAndAcquireSocket(NodeBase* node, net::SocketBase* t, int typeId)
 {
-	NODECPP_ASSERT( t != nullptr );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t != nullptr );
 	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
 }
 
 inline
 size_t registerWithInfraAndAssignSocket(NodeBase* node, net::SocketBase* t, int typeId, OpaqueSocketData& sdata)
 {
-	NODECPP_ASSERT( t != nullptr );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t != nullptr );
 	return netSocketManagerBase->appAssignSocket(node, t, typeId, sdata);
 }
 

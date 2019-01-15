@@ -58,10 +58,10 @@ namespace nodecpp {
 		OpaqueEmitter( ObjectType ot, NodeBase* node, net::SocketBase* ptr_, int type_ ) : objectType(ot), ptr( static_cast<PtrType>(ptr_)), type(type_), nodePtr( node ) {}
 		OpaqueEmitter( ObjectType ot, NodeBase* node, net::ServerTBase* ptr_, int type_ ) : objectType(ot), ptr( static_cast<PtrType>(ptr_)), type(type_), nodePtr( node ) {}
 		bool isValid() const { return ptr != nullptr; }
-		net::SocketBase* getClientSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ClientSocket ); return static_cast<net::SocketBase*>(ptr); }
-//		const net::SocketBase* getClientSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ClientSocket ); return static_cast<const net::SocketBase*>(ptr); }
-		net::ServerTBase* getServerSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ServerSocket ); return static_cast<net::ServerTBase*>(ptr); }
-//		const net::ServerTBase* getServerSocketPtr() const { NODECPP_ASSERT( objectType == ObjectType::ServerSocket ); return static_cast<const net::ServerTBase*>(ptr); }
+		net::SocketBase* getClientSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ClientSocket ); return static_cast<net::SocketBase*>(ptr); }
+//		const net::SocketBase* getClientSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ClientSocket ); return static_cast<const net::SocketBase*>(ptr); }
+		net::ServerTBase* getServerSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ServerSocket ); return static_cast<net::ServerTBase*>(ptr); }
+//		const net::ServerTBase* getServerSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ServerSocket ); return static_cast<const net::ServerTBase*>(ptr); }
 	};
 } // namespace nodecpp
 

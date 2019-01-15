@@ -29,8 +29,8 @@
 #include "../include/nodecpp/loop.h"
 
 #ifdef NODECPP_ENABLE_ONSTACK_SOFTPTR_COUNTING
-thread_local size_t onStackSafePtrCreationCount; 
-thread_local size_t onStackSafePtrDestructionCount;
+thread_local size_t nodecpp::safememory::onStackSafePtrCreationCount; 
+thread_local size_t nodecpp::safememory::onStackSafePtrDestructionCount;
 #endif // NODECPP_ENABLE_ONSTACK_SOFTPTR_COUNTING
 
 class NodeFactoryMap{
@@ -59,10 +59,10 @@ void NodeFactoryMap::registerFactory( const char* name, RunnableFactoryBase* fac
 {
 	if ( factoryMap == nullptr )
 		factoryMap = new MapT;
-	NODECPP_ASSERT( factoryMap != nullptr );
-	NODECPP_ASSERT( factoryMap->find( name ) == factoryMap->end() );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, factoryMap != nullptr );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, factoryMap->find( name ) == factoryMap->end() );
 	auto insRet NODECPP_UNUSED_VAR = factoryMap->insert( std::make_pair( name, factory ) );
-	NODECPP_ASSERT( insRet.second );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, insRet.second );
 }
 
 void registerFactory( const char* name, RunnableFactoryBase* factory )

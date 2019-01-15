@@ -253,11 +253,11 @@ namespace nodecpp
 				else
 				{
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
-					NODECPP_ASSERT( current.listener != nullptr );
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, current.listener != nullptr );
 //					current.listener->*onMyEvent(args...);
 					(current.listener->*onMyEvent)(args...);
 #else
-					NODECPP_ASSERT( false );
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
 #endif
 				}
 			}

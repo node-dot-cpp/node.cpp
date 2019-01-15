@@ -5,7 +5,7 @@
 #include "../../../../include/nodecpp/common.h"
 
 
-#include "../../../../3rdparty/fmt/include/fmt/format.h"
+#include <fmt/format.h>
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
@@ -15,7 +15,7 @@
 
 
 using namespace std;
-using namespace nodecpp;
+using namespace ::nodecpp;
 using namespace fmt;
 
 class MySampleTNode : public NodeBase
@@ -128,7 +128,7 @@ class MySampleTNode : public NodeBase
 		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
 			print("server: onConnection()!\n");
 			//srv.unref();
-			NODECPP_ASSERT( socket ); 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
 			std::unique_ptr<SocketListener> l( new MyServerCtrlSocketListener( myNode, s, sockIDBase++ ) );
@@ -150,7 +150,7 @@ class MySampleTNode : public NodeBase
 		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
 			print("server: onConnectionCtrl()!\n");
 			//srv.unref();
-			NODECPP_ASSERT( socket ); 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
 			std::unique_ptr<SocketListener> l( new MyServerSocketListener( myNode, s, sockIDBase++ ) );

@@ -45,8 +45,8 @@ public:
 	OpaqueEmitter emitter;
 
 	NetSocketEntry(size_t index) : index(index), state(State::Unused) {}
-	NetSocketEntry(size_t index, NodeBase* node, net::SocketBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
-	NetSocketEntry(size_t index, NodeBase* node, net::ServerTBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, NodeBase* node, net::SocketBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, NodeBase* node, net::ServerTBase* ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -54,15 +54,15 @@ public:
 	NetSocketEntry(NetSocketEntry&& other) = default;
 	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
 
-	bool isUsed() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state != State::Unused; }
-	bool isAssociated() const { NODECPP_ASSERT( (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state == State::SockAssociated; }
-	void setAssociated() {NODECPP_ASSERT( state == State::SockIssued && emitter.isValid() ); state = State::SockAssociated;}
-	void setSocketClosed() {NODECPP_ASSERT( state != State::Unused ); state = State::SockClosed;}
+	bool isUsed() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state != State::Unused; }
+	bool isAssociated() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (state == State::Unused) || (state != State::Unused && emitter.isValid()) ); return state == State::SockAssociated; }
+	void setAssociated() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, state == State::SockIssued && emitter.isValid() ); state = State::SockAssociated;}
+	void setSocketClosed() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, state != State::Unused ); state = State::SockClosed;}
 	void setUnused() {state = State::Unused; }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
-	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT(emitter.isValid()); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
-	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT(emitter.isValid()); NODECPP_ASSERT( emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
+	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
+	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
 };
 
 class NetSockets
@@ -83,8 +83,8 @@ public:
 
 	template<class SocketType>
 	size_t addEntry(NodeBase* node, SocketType* ptr, int typeId) {
-		NODECPP_ASSERT( ourSide.size() == osSide.size() );
-		NODECPP_ASSERT( ptr->dataForCommandProcessing.osSocket > 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
 		{
 			if (!ourSide[i].isUsed())
@@ -108,22 +108,22 @@ public:
 		return ix;
 	}
 	void setAssociated( size_t idx/*, pollfd p*/ ) {
-		NODECPP_ASSERT( idx && idx <= ourSide.size() );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() );
 		ourSide[idx].setAssociated();
 		osSide[idx].fd = (SOCKET)(-((int64_t)(osSide[idx].fd)));
-		NODECPP_ASSERT( osSide[idx].events == 0 );
-		NODECPP_ASSERT( osSide[idx].revents == 0 );
-		NODECPP_ASSERT( osSide[idx].fd > 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].events == 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].revents == 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].fd > 0 );
 		++associatedCount;
 	}
-	//short getEvents( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); return osSide[idx].events; }
-	void setPollout( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events |= POLLOUT; }
-	void unsetPollout( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events &= ~POLLOUT; }
-	void setPollin( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events |= POLLIN; }
-	void unsetPollin( size_t idx ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); osSide[idx].events &= ~POLLIN; }
-	void setRefed( size_t idx, bool refed ) {NODECPP_ASSERT( idx && idx <= ourSide.size() ); ourSide[idx].refed = refed; }
+	//short getEvents( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); return osSide[idx].events; }
+	void setPollout( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); osSide[idx].events |= POLLOUT; }
+	void unsetPollout( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); osSide[idx].events &= ~POLLOUT; }
+	void setPollin( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); osSide[idx].events |= POLLIN; }
+	void unsetPollin( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); osSide[idx].events &= ~POLLIN; }
+	void setRefed( size_t idx, bool refed ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); ourSide[idx].refed = refed; }
 	void setUnused( size_t idx ) {
-		NODECPP_ASSERT( idx && idx <= ourSide.size() );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() );
 		if ( osSide[idx].fd != INVALID_SOCKET )
 		{
 			osSide[idx].fd = INVALID_SOCKET; 
@@ -132,7 +132,7 @@ public:
 		ourSide[idx].setUnused();
 	}
 	void setSocketClosed( size_t idx ) {
-		NODECPP_ASSERT( idx && idx <= ourSide.size() ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); 
 		osSide[idx].fd = INVALID_SOCKET; 
 		ourSide[idx].setSocketClosed();
 		--associatedCount;
@@ -188,16 +188,16 @@ public:
 		size_t id = ptr->dataForCommandProcessing.index;
 		pendingAcceptedEvents.push_back(id);
 		ptr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connected;
-		NODECPP_ASSERT( ptr->dataForCommandProcessing.writeBuffer.size() == 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.writeBuffer.size() == 0 );
 		ioSockets.unsetPollout(id);
 		ptr->dataForCommandProcessing.refed = true;
 		auto& entry = appGetEntry(id);
 		entry.refed = true; 
 		ioSockets.setAssociated(id);
-		NODECPP_ASSERT(ptr->dataForCommandProcessing.remoteEnded == false);
-		NODECPP_ASSERT(ptr->dataForCommandProcessing.paused == false);
-		NODECPP_ASSERT(ptr->dataForCommandProcessing.state != net::SocketBase::DataForCommandProcessing::Connecting);
-		NODECPP_ASSERT(ptr->dataForCommandProcessing.writeBuffer.empty());
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.remoteEnded == false);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.paused == false);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state != net::SocketBase::DataForCommandProcessing::Connecting);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.writeBuffer.empty());
 		ioSockets.setPollin(id);
 	}
 
@@ -217,10 +217,10 @@ public:
 private:
 	size_t registerAndAssignSocket(NodeBase* node, net::SocketBase* ptr, int typeId, SocketRiia& s)
 	{
-		NODECPP_ASSERT(ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		size_t id = ioSockets.addEntry(node, ptr, typeId);
-		NODECPP_ASSERT(id != 0);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
 		return id;
 	}
 
@@ -228,15 +228,15 @@ public:
 	void appConnectSocket(net::SocketBase* sockPtr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
 		// TODO: check sockPtr validity
-		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.osSocket != INVALID_SOCKET);
-		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.osSocket != INVALID_SOCKET);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
 		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
 		sockPtr->dataForCommandProcessing.refed = true;
 		ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
 		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index/*, p*/ );
 		ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
-		NODECPP_ASSERT(sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting);
 		ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
 	}
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
@@ -511,7 +511,7 @@ private:
 				EmitterType::emitDrain(current.getEmitter());
 				break;
 			default:
-				NODECPP_ASSERT(status == NetSocketManagerBase::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,status == NetSocketManagerBase::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
 		}
 	}
 };
@@ -548,7 +548,7 @@ public:
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		size_t id = addServerEntry(node, ptr, typeId);
-		NODECPP_ASSERT(id != 0);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
 	}
 	void appListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog) {
 		Ip4 myIp = Ip4::parse(ip);
@@ -560,7 +560,7 @@ public:
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.refed = true;
-		NODECPP_ASSERT( ptr->dataForCommandProcessing.index != 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.index != 0 );
 		/*pollfd p;
 		p.fd = ptr->dataForCommandProcessing.osSocket;
 		p.events = POLLIN;*/
@@ -677,7 +677,7 @@ private:
 			return;
 //		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
-		NODECPP_ASSERT( netSocketManagerBase != nullptr );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
 		EmitterType::emitConnection( entry.getEmitter(), ptr );
 
