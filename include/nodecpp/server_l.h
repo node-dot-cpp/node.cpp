@@ -47,7 +47,7 @@ namespace nodecpp {
 			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
 			EventEmitterSupportingListeners<event::Error, ServerListener, &ServerListener::onError> eError;
 
-			std::vector<std::unique_ptr<ServerListener>> ownedListeners;
+			std::vector<nodecpp::safememory::owning_ptr<ServerListener>> ownedListeners;
 #else
 			EventEmitter<event::Close> eClose;
 			EventEmitter<event::Connection> eConnection;
@@ -122,14 +122,14 @@ namespace nodecpp {
 				eError.once(l);
 			}
 
-			void on( std::unique_ptr<ServerListener>& l) {
+			void on( nodecpp::safememory::owning_ptr<ServerListener>& l) {
 				ownedListeners.emplace_back( std::move( l ) );
-				on( l.get() );
+				on( l );
 			}
 
-			void once( std::unique_ptr<ServerListener>& l) {
+			void once( nodecpp::safememory::owning_ptr<ServerListener>& l) {
 				ownedListeners.emplace_back( std::move( l ) );
-				once( l.get() );
+				once( l );
 			}
 #endif
 			void on(std::string name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {

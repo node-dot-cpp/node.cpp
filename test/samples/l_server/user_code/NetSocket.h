@@ -67,14 +67,14 @@ public:
 //		ptr.reset(new uint8_t[size]);
 
 		srv.on( event::close, [this](bool hadError) {
-			print("server: onCloseServer()!\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!\n");
 		});
 		srv.on( event::connection, [this](soft_ptr<net::Socket> socket) {
-			print("server: onConnection()!\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!\n");
 			//srv.unref();
-			NODECPP_ASSERT( socket ); 
+			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
-				print("server socket: onCloseServerSocket!\n");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!\n");
 				socket->unref();
 				srv.removeSocket( socket );
 			});
@@ -87,7 +87,7 @@ public:
 					socket->unref();
 					return;
 				}
-		//		print("server socket: onData for idx %d !\n", *extra );
+		//		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx %d !\n", *extra );
 	
 				size_t receivedSz = buffer.begin()[0];
 				if ( receivedSz != buffer.size() )
@@ -128,7 +128,7 @@ public:
 					socket->unref();
 					return;
 				}
-		//		print("server socket: onData for idx %d !\n", *extra );
+		//		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx %d !\n", *extra );
 	
 				size_t receivedSz = buffer.readUInt8(0);
 				if ( receivedSz != buffer.size() )
@@ -157,7 +157,7 @@ public:
 			});
 #endif
 			socket->on( event::end, [this, socket]() {
-				print("server socket: onEnd!\n");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!\n");
 //				const char buff[] = "goodbye!";
 //				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 				Buffer b;
@@ -169,15 +169,15 @@ public:
 		});
 
 		srvCtrl.on( event::close, [this](bool hadError) {
-			print("server: onCloseServerCtrl()!\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!\n");
 			//serverCtrlSockets.clear();
 		});
 		srvCtrl.on( event::connection, [this](soft_ptr<net::Socket> socket) {
-			print("server: onConnectionCtrl()!\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!\n");
 			//srv.unref();
-			NODECPP_ASSERT( socket ); 
+			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
-				print("server socket: onCloseServerSocket!\n");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!\n");
 				srvCtrl.removeSocket( socket );
 			});
 			socket->on( event::data, [this, socket](Buffer& buffer) {
@@ -194,7 +194,7 @@ public:
 				}
 			});
 			socket->on( event::end, [this, socket]() {
-				print("server socket: onEnd!\n");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!\n");
 //				const char buff[] = "goodbye!";
 //				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 				Buffer b;

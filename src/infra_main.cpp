@@ -72,6 +72,10 @@ void registerFactory( const char* name, RunnableFactoryBase* factory )
 
 int main()
 {
+#ifdef NODECPP_USE_IIBMALLOC
+		g_AllocManager.initialize();
+		g_AllocManager.enable();
+#endif
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
 

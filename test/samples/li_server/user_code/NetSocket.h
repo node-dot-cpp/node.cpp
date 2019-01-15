@@ -42,7 +42,7 @@ class MySampleTNode : public NodeBase
 		MyServerSocketListener(MySampleTNode* node, soft_ptr<net::Socket> mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
 		void onClose(bool hadError) override
 		{
-			print("server socket: onCloseServerSocket!");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
 			myNode->srv.removeSocket(mySocket);
 		}
 		void onData(Buffer& buffer) override {
@@ -52,7 +52,7 @@ class MySampleTNode : public NodeBase
 				mySocket->unref();
 				return;
 			}
-	//		print("server socket: onData for idx {} !", *extra );
+	//		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *extra );
 
 			size_t receivedSz = buffer.begin()[0];
 			if ( receivedSz != buffer.size() )
@@ -76,7 +76,7 @@ class MySampleTNode : public NodeBase
 			++(myNode->stats.rqCnt);
 		}
 		void onEnd() override {
-			print("server socket: onEnd!");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
 			const char buff[] = "goodbye!";
 			mySocket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 			mySocket->end();
@@ -92,7 +92,7 @@ class MySampleTNode : public NodeBase
 		MyServerCtrlSocketListener(MySampleTNode* node, soft_ptr<net::Socket> mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
 		void onClose(bool hadError) override
 		{
-			print("server socket: onCloseServerSocket!");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
 			myNode->srvCtrl.removeSocket(mySocket);
 		}
 		void onData(Buffer& buffer) override {
@@ -108,7 +108,7 @@ class MySampleTNode : public NodeBase
 			}
 		}
 		void onEnd() override {
-			print("server socket: onEnd!");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
 			const char buff[] = "goodbye!";
 			mySocket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 			mySocket->end();
@@ -123,16 +123,16 @@ class MySampleTNode : public NodeBase
 	public:
 		MyServerListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
-			print("server: onCloseServer()!");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!");
 		}
 		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
-			print("server: onConnection()!");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 			//srv.unref();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
-			std::unique_ptr<SocketListener> l( new MyServerCtrlSocketListener( myNode, s, sockIDBase++ ) );
-			s->on( l );
+			nodecpp::safememory::owning_ptr<MyServerCtrlSocketListener> l = nodecpp::safememory::make_owning< MyServerCtrlSocketListener >( myNode, s, sockIDBase++ );
+			s->on( std::move(l) );
 		}
 	};
 	MyServerListener myServerListener;
@@ -145,16 +145,16 @@ class MySampleTNode : public NodeBase
 	public:
 		MyCtrlServerListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
-			print("server: onCloseServerCtrl()!");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!");
 		}
 		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
-			print("server: onConnectionCtrl()!");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 			//srv.unref();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
-			std::unique_ptr<SocketListener> l( new MyServerSocketListener( myNode, s, sockIDBase++ ) );
-			s->on( l );
+			nodecpp::safememory::owning_ptr<SocketListener> l = nodecpp::safememory::make_owning<MyServerSocketListener>( myNode, s, sockIDBase++ );
+			s->on( std::move(l) );
 //			myNode->serverCtrlSockets.add( socket );
 		}
 	};

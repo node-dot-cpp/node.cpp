@@ -193,9 +193,9 @@ namespace nodecpp
 			bool once;
 			bool isLambda; // note: now we have only two options here: lambda and listeners
 			typename EV::callback cb;
-			ListenerT* listener;
-			Element(bool once_, typename EV::callback cb_) : once(once_), isLambda(true), cb(cb_), listener(nullptr) {}
-			Element(bool once_, ListenerT* listener_) : once(once_), isLambda(false), listener(listener_) {}
+			nodecpp::safememory::owning_ptr<ListenerT> listener;
+			Element(bool once_, typename EV::callback cb_) : once(once_), isLambda(true), cb(cb_) {}
+			Element(bool once_, nodecpp::safememory::owning_ptr<ListenerT> listener_) : once(once_), isLambda(false), listener(std::move(listener_)) {}
 		};
 		std::vector<Element> callbacks;
 	public:
@@ -213,18 +213,22 @@ namespace nodecpp
 			callbacks.insert(std::make_pair(true, cb));
 		}
 
-		void on(ListenerT* listener) {
-			callbacks.emplace_back(false,listener);
+		void on(nodecpp::safememory::owning_ptr<ListenerT> listener) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, listener );
+			callbacks.emplace_back(false,std::move(listener));
 		}
-		void once(ListenerT* listener) {
-			callbacks.emplace_back(true, listener);
+		void once(nodecpp::safememory::owning_ptr<ListenerT> listener) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, listener );
+			callbacks.emplace_back(true, std::move(listener));
 		}
 
-		void prepend(ListenerT* listener) {
-			callbacks.insert(callbacks.begin(), std::make_pair(false, listener));
+		void prepend(nodecpp::safememory::owning_ptr<ListenerT> listener) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, listener );
+			callbacks.insert(callbacks.begin(), std::make_pair(false, std::move(listener)));
 		}
-		void prependOnce(ListenerT* listener) {
-			callbacks.insert(std::make_pair(true, listener));
+		void prependOnce(nodecpp::safememory::owning_ptr<ListenerT> listener) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, listener );
+			callbacks.insert(std::make_pair(true, std::move(listener)));
 		}
 
 		size_t listenerCount() const {
@@ -242,22 +246,26 @@ namespace nodecpp
 			//first make a copy of handlers
 			for (auto& current : callbacks) {
 				if (!current.once)
-					other.push_back(current);
+				{
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, current.isLambda || current.listener);
+					other.push_back(std::move(current));
+				}
 			}
 	
 			std::swap(callbacks, other);
 
-			for (auto& current : other) {
+			for (auto& current : callbacks) {
 				if ( current.isLambda )
 					current.cb(args...);
 				else
 				{
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, current.listener != nullptr );
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, current.listener );
 //					current.listener->*onMyEvent(args...);
-					(current.listener->*onMyEvent)(args...);
+					auto ptr = current.listener.get().get_dereferencable();
+					(ptr->*onMyEvent)(args...);
 #else
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
 #endif
 				}
 			}

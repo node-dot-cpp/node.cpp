@@ -44,7 +44,7 @@ namespace nodecpp {
 			class EventEmitterSupportingListeners<event::Error, SocketListener, &SocketListener::onError> eError;
 			class EventEmitterSupportingListeners<event::Accepted, SocketListener, &SocketListener::onAccepted> eAccepted;
 
-			std::vector<std::unique_ptr<SocketListener>> ownedListeners;
+			std::vector<nodecpp::safememory::owning_ptr<SocketListener>> ownedListeners;
 
 			void registerMeAndAcquireSocket();
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
@@ -118,34 +118,34 @@ namespace nodecpp {
 
 
 
-			void on( SocketListener* l) {
-				eClose.on(l);
-				eConnect.on(l);
-				eData.on(l);
-				eDrain.on(l);
-				eError.on(l);
-				eEnd.on(l);
-				eAccepted.on(l);
+			void on( nodecpp::safememory::owning_ptr<SocketListener> l) {
+				eClose.on(std::move(l));
+				eConnect.on(std::move(l));
+				eData.on(std::move(l));
+				eDrain.on(std::move(l));
+				eError.on(std::move(l));
+				eEnd.on(std::move(l));
+				eAccepted.on(std::move(l));
 			}
 
-			void once( SocketListener* l) {
-				eClose.once(l);
-				eConnect.once(l);
-				eData.once(l);
-				eDrain.once(l);
-				eError.once(l);
-				eEnd.once(l);
-				eAccepted.once(l);
+			void once( nodecpp::safememory::owning_ptr<SocketListener> l) {
+				eClose.once(std::move(l));
+				eConnect.once(std::move(l));
+				eData.once(std::move(l));
+				eDrain.once(std::move(l));
+				eError.once(std::move(l));
+				eEnd.once(std::move(l));
+				eAccepted.once(std::move(l));
 			}
 
-			void on( std::unique_ptr<SocketListener>& l) {
+			void on( nodecpp::safememory::owning_ptr<SocketListener>& l) {
 				ownedListeners.emplace_back( std::move( l ) );
-				on( l.get() );
+				on( std::move(l) );
 			}
 
-			void once( std::unique_ptr<SocketListener>& l) {
+			void once( nodecpp::safememory::owning_ptr<SocketListener>& l) {
 				ownedListeners.emplace_back( std::move( l ) );
-				once( l.get() );
+				once( std::move(l) );
 			}
 
 			void on( std::string name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {

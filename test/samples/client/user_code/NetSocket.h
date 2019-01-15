@@ -5,7 +5,6 @@
 #include "../../../../include/nodecpp/common.h"
 
 
-#include "../../../../3rdparty/fmt/include/fmt/format.h"
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
@@ -29,12 +28,12 @@ class MySampleTNode : public NodeBase
 public:
 	MySampleTNode() : clientSock(this)
 	{
-		printf( "MySampleTNode::MySampleTNode()\n" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
 	virtual void main()
 	{
-		printf( "MySampleLambdaOneNode::main()\n" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		*( clientSock.getExtra() ) = 17;
 		clientSock.connect(2000, "127.0.0.1");
@@ -48,11 +47,11 @@ public:
 	}
 	void onWhateverData(const SocketIdType* extra, nodecpp::Buffer& buffer)
 	{
-		NODECPP_ASSERT( extra != nullptr );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, extra != nullptr );
 		++recvReplies;
 		if ( ( recvReplies & 0xFFFF ) == 0 )
-//			printf( "[%zd] MySampleTNode::onData(), size = %zd\n", recvReplies, buffer.size() );
-			printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
+//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}", recvReplies, *extra, buffer.size() );
 		recvSize += buffer.size();
 		buf.writeInt8( 2, 0 );
 		buf.writeInt8( (uint8_t)recvReplies | 1, 1 );

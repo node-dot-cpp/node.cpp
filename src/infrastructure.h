@@ -314,10 +314,6 @@ public:
 	Runnable() {}
 	void run() override
 	{
-#ifdef USE_IIBMALLOC
-		g_AllocManager.initialize();
-		g_AllocManager.enable();
-#endif
 		return internalRun<typename Node::EmitterType, typename Node::EmitterTypeForServer>();
 	}
 };
