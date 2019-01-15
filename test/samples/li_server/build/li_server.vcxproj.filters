@@ -92,9 +92,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\trace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\src\ev_queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>

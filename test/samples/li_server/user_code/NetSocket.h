@@ -42,22 +42,22 @@ class MySampleTNode : public NodeBase
 		MyServerSocketListener(MySampleTNode* node, soft_ptr<net::Socket> mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
 		void onClose(bool hadError) override
 		{
-			print("server socket: onCloseServerSocket!\n");
+			print("server socket: onCloseServerSocket!");
 			myNode->srv.removeSocket(mySocket);
 		}
 		void onData(Buffer& buffer) override {
 			if ( buffer.size() < 2 )
 			{
-				printf( "Insufficient data on socket idx = %d\n", id );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", id );
 				mySocket->unref();
 				return;
 			}
-	//		print("server socket: onData for idx %d !\n", *extra );
+	//		print("server socket: onData for idx {} !", *extra );
 
 			size_t receivedSz = buffer.begin()[0];
 			if ( receivedSz != buffer.size() )
 			{
-				printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", id, receivedSz, buffer.size() );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", id, receivedSz, buffer.size() );
 				mySocket->unref();
 				return;
 			}
@@ -76,7 +76,7 @@ class MySampleTNode : public NodeBase
 			++(myNode->stats.rqCnt);
 		}
 		void onEnd() override {
-			print("server socket: onEnd!\n");
+			print("server socket: onEnd!");
 			const char buff[] = "goodbye!";
 			mySocket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 			mySocket->end();
@@ -92,7 +92,7 @@ class MySampleTNode : public NodeBase
 		MyServerCtrlSocketListener(MySampleTNode* node, soft_ptr<net::Socket> mySocket_, int id_) : myNode(node), mySocket( mySocket_ ), id(id_) {}
 		void onClose(bool hadError) override
 		{
-			print("server socket: onCloseServerSocket!\n");
+			print("server socket: onCloseServerSocket!");
 			myNode->srvCtrl.removeSocket(mySocket);
 		}
 		void onData(Buffer& buffer) override {
@@ -108,7 +108,7 @@ class MySampleTNode : public NodeBase
 			}
 		}
 		void onEnd() override {
-			print("server socket: onEnd!\n");
+			print("server socket: onEnd!");
 			const char buff[] = "goodbye!";
 			mySocket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 			mySocket->end();
@@ -123,10 +123,10 @@ class MySampleTNode : public NodeBase
 	public:
 		MyServerListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
-			print("server: onCloseServer()!\n");
+			print("server: onCloseServer()!");
 		}
 		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
-			print("server: onConnection()!\n");
+			print("server: onConnection()!");
 			//srv.unref();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
@@ -145,10 +145,10 @@ class MySampleTNode : public NodeBase
 	public:
 		MyCtrlServerListener(MySampleTNode* node, int id_) : myNode(node), id(id_) {}
 		void onClose(/*const ServerIdType* extra,*/ bool hadError) override {
-			print("server: onCloseServerCtrl()!\n");
+			print("server: onCloseServerCtrl()!");
 		}
 		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
-			print("server: onConnectionCtrl()!\n");
+			print("server: onConnectionCtrl()!");
 			//srv.unref();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
@@ -163,12 +163,12 @@ class MySampleTNode : public NodeBase
 public:
 	MySampleTNode() : myServerListener(this, 0), myCtrlServerListener(this, 1)
 	{
-		printf( "MySampleTNode::MySampleTNode()\n" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
 	virtual void main()
 	{
-		printf( "MySampleLambdaOneNode::main()\n" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 		srv.on( &myCtrlServerListener );

@@ -254,9 +254,9 @@ namespace nodecpp {
 			void onConnect() override
 			{ 
 	//assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
-				//printf("type 1 = \'%s\', hash = 0x%zx\n", typeid(x).name(), typeid(x).hash_code() );
-				//printf("type 2 = \'%s\', hash = 0x%zx\n", typeid(void (Node::*)(const void*)).name(), typeid(x).hash_code() );
-				//printf("type 3 = \'%s\', hash = 0x%zx\n", typeid(Initializer::onConnect).name(), typeid(x).hash_code() );
+				//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("type 1 = \'{}\', hash = 0x{:x}", typeid(x).name(), typeid(x).hash_code() );
+				//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("type 2 = \'{}\', hash = 0x{:x}", typeid(void (Node::*)(const void*)).name(), typeid(x).hash_code() );
+				//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("type 3 = \'{}\', hash = 0x{:x}", typeid(Initializer::onConnect).name(), typeid(x).hash_code() );
 				if constexpr ( Initializer::onConnect != nullptr )
 					((static_cast<Node*>(this->node))->*(Initializer::onConnect))(this->getExtra()); 
 				else

@@ -109,7 +109,7 @@ nodecpp::Timeout TimeoutManager::appSetTimeout(std::function<void()> cb, int32_t
 	}
 	else
 	{
-		NODECPP_TRACE("Failed to insert Timeout {}", id);
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Failed to insert Timeout {}", id);
 		return Timeout(0);
 	}
 
@@ -148,7 +148,7 @@ void TimeoutManager::appTimeoutDestructor(uint64_t id)
 			timers.erase(it);
 	}
 	else
-		NODECPP_TRACE("timer {} not found", id);
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("timer {} not found", id);
 }
 
 void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
@@ -234,7 +234,7 @@ bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t 
 #ifdef _MSC_VER
 		int error = WSAGetLastError();
 		//		if ( error == WSAEWOULDBLOCK )
-		NODECPP_TRACE("error {}", error);
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("error {}", error);
 #else
 		perror("select()");
 		//		int error = errno;
@@ -242,7 +242,7 @@ bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t 
 #endif
 		/*        return WAIT_RESULTED_IN_TIMEOUT;*/
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,false);
-		NODECPP_TRACE0("COMMLAYER_RET_FAILED");
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("COMMLAYER_RET_FAILED");
 		return false;
 	}
 	else if (retval == 0)
@@ -264,12 +264,12 @@ bool /*Infrastructure::*/pollPhase(bool refed, uint64_t nextTimeoutAt, uint64_t 
 
 		//if (queue.empty())
 		//{
-		//	NODECPP_TRACE("No event generated from poll wake up (non timeout)");
+		//	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("No event generated from poll wake up (non timeout)");
 		//	for (size_t i = 0; i != fds_sz; ++i)
 		//	{
 		//		if (fds[i].fd >= 0 && fds[i].revents != 0)
 		//		{
-		//			NODECPP_TRACE("At id {}, socket {}, revent {:x}", i, fds[i].fd, fds[i].revents);
+		//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("At id {}, socket {}, revent {:x}", i, fds[i].fd, fds[i].revents);
 		//		}
 		//	}
 		//}

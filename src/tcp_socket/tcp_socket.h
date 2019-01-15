@@ -392,7 +392,7 @@ public:
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
-			NODECPP_TRACE("POLLERR event at {}", current.getClientSocketData()->osSocket);
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getClientSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getClientSocketData()->osSocket);
 			//errorCloseSocket(current, storeError(Error()));
 			Error e;
@@ -412,25 +412,25 @@ public:
 			{
 				if (!current.getClientSocketData()->paused)
 				{
-					//NODECPP_TRACE("POLLIN event at {}", begin[i].fd);
+					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", begin[i].fd);
 					infraProcessReadEvent(current/*, evs*/);
 				}
 			}
 			else if ((revents & POLLHUP) != 0)
 			{
-				NODECPP_TRACE("POLLHUP event at {}", current.getClientSocketData()->osSocket);
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLHUP event at {}", current.getClientSocketData()->osSocket);
 				infraProcessRemoteEnded(current/*, evs*/);
 			}
 				
 			if ((revents & POLLOUT) != 0)
 			{
-				NODECPP_TRACE("POLLOUT event at {}", current.getClientSocketData()->osSocket);
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLOUT event at {}", current.getClientSocketData()->osSocket);
 				infraProcessWriteEvent(current/*, evs*/);
 			}
 		}
 		//else if (revents != 0)
 		//{
-		//	NODECPP_TRACE("Unexpected event at {}, value {:x}", begin[i].fd, revents);
+		//	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected event at {}, value {:x}", begin[i].fd, revents);
 		//	internal_getsockopt_so_error(entry.osSocket);
 		//	errorCloseSocket(entry);
 		//}
@@ -494,7 +494,7 @@ private:
 		}
 		else
 		{
-			NODECPP_TRACE("Unexpected end on socket {}, already ended", entry.getClientSocketData()->osSocket);
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected end on socket {}, already ended", entry.getClientSocketData()->osSocket);
 		}
 
 	}
@@ -653,18 +653,18 @@ public:
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
-			NODECPP_TRACE("POLLERR event at {}", current.getServerSocketData()->osSocket);
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
 			infraMakeErrorEventAndClose(current/*, evs*/);
 		}
 		else if ((revents & POLLIN) != 0)
 		{
-			NODECPP_TRACE("POLLIN event at {}", current.getServerSocketData()->osSocket);
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", current.getServerSocketData()->osSocket);
 			infraProcessAcceptEvent(current/*, evs*/);
 		}
 		else if (revents != 0)
 		{
-			NODECPP_TRACE("Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
 			infraMakeErrorEventAndClose(current/*, evs*/);
 		}

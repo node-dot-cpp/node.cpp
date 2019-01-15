@@ -167,7 +167,7 @@ public:
 #ifdef _MSC_VER
 			int error = WSAGetLastError();
 			//		if ( error == WSAEWOULDBLOCK )
-			NODECPP_TRACE("error {}", error);
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("error {}", error);
 #else
 			perror("select()");
 			//		int error = errno;
@@ -175,7 +175,7 @@ public:
 #endif
 			/*        return WAIT_RESULTED_IN_TIMEOUT;*/
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,false);
-			NODECPP_TRACE0("COMMLAYER_RET_FAILED");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("COMMLAYER_RET_FAILED");
 			return false;
 		}
 		else if (retval == 0)

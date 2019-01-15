@@ -186,7 +186,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_t_base.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\trace.h" />
     <ClInclude Include="..\..\..\..\safe_memory\src\safe_ptr.h" />
     <ClInclude Include="..\..\..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\..\..\src\infrastructure.h" />

@@ -56,7 +56,7 @@
 
 //#include <cassert>
 #include <fmt/format.h>
-#include "trace.h"
+//#include "trace.h"
 //#include "assert.h"
 #include "mallocator.h"
 
@@ -108,7 +108,7 @@ public:
 public:
 	NodeRegistrator( const char* name )
 	{
-		//NODECPP_TRACE( "NodeRegistrator(\"%s\");", name );
+		//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>(( "NodeRegistrator(\"{}\");", name );
 		class NodeFactory : public RunnableFactoryBase
 		{
 		public:
@@ -144,7 +144,7 @@ class NodeRegistrator
 public:
 	NodeRegistrator( const char* name )
 	{
-		//NODECPP_TRACE( "NodeRegistrator(\"%s\");", name );
+		//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>(( "NodeRegistrator(\"{}\");", name );
 		class NodeFactory : public NodeFactoryBase
 		{
 		public:
