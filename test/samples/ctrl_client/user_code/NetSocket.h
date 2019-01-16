@@ -73,7 +73,7 @@ public:
 	void onWhateverData(const SocketIdType* extra, nodecpp::Buffer& buffer)
 	{
 		if ( buffer.size() < sizeof( Stats ) )
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), buffer.size(), sizeof( Stats ) );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
 		else
 			printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
 		

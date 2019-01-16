@@ -131,11 +131,11 @@ class MySampleTNode : public NodeBase
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
-			nodecpp::safememory::owning_ptr<MyServerCtrlSocketListener> l = nodecpp::safememory::make_owning< MyServerCtrlSocketListener >( myNode, s, sockIDBase++ );
+			nodecpp::safememory::owning_ptr<MyServerSocketListener> l = nodecpp::safememory::make_owning< MyServerSocketListener >( myNode, s, sockIDBase++ );
 			s->on( std::move(l) );
 		}
 	};
-	MyServerListener myServerListener;
+	//MyServerListener myServerListener;
 
 	class MyCtrlServerListener : public ServerListener
 	{
@@ -153,15 +153,15 @@ class MySampleTNode : public NodeBase
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
-			nodecpp::safememory::owning_ptr<SocketListener> l = nodecpp::safememory::make_owning<MyServerSocketListener>( myNode, s, sockIDBase++ );
+			nodecpp::safememory::owning_ptr<SocketListener> l = nodecpp::safememory::make_owning<MyServerCtrlSocketListener>( myNode, s, sockIDBase++ );
 			s->on( std::move(l) );
 //			myNode->serverCtrlSockets.add( socket );
 		}
 	};
-	MyCtrlServerListener myCtrlServerListener;
+	//MyCtrlServerListener myCtrlServerListener;
 
 public:
-	MySampleTNode() : myServerListener(this, 0), myCtrlServerListener(this, 1)
+	MySampleTNode() /*: myServerListener(this, 0), myCtrlServerListener(this, 1)*/
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
@@ -171,8 +171,12 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		srv.on( &myCtrlServerListener );
-		srvCtrl.on( &myCtrlServerListener );
+		nodecpp::safememory::owning_ptr<ServerListener> svrListener = nodecpp::safememory::make_owning<MyServerListener>( this, 0 );
+		srv.on( svrListener );
+		//srv.on( &myCtrlServerListener );
+		nodecpp::safememory::owning_ptr<ServerListener> ctrlSvrListener = nodecpp::safememory::make_owning<MyCtrlServerListener>( this, 1 );
+		srvCtrl.on( ctrlSvrListener );
+		//srvCtrl.on( &myCtrlServerListener );
 
 		srv.listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
 		srvCtrl.listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});

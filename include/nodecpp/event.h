@@ -193,9 +193,9 @@ namespace nodecpp
 			bool once;
 			bool isLambda; // note: now we have only two options here: lambda and listeners
 			typename EV::callback cb;
-			nodecpp::safememory::owning_ptr<ListenerT> listener;
+			nodecpp::safememory::soft_ptr<ListenerT> listener;
 			Element(bool once_, typename EV::callback cb_) : once(once_), isLambda(true), cb(cb_) {}
-			Element(bool once_, nodecpp::safememory::owning_ptr<ListenerT> listener_) : once(once_), isLambda(false), listener(std::move(listener_)) {}
+			Element(bool once_, nodecpp::safememory::soft_ptr<ListenerT> listener_) : once(once_), isLambda(false), listener(std::move(listener_)) {}
 		};
 		std::vector<Element> callbacks;
 	public:
@@ -213,20 +213,20 @@ namespace nodecpp
 			callbacks.insert(std::make_pair(true, cb));
 		}
 
-		void on(nodecpp::safememory::owning_ptr<ListenerT> listener) {
+		void on(nodecpp::safememory::soft_ptr<ListenerT> listener) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, listener );
 			callbacks.emplace_back(false,std::move(listener));
 		}
-		void once(nodecpp::safememory::owning_ptr<ListenerT> listener) {
+		void once(nodecpp::safememory::soft_ptr<ListenerT> listener) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, listener );
 			callbacks.emplace_back(true, std::move(listener));
 		}
 
-		void prepend(nodecpp::safememory::owning_ptr<ListenerT> listener) {
+		void prepend(nodecpp::safememory::soft_ptr<ListenerT> listener) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, listener );
 			callbacks.insert(callbacks.begin(), std::make_pair(false, std::move(listener)));
 		}
-		void prependOnce(nodecpp::safememory::owning_ptr<ListenerT> listener) {
+		void prependOnce(nodecpp::safememory::soft_ptr<ListenerT> listener) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, listener );
 			callbacks.insert(std::make_pair(true, std::move(listener)));
 		}
@@ -248,7 +248,7 @@ namespace nodecpp
 				if (!current.once)
 				{
 					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, current.isLambda || current.listener);
-					other.push_back(std::move(current));
+					other.push_back(current);
 				}
 			}
 	

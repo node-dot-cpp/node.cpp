@@ -108,14 +108,14 @@ namespace nodecpp {
 			}
 
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
-			void on( ServerListener* l) {
+			void on( nodecpp::safememory::soft_ptr<ServerListener> l) {
 				eClose.on(l);
 				eConnection.on(l);
 				eListening.on(l);
 				eError.on(l);
 			}
 
-			void once( ServerListener* l) {
+			void once( nodecpp::safememory::soft_ptr<ServerListener> l) {
 				eClose.once(l);
 				eConnection.once(l);
 				eListening.once(l);
@@ -123,13 +123,15 @@ namespace nodecpp {
 			}
 
 			void on( nodecpp::safememory::owning_ptr<ServerListener>& l) {
+				nodecpp::safememory::soft_ptr<ServerListener> sl( l );
 				ownedListeners.emplace_back( std::move( l ) );
-				on( l );
+				on( sl );
 			}
 
 			void once( nodecpp::safememory::owning_ptr<ServerListener>& l) {
+				nodecpp::safememory::soft_ptr<ServerListener> sl( l );
 				ownedListeners.emplace_back( std::move( l ) );
-				once( l );
+				once( sl );
 			}
 #endif
 			void on(std::string name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
