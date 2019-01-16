@@ -265,7 +265,7 @@ namespace nodecpp
 					auto ptr = current.listener.get().get_dereferencable();
 					(ptr->*onMyEvent)(args...);
 #else
-					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
 #endif
 				}
 			}

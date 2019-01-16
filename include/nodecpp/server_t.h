@@ -122,9 +122,26 @@ namespace nodecpp {
 		class ServerT : public ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>
 		{
 			//int idType1; // we will try to get rid of it later
+			protected:
+				MultiOwner<Socket> socketList;
 		public:
 			ServerT(Node* node) : ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>(node) {int typeId = Node::EmitterTypeForServer::getTypeIndex( this ); this->registerServerByID(this->node, this, typeId);}
-			SocketBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }
+			
+			soft_ptr<Socket> makeSocket(OpaqueSocketData& sdata) {
+//				SocketForserver* sock = socketList.getNewSocket(sdata);
+					//net::Socket* sock_ = new Socket(sdata);
+					owning_ptr<Socket> sock_ = make_owning<Socket>(static_cast<Node*>(this->node), sdata);
+					soft_ptr<Socket> retSock( sock_ );
+				this->socketList.add( std::move(sock_) );
+				return retSock;
+			}
+			void removeSocket( soft_ptr<Socket> sock ) {
+//				socketList.removeAndDelete( static_cast<SocketForserver*>(sock) );
+				this->socketList.removeAndDelete( sock );
+			}
+			size_t getSockCount() {return this->socketList.getCount();}
+			//SocketBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }
+
 		};
 
 	} //namespace net

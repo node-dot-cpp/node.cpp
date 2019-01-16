@@ -152,18 +152,28 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					/*return (static_cast<ServerO*>(ptr->getPtr()))->makeSocket(sdata)*/;
+				{
+					//return (static_cast<ServerO*>(ptr->getPtr()))->makeSocket(sdata);
+					//return nodecpp::safememory::soft_ptr_static_cast<SocketBase>( (static_cast<ServerO*>(ptr->getPtr()))->makeSocket(sdata) );
+					//(static_cast<ServerO*>(ptr->getPtr()))->makeSocket(sdata);
+					assert( false );
+				}
 				else if constexpr (std::is_same< T1, Server >::value)
 				{
 //					soft_ptr<nodecpp::net::Socket> p = (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
-					auto p = (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
-					soft_ptr<nodecpp::net::SocketBase> p1 = p;
+					soft_ptr<net::Socket> p = (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
+					soft_ptr<nodecpp::net::SocketBase> p1 = nodecpp::safememory::soft_ptr_static_cast<SocketBase>(p);
 					return p1;
 //					return (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
 //					return (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
 				}
-				/*else
-					return static_cast<T1*>(ptr->getPtr())->makeSocket(sdata);*/
+				else
+				{
+					auto p = static_cast<T1*>(ptr->getPtr())->makeSocket(sdata);
+					//soft_ptr<SocketBase> x;
+					soft_ptr<nodecpp::net::SocketBase> p1 = nodecpp::safememory::soft_ptr_static_cast<SocketBase>(p);
+					return p1;
+				}
 			}
 			else
 				return callMakeSocket<T, args...>(nodePtr, ptr, type-1, sdata);

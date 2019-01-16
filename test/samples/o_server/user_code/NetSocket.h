@@ -5,7 +5,6 @@
 #include "../../../../include/nodecpp/common.h"
 
 
-#include "../../../../3rdparty/fmt/include/fmt/format.h"
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
@@ -174,9 +173,9 @@ private:
 		{
 			if ( firstFree != size_t(-1) )
 			{
-				NODECPP_ASSERT( firstFree < serverSocks.size() );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstFree < serverSocks.size() );
 				ServerSock& toUse = serverSocks[firstFree];
-				NODECPP_ASSERT( firstFree == toUse.idx );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstFree == toUse.idx );
 				firstFree = toUse.nextFree;
 				toUse.socket.reset( sock );
 				*(static_cast<Socket*>(sock)->getExtra()) = toUse.idx;
@@ -191,8 +190,8 @@ private:
 		}
 		void remove( size_t idx )
 		{
-			NODECPP_ASSERT( idx < serverSocks.size() );
-			NODECPP_ASSERT( *(at(idx)->getExtra()) == idx );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < serverSocks.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, *(at(idx)->getExtra()) == idx );
 			ServerSock& toUse = serverSocks[idx];
 			toUse.nextFree = firstFree;
 			net::SocketBase* s = serverSocks[idx].socket.release();
@@ -203,7 +202,7 @@ private:
 		}
 		Socket* at(size_t idx)
 		{
-			NODECPP_ASSERT( idx < serverSocks.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < serverSocks.size() );
 			net::SocketBase* s = serverSocks[idx].socket.get();
 			return static_cast<Socket*>(s);
 		}
@@ -225,7 +224,7 @@ public:
 	void onConnectionx(const ServerIdType* extra, net::SocketBase* socket) { 
 		print("server: onConnection()!\n");
 		//srv.unref();
-		NODECPP_ASSERT( socket != nullptr ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		serverSockets.add( socket );
 	}
 	void onListeningx(const ServerIdType* extra, size_t id, nodecpp::net::Address addr) {print("server: onListening()!\n");}
@@ -251,7 +250,7 @@ public:
 	void onConnectionCtrl(const ServerIdType* extra, net::SocketBase* socket) { 
 		print("server: onConnectionCtrl()!\n");
 		//srv.unref();
-		NODECPP_ASSERT( socket != nullptr ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		serverCtrlSockets.add( socket );
 	}
 	void onListeningCtrl(const ServerIdType* extra, size_t id, nodecpp::net::Address addr) {print("server: onListeninCtrlg()!\n");}
