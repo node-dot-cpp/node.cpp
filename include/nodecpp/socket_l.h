@@ -35,7 +35,7 @@ namespace nodecpp {
 
 	namespace net {
 
-		class Socket : public SocketBase {
+		class [[nodecpp::owning_only]] Socket : public SocketBase {
 			class EventEmitterSupportingListeners<event::Close, SocketListener, &SocketListener::onClose> eClose;
 			class EventEmitterSupportingListeners<event::Connect, SocketListener, &SocketListener::onConnect> eConnect;
 			class EventEmitterSupportingListeners<event::Data, SocketListener, &SocketListener::onData> eData;

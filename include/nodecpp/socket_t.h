@@ -122,7 +122,38 @@ namespace nodecpp {
 			static constexpr auto onAccepted = nullptr;
 		};
 
-		template<class Node, class Initializer, class Extra>
+		template<class Node, class Extra>
+		class SocketTUserBase : public SocketBase
+		{
+		public:
+			using userIdType = Extra;
+			using userNodeType = Node;
+
+		protected:
+			Extra extra;
+
+		public:
+			SocketTUserBase(Node* node) : SocketBase( node ) {}
+			Extra* getExtra() { return &extra; }
+			const Extra* getExtra() const { return &extra; }
+
+		};
+
+		template<class Node>
+		class SocketTUserBase<Node, void> : public SocketBase
+		{
+			public:
+				using userIdType = void;
+				using userNodeType = Node;
+
+		public:
+			SocketTUserBase(Node* node) : SocketBase( node ) {}
+			void* getExtra() { return nullptr; }
+			const void* getExtra() const { return nullptr; }
+
+		};
+
+		/*template<class Node, class Initializer, class Extra>
 		class SocketT2 : public SocketBase
 		{
 		public:
@@ -153,7 +184,18 @@ namespace nodecpp {
 			void* getExtra() { return nullptr; }
 			const void* getExtra() const { return nullptr; }
 
+		};*/
+		template<class Node, class Initializer, class Extra>
+		class SocketT2 : public SocketTUserBase<Node, Extra>
+		{
+		public:
+			using Handlers = Initializer;
+
+		public:
+			SocketT2(Node* node) : SocketTUserBase<Node, Extra>( node ) {}
+
 		};
+
 
 
 		template<class Node, class Extra, class ... Handlers>

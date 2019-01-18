@@ -35,7 +35,7 @@ namespace nodecpp {
 
 	namespace net {
 
-		class SocketO : public SocketBase {
+		class [[nodecpp::owning_only]] SocketO : public SocketBase {
 
 		private:
 			void registerMeAndAcquireSocket();

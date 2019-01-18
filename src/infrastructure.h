@@ -263,16 +263,16 @@ public:
 
 #ifdef USING_T_SOCKETS
 inline
-size_t registerWithInfraAndAcquireSocket(NodeBase* node, net::SocketBase* t, int typeId)
+size_t registerWithInfraAndAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t != nullptr );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
 	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
 }
 
 inline
-size_t registerWithInfraAndAssignSocket(NodeBase* node, net::SocketBase* t, int typeId, OpaqueSocketData& sdata)
+size_t registerWithInfraAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
 {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t != nullptr );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
 	return netSocketManagerBase->appAssignSocket(node, t, typeId, sdata);
 }
 

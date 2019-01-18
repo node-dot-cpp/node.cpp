@@ -774,7 +774,7 @@ void NetServerManagerBase::appClose(size_t id)
 	pendingCloseEvents.emplace_back(entry.index, false);
 }
 
-size_t NetServerManagerBase::addServerEntry(NodeBase* node, net::ServerTBase* ptr, int typeId)
+size_t NetServerManagerBase::addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int typeId)
 {
 	return ioSockets.addEntry( node, ptr, typeId );
 }

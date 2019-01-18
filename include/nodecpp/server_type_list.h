@@ -49,12 +49,16 @@ namespace nodecpp {
 				else if constexpr (std::is_same< T1, Server >::value)
 				{
 					soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>(sock);
-					(static_cast<Server*>(ptr->getPtr()))->emitConnection(s);
+					(nodecpp::safememory::soft_ptr_static_cast<Server>(ptr->getPtr()))->emitConnection(s);
 				}
 				else
 				{
 					if constexpr ( T1::Handlers::onConnection != nullptr )
-						;//(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr())->getExtra(), static_cast<typename T1::SocketType*>(sock) );
+					{
+						soft_ptr<typename T1::SocketType> s = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(sock);
+//						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr())->getExtra(), static_cast<typename T1::SocketType*>(sock) );
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->getExtra(), s );
+					}
 				}
 			}
 			else
@@ -74,13 +78,13 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					(static_cast<ServerO*>(ptr->getPtr()))->onClose(hadError);
+					(nodecpp::safememory::soft_ptr_static_cast<ServerO>(ptr->getPtr()))->onClose(hadError);
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->emitClose(hadError);
+					(nodecpp::safememory::soft_ptr_static_cast<Server>(ptr->getPtr()))->emitClose(hadError);
 				else
 				{
 					if constexpr ( T1::Handlers::onClose != nullptr )
-						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(static_cast<T1*>(ptr->getPtr())->getExtra(), hadError);
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->getExtra(), hadError);
 				}
 			}
 			else
@@ -100,13 +104,13 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					(static_cast<ServerO*>(ptr->getPtr()))->onListeningX(id, addr);
+					(nodecpp::safememory::soft_ptr_static_cast<ServerO>(ptr->getPtr()))->onListeningX(id, addr);
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->emitListening(id, addr);
+					(nodecpp::safememory::soft_ptr_static_cast<Server>(ptr->getPtr()))->emitListening(id, addr);
 				else
 				{
 					if constexpr ( T1::Handlers::onListening != nullptr )
-						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(static_cast<T1*>(ptr->getPtr())->getExtra(), id, addr);
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->getExtra(), id, addr);
 				}
 			}
 			else
@@ -126,13 +130,13 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					(static_cast<ServerO*>(ptr->getPtr()))->onError(e);
+					(nodecpp::safememory::soft_ptr_static_cast<ServerO>(ptr->getPtr()))->onError(e);
 				else if constexpr (std::is_same< T1, Server >::value)
-					(static_cast<Server*>(ptr->getPtr()))->emitError(e);
+					(nodecpp::safememory::soft_ptr_static_cast<Server>(ptr->getPtr()))->emitError(e);
 				else
 				{
 					if constexpr ( T1::Handlers::onError != nullptr )
-						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(static_cast<T1*>(ptr->getPtr())->getExtra(), e);
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->getExtra(), e);
 				}
 			}
 			else
@@ -156,12 +160,13 @@ namespace nodecpp {
 					//return (static_cast<ServerO*>(ptr->getPtr()))->makeSocket(sdata);
 					//return nodecpp::safememory::soft_ptr_static_cast<SocketBase>( (static_cast<ServerO*>(ptr->getPtr()))->makeSocket(sdata) );
 					//(static_cast<ServerO*>(ptr->getPtr()))->makeSocket(sdata);
-					assert( false );
+					//assert( false );
+					return (nodecpp::safememory::soft_ptr_static_cast<ServerO>(ptr->getPtr()))->makeSocket(sdata);
 				}
 				else if constexpr (std::is_same< T1, Server >::value)
 				{
 //					soft_ptr<nodecpp::net::Socket> p = (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
-					soft_ptr<net::Socket> p = (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
+					soft_ptr<net::Socket> p = (nodecpp::safememory::soft_ptr_static_cast<Server>(ptr->getPtr()))->makeSocket(sdata);
 					soft_ptr<nodecpp::net::SocketBase> p1 = nodecpp::safememory::soft_ptr_static_cast<SocketBase>(p);
 					return p1;
 //					return (static_cast<Server*>(ptr->getPtr()))->makeSocket(sdata);
@@ -169,7 +174,7 @@ namespace nodecpp {
 				}
 				else
 				{
-					auto p = static_cast<T1*>(ptr->getPtr())->makeSocket(sdata);
+					auto p = nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->makeSocket(sdata);
 					//soft_ptr<SocketBase> x;
 					soft_ptr<nodecpp::net::SocketBase> p1 = nodecpp::safememory::soft_ptr_static_cast<SocketBase>(p);
 					return p1;
@@ -195,10 +200,10 @@ namespace nodecpp {
 		public:
 			class Ptr
 			{
-				ServerTBase* ptr;
+				nodecpp::safememory::soft_ptr<ServerTBase> ptr;
 			public:
-				Ptr( ServerTBase* ptr_ ) { ptr = ptr_; }
-				ServerTBase* getPtr() const {return ptr;}
+				Ptr( nodecpp::safememory::soft_ptr<ServerTBase> ptr_ ) { ptr = ptr_; }
+				nodecpp::safememory::soft_ptr<ServerTBase> getPtr() const {return ptr;}
 			};
 
 		public:
@@ -215,12 +220,32 @@ namespace nodecpp {
 			static SocketBase* makeSocket(const OpaqueEmitterForServer& emitter, OpaqueSocketData& sdata) { Ptr emitter_ptr( emitter.ptr ); return callMakeSocket<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sdata); }
 #else
 
-			static void emitConnection( const OpaqueEmitter& emitter, soft_ptr<SocketBase> sock ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); Ptr emitter_ptr( static_cast<ServerTBase*>(emitter.getServerSocketPtr()) ); callOnConnection<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sock); }
-			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); Ptr emitter_ptr( static_cast<ServerTBase*>(emitter.getServerSocketPtr()) ); callOnCloseServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError); }
-			static void emitListening( const OpaqueEmitter& emitter, size_t id, Address addr ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); Ptr emitter_ptr( static_cast<ServerTBase*>(emitter.getServerSocketPtr()) ); callOnListening<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, id, addr); }
-			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); Ptr emitter_ptr( static_cast<ServerTBase*>(emitter.getServerSocketPtr()) ); callOnErrorServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
+			static void emitConnection( const OpaqueEmitter& emitter, soft_ptr<SocketBase> sock ) {
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerTBase>(emitter.getServerSocketPtr()) ); 
+				callOnConnection<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sock); 
+			}
+			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) {
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerTBase>(emitter.getServerSocketPtr()) ); 
+				callOnCloseServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError);
+			}
+			static void emitListening( const OpaqueEmitter& emitter, size_t id, Address addr ) { 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerTBase>(emitter.getServerSocketPtr()) ); 
+				callOnListening<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, id, addr); 
+			}
+			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerTBase>(emitter.getServerSocketPtr()) ); 
+				callOnErrorServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); 
+			}
 
-			static soft_ptr<SocketBase> makeSocket(const OpaqueEmitter& emitter, OpaqueSocketData& sdata) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); Ptr emitter_ptr( static_cast<ServerTBase*>(emitter.getServerSocketPtr()) ); return callMakeSocket<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sdata); }
+			static soft_ptr<SocketBase> makeSocket(const OpaqueEmitter& emitter, OpaqueSocketData& sdata) { 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerTBase>(emitter.getServerSocketPtr()) ); 
+				return callMakeSocket<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, sdata); 
+			}
 #endif // 0
 		};
 	} // namespace net

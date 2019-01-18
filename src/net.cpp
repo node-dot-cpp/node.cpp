@@ -53,12 +53,12 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 	return netSocketManagerBase->appWrite(dataForCommandProcessing, data, size);
 }
 
-void SocketO::registerMeAndAcquireSocket() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO);}
-void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );registerWithInfraAndAssignSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketO, sdata);}
+void SocketO::registerMeAndAcquireSocket() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );registerWithInfraAndAcquireSocket(this->node, nodecpp::safememory::soft_ptr<SocketO>(this), netSocketManagerBase->typeIndexOfSocketO);}
+void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );registerWithInfraAndAssignSocket(this->node, nodecpp::safememory::soft_ptr<SocketO>(this), netSocketManagerBase->typeIndexOfSocketO, sdata);}
 void SocketO::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
-void Socket::registerMeAndAcquireSocket() {registerWithInfraAndAcquireSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL);}
-void Socket::registerMeAndAssignSocket(OpaqueSocketData& sdata) {registerWithInfraAndAssignSocket(this->node, this, netSocketManagerBase->typeIndexOfSocketL, sdata);}
+void Socket::registerMeAndAcquireSocket() {registerWithInfraAndAcquireSocket(this->node, nodecpp::safememory::soft_ptr<Socket>(this), netSocketManagerBase->typeIndexOfSocketL);}
+void Socket::registerMeAndAssignSocket(OpaqueSocketData& sdata) {registerWithInfraAndAssignSocket(this->node, nodecpp::safememory::soft_ptr<Socket>(this), netSocketManagerBase->typeIndexOfSocketL, sdata);}
 void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
 ///////////////////////////////////////////////////////////////////////////////
