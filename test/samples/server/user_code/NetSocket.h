@@ -35,9 +35,12 @@ class MySampleTNode : public NodeBase
 	using SocketIdType = int;
 	using ServerIdType = int;
 
+
 public:
-	MySampleTNode() : srv( this ), srvCtrl( this )
+	MySampleTNode()
 	{
+		_srv = nodecpp::safememory::make_owning<ServerType>(this);
+		_srvCtrl = nodecpp::safememory::make_owning<CtrlServerType>(this);
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
 
@@ -47,8 +50,8 @@ public:
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 #ifndef NET_CLIENT_ONLY
-		srv.listen(2000, "127.0.0.1", 5);
-		srvCtrl.listen(2001, "127.0.0.1", 5);
+		_srv->listen(2000, "127.0.0.1", 5);
+		_srvCtrl->listen(2001, "127.0.0.1", 5);
 #endif // NO_SERVER_STAFF
 	}
 
@@ -58,6 +61,7 @@ public:
 	{
 		print("server socket: onCloseServerSocket!\n");
 		//serverSockets.remove(*extra);
+		//_srv->removeSocket( socket );
 	}
 //	void onConnectServerSocket(const SocketIdType* extra) {
 	void onConnectServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket) {
@@ -71,7 +75,7 @@ public:
 			socket->unref();
 			return;
 		}
-		print("server socket: onData for idx %d !\n", *(socket->getExtra()) );
+		//print("server socket: onData for idx %d !\n", *(socket->getExtra()) );
 
 		size_t receivedSz = buffer.begin()[0];
 		if ( receivedSz != buffer.size() )
@@ -129,6 +133,7 @@ public:
 	{
 		print("server socket: onCloseServerSocket!\n");
 		//serverCtrlSockets.remove(*extra);
+		//_srvCtrl->removeSocket( socket );
 	}
 //	void onDataCtrlServerSocket(nodecpp::safememory::soft_ptr<SockTypeServerCtrlSocket> socket, Buffer& buffer) {
 	void onDataCtrlServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
@@ -137,7 +142,8 @@ public:
 		if ( requestedSz )
 		{
 			Buffer reply(sizeof(stats));
-			stats.connCnt = serverSockets.getServerSockCount();
+//			stats.connCnt = serverSockets.getServerSockCount();
+			stats.connCnt = _srv->getSockCount();
 			size_t replySz = sizeof(Stats);
 			uint8_t* buff = ptr.get();
 			memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
@@ -179,6 +185,7 @@ public:
 
 	// server
 private:
+#if 0
 	template<class Socket>
 	class ServerSockets
 	{
@@ -237,11 +244,11 @@ private:
 		size_t getServerSockCount() { return serverSockCount; }
 	};
 	ServerSockets<SockTypeServerSocket> serverSockets;
-
+#endif
 public:
 	void onCloseServer(const ServerIdType* extra, bool hadError) {
 		print("server: onCloseServer()!\n");
-		serverSockets.clear();
+		//serverSockets.clear();
 	}
 	void onConnectionServer(const ServerIdType* extra, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		print("server: onConnection()!\n");
@@ -258,16 +265,16 @@ public:
 		nodecpp::net::OnListeningST<&MySampleTNode::onListeningServer>,
 		nodecpp::net::OnErrorST<&MySampleTNode::onErrorServer>
 	>;
-	ServerType srv;
+	nodecpp::safememory::owning_ptr<ServerType> _srv;
 
 	// ctrl server
 private:
-	ServerSockets<SockTypeServerCtrlSocket> serverCtrlSockets;
+	//ServerSockets<SockTypeServerCtrlSocket> serverCtrlSockets;
 
 public:
 	void onCloseServerCtrl(const ServerIdType* extra, bool hadError) {
 		print("server: onCloseServerCtrl()!\n");
-		serverCtrlSockets.clear();
+		//serverCtrlSockets.clear();
 	}
 	void onConnectionCtrl(const ServerIdType* extra, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		print("server: onConnectionCtrl()!\n");
@@ -284,7 +291,7 @@ public:
 		nodecpp::net::OnListeningST<&MySampleTNode::onListeningCtrl>,
 		nodecpp::net::OnErrorST<&MySampleTNode::onErrorServerCtrl>
 	>;
-	CtrlServerType srvCtrl;
+	nodecpp::safememory::owning_ptr<CtrlServerType> _srvCtrl;
 
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, SockTypeServerSocket, SockTypeServerCtrlSocket>;
