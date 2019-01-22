@@ -123,7 +123,7 @@ namespace nodecpp {
 		{
 			//int idType1; // we will try to get rid of it later
 			protected:
-				MultiOwner<Socket> socketList;
+				MultiOwner<typename Socket::StorableType> socketList;
 		public:
 			ServerT(Node* node) : ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>(node) {int typeId = Node::EmitterTypeForServer::getTypeIndex( this ); this->registerServerByID(this->node, this, typeId);}
 			
@@ -135,7 +135,7 @@ namespace nodecpp {
 				this->socketList.add( std::move(sock_) );
 				return retSock;
 			}
-			void removeSocket( soft_ptr<Socket> sock ) {
+			void removeSocket( soft_ptr<typename Socket::StorableType> sock ) {
 //				socketList.removeAndDelete( static_cast<SocketForserver*>(sock) );
 				this->socketList.removeAndDelete( sock );
 			}

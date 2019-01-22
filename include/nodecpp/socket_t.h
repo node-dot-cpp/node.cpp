@@ -190,6 +190,7 @@ namespace nodecpp {
 		{
 		public:
 			using Handlers = Initializer;
+			using StorableType = SocketTUserBase<Node, Extra>;
 
 		public:
 			SocketT2(Node* node) : SocketTUserBase<Node, Extra>( node ) {}
