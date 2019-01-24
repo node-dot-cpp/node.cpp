@@ -59,7 +59,7 @@ public:
 	void onCloseServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, bool hadError)
 	{
 		print("server socket: onCloseServerSocket!\n");
-		//_srv->removeSocket( socket );
+		_srv->removeSocket( socket );
 	}
 	void onConnectServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket) {
 		print("server socket: onConnect!\n");
@@ -123,7 +123,7 @@ public:
 	void onCloseCtrlServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, bool hadError)
 	{
 		print("server socket: onCloseServerSocket!\n");
-		//_srvCtrl->removeSocket( socket );
+		_srvCtrl->removeSocket( socket );
 	}
 	void onDataCtrlServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
 
