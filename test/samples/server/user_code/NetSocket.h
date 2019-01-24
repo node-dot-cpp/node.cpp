@@ -2,15 +2,13 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
-#include "../../../../include/nodecpp/common.h"
 
+#include "../../../../include/nodecpp/common.h"
 
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
 #include "../../../../include/nodecpp/server_type_list.h"
-
-#include <functional>
 
 
 using namespace std;
@@ -167,77 +165,14 @@ public:
 	>;
 
 	// server
-private:
-#if 0
-	template<class Socket>
-	class ServerSockets
-	{
-		struct ServerSock
-		{
-			size_t idx;
-			size_t nextFree;
-			std::unique_ptr<net::SocketBase> socket;
-			ServerSock( net::SocketBase* sock, size_t idx_ ) : idx( idx_ ), nextFree( size_t(-1) ), socket( sock )  {}
-		};
-		size_t firstFree = size_t(-1);
-		std::vector<ServerSock> serverSocks;
-		size_t serverSockCount = 0;
-	public:
-		ServerSockets() {}
-		void add( net::SocketBase* sock )
-		{
-			if ( firstFree != size_t(-1) )
-			{
-				NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, firstFree < serverSocks.size() );
-				ServerSock& toUse = serverSocks[firstFree];
-				NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, firstFree == toUse.idx );
-				firstFree = toUse.nextFree;
-				toUse.socket.reset( sock );
-				*(reinterpret_cast<Socket*>(sock)->getExtra()) = toUse.idx;
-			}
-			else
-			{
-				size_t idx = serverSocks.size();
-				serverSocks.emplace_back( sock, idx );
-				*(reinterpret_cast<Socket*>(sock)->getExtra()) = idx;
-			}
-			++serverSockCount;
-		}
-		void remove( size_t idx )
-		{
-			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, idx < serverSocks.size() );
-			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, *(at(idx)->getExtra()) == idx );
-			ServerSock& toUse = serverSocks[idx];
-			toUse.nextFree = firstFree;
-			toUse.socket.reset();
-			firstFree = idx;
-			--serverSockCount;
-		}
-		Socket* at(size_t idx)
-		{
-			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, idx < serverSocks.size() );
-			return reinterpret_cast<Socket*>(serverSocks[idx].socket.get());
-		}
-		void clear()
-		{
-			for ( size_t i=0; i<serverSocks.size(); ++i )
-				serverSocks[i].socket.reset();
-			serverSocks.clear();
-		}
-		size_t getServerSockCount() { return serverSockCount; }
-	};
-	ServerSockets<SockTypeServerSocket> serverSockets;
-#endif
 public:
 	void onCloseServer(const ServerIdType* extra, bool hadError) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!");
-		//serverSockets.clear();
 	}
 	void onConnectionServer(const ServerIdType* extra, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-//		serverSockets.add( socket );
 	}
 	void onListeningServer(const ServerIdType* extra) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
 	void onErrorServer(const ServerIdType* extra, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServer!");}
@@ -250,10 +185,6 @@ public:
 	>;
 	nodecpp::safememory::owning_ptr<ServerType> _srv;
 
-	// ctrl server
-private:
-	//ServerSockets<SockTypeServerCtrlSocket> serverCtrlSockets;
-
 public:
 	void onCloseServerCtrl(const ServerIdType* extra, bool hadError) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!");
@@ -263,7 +194,6 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-//		serverCtrlSockets.add( socket );
 	}
 	void onListeningCtrl(const ServerIdType* extra) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
 	void onErrorServerCtrl(const ServerIdType* extra, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServerCtrl!");}
