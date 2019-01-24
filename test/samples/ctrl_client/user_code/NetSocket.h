@@ -6,11 +6,12 @@
 
 
 #include "../../../../include/nodecpp/socket_type_list.h"
-#include "../../../../include/nodecpp/socket_t_base.h"
+#include "../../../../include/nodecpp/socket_t.h"
+/*#include "../../../../include/nodecpp/socket_t_base.h"
 #include "../../../../include/nodecpp/server_t.h"
 #include "../../../../include/nodecpp/server_type_list.h"
 
-#include <functional>
+#include <functional>*/
 
 
 using namespace std;
@@ -41,36 +42,37 @@ class MySampleTNode : public NodeBase
 	using SocketIdType = int;
 
 public:
-	MySampleTNode() : clientSock(this)
+	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
 	}
 
 	virtual void main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		*( clientSock.getExtra() ) = 17;
-		clientSock.connect(2001, "127.0.0.1");
+		*( clientSock->getExtra() ) = 17;
+		clientSock->connect(2001, "127.0.0.1");
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 	}
 	
-	void onWhateverConnect(const SocketIdType* extra) 
+	void onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket) 
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, extra != nullptr );
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverConnect(), extra = {}", *extra );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverConnect(), extra = {}", *(clientSock->getExtra()) );
 
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;
 		buff[1] = 1;
-		clientSock.write(buff, 2);
+		clientSock->write(buff, 2);
 	}
-	void onWhateverClose(const SocketIdType* extra, bool)
+	void onWhateverClose(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, bool)
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, extra != nullptr );
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverClose(), extra = {}", *extra );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverClose(), extra = {}", *(clientSock->getExtra()) );
 	}
-	void onWhateverData(const SocketIdType* extra, nodecpp::Buffer& buffer)
+	void onWhateverData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, nodecpp::Buffer& buffer)
 	{
 		if ( buffer.size() < sizeof( Stats ) )
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
@@ -79,29 +81,29 @@ public:
 		
 		getchar();
 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, extra != nullptr );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
 		++recvReplies;
 		recvSize += buffer.size();
 		uint8_t* buff = ptr.get();
 		buff[0] = 2;
 		buff[1] = (uint8_t)recvReplies | 1;
-		clientSock.write(buff, 2);
+		clientSock->write(buff, 2);
 	}
-	void onWhateverDrain(const SocketIdType* extra)
+	void onWhateverDrain(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket)
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, extra != nullptr );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
 		if ( letOnDrain )
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverDrain(), extra = {}", *extra );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverDrain(), extra = {}", *(clientSock->getExtra()) );
 	}
-	void onWhateverError(const SocketIdType* extra, nodecpp::Error&)
+	void onWhateverError(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, nodecpp::Error&)
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, extra != nullptr );
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverError(), extra = {}", *extra );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverError(), extra = {}", *(clientSock->getExtra()) );
 	}
-	void onWhateverEnd(const SocketIdType* extra)
+	void onWhateverEnd(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket)
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, extra != nullptr );
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverEnd(), extra = {}", *extra );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverEnd(), extra = {}", *(clientSock->getExtra()) );
 	}
 
 	using ClientSockType = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
@@ -112,7 +114,7 @@ public:
 		nodecpp::net::OnErrorT<&MySampleTNode::onWhateverError>,
 		nodecpp::net::OnEndT<&MySampleTNode::onWhateverEnd>
 	>;
-	ClientSockType clientSock;
+	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
 
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, ClientSockType>;
