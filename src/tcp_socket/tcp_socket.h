@@ -358,7 +358,8 @@ public:
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 #else // new version
 					EmitterType::emitClose(entry.getEmitter(), err);
-					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
+					if (entry.isUsed())
+						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 //					if (err && entry.isValid()) //if error closing, then first error event
 					if (err && entry.isUsed()) //if error closing, then first error event
 						EmitterType::emitError(entry.getEmitter(), current.second.second);
