@@ -82,6 +82,11 @@ void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 	netServerManagerBase->appListen(soft_ptr<net::ServerTBase>(this), ip, port, backlog);
 }
 
+void ServerO::listen(uint16_t port, const char* ip, int backlog)
+{
+	netServerManagerBase->appListen(soft_ptr<net::ServerTBase>(this), ip, port, backlog);
+}
+
 void ServerTBase::registerServerByID(NodeBase* node, net::ServerTBase* t, int typeId) { registerServer(node, t, typeId); }
 
 

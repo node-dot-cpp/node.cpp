@@ -46,6 +46,7 @@ namespace nodecpp {
 			virtual void onError(Error& err) {}
 
 			virtual soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) = 0;
+			void listen(uint16_t port, const char* ip, int backlog);
 		};
 		
 		template<auto x>
@@ -97,47 +98,63 @@ namespace nodecpp {
 		};
 
 
-		template<class Node, class Initializer, class Extra>
-		class ServerN2 : public ServerO
+		template<class Node, class Extra>
+		class ServerOUserBase : public ServerO
 		{
 		protected:
 			Node* node;
 			Extra extra;
 		public:
-			ServerN2(Node* node_) { node = node_;}
+			ServerOUserBase(Node* node_) { node = node_;}
 			Extra* getExtra() { return &extra; }
+		};
+
+
+		template<class Node>
+		class ServerOUserBase<Node, void> : public ServerO
+		{
+			Node* node;
+		public:
+			ServerOUserBase(Node* node_) { node = node_;}
+			void* getExtra() { return nullptr; }
+		};
+		template<class Node, class Initializer, class Extra>
+		class ServerN2 : public ServerOUserBase<Node, Extra>
+		{
+		public:
+			ServerN2(Node* node_) : ServerOUserBase<Node, Extra>(node_) {}
 
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
-					(node->*(Initializer::onClose))(this->getExtra(),b); 
+					(this->node->*(Initializer::onClose))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this),b); 
 				else
 					ServerO::onClose(b);
 			}
 			void onConnection(SocketBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
-					(node->*(Initializer::onConnection))(this->getExtra(), socket); 
+					(this->node->*(Initializer::onConnection))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this), socket); 
 				else
 					ServerO::onConnection(socket);
 			}
 			void onListening(size_t id, Address addr) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
-					(node->*(Initializer::onListening))(this->getExtra(), id, addr); 
+					(this->node->*(Initializer::onListening))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this), id, addr); 
 				else
 					ServerO::onListening(id, addr);
 			}
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )
-					(node->*(Initializer::onError))(this->getExtra(),e);
+					(this->node->*(Initializer::onError))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this),e);
 				else
 					ServerO::onError(e);
 			}
 		};
 
-		template<class Node, class Initializer>
+		/*template<class Node, class Initializer>
 		class ServerN2<Node, Initializer, void> : public ServerO
 		{
 			Node* node;
@@ -176,7 +193,7 @@ namespace nodecpp {
 				else
 					ServerO::onError(e);
 			}
-		};
+		};*/
 
 
 		template<class Node, class Socket, class Extra, class ... Handlers>
