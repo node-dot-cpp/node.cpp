@@ -45,7 +45,7 @@ namespace nodecpp {
 			virtual void onListening(size_t id, Address addr) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
 			virtual void onError(Error& err) {}
 
-			virtual SocketBase* makeSocket(OpaqueSocketData& sdata) = 0;
+			virtual soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) = 0;
 		};
 		
 		template<auto x>
@@ -182,10 +182,21 @@ namespace nodecpp {
 		template<class Node, class Socket, class Extra, class ... Handlers>
 		class ServerN : public ServerN2<Node, ServerOInitializer<Handlers...>, Extra>
 		{
+			protected:
+				MultiOwner<typename Socket::StorableType> socketList;
 		public:
 			ServerN(Node* node_) : ServerN2<Node, ServerOInitializer<Handlers...>, Extra>( node_ ) {}
-			SocketBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( static_cast<Node*>(this->node), sdata ); }		
-//			SocketBase* makeSocket(OpaqueSocketData& sdata) { return new Socket( sdata ); }		
+			soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) { 
+				//return new Socket( static_cast<Node*>(this->node), sdata ); 
+				owning_ptr<Socket> sock_ = make_owning<Socket>(static_cast<Node*>(this->node), sdata);
+				soft_ptr<Socket> retSock( sock_ );
+				this->socketList.add( std::move(sock_) );
+				return retSock;
+			}		
+			void removeSocket( soft_ptr<typename Socket::StorableType> sock ) {
+				this->socketList.removeAndDelete( sock );
+			}
+			size_t getSockCount() {return this->socketList.getCount();}
 		};
 	} //namespace net
 } //namespace nodecpp

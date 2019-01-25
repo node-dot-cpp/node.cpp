@@ -152,8 +152,8 @@ namespace nodecpp {
 			static constexpr auto onAccepted = nullptr;
 		};
 
-		template<class Node, class Initializer, class Extra>
-		class SocketN2 : public SocketO
+		template<class Node, class Extra>
+		class SocketOUserBase : public SocketO
 		{
 	#if 0
 			static constexpr bool is_void_extra = std::is_same< Extra, void >::value;
@@ -167,16 +167,61 @@ namespace nodecpp {
 		public:
 //			SocketN2(Node* node_) : SocketO( node_ ) { node = node_;}
 //			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
-			SocketN2(Node* node) : SocketO( node ) {}
-			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketO( node, sdata ) {}
+			SocketOUserBase(Node* node) : SocketO( node ) {}
+			SocketOUserBase(Node* node, OpaqueSocketData& sdata) : SocketO( node, sdata ) {}
 			Extra* getExtra() { return &extra; }
+		};
+
+		template<class Node>
+		class SocketOUserBase<Node, void> : public SocketO
+		{
+	//		Node* node;
+	//		static constexpr auto x = void (Node::*onConnect)(const void*);
+//			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
+	//		typename void (Node::*)(const void*) y;
+	#if 1
+			static_assert( Initializer::onConnect != nullptr );
+	//		static_assert( std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value );
+	//		static_assert( std::is_same< typename std::remove_cv<decltype((Initializer::onConnect))>::type, typename std::remove_cv<void (Node::*)(const void*)>::type >::value );
+	//		static_assert( std::is_same< typename std::remove_reference<typename std::remove_cv<decltype((Initializer::onConnect))>::type>::type, typename std::remove_reference<typename std::remove_cv<void (Node::*)(const void*)>::type>::type >::value );
+	//		static_assert( std::is_same< typename std::remove_cv<decltype(x)>::type, typename std::remove_reference<decltype((Initializer::onConnect))>::type >::value );
+	//		static_assert( Initializer::onConnect == nullptr || std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value );
+	//		static_assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
+	#endif
+		public:
+	//		SocketN2(Node* node) : SocketO( node ) {}
+	//		SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
+			SocketOUserBase(Node* node) : SocketO( node ) {}
+			SocketOUserBase(Node* node, OpaqueSocketData& sdata) : SocketO( node, sdata ) {}
+			void* getExtra() { return nullptr; }
+		};
+
+		template<class Node, class Initializer, class Extra>
+		class SocketN2 : public SocketOUserBase<Node, Extra>
+		{
+	#if 0
+			static constexpr bool is_void_extra = std::is_same< Extra, void >::value;
+			static_assert( Initializer::onConnect != nullptr );
+			static_assert( !is_void_extra );
+			static_assert( std::is_same< decltype(Initializer::onConnect), void (Node::*)() >::value );
+			static_assert( Initializer::onConnect == nullptr || (is_void_extra && std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value) || ( (!is_void_extra) && std::is_same< decltype(Initializer::onConnect), void (Node::*)(const Extra*) >::value ) );
+	#endif
+
+		public:
+			using StorableType = SocketOUserBase<Node, Extra>;
+
+		public:
+//			SocketN2(Node* node_) : SocketO( node_ ) { node = node_;}
+//			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
+			SocketN2(Node* node) : SocketOUserBase<Node, Extra>( node ) {}
+			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketOUserBase<Node, Extra>( node, sdata ) {}
 
 			void onConnect() override
 			{ 
 				if constexpr ( Initializer::onConnect != nullptr )
 				{
 	//				static_assert( Initializer::onConnect == nullptr || std::is_same< decltype(Initializer::onConnect), void (Node::*)(const Extra*) >::value );
-					((static_cast<Node*>(this->node))->*(Initializer::onConnect))(this->getExtra()); 
+					((static_cast<Node*>(this->node))->*(Initializer::onConnect))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this)); 
 				}
 				else
 				{
@@ -187,47 +232,48 @@ namespace nodecpp {
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onClose))(this->getExtra(),b); 
+					((static_cast<Node*>(this->node))->*(Initializer::onClose))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this),b); 
 				else
 					SocketO::onClose(b);
 			}
 			void onData(nodecpp::Buffer& b) override
 			{ 
 				if constexpr ( Initializer::onData != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onData))(this->getExtra(),b); 
+					((static_cast<Node*>(this->node))->*(Initializer::onData))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this),b); 
 				else
 					SocketO::onData(b);
 			}
 			void onDrain() override
 			{
 				if constexpr ( Initializer::onDrain != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onDrain))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onDrain))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this));
 				else
 					SocketO::onDrain();
 			}
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onError))(this->getExtra(),e);
+					((static_cast<Node*>(this->node))->*(Initializer::onError))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this),e);
 				else
 					SocketO::onError(e);
 			}
 			void onEnd() override
 			{
 				if constexpr ( Initializer::onEnd != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onEnd))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onEnd))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this));
 				else
 					SocketO::onEnd();
 			}
 			void onAccepted() override
 			{
 				if constexpr ( Initializer::onAccepted != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onAccepted))(this->getExtra());
+					((static_cast<Node*>(this->node))->*(Initializer::onAccepted))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this));
 				else
 					SocketO::onAccepted();
 			}
 		};
 
+#if 0
 		template<class Node, class Initializer>
 		class SocketN2<Node, Initializer, void> : public SocketO
 		{
@@ -305,7 +351,7 @@ namespace nodecpp {
 					SocketO::onAccepted();
 			}
 		};
-
+#endif // 0
 
 		template<class Node, class Extra, class ... Handlers>
 		class SocketN : public SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>
