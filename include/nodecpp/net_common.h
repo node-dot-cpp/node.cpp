@@ -290,7 +290,7 @@ namespace nodecpp {
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item );
 			for ( size_t idx=0; idx<items.size(); ++idx )
-				if ( items[idx].get() == item.get() )
+				if ( items[idx] == item )
 				{
 					items[idx].reset();
 					--cnt;
