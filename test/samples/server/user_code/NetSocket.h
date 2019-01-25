@@ -166,16 +166,16 @@ public:
 
 	// server
 public:
-	void onCloseServer(const ServerIdType* extra, bool hadError) {
+	void onCloseServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>, bool hadError) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!");
 	}
-	void onConnectionServer(const ServerIdType* extra, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	void onConnectionServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningServer(const ServerIdType* extra) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
-	void onErrorServer(const ServerIdType* extra, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServer!");}
+	void onListeningServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
+	void onErrorServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServer!");}
 
 	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
 		nodecpp::net::OnConnectionST<&MySampleTNode::onConnectionServer>,
@@ -186,17 +186,17 @@ public:
 	nodecpp::safememory::owning_ptr<ServerType> srv;
 
 public:
-	void onCloseServerCtrl(const ServerIdType* extra, bool hadError) {
+	void onCloseServerCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>, bool hadError) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!");
 		//serverCtrlSockets.clear();
 	}
-	void onConnectionCtrl(const ServerIdType* extra, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	void onConnectionCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningCtrl(const ServerIdType* extra) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
-	void onErrorServerCtrl(const ServerIdType* extra, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServerCtrl!");}
+	void onListeningCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
+	void onErrorServerCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServerCtrl!");}
 
 	using CtrlServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType,
 		nodecpp::net::OnConnectionST<&MySampleTNode::onConnectionCtrl>,

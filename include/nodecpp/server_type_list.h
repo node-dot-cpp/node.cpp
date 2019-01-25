@@ -56,8 +56,8 @@ namespace nodecpp {
 					if constexpr ( T1::Handlers::onConnection != nullptr )
 					{
 						soft_ptr<typename T1::SocketType> s = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(sock);
-//						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr())->getExtra(), static_cast<typename T1::SocketType*>(sock) );
-						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->getExtra(), s );
+//						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(static_cast<T1*>(ptr->getPtr()), static_cast<typename T1::SocketType*>(sock) );
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnection)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr()), s );
 					}
 				}
 			}
@@ -84,7 +84,7 @@ namespace nodecpp {
 				else
 				{
 					if constexpr ( T1::Handlers::onClose != nullptr )
-						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->getExtra(), hadError);
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onClose)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr()), hadError);
 				}
 			}
 			else
@@ -110,7 +110,7 @@ namespace nodecpp {
 				else
 				{
 					if constexpr ( T1::Handlers::onListening != nullptr )
-						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->getExtra(), id, addr);
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onListening)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr()), id, addr);
 				}
 			}
 			else
@@ -136,7 +136,7 @@ namespace nodecpp {
 				else
 				{
 					if constexpr ( T1::Handlers::onError != nullptr )
-						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr())->getExtra(), e);
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onError)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr()), e);
 				}
 			}
 			else

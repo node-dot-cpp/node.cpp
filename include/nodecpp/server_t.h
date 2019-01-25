@@ -83,26 +83,50 @@ namespace nodecpp {
 			static constexpr auto onError = nullptr;
 		};
 
-		template<class Node, class Socket, class Initializer, class Extra>
-		class ServerT2 : public ServerTBase
+		template<class Node, class Socket, class Extra>
+		class ServerTUserBase : public ServerTBase
 		{
 		public:
 			using userIdType = Extra;
 			using userNodeType = Node;
-			using Handlers = Initializer;
 			using SocketType = Socket;
 
 		protected:
 			Extra extra;
 
 		public:
-			ServerT2(Node* node_) {this->node = node_;}
+			ServerTUserBase(Node* node_) {this->node = node_;}
 			Extra* getExtra() { return &extra; }
 			const Extra* getExtra() const { return &extra; }
 
 		};
 
-		template<class Node, class Socket, class Initializer>
+		template<class Node, class Socket>
+		class ServerTUserBase<Node, Socket, void> : public ServerTBase
+		{
+			public:
+				using userIdType = void;
+				using userNodeType = Node;
+				using SocketType = Socket;
+
+		public:
+			ServerTUserBase() {}
+			void* getExtra() { return nullptr; }
+			const void* getExtra() const { return nullptr; }
+
+		};
+
+		template<class Node, class Socket, class Initializer, class Extra>
+		class ServerT2 : public ServerTUserBase<Node, Socket, Extra>
+		{
+		public:
+			using Handlers = Initializer;
+
+		public:
+			ServerT2(Node* node_) :ServerTUserBase<Node, Socket, Extra>( node_ ) {}
+		};
+
+/*		template<class Node, class Socket, class Initializer>
 		class ServerT2<Node, Socket, Initializer, void> : public ServerTBase
 		{
 			public:
@@ -116,7 +140,7 @@ namespace nodecpp {
 			void* getExtra() { return nullptr; }
 			const void* getExtra() const { return nullptr; }
 
-		};
+		};*/
 
 		template<class Node, class Socket, class Extra, class ... Handlers>
 		class ServerT : public ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>

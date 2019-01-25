@@ -551,7 +551,7 @@ public:
 		size_t id = addServerEntry(node, ptr, typeId);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
 	}
-	void appListen(net::ServerTBase* ptr, const char* ip, uint16_t port, int backlog) {
+	void appListen(soft_ptr<net::ServerTBase> ptr, const char* ip, uint16_t port, int backlog) {
 		Ip4 myIp = Ip4::parse(ip);
 		Port myPort = Port::fromHost(port);
 		if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort)) {
