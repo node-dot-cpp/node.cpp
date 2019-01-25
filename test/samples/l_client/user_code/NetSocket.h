@@ -5,11 +5,9 @@
 #include "../../../../include/nodecpp/common.h"
 
 
-#include "../../../../3rdparty/fmt/include/fmt/format.h"
+#include <fmt/format.h>
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
-#include "../../../../include/nodecpp/server_t.h"
-#include "../../../../include/nodecpp/server_type_list.h"
 
 //#define DO_INTEGRITY_CHECKING // TODO: consider making project-level definition
 
@@ -23,7 +21,7 @@ class MySampleTNode : public NodeBase
 	size_t recvReplies = 0;
 	Buffer buf;
 
-	net::Socket clientSock;
+	nodecpp::safememory::owning_ptr<net::Socket> clientSock;
 
 #ifdef DO_INTEGRITY_CHECKING
 	uint16_t Fletcher16( uint8_t *data, int count )
@@ -49,33 +47,35 @@ class MySampleTNode : public NodeBase
 public:
 	MySampleTNode()
 	{
-		printf( "MySampleTNode::MySampleTNode()\n" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
 	virtual void main()
 	{
-		printf( "MySampleLambdaOneNode::main()\n" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+		clientSock = nodecpp::safememory::make_owning<net::Socket>();
 
 #ifdef DO_INTEGRITY_CHECKING
-		clientSock.on(event::connect, [this]() { 
+		clientSock->on(event::connect, [this]() { 
 			buf.writeInt8( 10, 0 );
 			buf.writeInt8( ++lastRequestedSize, 1 );
 			buf.append( reinterpret_cast<uint8_t*>(&myID), sizeof(myID) );
 			buf.append( reinterpret_cast<uint8_t*>(&(++lastPacketSN)), sizeof(myID) );
-			clientSock.write(buf);
+			clientSock->write(buf);
 			buf.clear();
 		});
 
-		clientSock.on(event::data, [this](Buffer& buffer) { 
+		clientSock->on(event::data, [this](Buffer& buffer) { 
 			++recvReplies;
 			if ( ( recvReplies & 0xFFFF ) == 0 )
-				printf( "[%zd] MySampleTNode::onData(), size = %zd\n", recvReplies, buffer.size() );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
 			recvSize += buffer.size();
 
 			if ( buffer.size() < 11 )
 			{
 				NODECPP_TRACE( "Insufficient data on socket id = {}: received just {} bytes", myID, buffer.size() );
-				clientSock.unref();
+				clientSock->unref();
 				return;
 			}
 
@@ -83,7 +83,7 @@ public:
 			if ( *reinterpret_cast<uint16_t*>(buffer.begin()) != chS )
 			{
 				NODECPP_TRACE0( "Checksum failed" );
-				clientSock.unref();
+				clientSock->unref();
 				return;
 			}
 
@@ -99,28 +99,28 @@ public:
 			else if ( myID != recClientID )
 			{
 				NODECPP_TRACE( "Packet for wrong ID received: myID = {}, in-packet for-id = {}", myID, recClientID );
-				clientSock.unref();
+				clientSock->unref();
 				return;
 			}
 
 			if ( receivedPN != lastPacketSN )
 			{
 				NODECPP_TRACE( "Reply to packet with unexpected sequential num = {} received (expected {})", receivedPN, lastPacketSN);
-				clientSock.unref();
+				clientSock->unref();
 				return;
 			}
 
 			if ( requestedSz != lastRequestedSize )
 			{
 				NODECPP_TRACE( "Reply size as indicated in header ({}) is not that has been requested (expected {})", requestedSz, lastRequestedSize);
-				clientSock.unref();
+				clientSock->unref();
 				return;
 			}
 
 			if ( requestedSz + 11 != buffer.size() )
 			{
 				NODECPP_TRACE( "Reply size ({}) is not that has been requested (expected {})", requestedSz, lastRequestedSize);
-				clientSock.unref();
+				clientSock->unref();
 				return;
 			}
 
@@ -128,28 +128,28 @@ public:
 			buf.writeInt8( ++lastRequestedSize, 1 );
 			buf.append( reinterpret_cast<uint8_t*>(&myID), sizeof(myID) );
 			buf.append( reinterpret_cast<uint8_t*>(&(++lastPacketSN)), sizeof(myID) );
-			clientSock.write(buf);
+			clientSock->write(buf);
 			buf.clear();
 		});
 #else
-		clientSock.on(event::connect, [this]() { 
+		clientSock->on(event::connect, [this]() { 
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
-			clientSock.write(buf);
+			clientSock->write(buf);
 		});
 
-		clientSock.on(event::data, [this](Buffer& buffer) { 
+		clientSock->on(event::data, [this](Buffer& buffer) { 
 			++recvReplies;
 			if ( ( recvReplies & 0xFFFF ) == 0 )
-				printf( "[%zd] MySampleTNode::onData(), size = %zd\n", recvReplies, buffer.size() );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
 			recvSize += buffer.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-			clientSock.write(buf);
+			clientSock->write(buf);
 		});
 #endif
 
-		clientSock.connect(2000, "127.0.0.1");
+		clientSock->connect(2000, "127.0.0.1");
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
