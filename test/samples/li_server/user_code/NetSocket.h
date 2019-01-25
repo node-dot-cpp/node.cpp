@@ -43,7 +43,7 @@ class MySampleTNode : public NodeBase
 		void onClose(bool hadError) override
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
-			myNode->srv.removeSocket(mySocket);
+			myNode->srv->removeSocket(mySocket);
 		}
 		void onData(Buffer& buffer) override {
 			if ( buffer.size() < 2 )
@@ -93,14 +93,14 @@ class MySampleTNode : public NodeBase
 		void onClose(bool hadError) override
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
-			myNode->srvCtrl.removeSocket(mySocket);
+			myNode->srvCtrl->removeSocket(mySocket);
 		}
 		void onData(Buffer& buffer) override {
 			size_t requestedSz = buffer.begin()[1];
 			if ( requestedSz )
 			{
 				Buffer reply(sizeof(stats));
-				myNode->stats.connCnt = myNode->srv.getSockCount();
+				myNode->stats.connCnt = myNode->srv->getSockCount();
 				size_t replySz = sizeof(Stats);
 				uint8_t* buff = myNode->ptr.get();
 				memcpy( buff, &(myNode->stats), replySz); // naive marshalling will work for a limited number of cases
@@ -127,7 +127,7 @@ class MySampleTNode : public NodeBase
 		}
 		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
-			//srv.unref();
+			//srv->unref();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
@@ -149,7 +149,7 @@ class MySampleTNode : public NodeBase
 		}
 		void onConnection(/*const ServerIdType* extra,*/ soft_ptr<net::SocketBase> socket) override { 
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
-			//srv.unref();
+			//srv->unref();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket ); 
 			//net::Socket* s = static_cast<net::Socket*>( socket );
 			soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>( socket );
@@ -158,32 +158,32 @@ class MySampleTNode : public NodeBase
 //			myNode->serverCtrlSockets.add( socket );
 		}
 	};
-	//MyCtrlServerListener myCtrlServerListener;
 
 public:
-	MySampleTNode() /*: myServerListener(this, 0), myCtrlServerListener(this, 1)*/
+	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
 	virtual void main()
 	{
+		srv = nodecpp::safememory::make_owning<net::Server>();
+		srvCtrl = nodecpp::safememory::make_owning<net::Server>();
+
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 		nodecpp::safememory::owning_ptr<ServerListener> svrListener = nodecpp::safememory::make_owning<MyServerListener>( this, 0 );
-		srv.on( svrListener );
-		//srv.on( &myCtrlServerListener );
+		srv->on( svrListener );
 		nodecpp::safememory::owning_ptr<ServerListener> ctrlSvrListener = nodecpp::safememory::make_owning<MyCtrlServerListener>( this, 1 );
-		srvCtrl.on( ctrlSvrListener );
-		//srvCtrl.on( &myCtrlServerListener );
+		srvCtrl->on( ctrlSvrListener );
 
-		srv.listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
-		srvCtrl.listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
+		srv->listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
+		srvCtrl->listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
 	}
 
-	net::Server srv;
-	net::Server srvCtrl;
+	nodecpp::safememory::owning_ptr<net::Server> srv;
+	nodecpp::safememory::owning_ptr<net::Server> srvCtrl;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;

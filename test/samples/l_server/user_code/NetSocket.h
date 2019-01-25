@@ -66,17 +66,20 @@ public:
 //		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 //		ptr.reset(new uint8_t[size]);
 
-		srv.on( event::close, [this](bool hadError) {
+		srv = nodecpp::safememory::make_owning<net::Server>();
+		srvCtrl = nodecpp::safememory::make_owning<net::Server>();
+
+		srv->on( event::close, [this](bool hadError) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!\n");
 		});
-		srv.on( event::connection, [this](soft_ptr<net::Socket> socket) {
+		srv->on( event::connection, [this](soft_ptr<net::Socket> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!\n");
-			//srv.unref();
+			//srv->unref();
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!\n");
 				socket->unref();
-				srv.removeSocket( socket );
+				srv->removeSocket( socket );
 			});
 #ifdef DO_INTEGRITY_CHECKING
 			uint32_t clientID = ++clientIDBase;
@@ -168,24 +171,24 @@ public:
 
 		});
 
-		srvCtrl.on( event::close, [this](bool hadError) {
+		srvCtrl->on( event::close, [this](bool hadError) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!\n");
 			//serverCtrlSockets.clear();
 		});
-		srvCtrl.on( event::connection, [this](soft_ptr<net::Socket> socket) {
+		srvCtrl->on( event::connection, [this](soft_ptr<net::Socket> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!\n");
-			//srv.unref();
+			//srv->unref();
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!\n");
-				srvCtrl.removeSocket( socket );
+				srvCtrl->removeSocket( socket );
 			});
 			socket->on( event::data, [this, socket](Buffer& buffer) {
 				size_t requestedSz = buffer.readUInt8(1);
 				if ( requestedSz )
 				{
 					Buffer reply(sizeof(stats));
-					stats.connCnt = srv.getSockCount();
+					stats.connCnt = srv->getSockCount();
 					size_t replySz = sizeof(Stats);
 					//uint8_t* buff = ptr.get();
 					//memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
@@ -204,13 +207,13 @@ public:
 			});
 		});
 
-		srv.listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
-		srvCtrl.listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
+		srv->listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
+		srvCtrl->listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
 	}
 
 public:
-	net::Server srv;
-	net::Server srvCtrl;
+	nodecpp::safememory::owning_ptr<net::Server> srv;
+	nodecpp::safememory::owning_ptr<net::Server> srvCtrl;
 
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
