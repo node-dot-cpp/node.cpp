@@ -74,8 +74,8 @@ void ServerBase::close()
 }
 
 
-ServerO::ServerO() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerO);}
-Server::Server() {registerServer(this->node, this, netServerManagerBase->typeIndexOfServerL);}
+ServerO::ServerO() {registerServer(this->node, soft_ptr<net::ServerTBase>(this), netServerManagerBase->typeIndexOfServerO);}
+Server::Server() {registerServer(this->node, soft_ptr<net::ServerTBase>(this), netServerManagerBase->typeIndexOfServerL);}
 
 void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 {

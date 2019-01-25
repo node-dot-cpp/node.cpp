@@ -283,7 +283,7 @@ void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 }
 
 inline
-void registerServer(NodeBase* node, net::ServerTBase* t, int typeId)
+void registerServer(NodeBase* node, soft_ptr<net::ServerTBase> t, int typeId)
 {
 	return netServerManagerBase->appAddServer(node, t, typeId);
 }
