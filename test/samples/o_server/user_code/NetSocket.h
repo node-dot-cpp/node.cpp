@@ -100,7 +100,6 @@ public:
 		const char buff[] = "goodbye!";
 		socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 		socket->end();
-		//serverSockets.remove(*(socket->getExtra()));
 		srv->removeSocket( socket );
 	}
 	void onErrorServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, nodecpp::Error&) {
@@ -134,8 +133,6 @@ public:
 			size_t replySz = sizeof(Stats);
 			uint8_t* buff = ptr.get();
 			memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
-			//SockTypeServerCtrlSocket* sock = serverCtrlSockets.at(*(socket->getExtra()));
-			//sock->write(buff, replySz);
 			socket->write(buff, replySz);
 		}
 	}
@@ -144,7 +141,6 @@ public:
 		const char buff[] = "goodbye!";
 		socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 		socket->end();
-		//serverCtrlSockets.remove(*(socket->getExtra()));
 		srvCtrl->removeSocket( socket );
 	}
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
@@ -158,80 +154,14 @@ public:
 	>;
 
 	// server
-private:
-#if 0
-	template<class Socket>
-	class ServerSockets
-	{
-		struct ServerSock
-		{
-			size_t idx;
-			size_t nextFree;
-			std::unique_ptr<net::SocketBase> socket;
-			ServerSock( net::SocketBase* sock, size_t idx_ ) : idx( idx_ ), nextFree( size_t(-1) ), socket( sock )  {}
-		};
-		size_t firstFree = size_t(-1);
-		std::vector<ServerSock> serverSocks;
-		size_t serverSockCount = 0;
-	public:
-		ServerSockets() {}
-		void add( net::SocketBase* sock )
-		{
-			if ( firstFree != size_t(-1) )
-			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstFree < serverSocks.size() );
-				ServerSock& toUse = serverSocks[firstFree];
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstFree == toUse.idx );
-				firstFree = toUse.nextFree;
-				toUse.socket.reset( sock );
-				*(static_cast<Socket*>(sock)->getExtra()) = toUse.idx;
-			}
-			else
-			{
-				size_t idx = serverSocks.size();
-				serverSocks.emplace_back( sock, idx );
-				*(static_cast<Socket*>(sock)->getExtra()) = idx;
-			}
-			++serverSockCount;
-		}
-		void remove( size_t idx )
-		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < serverSocks.size() );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, *(at(idx)->getExtra()) == idx );
-			ServerSock& toUse = serverSocks[idx];
-			toUse.nextFree = firstFree;
-			net::SocketBase* s = serverSocks[idx].socket.release();
-			Socket* sockToDelete = static_cast<Socket*>(s);
-			delete sockToDelete;
-			firstFree = idx;
-			--serverSockCount;
-		}
-		Socket* at(size_t idx)
-		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < serverSocks.size() );
-			net::SocketBase* s = serverSocks[idx].socket.get();
-			return static_cast<Socket*>(s);
-		}
-		void clear()
-		{
-			for ( size_t i=0; i<serverSocks.size(); ++i )
-				serverSocks[i].socket.reset();
-			serverSocks.clear();
-		}
-		size_t getServerSockCount() { return serverSockCount; }
-	};
-	//ServerSockets<SockTypeServerSocket> serverSockets;
-#endif // 0
 public:
 	void onCloseServer(const ServerIdType* extra, bool hadError) {
 		print("server: onCloseServer()!\n");
-		//serverSockets.clear();
 	}
 	void onConnectionx(const ServerIdType* extra, net::SocketBase* socket) { 
 		print("server: onConnection()!\n");
 		//srv->unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
-		//serverSockets.add( socket );
 	}
 	void onListeningx(const ServerIdType* extra, size_t id, nodecpp::net::Address addr) {print("server: onListening()!\n");}
 	void onErrorServer(const ServerIdType* extra, Error& err) {print("server: onErrorServer!\n");}
@@ -242,23 +172,17 @@ public:
 		nodecpp::net::OnListeningSO<&MySampleTNode::onListeningx>,
 		nodecpp::net::OnErrorSO<&MySampleTNode::onErrorServer>
 	>;
-//	ServerType srv;
 	nodecpp::safememory::owning_ptr<ServerType> srv;
 
 	// ctrl server
-private:
-	//ServerSockets<SockTypeServerCtrlSocket> serverCtrlSockets;
-
 public:
 	void onCloseServerCtrl(const ServerIdType* extra, bool hadError) {
 		print("server: onCloseServerCtrl()!\n");
-		//serverCtrlSockets.clear();
 	}
 	void onConnectionCtrl(const ServerIdType* extra, net::SocketBase* socket) { 
 		print("server: onConnectionCtrl()!\n");
 		//srv->unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
-		//serverCtrlSockets.add( socket );
 	}
 	void onListeningCtrl(const ServerIdType* extra, size_t id, nodecpp::net::Address addr) {print("server: onListeninCtrlg()!\n");}
 	void onErrorServerCtrl(const ServerIdType* extra, Error& err) {print("server: onErrorServerCtrl!\n");}
@@ -269,7 +193,6 @@ public:
 		nodecpp::net::OnListeningSO<&MySampleTNode::onListeningCtrl>,
 		nodecpp::net::OnErrorSO<&MySampleTNode::onErrorServerCtrl>
 	>;
-//	CtrlServerType srvCtrl;
 	nodecpp::safememory::owning_ptr<CtrlServerType> srvCtrl;
 
 
