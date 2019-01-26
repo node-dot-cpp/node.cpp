@@ -5,11 +5,9 @@
 #include "../../../../include/nodecpp/common.h"
 
 
-#include "../../../../3rdparty/fmt/include/fmt/format.h"
+#include <fmt/format.h>
 #include "../../../../include/nodecpp/socket_type_list.h"
 #include "../../../../include/nodecpp/socket_t_base.h"
-#include "../../../../include/nodecpp/server_t.h"
-#include "../../../../include/nodecpp/server_type_list.h"
 
 
 using namespace nodecpp;
@@ -30,41 +28,42 @@ class MySampleTNode : public NodeBase
 		void onConnect() override { myNode->onConnect(&id); }
 		void onData(nodecpp::Buffer& buffer) override { myNode->onData(&id, buffer); }
 	};
-	MyListener myListener;
 
-	net::Socket clientSock;
+	nodecpp::safememory::owning_ptr<net::Socket> clientSock;
 
 public:
-	MySampleTNode() : myListener(this, 0)
+	MySampleTNode()/* : myListener(this, 0)*/
 	{
-		printf( "MySampleTNode::MySampleTNode()\n" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()\n" );
 	}
 
 	virtual void main()
 	{
-		printf( "MySampleLambdaOneNode::main()\n" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()\n" );
 
-		clientSock.on( &myListener );
-		clientSock.connect(2000, "127.0.0.1");
+		clientSock = nodecpp::safememory::make_owning<net::Socket>();
+		nodecpp::safememory::owning_ptr<SocketListener> myListener = nodecpp::safememory::make_owning<MyListener>(this, 0);
+		clientSock->on( std::move(myListener) );
+		clientSock->connect(2000, "127.0.0.1");
 	}
 	
 	void onConnect(const int* extra) 
 	{
 		buf.writeInt8( 2, 0 );
 		buf.writeInt8( 1, 1 );
-		clientSock.write(buf);
+		clientSock->write(buf);
 	}
 
 	void onData(const int* extra, nodecpp::Buffer& buffer)
 	{
-		NODECPP_ASSERT( extra != nullptr );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, extra != nullptr );
 		++recvReplies;
 		if ( ( recvReplies & 0xFFFF ) == 0 )
-			printf( "[%zd] MySampleTNode::onWhateverData(), extra = %d, size = %zd\n", recvReplies, *extra, buffer.size() );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}\n", recvReplies, *extra, buffer.size() );
 		recvSize += buffer.size();
 		buf.writeInt8( 2, 0 );
 		buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-		clientSock.write(buf);
+		clientSock->write(buf);
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
