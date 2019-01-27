@@ -146,7 +146,7 @@ public:
 #ifdef _MSC_VER
 		int retval = WSAPoll(&(osSide[1]), static_cast<ULONG>(osSide.size() - 1), timeoutToUse);
 #else
-		int retval = poll(fds_begin, fds_sz, timeoutToUse);
+		int retval = poll(&(osSide[1]), static_cast<nfds_t>(osSide.size() - 1), timeoutToUse);
 #endif
 		return std::make_pair(true, retval);
 	}

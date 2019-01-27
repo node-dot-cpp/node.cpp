@@ -180,7 +180,7 @@ namespace nodecpp {
 //			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
 	//		typename void (Node::*)(const void*) y;
 	#if 1
-			static_assert( Initializer::onConnect != nullptr );
+	//		static_assert( Initializer::onConnect != nullptr );
 	//		static_assert( std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value );
 	//		static_assert( std::is_same< typename std::remove_cv<decltype((Initializer::onConnect))>::type, typename std::remove_cv<void (Node::*)(const void*)>::type >::value );
 	//		static_assert( std::is_same< typename std::remove_reference<typename std::remove_cv<decltype((Initializer::onConnect))>::type>::type, typename std::remove_reference<typename std::remove_cv<void (Node::*)(const void*)>::type>::type >::value );
