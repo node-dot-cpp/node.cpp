@@ -93,7 +93,7 @@ namespace nodecpp
 
 		struct Connection
 		{
-			using callback = std::function<void([[nodecpp::owned_by_this]]soft_ptr<net::Socket>)>;
+			using callback = std::function<void(soft_ptr<net::Socket>[[nodecpp::owned_by_this]])>;
 			static constexpr const char* name = "connection";
 		};
 		static constexpr Connection connection = Connection();
