@@ -1,6 +1,7 @@
 
-build/.vs
-build/x64
-build/Release
-build/Debug
+.vs
+x64
+Release
+Debug
 *.vcproj.user
+*.vcxproj.user
