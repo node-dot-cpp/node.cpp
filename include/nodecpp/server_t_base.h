@@ -38,7 +38,7 @@ namespace nodecpp {
 		class ServerTBase : public ServerBase {
 
 		protected:
-			void registerServerByID(NodeBase* node, net::ServerTBase* t, int typeId);
+			void registerServerByID(NodeBase* node, soft_ptr<net::ServerTBase> t, int typeId);
 
 		
 		public:

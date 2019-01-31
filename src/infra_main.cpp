@@ -32,6 +32,7 @@
 thread_local size_t nodecpp::safememory::onStackSafePtrCreationCount; 
 thread_local size_t nodecpp::safememory::onStackSafePtrDestructionCount;
 #endif // NODECPP_ENABLE_ONSTACK_SOFTPTR_COUNTING
+thread_local void* nodecpp::safememory::thg_stackPtrForMakeOwningCall = 0;
 
 class NodeFactoryMap{
 	typedef std::basic_string<char, std::char_traits<char>, GlobalObjectAllocator<char>> StringT;

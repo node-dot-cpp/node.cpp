@@ -149,7 +149,11 @@ namespace nodecpp {
 			protected:
 				MultiOwner<typename Socket::StorableType> socketList;
 		public:
-			ServerT(Node* node) : ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>(node) {int typeId = Node::EmitterTypeForServer::getTypeIndex( this ); this->registerServerByID(this->node, this, typeId);}
+			ServerT(Node* node) : ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>(node) {
+				int typeId = Node::EmitterTypeForServer::getTypeIndex( this ); 
+				nodecpp::safememory::soft_ptr<ServerT> me = this->myThis.getSoftPtr<ServerT>(this);
+				this->registerServerByID(this->node, me, typeId);
+			}
 			
 			soft_ptr<Socket> makeSocket(OpaqueSocketData& sdata) {
 //				SocketForserver* sock = socketList.getNewSocket(sdata);
