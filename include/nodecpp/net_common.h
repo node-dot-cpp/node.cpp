@@ -317,6 +317,8 @@ namespace nodecpp {
 		class SocketBase
 		{
 		public:
+			nodecpp::safememory::soft_this_ptr myThis;
+		public:
 			SocketBase* prev_;
 			SocketBase* next_;
 

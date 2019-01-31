@@ -53,12 +53,25 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 	return netSocketManagerBase->appWrite(dataForCommandProcessing, data, size);
 }
 
-void SocketO::registerMeAndAcquireSocket() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );registerWithInfraAndAcquireSocket(this->node, nodecpp::safememory::soft_ptr<SocketO>(this), netSocketManagerBase->typeIndexOfSocketO);}
-void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );registerWithInfraAndAssignSocket(this->node, nodecpp::safememory::soft_ptr<SocketO>(this), netSocketManagerBase->typeIndexOfSocketO, sdata);}
+void SocketO::registerMeAndAcquireSocket() {
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
+	nodecpp::safememory::soft_ptr<SocketO> p = myThis.getSoftPtr<SocketO>(this);
+	registerWithInfraAndAcquireSocket(this->node, p, netSocketManagerBase->typeIndexOfSocketO);
+}
+void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
+	nodecpp::safememory::soft_ptr<SocketO> p = myThis.getSoftPtr<SocketO>(this);
+	registerWithInfraAndAssignSocket(this->node, p, netSocketManagerBase->typeIndexOfSocketO, sdata);
+}
 void SocketO::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
-void Socket::registerMeAndAcquireSocket() {registerWithInfraAndAcquireSocket(this->node, nodecpp::safememory::soft_ptr<Socket>(this), netSocketManagerBase->typeIndexOfSocketL);}
-void Socket::registerMeAndAssignSocket(OpaqueSocketData& sdata) {registerWithInfraAndAssignSocket(this->node, nodecpp::safememory::soft_ptr<Socket>(this), netSocketManagerBase->typeIndexOfSocketL, sdata);}
+void Socket::registerMeAndAcquireSocket() {
+	nodecpp::safememory::soft_ptr<Socket> p = myThis.getSoftPtr<Socket>(this);
+	registerWithInfraAndAcquireSocket(this->node, p, netSocketManagerBase->typeIndexOfSocketL);
+}
+void Socket::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
+	nodecpp::safememory::soft_ptr<Socket> p = myThis.getSoftPtr<Socket>(this);
+	registerWithInfraAndAssignSocket(this->node, p, netSocketManagerBase->typeIndexOfSocketL, sdata);}
 void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -74,20 +87,28 @@ void ServerBase::close()
 }
 
 
-ServerO::ServerO() {registerServer(this->node, soft_ptr<net::ServerTBase>(this), netServerManagerBase->typeIndexOfServerO);}
-Server::Server() {registerServer(this->node, soft_ptr<net::ServerTBase>(this), netServerManagerBase->typeIndexOfServerL);}
+ServerO::ServerO() {
+	nodecpp::safememory::soft_ptr<ServerTBase> p = myThis.getSoftPtr<ServerTBase>(this);
+	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
+}
+Server::Server() {
+	nodecpp::safememory::soft_ptr<ServerTBase> p = myThis.getSoftPtr<ServerTBase>(this);
+	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerL);
+}
 
 void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
 {
-	netServerManagerBase->appListen(soft_ptr<net::ServerTBase>(this), ip, port, backlog);
+	nodecpp::safememory::soft_ptr<ServerTBase> p = myThis.getSoftPtr<ServerTBase>(this);
+	netServerManagerBase->appListen(p, ip, port, backlog);
 }
 
 void ServerO::listen(uint16_t port, const char* ip, int backlog)
 {
-	netServerManagerBase->appListen(soft_ptr<net::ServerTBase>(this), ip, port, backlog);
+	nodecpp::safememory::soft_ptr<ServerTBase> p = myThis.getSoftPtr<ServerTBase>(this);
+	netServerManagerBase->appListen(p, ip, port, backlog);
 }
 
-void ServerTBase::registerServerByID(NodeBase* node, net::ServerTBase* t, int typeId) { registerServer(node, t, typeId); }
+void ServerTBase::registerServerByID(NodeBase* node, soft_ptr<net::ServerTBase> t, int typeId) { registerServer(node, t, typeId); }
 
 
 

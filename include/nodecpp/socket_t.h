@@ -203,8 +203,18 @@ namespace nodecpp {
 		class SocketT : public SocketT2<Node, SocketTInitializer<Handlers...>, Extra>
 		{
 		public:
-			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr ); registerWithInfraAndAcquireSocket(this->node, this, idType1); }
-			SocketT(Node* node, OpaqueSocketData& sdata) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {int idType1 = Node::EmitterType::getTypeIndex( this ); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, node != nullptr ); registerWithInfraAndAssignSocket(node, this, idType1,sdata); }
+			SocketT(Node* node) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {
+				int idType1 = Node::EmitterType::getTypeIndex( this ); 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr ); 
+				nodecpp::safememory::soft_ptr<SocketT> me = this->myThis.getSoftPtr<SocketT>(this);
+				registerWithInfraAndAcquireSocket(this->node, me, idType1); 
+			}
+			SocketT(Node* node, OpaqueSocketData& sdata) : SocketT2<Node, SocketTInitializer<Handlers...>, Extra>(node) {
+				int idType1 = Node::EmitterType::getTypeIndex( this ); 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, node != nullptr ); 
+				nodecpp::safememory::soft_ptr<SocketT> me = this->myThis.getSoftPtr<SocketT>(this);
+				registerWithInfraAndAssignSocket(node, me, idType1,sdata);
+			}
 			void connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
 			SocketT& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(this->dataForCommandProcessing, noDelay); return *this; }
 			SocketT& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(this->dataForCommandProcessing, enable); return *this; }
