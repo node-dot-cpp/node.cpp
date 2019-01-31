@@ -151,7 +151,7 @@ namespace nodecpp {
 		public:
 			ServerT(Node* node) : ServerT2<Node, Socket, ServerTInitializer<Handlers...>, Extra>(node) {
 				int typeId = Node::EmitterTypeForServer::getTypeIndex( this ); 
-				nodecpp::safememory::soft_ptr<ServerT> me = this->myThis.getSoftPtr<ServerT>(this);
+				nodecpp::safememory::soft_ptr<ServerT> me = this->myThis.template getSoftPtr<ServerT>(this);
 				this->registerServerByID(this->node, me, typeId);
 			}
 			
