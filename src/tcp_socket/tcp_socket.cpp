@@ -776,7 +776,7 @@ void NetServerManagerBase::appClose(size_t id)
 
 size_t NetServerManagerBase::addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int typeId)
 {
-	return ioSockets.addEntry( node, ptr, typeId );
+	return ioSockets.addEntry<net::ServerTBase>( node, ptr, typeId );
 }
 
 #endif // NO_SERVER_STAFF

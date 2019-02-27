@@ -39,7 +39,7 @@ namespace nodecpp {
 		class ServerBase
 		{
 			public:
-				nodecpp::safememory::soft_this_ptr myThis;
+				nodecpp::safememory::soft_this_ptr<ServerBase> myThis;
 			public:
 			class DataForCommandProcessing {
 			public:
