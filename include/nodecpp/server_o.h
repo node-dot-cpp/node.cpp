@@ -127,28 +127,40 @@ namespace nodecpp {
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
-					(this->node->*(Initializer::onClose))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this),b); 
+				{
+					nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<ServerOUserBase<Node, Extra>>(this);
+					(this->node->*(Initializer::onClose))(ptr2this,b); 
+				}
 				else
 					ServerO::onClose(b);
 			}
 			void onConnection(SocketBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
-					(this->node->*(Initializer::onConnection))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this), socket); 
+				{
+					nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<ServerOUserBase<Node, Extra>>(this);
+					(this->node->*(Initializer::onConnection))(ptr2this, socket); 
+				}
 				else
 					ServerO::onConnection(socket);
 			}
 			void onListening(size_t id, Address addr) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
-					(this->node->*(Initializer::onListening))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this), id, addr); 
+				{
+					nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<ServerOUserBase<Node, Extra>>(this);
+					(this->node->*(Initializer::onListening))(ptr2this, id, addr); 
+				}
 				else
 					ServerO::onListening(id, addr);
 			}
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )
-					(this->node->*(Initializer::onError))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this),e);
+				{
+					nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<ServerOUserBase<Node, Extra>>(this);
+					(this->node->*(Initializer::onError))(ptr2this,e);
+				}
 				else
 					ServerO::onError(e);
 			}
