@@ -103,6 +103,7 @@
       <PreprocessorDefinitions>USING_T_SOCKETS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,6 +119,7 @@
       <PreprocessorDefinitions>USING_T_SOCKETS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,6 +137,7 @@
       <PreprocessorDefinitions>USING_T_SOCKETS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,6 +157,7 @@
       <PreprocessorDefinitions>USING_T_SOCKETS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -197,7 +201,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_t_base.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\trace.h" />
     <ClInclude Include="..\..\..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />
