@@ -166,47 +166,6 @@ namespace nodecpp {
 			}
 		};
 
-		/*template<class Node, class Initializer>
-		class ServerN2<Node, Initializer, void> : public ServerO
-		{
-			Node* node;
-			static_assert( Initializer::onConnection != nullptr );
-		public:
-			ServerN2(Node* node_) { node = node_;}
-			void* getExtra() { return nullptr; }
-
-			void onClose(bool b) override
-			{ 
-				if constexpr ( Initializer::onClose != nullptr )
-					(node->*(Initializer::onClose))(this->getExtra(),b); 
-				else
-					ServerO::onClose(b);
-			}
-#if 1 //[+++] revision required
-			void onConnectionX(SocketBase* socket) override
-			{ 
-				if constexpr ( Initializer::onConnection != nullptr )
-					(node->*(Initializer::onConnection))(this->getExtra()); 
-				else
-					ServerO::onConnectionX(socket);
-			}
-			void onListeningX(size_t id, Address addr) override
-			{ 
-				if constexpr ( Initializer::onListening != nullptr )
-					(node->*(Initializer::onListening))(this->getExtra()); 
-				else
-					ServerO::onListeningX(id, addr);
-			}
-#endif
-			void onError(nodecpp::Error& e) override
-			{
-				if constexpr ( Initializer::onError != nullptr )
-					(node->*(Initializer::onError))(this->getExtra(),e);
-				else
-					ServerO::onError(e);
-			}
-		};*/
-
 
 		template<class Node, class Socket, class Extra, class ... Handlers>
 		class ServerN : public ServerN2<Node, ServerOInitializer<Handlers...>, Extra>
