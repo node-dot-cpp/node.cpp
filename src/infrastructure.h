@@ -291,7 +291,7 @@ void registerServer(NodeBase* node, soft_ptr<net::ServerTBase> t, int typeId)
 template<class Node>
 class Runnable : public RunnableBase
 {
-	Node* node;
+	owning_ptr<Node> node;
 	template<class ClientSocketEmitter, class ServerSocketEmitter>
 	void internalRun()
 	{
@@ -305,7 +305,7 @@ class Runnable : public RunnableBase
 			netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
 			netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
 		}
-		node = new Node;
+		node = make_owning<Node>();
 		node->main();
 		infra.runInfraLoop2();
 	}
