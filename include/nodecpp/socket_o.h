@@ -9,14 +9,14 @@
 *     * Redistributions in binary form must reproduce the above copyright
 *       notice, this list of conditions and the following disclaimer in the
 *       documentation and/or other materials provided with the distribution.
-*     * Neither the name of the <organization> nor the
+*     * Neither the name of the OLogN Technologies AG nor the
 *       names of its contributors may be used to endorse or promote products
 *       derived from this software without specific prior written permission.
 *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+* DISCLAIMED. IN NO EVENT SHALL OLogN Technologies AG BE LIABLE FOR ANY
 * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -221,7 +221,8 @@ namespace nodecpp {
 				if constexpr ( Initializer::onConnect != nullptr )
 				{
 	//				static_assert( Initializer::onConnect == nullptr || std::is_same< decltype(Initializer::onConnect), void (Node::*)(const Extra*) >::value );
-					((static_cast<Node*>(this->node))->*(Initializer::onConnect))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this)); 
+					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+					((static_cast<Node*>(this->node))->*(Initializer::onConnect))(ptr2this); 
 				}
 				else
 				{
@@ -232,42 +233,60 @@ namespace nodecpp {
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onClose))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this),b); 
+				{
+					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+					((static_cast<Node*>(this->node))->*(Initializer::onClose))(ptr2this,b); 
+				}
 				else
 					SocketO::onClose(b);
 			}
 			void onData(nodecpp::Buffer& b) override
 			{ 
 				if constexpr ( Initializer::onData != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onData))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this),b); 
+				{
+					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+					((static_cast<Node*>(this->node))->*(Initializer::onData))(ptr2this, b); 
+				}
 				else
 					SocketO::onData(b);
 			}
 			void onDrain() override
 			{
 				if constexpr ( Initializer::onDrain != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onDrain))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this));
+				{
+					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+					((static_cast<Node*>(this->node))->*(Initializer::onDrain))(ptr2this);
+				}
 				else
 					SocketO::onDrain();
 			}
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onError))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this),e);
+				{
+					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+					((static_cast<Node*>(this->node))->*(Initializer::onError))(ptr2this,e);
+				}
 				else
 					SocketO::onError(e);
 			}
 			void onEnd() override
 			{
 				if constexpr ( Initializer::onEnd != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onEnd))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this));
+				{
+					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+					((static_cast<Node*>(this->node))->*(Initializer::onEnd))(ptr2this);
+				}
 				else
 					SocketO::onEnd();
 			}
 			void onAccepted() override
 			{
 				if constexpr ( Initializer::onAccepted != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onAccepted))(nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>>(this));
+				{
+					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+					((static_cast<Node*>(this->node))->*(Initializer::onAccepted))(ptr2this);
+				}
 				else
 					SocketO::onAccepted();
 			}

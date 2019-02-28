@@ -73,25 +73,25 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>../../../../safe_memory/src/iibmalloc/src/foundation/include;../../../../safe_memory/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/src/iibmalloc/src;../../../../safe_memory/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>../../../../safe_memory/src/iibmalloc/src/foundation/include;../../../../safe_memory/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/src/iibmalloc/src;../../../../safe_memory/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>../../../../safe_memory/src/iibmalloc/src/foundation/include;../../../../safe_memory/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/src/iibmalloc/src;../../../../safe_memory/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <IncludePath>../../../../safe_memory/src/iibmalloc/src/foundation/include;../../../../safe_memory/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/src/iibmalloc/src;../../../../safe_memory/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -103,6 +103,7 @@
       <PreprocessorDefinitions>USING_T_SOCKETS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,6 +119,7 @@
       <PreprocessorDefinitions>USING_T_SOCKETS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,6 +137,7 @@
       <PreprocessorDefinitions>USING_T_SOCKETS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,6 +157,7 @@
       <PreprocessorDefinitions>USING_T_SOCKETS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -163,10 +167,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc" />
-    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\foundation\src\log.cpp" />
-    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\iibmalloc_windows.cpp" />
-    <ClCompile Include="..\..\..\..\safe_memory\src\iibmalloc\src\page_allocator_windows.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\cpu_exceptions_translator.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\log.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\safe_memory_error.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc_windows.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\page_allocator_windows.cpp" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\..\src\loop.cpp" />
@@ -175,9 +183,7 @@
     <ClCompile Include="..\user_code\NetSocket.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\include\nodecpp\assert.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\error.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\event.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\loop.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
@@ -195,7 +201,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_t_base.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\trace.h" />
     <ClInclude Include="..\..\..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />

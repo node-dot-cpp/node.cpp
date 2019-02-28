@@ -1,3 +1,31 @@
+/* -------------------------------------------------------------------------------
+* Copyright (c) 2018, OLogN Technologies AG
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*     * Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*     * Redistributions in binary form must reproduce the above copyright
+*       notice, this list of conditions and the following disclaimer in the
+*       documentation and/or other materials provided with the distribution.
+*     * Neither the name of the OLogN Technologies AG nor the
+*       names of its contributors may be used to endorse or promote products
+*       derived from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL OLogN Technologies AG BE LIABLE FOR ANY
+* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+* -------------------------------------------------------------------------------*/
+
+
 // NetSocket.h : sample of user-defined code
 
 #ifndef NET_SOCKET_H
@@ -31,8 +59,6 @@ class MySampleTNode : public NodeBase
 	};
 	Stats stats;
 
-	/*std::unique_ptr<uint8_t[]> ptr;
-	size_t size = 64 * 1024;*/
 	bool letOnDrain = false;
 
 #ifdef DO_INTEGRITY_CHECKING
@@ -63,23 +89,18 @@ public:
 	virtual void main()
 	{
 		printf( "MySampleLambdaOneNode::main()\n" );
-//		ptr.reset(static_cast<uint8_t*>(malloc(size)));
-//		ptr.reset(new uint8_t[size]);
 
-		srv = nodecpp::safememory::make_owning<net::Server>();
-		srvCtrl = nodecpp::safememory::make_owning<net::Server>();
-
-		srv->on( event::close, [this](bool hadError) {
+		srv.on( event::close, [this](bool hadError) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!\n");
 		});
-		srv->on( event::connection, [this](soft_ptr<net::Socket> socket) {
+		srv.on( event::connection, [this](soft_ptr<net::Socket> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!\n");
-			//srv->unref();
+			//srv.unref();
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!\n");
 				socket->unref();
-				srv->removeSocket( socket );
+				srv.removeSocket( socket );
 			});
 #ifdef DO_INTEGRITY_CHECKING
 			uint32_t clientID = ++clientIDBase;
@@ -127,7 +148,7 @@ public:
 			socket->on( event::data, [this, socket](Buffer& buffer) {
 				if ( buffer.size() < 2 )
 				{
-					//printf( "Insufficient data on socket idx = %d\n", *extra );
+					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = %d", *extra );
 					socket->unref();
 					return;
 				}
@@ -136,7 +157,6 @@ public:
 				size_t receivedSz = buffer.readUInt8(0);
 				if ( receivedSz != buffer.size() )
 				{
-//					printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", *extra, receivedSz, buffer.size() );
 					printf( "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes\n", receivedSz, buffer.size() );
 					socket->unref();
 					return;
@@ -148,9 +168,6 @@ public:
 					Buffer reply(requestedSz);
 					for ( size_t i=0; i<(uint8_t)requestedSz; ++i )
 						reply.appendUint8( 0 );
-					//buffer.begin()[0] = (uint8_t)requestedSz;
-					//memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-//					socket->write(reply.begin(), requestedSz);
 					socket->write(reply);
 				}
 	
@@ -161,8 +178,6 @@ public:
 #endif
 			socket->on( event::end, [this, socket]() {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!\n");
-//				const char buff[] = "goodbye!";
-//				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 				socket->write( b );
@@ -171,35 +186,30 @@ public:
 
 		});
 
-		srvCtrl->on( event::close, [this](bool hadError) {
+		srvCtrl.on( event::close, [this](bool hadError) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!\n");
-			//serverCtrlSockets.clear();
 		});
-		srvCtrl->on( event::connection, [this](soft_ptr<net::Socket> socket) {
+		srvCtrl.on( event::connection, [this](soft_ptr<net::Socket> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!\n");
-			//srv->unref();
+			//srv.unref();
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!\n");
-				srvCtrl->removeSocket( socket );
+				srvCtrl.removeSocket( socket );
 			});
 			socket->on( event::data, [this, socket](Buffer& buffer) {
 				size_t requestedSz = buffer.readUInt8(1);
 				if ( requestedSz )
 				{
 					Buffer reply(sizeof(stats));
-					stats.connCnt = srv->getSockCount();
+					stats.connCnt = srv.getSockCount();
 					size_t replySz = sizeof(Stats);
-					//uint8_t* buff = ptr.get();
-					//memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
 					reply.append( &stats, replySz );
 					socket->write(reply);
 				}
 			});
 			socket->on( event::end, [this, socket]() {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!\n");
-//				const char buff[] = "goodbye!";
-//				socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 				socket->write( b );
@@ -207,14 +217,13 @@ public:
 			});
 		});
 
-		srv->listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
-		srvCtrl->listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
+		srv.listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
+		srvCtrl.listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
 	}
 
 public:
-	nodecpp::safememory::owning_ptr<net::Server> srv;
-	nodecpp::safememory::owning_ptr<net::Server> srvCtrl;
-
+	net::Server srv;
+	net::Server srvCtrl;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;

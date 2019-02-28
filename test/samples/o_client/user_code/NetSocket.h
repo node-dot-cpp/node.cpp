@@ -22,7 +22,7 @@ class MySampleTNode : public NodeBase
 	using SocketIdType = int;
 
 public:
-	MySampleTNode()
+	MySampleTNode() : clientSock( this )
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
@@ -31,9 +31,8 @@ public:
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
-		*( clientSock->getExtra() ) = 17;
-		clientSock->connect(2000, "127.0.0.1");
+		*( clientSock.getExtra() ) = 17;
+		clientSock.connect(2000, "127.0.0.1");
 	}
 	
 	void onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
@@ -60,7 +59,7 @@ public:
 		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>,
 		nodecpp::net::OnData<&MySampleTNode::onWhateverData>
 	>;
-	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
+	ClientSockType clientSock;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
 };

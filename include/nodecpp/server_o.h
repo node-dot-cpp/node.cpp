@@ -9,14 +9,14 @@
 *     * Redistributions in binary form must reproduce the above copyright
 *       notice, this list of conditions and the following disclaimer in the
 *       documentation and/or other materials provided with the distribution.
-*     * Neither the name of the <organization> nor the
+*     * Neither the name of the OLogN Technologies AG nor the
 *       names of its contributors may be used to endorse or promote products
 *       derived from this software without specific prior written permission.
 *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+* DISCLAIMED. IN NO EVENT SHALL OLogN Technologies AG BE LIABLE FOR ANY
 * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -127,73 +127,44 @@ namespace nodecpp {
 			void onClose(bool b) override
 			{ 
 				if constexpr ( Initializer::onClose != nullptr )
-					(this->node->*(Initializer::onClose))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this),b); 
+				{
+					nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<ServerOUserBase<Node, Extra>>(this);
+					(this->node->*(Initializer::onClose))(ptr2this,b); 
+				}
 				else
 					ServerO::onClose(b);
 			}
 			void onConnection(SocketBase* socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
-					(this->node->*(Initializer::onConnection))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this), socket); 
+				{
+					nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<ServerOUserBase<Node, Extra>>(this);
+					(this->node->*(Initializer::onConnection))(ptr2this, socket); 
+				}
 				else
 					ServerO::onConnection(socket);
 			}
 			void onListening(size_t id, Address addr) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
-					(this->node->*(Initializer::onListening))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this), id, addr); 
+				{
+					nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<ServerOUserBase<Node, Extra>>(this);
+					(this->node->*(Initializer::onListening))(ptr2this, id, addr); 
+				}
 				else
 					ServerO::onListening(id, addr);
 			}
 			void onError(nodecpp::Error& e) override
 			{
 				if constexpr ( Initializer::onError != nullptr )
-					(this->node->*(Initializer::onError))(nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>>(this),e);
+				{
+					nodecpp::safememory::soft_ptr<ServerOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<ServerOUserBase<Node, Extra>>(this);
+					(this->node->*(Initializer::onError))(ptr2this,e);
+				}
 				else
 					ServerO::onError(e);
 			}
 		};
-
-		/*template<class Node, class Initializer>
-		class ServerN2<Node, Initializer, void> : public ServerO
-		{
-			Node* node;
-			static_assert( Initializer::onConnection != nullptr );
-		public:
-			ServerN2(Node* node_) { node = node_;}
-			void* getExtra() { return nullptr; }
-
-			void onClose(bool b) override
-			{ 
-				if constexpr ( Initializer::onClose != nullptr )
-					(node->*(Initializer::onClose))(this->getExtra(),b); 
-				else
-					ServerO::onClose(b);
-			}
-#if 1 //[+++] revision required
-			void onConnectionX(SocketBase* socket) override
-			{ 
-				if constexpr ( Initializer::onConnection != nullptr )
-					(node->*(Initializer::onConnection))(this->getExtra()); 
-				else
-					ServerO::onConnectionX(socket);
-			}
-			void onListeningX(size_t id, Address addr) override
-			{ 
-				if constexpr ( Initializer::onListening != nullptr )
-					(node->*(Initializer::onListening))(this->getExtra()); 
-				else
-					ServerO::onListeningX(id, addr);
-			}
-#endif
-			void onError(nodecpp::Error& e) override
-			{
-				if constexpr ( Initializer::onError != nullptr )
-					(node->*(Initializer::onError))(this->getExtra(),e);
-				else
-					ServerO::onError(e);
-			}
-		};*/
 
 
 		template<class Node, class Socket, class Extra, class ... Handlers>
