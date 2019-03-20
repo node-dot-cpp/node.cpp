@@ -54,8 +54,6 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 
 	int myID;
 
-//	awaitable_anchor anchor;
-
     my_sync_awaitable()  {
 		myID = getID();
  		//if ( myID == 8 ) __asm{int 3}
@@ -63,7 +61,6 @@ struct my_sync_awaitable : public awaitable_base<false>  {
    }
 	my_sync_awaitable(handle_type h) : coro(h) {
 		myID = getID();
-		//if ( myID == 8 ) __asm{int 3}
 		printf( "my_sync_awaitable::my_sync_awaitable() with myID = %d (from coro; my coro = 0x%zx)\n", myID, (size_t)(&coro) );
 	}
 
@@ -73,7 +70,6 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 	my_sync_awaitable(my_sync_awaitable &&s) : coro(s.coro) {
 		s.coro = nullptr;
 		myID = getID();
-		//if ( myID == 8 ) __asm{int 3}
 		printf( "my_sync_awaitable::my_sync_awaitable() with myID = %d (moving, other ID = %d)\n", myID, s.myID );
 	}
 	my_sync_awaitable &operator = (my_sync_awaitable &&s) {
@@ -86,8 +82,6 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 	}   
 	
 	~my_sync_awaitable() {
-//		if ( myID == 9 )
-//			__asm {int 3}
 		printf( "my_sync_awaitable::~my_sync_awaitable() with myID = %d (this = 0x%zx)\n", myID, (size_t)this );
 		if ( coro ) {
 			printf( "destroying core: myID = %zd, &coro = 0x%zx\n", myID, (size_t)(&coro) );
@@ -100,15 +94,6 @@ struct my_sync_awaitable : public awaitable_base<false>  {
     }
 
 	bool await_ready() { return false; }
-
-	/*bool move_next() {
-		printf( "my_sync_awaitable::move_next()\n" );
-		coro.resume();
-		//std::cout << "Are we done? ";
-		auto still_going = ! coro.done();
-		//std::cout << (still_going ? "There is another" : "We're done") << std::endl;
-		return still_going;
-	}*/
 	
 	void who() { printf( "WHO: my_sync_awaitable with myID = %d\n", myID ); }
 
@@ -273,20 +258,6 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 				return await_transform_(value);
 			}
 		}
-		/*template<typename U>
-		auto await_transform(std::optional<U>& value)
-		{
-			class awaiter
-			{
-				std::optional<U>& value;
-			public:
-				explicit awaiter(std::optional<U>& x) noexcept : value(x) {}
-				bool await_ready() noexcept { return value.has_value(); }
-				void await_suspend(std::experimental::coroutine_handle<>) noexcept {}
-				U& await_resume() noexcept { return *value; }
-			};
-			return awaiter{ value };
-		}*/
     };
 };
 
@@ -404,21 +375,6 @@ public:
 	size_t myIdx = (size_t)(-1);
 	static constexpr int threashold = 2;
 
-//	my_sync_awaitable<int> call_ret;
-	struct awaitable_ret_holder
-	{
-		my_sync_awaitable<int> call_ret;
-		int myID;
-		awaitable_ret_holder()
-		{
-			myID = getID();
-		}
-		~awaitable_ret_holder() {
-            printf( "page_processor::awaitable_ret_holder::~awaitable_ret_holder() with myID == %d\n", myID );
-		}
-	};
-	awaitable_ret_holder arh;
-
 	my_sync_awaitable<int> complete_page_1()
 	{
 		while ( ctr < threashold )
@@ -426,8 +382,7 @@ public:
 			printf( "   ---> my_sync<int> complete_page_1(): [1] (id = %d, ctr = %d)\n", myIdx, ctr );
 			//auto a = l_reader.complete_block_1();
 			printf( "   ---> my_sync<int> complete_page_1(): [2] (id = %d, ctr = %d)\n", myIdx, ctr );
-			///**/auto& v = co_await ;
-			/*arh.call_ret = std::move*/(co_await l_reader.complete_block_1());
+			co_await l_reader.complete_block_1();
 			printf( "   ---> my_sync<int> complete_page_1(): [3] (id = %d, ctr = %d)\n", myIdx, ctr );
 		l_reader.get_ready_block();
 			//v.get();
@@ -484,26 +439,13 @@ public:
 	void set_idx( size_t idx ) { myIdx = idx; }
 	my_sync_awaitable<int> run()
 	{
-	awaitable_ret_holder call_arh;
-//	my_sync_awaitable<int> call_ret;
 		for(;;)
 		{
-//			auto a = processor.get_page_async();
-			//auto a = processor.complete_page_1();
-			///**/auto& v = co_await a;
-			/*call_arh.call_ret = std::move*/(co_await processor.complete_page_1());
+			co_await processor.complete_page_1();
 				processor.get_ready_page();
 			++ctr;
 			printf( "PAGE %d HAS BEEN PROCESSED\n", ctr );
 		}
-
-/*		awaitable_anchor value;
-		auto v_h = co_await value;
-		if ( value.hr_set )
-		{
-			printf( "run() : complete_page_1(): handle 0 is about to be released\n" );
-			value.hr();
-		}*/
 
 		co_return 0;
 	}
