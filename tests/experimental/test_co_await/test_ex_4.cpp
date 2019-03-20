@@ -19,7 +19,7 @@ struct awaitable_anchor
 	std::experimental::coroutine_handle<> hr;
 //	bool h_set_1 = false;
 //	std::experimental::coroutine_handle<> h_1;
-	void who() { printf( "WHO: awaitable_anchor\n" ); }
+	void who() const { printf( "WHO: awaitable_anchor\n" ); }
 
 	bool await_ready() {
 		printf( "awaitable_anchor::await_ready()\n" );
@@ -93,9 +93,9 @@ struct my_sync_awaitable : public awaitable_base<false>  {
         return coro.promise().value;
     }
 
-	bool await_ready() { return false; }
+	bool await_ready() const { return false; }
 	
-	void who() { printf( "WHO: my_sync_awaitable with myID = %d\n", myID ); }
+	void who() const { printf( "WHO: my_sync_awaitable with myID = %d\n", myID ); }
 
 	struct promise_type {
         T value;
@@ -136,7 +136,7 @@ struct my_sync_awaitable : public awaitable_base<false>  {
             //printf( "my_sync_awaitable::get_return_object() [2]\n" );
 			return my_sync_awaitable<T>{h};
         }
-		void who() { printf( "WHO: my_sync_awaitable::promise_type with myID = %d\n", myID ); }
+		void who() const { printf( "WHO: my_sync_awaitable::promise_type with myID = %d\n", myID ); }
         auto initial_suspend() {
             //printf( "my_sync_awaitable::initial_suspend() [1]\n" );
 //            return std::experimental::suspend_always{};
@@ -274,7 +274,7 @@ public:
 
 		struct myLazyInFn : public awaitable_base<true> {
 			int myID;
-			void who() { printf("WHO: myLazyInFn with myID = %d\n", myID); }
+			void who() const { printf("WHO: myLazyInFn with myID = %d\n", myID); }
 			std::experimental::coroutine_handle<> who_is_awaiting;
 
 			size_t myIdx;
