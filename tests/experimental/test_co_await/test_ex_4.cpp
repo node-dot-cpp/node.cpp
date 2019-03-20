@@ -10,6 +10,7 @@ struct awaitable_base
 	static constexpr bool is_awaitable = is_awaitable_;
 };
 
+#if 0
 struct awaitable_anchor
 {
 	bool h_set = false;
@@ -43,7 +44,7 @@ struct awaitable_anchor
 		return 0;
 	}
 };
-
+#endif
 template<typename T>
 struct my_sync_awaitable : public awaitable_base<false>  {
 	struct promise_type;
@@ -247,7 +248,7 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 				return awaiter{ value, this };
 			}
 		}
-
+#if 0
 		auto await_transform(awaitable_anchor& value)
 		{
 			printf( "await_transform() for awaitable_anchor called; hr_set = %s\n", hr_set ? "YES" : "NO" );
@@ -257,7 +258,7 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 			value.hr_set = hr_set;
 			return value;
 		}
-
+#endif
 		template<typename U>
 		auto await_transform(U& value)
 		{
@@ -289,199 +290,6 @@ struct my_sync_awaitable : public awaitable_base<false>  {
     };
 };
 
-#if 0
-template<typename T>
-struct my_sync_awaitable_2 : public awaitable_base<false>  {
-		std::experimental::coroutine_handle<> h;
-		int myID;
-	public:
-
-		my_sync_awaitable_2(size_t myIdx_) {
-			myIdx = myIdx_;
-			printf( "my_sync_awaitable_2(std::shared_ptr<T> p) : Created a my_sync_awaitable_2 object with id %zd\n", myIdx );
-		}
-		my_sync_awaitable_2(const my_sync_awaitable_2 &) = delete;
-		my_sync_awaitable_2 &operator = (const my_sync_awaitable_2 &) = delete;
-
-		my_sync_awaitable_2 &operator = (my_sync_awaitable_2 &&s) {
-			myID = getID();
-			printf( "await_transform()::my_sync_awaitable_2::my_sync_awaitable_2(), moving with myID = %d, other.ID = %d\n", myID, other.myID ); 
-			return *this;
-		}   
-		my_sync_awaitable_2(my_sync_awaitable_2&& other) : value(std::move(other.value)) {
-			//promise = other.promise;
-			//other.promise = nullptr;
-			myID = getID();
-			printf( "await_transform()::my_sync_awaitable_2::my_sync_awaitable_2(), moving with myID = %d, other.ID = %d\n", myID, other.myID ); 
-		}
-		bool await_ready() noexcept { 
-			printf( "await_transform()::my_sync_awaitable_2::await_ready() with myID = %d\n", myID ); 
-			//return value.await_ready();
-			return false;
-		}
-		void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
-			printf( "await_transform()::my_sync_awaitable_2::await_suspend() with myID = %d\n", myID ); 
-			value.who(); 
-			//h = h_;
-//						promise->hr_set = true;
-//						promise->hr = h_;
-			value.coro.promise().hr_set = true;
-			value.coro.promise().hr = h_;
-		}
-		auto await_resume() noexcept { 
-			printf( "await_transform()::my_sync_awaitable_2::await_resume() with myID = %d\n", myID ); 
-			return 1; 
-		}
-		~my_sync_awaitable_2() {
-			printf( "await_transform()::my_sync_awaitable_2::~my_sync_awaitable_2() with myID = %d\n", myID );
-		}
-};
-
-template<typename T>
-struct my_sync_awaitable_1 : public awaitable_base<false> {
-	struct promise_type;
-	using handle_type = std::experimental::coroutine_handle<promise_type>;
-	handle_type coro;
-
-
-    my_sync_awaitable_1()  {
-    }
-	my_sync_awaitable_1(handle_type h) : coro(h) {
-	}
-
-    my_sync_awaitable_1(const my_sync_awaitable_1 &) = delete;
-	my_sync_awaitable_1 &operator = (const my_sync_awaitable_1 &) = delete;
-
-	my_sync_awaitable_1(my_sync_awaitable_1 &&s) : coro(s.coro) {
-		s.coro = nullptr;
-	}
-	my_sync_awaitable_1 &operator = (my_sync_awaitable_1 &&s) {
-		coro = s.coro;
-		s.coro = nullptr;
-		return *this;
-	}   
-	
-	~my_sync_awaitable_1() {
-		if ( coro ) coro.destroy();
-    }
-		void who() { printf( "WHO: my_sync_awaitable_1\n" ); }
-
-    T get() {
-        return coro.promise().value;
-    }
-
-	bool await_ready() { return false; }
-
-	/*bool move_next() {
-		//std::cout << "Moving to next" << std::endl;;
-		coro.resume();
-		//std::cout << "Are we done? ";
-		auto still_going = ! coro.done();
-		//std::cout << (still_going ? "There is another" : "We're done") << std::endl;
-		return still_going;
-	}   */ 
-	
-	struct promise_type {
-        T value;
-        promise_type() {
-            //printf( "my_sync_awaitable_1::promise_type::promise_type() [1]\n" );
-        }
-        ~promise_type() {
-            //printf( "my_sync_awaitable_1::promise_type::~promise_type() [1]\n" );
-        }
-        auto get_return_object() {
-            //printf( "my_sync_awaitable_1::get_return_object() [1]\n" );
-			auto h = handle_type::from_promise(*this);
-            //printf( "my_sync_awaitable_1::get_return_object() [2]\n" );
-			return my_sync_awaitable_1<T>{h};
-        }
-        auto initial_suspend() {
-            //printf( "my_sync_awaitable_1::initial_suspend() [1]\n" );
-//            return std::experimental::suspend_always{};
-            return std::experimental::suspend_never{};
-        }
-        auto return_value(T v) {
-            //printf( "my_sync_awaitable_1::return_value() [1]\n" );
-            value = v;
-            return std::experimental::suspend_never{};
-        }
-        auto final_suspend() {
-            //printf( "my_sync_awaitable_1::final_suspend() [1]\n" );
-            return std::experimental::suspend_always{};
-        }
-        void unhandled_exception() {
-            std::exit(1);
-        }
-		template<typename U>
-		auto await_transform_(U& value)
-		{
-			{
-				class awaiter
-				{
-					U& value;
-					std::experimental::coroutine_handle<> h;
-				public:
-					explicit awaiter(U& x) noexcept : value(x) {}
-					awaiter(awaiter&& other) : value(std::move(other.value)) {
-					}
-					bool await_ready() noexcept { printf( "await_transform()::awaiter::await_ready()\n" ); return false && value.await_ready(); }
-					void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {printf( "await_transform()::awaiter::await_suspend()\n" ); value.who(); h = h_;}
-					U& await_resume() noexcept { printf( "await_transform()::awaiter::await_resume()\n" ); h(); return value; }
-					awaiter operator co_await ()//(U&& v)
-					{
-	//					value(h); 
-						return std::move(*this);
-					};
-				};
-				return awaiter{ value };
-			}
-		}
-
-		template<typename U>
-		auto await_transform(U& value)
-		{
-			if constexpr ( U::is_awaitable )
-				return std::move(value);
-			else
-			{
-				/*class awaiter
-				{
-					U& value;
-					std::experimental::coroutine_handle<> h;
-				public:
-					explicit awaiter(U& x) noexcept : value(x) {}
-					awaiter(awaiter&& other) : value(std::move(other.value)) {
-					}
-					bool await_ready() noexcept { printf( "await_transform()::awaiter::await_ready()\n" ); return false && value.await_ready(); }
-					void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {printf( "await_transform()::awaiter::await_suspend()\n" ); value.who(); h = h_;}
-					U& await_resume() noexcept { printf( "await_transform()::awaiter::await_resume()\n" ); h(); return value; }
-					awaiter operator co_await ()//(U&& v)
-					{
-	//					value(h); 
-						return std::move(*this);
-					};
-				};
-				return awaiter{ value };*/
-				return await_transform_(value);
-			}
-		}
-		/*template<typename U>
-		auto await_transform(std::optional<U>& value)
-		{
-			class awaiter
-			{
-				std::optional<U>& value;
-			public:
-				explicit awaiter(std::optional<U>& x) noexcept : value(x) {}
-				bool await_ready() noexcept { return value.has_value(); }
-				void await_suspend(std::experimental::coroutine_handle<>) noexcept {}
-				U& await_resume() noexcept { return *value; }
-			};
-			return awaiter{ value };
-		}*/
-    };
-};
-#endif // 0
 class line_reader
 {
 public:
@@ -568,96 +376,10 @@ public:
 
 		printf( "   ---> my_sync<int> complete_block_1(): [4] (id = %d), ctr = %d)\n", myIdx, ctr );
 
-		/*awaitable_anchor value;
-		auto v_h = co_await value;
-		if ( value.h_set )
-		{
-			printf( "complete_block_1(): handle 0 is about to be released, ctr = %d)\n", ctr );
-//			value.hr();
-		}*/
-
-		printf( "   ---> my_sync<int> complete_block_1(): [about to exit] (id = %d), ctr = %d)\n", myIdx, ctr );
-		co_return ctr;
-	}
-#if 0
-	my_sync_awaitable<int> complete_block_2(std::experimental::coroutine_handle<> awaiting)
-	{
-		while ( ctr < threashold )
-		{
-			printf( "   ---> my_sync<int> complete_block_1(): [1] (id = %d, ctr = %d)\n", myIdx, ctr );
-			auto a = read_data_or_wait();
-			printf( "   ---> my_sync<int> complete_block_1(): [2] (id = %d, ctr = %d)\n", myIdx, ctr );
-			/**/auto v = co_await a;
-			printf( "   ---> my_sync<int> complete_block_1(): [3] (id = %d, ctr = %d)\n", myIdx, ctr );
-			++ctr;
-		}
-
-		printf( "   ---> my_sync<int> complete_block_1(): [4] (id = %d), ctr = %d)\n", myIdx, ctr );
-
-		awaiting();
-
 		printf( "   ---> my_sync<int> complete_block_1(): [about to exit] (id = %d), ctr = %d)\n", myIdx, ctr );
 		co_return ctr;
 	}
 
-	my_sync_awaitable<int> complete_block_1_1()
-	{
-		printf( "entering complete_block_1_1(); ctr = %d, ctr = %d)\n", myIdx, ctr );
-		while ( ctr < threashold )
-		{
-			printf( "   ---> my_sync<int> complete_block_1_1(): [1] (id = %d), ctr = %d)\n", myIdx, ctr );
-			auto a = read_data_or_wait();
-			printf( "   ---> my_sync<int> complete_block_1_1(): [2] (id = %d), ctr = %d)\n", myIdx, ctr );
-			/**/auto v = co_await a;
-			printf( "   ---> my_sync<int> complete_block_1_1(): [3] (id = %d), ctr = %d)\n", myIdx, ctr );
-			++ctr;
-		}
-
-		printf( "   ---> my_sync<int> complete_block_1_1(): [about to exit] (id = %d), ctr = %d)\n", myIdx, ctr );
-
-		awaitable_anchor value;
-		auto v_h = co_await value;
-		if ( value.hr_set )
-		{
-			printf( "complete_block_1_1(): handle 0 is about to be released, ctr = %d)\n", ctr );
-			value.hr();
-		}
-
-		co_return 0;
-	}
-
-	my_sync_awaitable<int> complete_block_1_2()
-	{
-		printf( "entering complete_block_1_1(); ctr = %d\n", ctr );
-		while ( ctr < threashold )
-		{
-			printf( "   ---> my_sync<int> complete_block_1_1(): [1] (id = %d)\n", myIdx );
-			auto a = read_data_or_wait();
-			printf( "   ---> my_sync<int> complete_block_1_1(): [2] (id = %d)\n", myIdx );
-			/**/auto v = co_await a;
-			printf( "   ---> my_sync<int> complete_block_1_1(): [3] (id = %d)\n", myIdx );
-			++ctr;
-		}
-
-		printf( "   ---> my_sync<int> complete_block_1_1(): [about to exit] (id = %d)\n", myIdx );
-
-		awaitable_anchor value;
-		auto v_h = co_await value;
-		if ( value.hr_set )
-		{
-			printf( "complete_block_1_1(): handle 0 is about to be released\n" );
-			value.hr();
-		}
-/*		//else 
-		if ( value.h_set_1 )
-		{
-			printf( "complete_block_1(): handle 1 is about to be released\n" );
-			value.h_1();
-		}*/
-
-		co_return 0;
-	}
-#endif
 public:
 	bool is_block() { return ctr >= threashold; }
 	int get_ready_block() { int ret = ctr; ctr = 0; return ret ? 1 : 0; }
@@ -681,44 +403,6 @@ public:
 	int ctr = 0;
 	size_t myIdx = (size_t)(-1);
 	static constexpr int threashold = 2;
-#if 0
-//	my_sync_awaitable_1<int> complete_page_1()
-	my_sync_awaitable<int> complete_page_1_1()
-	{
-		//while ( ctr < threashold )
-		{
-			printf( "   ---> my_sync<int> complete_page_1(): [1] (id = %d, ctr = %d)\n", myIdx, ctr );
-			auto a = l_reader.complete_block_1();
-			printf( "   ---> my_sync<int> complete_page_1(): [2] (id = %d, ctr = %d)\n", myIdx, ctr );
-			/**/auto& v = co_await a;
-			printf( "   ---> my_sync<int> complete_page_1(): [3] (id = %d, ctr = %d)\n", myIdx, ctr );
-		//l_reader.get_ready_block();
-			//v.get();
-			++ctr;
-		}
-		{
-			printf( "   ---> my_sync<int> complete_page_1(): [4] (id = %d, ctr = %d)\n", myIdx, ctr );
-			auto a = l_reader.complete_block_1_1();
-			printf( "   ---> my_sync<int> complete_page_1(): [5] (id = %d, ctr = %d)\n", myIdx, ctr );
-			/**/auto& v = co_await a;
-			printf( "   ---> my_sync<int> complete_page_1(): [6] (id = %d, ctr = %d)\n", myIdx, ctr );
-		//l_reader.get_ready_block();
-			//v.get();
-			++ctr;
-		}
-		printf( "   ---> my_sync<int> complete_page_1(): [about to exit] (id = %d)\n", myIdx );
-
-		awaitable_anchor value;
-		auto v_h = co_await value;
-		if ( value.hr_set )
-		{
-			printf( "complete_page_1(): handle 0 is about to be released\n" );
-			value.hr();
-		}
-
-		co_return 0;
-	}
-#endif // 0
 
 //	my_sync_awaitable<int> call_ret;
 	struct awaitable_ret_holder
@@ -750,14 +434,6 @@ public:
 			++ctr;
 		}
 		printf( "   ---> my_sync<int> complete_page_1(): [about to exit] (id = %d)\n", myIdx );
-
-		/*awaitable_anchor value;
-		auto v_h = co_await value;
-		if ( value.hr_set )
-		{
-			printf( "complete_page_1(): handle 0 is about to be released\n" );
-			value.hr();
-		}*/
 
 		co_return 0;
 	}
@@ -821,49 +497,7 @@ public:
 			printf( "PAGE %d HAS BEEN PROCESSED\n", ctr );
 		}
 
-		awaitable_anchor value;
-		auto v_h = co_await value;
-		if ( value.hr_set )
-		{
-			printf( "run() : complete_page_1(): handle 0 is about to be released\n" );
-			value.hr();
-		}
-
-		co_return 0;
-	}
-#if 0
-	my_sync_awaitable<int> run1()
-	{
-		int val;
-		for(;;)
-		{
-//			auto a = processor.get_page_async();
-			/*{auto a = processor.l_reader.complete_block_1();
-			auto v = std::move(co_await a);
-			v.get();}*/
-			//{
-				//auto v = std::move(co_await processor.l_reader.complete_block_1());
-				//val = v.get();
-//				call_ret = std::move(co_await processor.l_reader.complete_block_2(value.h));
-				call_ret = std::move(co_await processor.l_reader.complete_block_1());
-				processor.l_reader.get_ready_block();
-				++ctr;
-				printf( "PAGE %d HAS BEEN PROCESSED\n", ctr );
-			//}
-
-			/*{
-				printf( "PAGE %d started [1]\n", ctr + 1 );
-				auto a1 = processor.l_reader.complete_block_1_1();
-				printf( "PAGE %d started [2]\n", ctr + 1 );
-//				auto v1 = std::move(co_await a1);
-				co_await a1;
-				++ctr;
-				printf( "PAGE %d HAS BEEN PROCESSED\n", ctr );
-			}*/
-			/*auto a2 = processor.l_reader.complete_block_1_2();
-			auto v2 = std::move(co_await a2);*/
-		}
-		/*awaitable_anchor value;
+/*		awaitable_anchor value;
 		auto v_h = co_await value;
 		if ( value.hr_set )
 		{
@@ -871,9 +505,8 @@ public:
 			value.hr();
 		}*/
 
-		co_return val;
+		co_return 0;
 	}
-#endif
 };
 
 //my_sync_awaitable<int> processing_loop_3_()
@@ -893,7 +526,6 @@ void processing_loop_3()
 
 	for ( size_t i=0; i<bep_cnt; ++i )
 		preader[i].run_arh.call_ret = std::move( preader[i].run() );
-//		preader[i].run_ret = std::move( preader[i].processor.l_reader.complete_block_1() );
 //		preader[i].run();
 
 	for (;;)
@@ -915,12 +547,4 @@ void processing_loop_3()
 			break;
 		}
 	}
-//	co_return 0;
 }
-
-/*void processing_loop_3()
-{
-	auto ret = processing_loop_3_();
-    auto v = ret.get();
-	return;
-}*/
