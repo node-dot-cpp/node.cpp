@@ -10,41 +10,6 @@ struct awaitable_base
 	static constexpr bool is_awaitable = is_awaitable_;
 };
 
-#if 0
-struct awaitable_anchor
-{
-	bool h_set = false;
-	std::experimental::coroutine_handle<> h;
-	bool hr_set = false;
-	std::experimental::coroutine_handle<> hr;
-//	bool h_set_1 = false;
-//	std::experimental::coroutine_handle<> h_1;
-	void who() const { printf( "WHO: awaitable_anchor\n" ); }
-
-	bool await_ready() {
-		printf( "awaitable_anchor::await_ready()\n" );
-//		return false;
-		return true;
-	}
-
-	void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-		printf( "awaitable_anchor::await_suspend()\n" );
-//		h_set_1 = true;
-//		h_1 = awaiting;
-		/*if ( h_set )
-		{
-			printf("awaitable_anchor::await_suspend(): handle 0 is about to be released\n");
-			h();
-			h_set = false;
-		}*/
-//		awaiting();
-	}
-
-	auto await_resume() {
-		return 0;
-	}
-};
-#endif
 template<typename T>
 struct my_sync_awaitable : public awaitable_base<false>  {
 	struct promise_type;
@@ -188,104 +153,7 @@ struct my_sync_awaitable : public awaitable_base<false>  {
         void unhandled_exception() {
             std::exit(1);
         }
-
-		template<typename U>
-		auto await_transform_(U& value)
-		{
-			printf( "await_transform() called with myID = %d\n", myID ); 
-			value.coro.promise().who();
-			{
-				class awaiter
-				{
-					U& value;
-					//std::experimental::coroutine_handle<> h;
-					promise_type* promise;
-					int myID;
-				public:
-					explicit awaiter(U& x, promise_type* promise_) noexcept : value(x), promise( promise_ ) {
-						myID = getID();
-						printf( "await_transform()::awaiter::awaiter() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
-					}
-					awaiter(const awaiter &) = delete;
-					awaiter &operator = (const awaiter &) = delete;
-					awaiter(awaiter&& other) : value(other.value) {
-						promise = other.promise;
-						other.promise = nullptr;
-						myID = getID();
-						printf( "await_transform()::awaiter::awaiter(), moving with myID = %d, other.ID = %d\n", myID, other.myID ); 
-					}
-					awaiter &operator = (awaiter &&other) {
-						promise = other.promise;
-						other.promise = nullptr;
-						myID = getID();
-						printf( "await_transform()::awaiter::operator =(), moving with myID = %d, other.ID = %d\n", myID, other.myID ); 
-						return *this;
-					}   
-					bool await_ready() noexcept { 
-						printf( "await_transform()::awaiter::await_ready() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
-						return value.await_ready();
-					}
-					void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
-						printf( "await_transform()::awaiter::await_suspend() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
-						value.who(); 
-						//h = h_;
-//						promise->hr_set = true;
-//						promise->hr = h_;
-						value.coro.promise().hr_set = true;
-						value.coro.promise().hr = h_;
-
-						auto hx = handle_type::from_promise(*promise);
-						if ( hx == h_ )
-							value.coro = nullptr;
-					}
-					U& await_resume() noexcept { printf( "await_transform()::awaiter::await_resume() with myID = %zd, this = 0x%zx\n", myID, (size_t)this );  return value; }
-					/*awaiter operator co_await ()//(U&& v)
-					{
-						printf( "await_transform()::awaiter::operator co_await()\n" ); 
-						value.who();
-	//					value(h); 
-						return std::move(*this);
-					};
-					U::value_type operator co_await ()//(U&& v)
-					{
-						printf( "await_transform()::awaiter::operator co_await()\n" ); 
-						value.who();
-						return value.get();
-					}*/
-					~awaiter() {
-						//if ( myID == 16 ) __asm {int 3}
-						printf( "await_transform()::awaiter::~awaiter() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
-					}
-				};
-				return awaiter{ value, this };
-			}
-		}
-#if 0
-		auto await_transform(awaitable_anchor& value)
-		{
-			printf( "await_transform() for awaitable_anchor called; hr_set = %s\n", hr_set ? "YES" : "NO" );
-			value.h = handle_type::from_promise(*this);
-			value.h_set = true;
-			value.hr = hr;
-			value.hr_set = hr_set;
-			return value;
-		}
-#endif
-		template<typename U>
-		auto await_transform(U& value)
-		{
-			if constexpr ( U::is_awaitable )
-			{
-				printf("await_transform() for awaitable type with myID = %d called\n", value.myID );
-				value.who();
-				return std::move(value);
-			}
-			else
-			{
-				return await_transform_(value);
-			}
-		}
-    };
+	};
 };
 
 class line_reader
@@ -478,7 +346,6 @@ public:
 	}
 };
 
-//my_sync_awaitable<int> processing_loop_3_()
 void processing_loop_3()
 { 
 	init_read_context();
@@ -491,7 +358,6 @@ void processing_loop_3()
 		preader[i].set_idx( i );
 		g_callbacks[i].dataAvailable = false;
 	}
-//	co_return 0;
 
 	for ( size_t i=0; i<bep_cnt; ++i )
 		preader[i].run_arh.call_ret = std::move( preader[i].run() );
