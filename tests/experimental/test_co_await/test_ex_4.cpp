@@ -51,6 +51,7 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
 	handle_type coro;
 	using value_type = T;
+	bool from_coro = false;
 
 	int myID;
 
@@ -61,6 +62,7 @@ struct my_sync_awaitable : public awaitable_base<false>  {
    }
 	my_sync_awaitable(handle_type h) : coro(h) {
 		myID = getID();
+		from_coro = true;
 		printf( "my_sync_awaitable::my_sync_awaitable() with myID = %d (from coro; my coro = 0x%zx)\n", myID, (size_t)(&coro) );
 	}
 
@@ -69,12 +71,14 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 
 	my_sync_awaitable(my_sync_awaitable &&s) : coro(s.coro) {
 		s.coro = nullptr;
+		from_coro = s.from_coro;
 		myID = getID();
 		printf( "my_sync_awaitable::my_sync_awaitable() with myID = %d (moving, other ID = %d)\n", myID, s.myID );
 	}
 	my_sync_awaitable &operator = (my_sync_awaitable &&s) {
 		coro = s.coro;
 		s.coro = nullptr;
+		from_coro = s.from_coro;
 		//myID = getID();
 		printf( "my_sync_awaitable::operator =() with myID = %d (moving, other ID = %d)\n", myID, s.myID );
 		//if ( myID == 8 ) __asm{int 3}
@@ -83,7 +87,7 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 	
 	~my_sync_awaitable() {
 		printf( "my_sync_awaitable::~my_sync_awaitable() with myID = %d (this = 0x%zx)\n", myID, (size_t)this );
-		if ( coro ) {
+		if ( coro && !from_coro ) {
 			printf( "destroying core: myID = %zd, &coro = 0x%zx\n", myID, (size_t)(&coro) );
 			coro.destroy();
 		}
@@ -93,7 +97,30 @@ struct my_sync_awaitable : public awaitable_base<false>  {
         return coro.promise().value;
     }
 
-	bool await_ready() const { return false; }
+	bool await_ready() noexcept { 
+		printf( "await_transform()::awaiter::await_ready() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
+		return false;
+	}
+	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
+		printf( "await_transform()::awaiter::await_suspend() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
+		who(); 
+		//h = h_;
+//						promise->hr_set = true;
+//						promise->hr = h_;
+		if ( coro )
+		{
+			coro.promise().hr_set = true;
+			coro.promise().hr = h_;
+
+			auto hx = handle_type::from_promise(coro.promise());
+			if ( hx == h_ )
+				coro = nullptr;
+		}
+	}
+	T await_resume() noexcept { 
+		printf( "await_transform()::awaiter::await_resume() with myID = %zd, this = 0x%zx\n", myID, (size_t)this );  
+		return 0; 
+	}
 	
 	void who() const { printf( "WHO: my_sync_awaitable with myID = %d\n", myID ); }
 
