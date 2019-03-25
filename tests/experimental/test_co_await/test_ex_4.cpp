@@ -38,14 +38,8 @@ bool is_data(size_t idx) { return g_callbacks[idx].data.size() != 0 ; }
 static int object_id_base = 0;
 static int getID() { return ++object_id_base; }
 
-template<bool is_awaitable_>
-struct awaitable_base
-{
-	static constexpr bool is_awaitable = is_awaitable_;
-};
-
 template<typename T>
-struct my_sync_awaitable : public awaitable_base<false>  {
+struct my_sync_awaitable  {
 	struct promise_type;
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
 	handle_type coro;
@@ -97,11 +91,11 @@ struct my_sync_awaitable : public awaitable_base<false>  {
     }
 
 	bool await_ready() noexcept { 
-		printf( "await_transform()::awaiter::await_ready() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
+		printf( "my_sync_awaitable::await_ready() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
 		return false;
 	}
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
-		printf( "await_transform()::awaiter::await_suspend() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
+		printf( "my_sync_awaitable::await_suspend() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
 		who(); 
 		//h = h_;
 //						promise->hr_set = true;
@@ -117,7 +111,7 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 		}
 	}
 	T await_resume() noexcept { 
-		printf( "await_transform()::awaiter::await_resume() with myID = %zd, this = 0x%zx\n", myID, (size_t)this );  
+		printf( "my_sync_awaitable::await_resume() with myID = %zd, this = 0x%zx\n", myID, (size_t)this ); 
 		return 0; 
 	}
 	
@@ -149,12 +143,6 @@ struct my_sync_awaitable : public awaitable_base<false>  {
 		}*/
         ~promise_type() {
             printf( "my_sync_awaitable::promise_type::~promise_type() with myID == %d [1]\n", myID );
-			if ( hr_set )
-			{
-				printf("my_sync_awaitable::promise_type::~promise_type() [2, releasing handle]\n");
-				hr_set = false;
-				//hr();
-			}/**/
         }
         auto get_return_object() {
             //printf( "my_sync_awaitable::get_return_object() [1]\n" );
@@ -201,7 +189,7 @@ public:
 
 		printf( "   +++> +++> read_data_or_wait(): [1] (id = %d) \n", myIdx );
 
-		struct myLazyInFn : public awaitable_base<true> {
+		struct myLazyInFn {
 			int myID;
 			void who() const { printf("WHO: myLazyInFn with myID = %d\n", myID); }
 			std::experimental::coroutine_handle<> who_is_awaiting;
@@ -235,9 +223,10 @@ public:
 			~myLazyInFn() {}
 
 			bool await_ready() {
-				isData = read_data(myIdx);
+				isData = is_data(myIdx);
 				printf( "   ---> ---> ---> In await_ready(): id = %zd\n", myIdx );
-				return isData;
+				//return isData;
+				return false;
 			}
 
 			void await_suspend(std::experimental::coroutine_handle<> awaiting) {
@@ -248,13 +237,21 @@ public:
 			}
 
 			auto await_resume() {
-					if ( read_data(myIdx) )
-					{
-						printf("line_reader::read_data_or_wait(): resuming handle (idx = %zd)\n", myIdx);
-						//this->who_is_awaiting();
-					}
 				printf( "   ---> ---> ---> In await_resume(): id = %zd\n", myIdx );
-				return 1;
+				read_result r = std::move( read_data(myIdx) );
+				if ( r.is_exception )
+				{
+					printf("line_reader::read_data_or_wait(): resuming handle (idx = %zd), with exception\n", myIdx);
+					throw r.exception;
+					return r.data;
+					//promise_base& promise = who_is_awaiting.promise();
+					//std::experimental::coroutine_handle<promise_base> h_spec = static_cast<std::experimental::coroutine_handle<promise_base>>( who_is_awaiting );
+				}
+				else
+				{
+					printf("line_reader::read_data_or_wait(): resuming handle (idx = %zd)\n", myIdx);
+					return r.data;
+				}
 			}
 		};
 		printf( "   +++> +++> read_data_or_wait(): [2] (id = %d)\n", myIdx );
@@ -309,12 +306,9 @@ public:
 		while ( ctr < threashold )
 		{
 			printf( "   ---> my_sync<int> complete_page_1(): [1] (id = %d, ctr = %d)\n", myIdx, ctr );
-			//auto a = l_reader.complete_block_1();
-			printf( "   ---> my_sync<int> complete_page_1(): [2] (id = %d, ctr = %d)\n", myIdx, ctr );
 			co_await l_reader.complete_block_1();
-			printf( "   ---> my_sync<int> complete_page_1(): [3] (id = %d, ctr = %d)\n", myIdx, ctr );
-		l_reader.get_ready_block();
-			//v.get();
+			printf( "   ---> my_sync<int> complete_page_1(): [2] (id = %d, ctr = %d)\n", myIdx, ctr );
+			l_reader.get_ready_block();
 			++ctr;
 		}
 		printf( "   ---> my_sync<int> complete_page_1(): [about to exit] (id = %d)\n", myIdx );
@@ -371,7 +365,7 @@ public:
 		for(;;)
 		{
 			co_await processor.complete_page_1();
-				processor.get_ready_page();
+			processor.get_ready_page();
 			++ctr;
 			printf( "PAGE %d HAS BEEN PROCESSED\n", ctr );
 		}
@@ -382,7 +376,7 @@ public:
 
 void processing_loop_3()
 { 
-	init_read_context();
+	init_handler_context();
 
 	static constexpr size_t bep_cnt = 1;
 	page_processor preader[bep_cnt];
@@ -390,7 +384,6 @@ void processing_loop_3()
 	for ( size_t i=0; i<bep_cnt; ++i )
 	{
 		preader[i].set_idx( i );
-		g_callbacks[i].dataAvailable = false;
 	}
 
 	for ( size_t i=0; i<bep_cnt; ++i )
@@ -402,18 +395,29 @@ void processing_loop_3()
 		char ch = getchar();
 		if ( ch > '0' && ch <= '0' + max_h_count )
 		{
-			getchar();
+			getchar(); // take '\n' out of stream
 			printf( "   --> got \'%c\' (continuing)\n", ch );
-			//g_Processors[ch - '1']->onEvent(preader[ch - '1'].run_ret);
-			g_callbacks[ch - '1'].dataAvailable = true;
-//			g_callbacks[ch - '1'].cb(true);
+			g_callbacks[ch - '1'].data.push_back( ch );
+			g_callbacks[ch - '1'].is_exception = false;
 			g_callbacks[ch - '1'].awaiting();
-			g_callbacks[ch - '1'].dataAvailable = false;
+		}
+		else if ( ch > 'a' && ch <= 'a' + max_h_count )
+		{
+			getchar(); // take '\n' out of stream
+			printf( "   --> got \'%c\' (continuing)\n", ch );
+			g_callbacks[ch - '1'].exception = std::exception();
+			g_callbacks[ch - '1'].is_exception = false;
+			g_callbacks[ch - '1'].awaiting();
 		}
 		else
 		{
 			printf( "   --> got \'%c\' (terminating)\n", ch );
 			break;
+			for ( size_t i=0; i<max_h_count; ++i )
+			{
+				if ( g_callbacks[i].awaiting )
+					g_callbacks[i].awaiting.destroy();
+			}
 		}
 	}
 }
