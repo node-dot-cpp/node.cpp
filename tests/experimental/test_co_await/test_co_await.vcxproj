@@ -153,8 +153,8 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="co_await_hierarchy_sample.cpp" />
     <ClCompile Include="test_co_await.cpp" />
-    <ClCompile Include="test_ex_4.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tests.h" />

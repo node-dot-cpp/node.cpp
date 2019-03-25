@@ -21,7 +21,7 @@
     <ClCompile Include="test_co_await.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="test_ex_4.cpp">
+    <ClCompile Include="co_await_hierarchy_sample.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
