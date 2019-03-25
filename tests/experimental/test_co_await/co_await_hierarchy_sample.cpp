@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <optional>
 #include <iostream>
-//#include <experimental/resumable> 
 using namespace std;
 
 
@@ -50,7 +49,6 @@ struct my_sync_awaitable  {
 
     my_sync_awaitable()  {
 		myID = getID();
- 		//if ( myID == 8 ) __asm{int 3}
 		printf( "my_sync_awaitable::my_sync_awaitable() with myID = %d (no params)\n", myID );
    }
 	my_sync_awaitable(handle_type h) : coro(h) {
@@ -74,7 +72,6 @@ struct my_sync_awaitable  {
 		from_coro = s.from_coro;
 		//myID = getID();
 		printf( "my_sync_awaitable::operator =() with myID = %d (moving, other ID = %d)\n", myID, s.myID );
-		//if ( myID == 8 ) __asm{int 3}
 		return *this;
 	}   
 	
@@ -129,12 +126,7 @@ struct my_sync_awaitable  {
         }
 		promise_type(const promise_type &) = delete;
 		promise_type &operator = (const promise_type &) = delete;
-       /*promise_type(promise_type&&other) : value( std::move(other.value) ), hr( std::move( other.hr ) ) {
-            //printf( "my_sync_awaitable::promise_type::promise_type() [1]\n" );
-			hr_set = other.hr_set;
-			other.hr_set = false;
-        }
-		/*promise_type( promise_type&& other )
+		/*promise_type( promise_type&& other ) : value( std::move(other.value) )
 		{
             printf( "my_sync_awaitable::promise_type::promise_type() [move]\n" );
 			hr = std::move( other.hr );
@@ -168,7 +160,7 @@ struct my_sync_awaitable  {
 				printf("my_sync_awaitable::final_suspend() [2]\n");
 				hr();
 				hr_set = false;
-			}/**/
+			}
 //			return std::experimental::suspend_always{};
 			return std::experimental::suspend_never{};
         }
