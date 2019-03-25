@@ -1,5 +1,39 @@
 
-#include "test_ex_2_base.h"
+#include <assert.h>
+#include <experimental/coroutine>
+#include <future>
+#include <stdio.h>
+#include <optional>
+#include <iostream>
+//#include <experimental/resumable> 
+using namespace std;
+
+
+struct handler_context
+{
+	bool used = false;
+	std::experimental::coroutine_handle<> awaiting;
+	std::string data;
+	bool is_exception;
+	std::exception exception;
+};
+
+struct read_result
+{
+	std::string data;
+	bool is_exception;
+	std::exception exception;
+};
+
+static constexpr size_t max_h_count = 4;
+static handler_context g_callbacks[max_h_count];
+static void init_handler_context() { memset(g_callbacks, 0, sizeof( g_callbacks ) ); }
+static size_t register_me() { printf( "register_me()\n"  ); for ( size_t i=0; i<max_h_count; ++i ) if ( !g_callbacks[i].used ) { g_callbacks[i].used = true; return i; } assert( false ); return (size_t)(-1); }
+static void unregister( size_t idx ) { assert( idx < max_h_count ); g_callbacks[idx].used = false; }
+
+static void set_read_awaiting_handle(size_t idx, std::experimental::coroutine_handle<> awaiting) { g_callbacks[idx].awaiting = awaiting; } // returns immediately
+read_result read_data(size_t idx) { read_result ret; ret.data = std::move( g_callbacks[idx].data ); ret.is_exception = g_callbacks[idx].is_exception; ret.exception = std::move( g_callbacks[idx].exception ); return ret; } // returns immediately
+bool is_data(size_t idx) { return g_callbacks[idx].data.size() != 0 ; }
 
 static int object_id_base = 0;
 static int getID() { return ++object_id_base; }
