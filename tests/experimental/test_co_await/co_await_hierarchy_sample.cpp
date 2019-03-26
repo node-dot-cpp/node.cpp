@@ -70,7 +70,6 @@ struct my_sync_awaitable  {
 		coro = s.coro;
 		s.coro = nullptr;
 		from_coro = s.from_coro;
-		//myID = getID();
 		printf( "my_sync_awaitable::operator =() with myID = %d (moving, other ID = %d)\n", myID, s.myID );
 		return *this;
 	}   
@@ -84,6 +83,7 @@ struct my_sync_awaitable  {
     }
 
     T get() {
+		printf( "my_sync_awaitable::get() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
         return coro.promise().value;
     }
 
@@ -94,22 +94,21 @@ struct my_sync_awaitable  {
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
 		printf( "my_sync_awaitable::await_suspend() with myID = %d, this = 0x%zx\n", myID, (size_t)this ); 
 		who(); 
-		//h = h_;
-//						promise->hr_set = true;
-//						promise->hr = h_;
 		if ( coro )
 		{
 			coro.promise().hr_set = true;
 			coro.promise().hr = h_;
-
-			auto hx = handle_type::from_promise(coro.promise());
-			if ( hx == h_ )
-				coro = nullptr;
 		}
 	}
-	T await_resume() noexcept { 
+	T await_resume() { 
 		printf( "my_sync_awaitable::await_resume() with myID = %zd, this = 0x%zx\n", myID, (size_t)this ); 
-		return 0; 
+		if ( coro.promise().e_pending != nullptr )
+		{
+			std::exception_ptr ex = coro.promise().e_pending;
+			coro.promise().e_pending = nullptr;
+			std::rethrow_exception(ex);
+		}
+		return coro.promise().value; 
 	}
 	
 	void who() const { printf( "WHO: my_sync_awaitable with myID = %d\n", myID ); }
@@ -153,19 +152,22 @@ struct my_sync_awaitable  {
             value = v;
             return std::experimental::suspend_never{};
         }
-        auto final_suspend() {
+		auto final_suspend() {
             printf( "my_sync_awaitable::final_suspend() [1] with myID = %d\n", myID );
 			if ( hr_set )
 			{
-				printf("my_sync_awaitable::final_suspend() [2]\n");
-				hr();
+				printf("my_sync_awaitable::final_suspend() [2] with myID = %d\n", myID );
 				hr_set = false;
+				hr();
+				printf("my_sync_awaitable::final_suspend() [3] with myID = %d\n", myID );
 			}
 //			return std::experimental::suspend_always{};
 			return std::experimental::suspend_never{};
         }
-        void unhandled_exception() {
-            std::exit(1);
+		std::exception_ptr e_pending = nullptr;
+		void unhandled_exception() {
+            printf( "my_sync_awaitable::unhandled_exception() with myID = %d\n", myID );
+			e_pending = std::current_exception();
         }
 	};
 };
@@ -236,8 +238,6 @@ public:
 					printf("line_reader::read_data_or_wait(): resuming handle (idx = %zd), with exception\n", myIdx);
 					throw r.exception;
 					return r.data;
-					//promise_base& promise = who_is_awaiting.promise();
-					//std::experimental::coroutine_handle<promise_base> h_spec = static_cast<std::experimental::coroutine_handle<promise_base>>( who_is_awaiting );
 				}
 				else
 				{
@@ -256,9 +256,14 @@ public:
 		while ( ctr < threashold )
 		{
 			printf( "   ---> my_sync<int> complete_block_1(): [1] (id = %d, ctr = %d)\n", myIdx, ctr );
-			auto a = read_data_or_wait();
-			printf( "   ---> my_sync<int> complete_block_1(): [2] (id = %d, ctr = %d)\n", myIdx, ctr );
-			/**/auto v = co_await a;
+			try
+			{
+				auto v = co_await read_data_or_wait();
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at complete_block_1(): %s\n", e.what());
+			}
 			printf( "   ---> my_sync<int> complete_block_1(): [3] (id = %d, ctr = %d)\n", myIdx, ctr );
 			++ctr;
 		}
@@ -356,7 +361,14 @@ public:
 	{
 		for(;;)
 		{
-			co_await processor.complete_page_1();
+			try
+			{
+				co_await processor.complete_page_1();
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at run(): %s\n", e.what());
+			}
 			processor.get_ready_page();
 			++ctr;
 			printf( "PAGE %d HAS BEEN PROCESSED\n", ctr );
@@ -393,13 +405,13 @@ void processing_loop_3()
 			g_callbacks[ch - '1'].is_exception = false;
 			g_callbacks[ch - '1'].awaiting();
 		}
-		else if ( ch > 'a' && ch <= 'a' + max_h_count )
+		else if ( ch >= 'a' && ch < 'a' + max_h_count )
 		{
 			getchar(); // take '\n' out of stream
 			printf( "   --> got \'%c\' (continuing)\n", ch );
-			g_callbacks[ch - '1'].exception = std::exception();
-			g_callbacks[ch - '1'].is_exception = false;
-			g_callbacks[ch - '1'].awaiting();
+			g_callbacks[ch - 'a'].exception = std::exception();
+			g_callbacks[ch - 'a'].is_exception = true;
+			g_callbacks[ch - 'a'].awaiting();
 		}
 		else
 		{
