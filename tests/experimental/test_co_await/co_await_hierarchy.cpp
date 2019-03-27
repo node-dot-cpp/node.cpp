@@ -140,6 +140,7 @@ class page_processor
 		co_return accumulated;
 	}
 
+protected:
 	nodecpp::awaitable::coro_ret<std::string> complete_page_1()
 	{
 		int ctr = 0;
@@ -155,9 +156,15 @@ class page_processor
 
 public:
 	page_processor() {}
-	~page_processor() {}
+	virtual ~page_processor() {}
 
-	nodecpp::awaitable::coro_ret<int> run()
+	virtual nodecpp::awaitable::coro_ret<int> run() = 0;
+};
+
+class page_processor_A : public page_processor
+{
+public:
+	virtual nodecpp::awaitable::coro_ret<int> run()
 	{
 		for(int ctr = 0;;)
 		{
@@ -165,7 +172,30 @@ public:
 			{
 				auto page = co_await complete_page_1();
 				++ctr;
-				printf( "PAGE %d HAS BEEN PROCESSED\n%s", ctr, page.c_str() );
+				printf( "PAGE %d HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at run(): %s\n", e.what());
+			}
+		}
+
+		co_return 0;
+	}
+};
+
+class page_processor_B : public page_processor
+{
+public:
+	virtual nodecpp::awaitable::coro_ret<int> run()
+	{
+		for(int ctr = 0;;)
+		{
+			try
+			{
+				auto page = co_await complete_page_1();
+				++ctr;
+				printf( "PAGE %d HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
 			}
 			catch (std::exception& e)
 			{
@@ -179,12 +209,18 @@ public:
 
 void processing_loop()
 { 
-	static constexpr size_t bep_cnt = 1;
-	page_processor preader[bep_cnt];
+	static constexpr size_t bep_cnt = 2;
+	page_processor* preader[bep_cnt];
 	nodecpp::awaitable::coro_ret<int> run_ret[bep_cnt];
 
 	for ( size_t i=0; i<bep_cnt; ++i )
-		run_ret[i] = preader[i].run();
+	{
+		if (i%2)
+			preader[i] = new page_processor_A;
+		else
+			preader[i] = new page_processor_B;
+		run_ret[i] = preader[i]->run();
+	}
 
 	for (;;)
 	{
