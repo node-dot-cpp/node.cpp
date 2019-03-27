@@ -11,9 +11,9 @@ using namespace std;
 struct handler_context
 {
 	bool used = false;
-	std::experimental::coroutine_handle<> awaiting;
+	std::experimental::coroutine_handle<> awaiting = nullptr;
 	std::string data;
-	bool is_exception;
+	bool is_exception = false;
 	std::exception exception;
 };
 
@@ -26,13 +26,18 @@ struct read_result
 
 static constexpr size_t max_h_count = 4;
 static handler_context g_callbacks[max_h_count];
-static void init_handler_context() { memset(g_callbacks, 0, sizeof( g_callbacks ) ); }
-static size_t register_me() { printf( "register_me()\n"  ); for ( size_t i=0; i<max_h_count; ++i ) if ( !g_callbacks[i].used ) { g_callbacks[i].used = true; return i; } assert( false ); return (size_t)(-1); }
+static int register_me() { printf( "register_me()\n"  ); for ( size_t i=0; i<max_h_count; ++i ) if ( !g_callbacks[i].used ) { g_callbacks[i].used = true; return (int)i; } assert( false ); return -1; }
 static void unregister( size_t idx ) { assert( idx < max_h_count ); g_callbacks[idx].used = false; }
 
 static void set_read_awaiting_handle(size_t idx, std::experimental::coroutine_handle<> awaiting) { g_callbacks[idx].awaiting = awaiting; } // returns immediately
-read_result read_data(size_t idx) { read_result ret; ret.data = std::move( g_callbacks[idx].data ); ret.is_exception = g_callbacks[idx].is_exception; ret.exception = std::move( g_callbacks[idx].exception ); return ret; } // returns immediately
 bool is_data(size_t idx) { return g_callbacks[idx].data.size() != 0 ; }
+read_result read_data(size_t idx) { 
+	read_result ret; 
+	ret.data = std::move( g_callbacks[idx].data ); 
+	ret.is_exception = g_callbacks[idx].is_exception; 
+	ret.exception = std::move( g_callbacks[idx].exception ); 
+	return ret;
+} // returns immediately
 
 static int object_id_base = 0;
 static int getID() { return ++object_id_base; }
@@ -77,7 +82,7 @@ struct my_sync_awaitable  {
 	~my_sync_awaitable() {
 		printf( "my_sync_awaitable::~my_sync_awaitable() with myID = %d (this = 0x%zx)\n", myID, (size_t)this );
 		if ( coro && !from_coro ) {
-			printf( "destroying core: myID = %zd, &coro = 0x%zx\n", myID, (size_t)(&coro) );
+			printf( "destroying core: myid = %d, &coro = 0x%zx\n", myID, (size_t)(&coro) );
 			coro.destroy();
 		}
     }
@@ -101,7 +106,7 @@ struct my_sync_awaitable  {
 		}
 	}
 	T await_resume() { 
-		printf( "my_sync_awaitable::await_resume() with myID = %zd, this = 0x%zx\n", myID, (size_t)this ); 
+		printf( "my_sync_awaitable::await_resume() with myid = %d, this = 0x%zx\n", myID, (size_t)this ); 
 		if ( coro.promise().e_pending != nullptr )
 		{
 			std::exception_ptr ex = coro.promise().e_pending;
@@ -136,19 +141,19 @@ struct my_sync_awaitable  {
             printf( "my_sync_awaitable::promise_type::~promise_type() with myID == %d [1]\n", myID );
         }
         auto get_return_object() {
-            //printf( "my_sync_awaitable::get_return_object() [1]\n" );
+            printf( "my_sync_awaitable::get_return_object() [1]\n" );
 			auto h = handle_type::from_promise(*this);
-            //printf( "my_sync_awaitable::get_return_object() [2]\n" );
+            printf( "my_sync_awaitable::get_return_object() [2]\n" );
 			return my_sync_awaitable<T>{h};
         }
 		void who() const { printf( "WHO: my_sync_awaitable::promise_type with myID = %d\n", myID ); }
         auto initial_suspend() {
-            //printf( "my_sync_awaitable::initial_suspend() [1]\n" );
+            printf( "my_sync_awaitable::initial_suspend() [1]\n" );
 //            return std::experimental::suspend_always{};
             return std::experimental::suspend_never{};
         }
         auto return_value(T v) {
-            //printf( "my_sync_awaitable::return_value() [1]\n" );
+            printf( "my_sync_awaitable::return_value() [1]\n" );
             value = v;
             return std::experimental::suspend_never{};
         }
@@ -175,8 +180,7 @@ struct my_sync_awaitable  {
 class line_reader
 {
 public:
-	int ctr = 0;
-	size_t myIdx = (size_t)(-1);
+	int myIdx = -1;
 	static constexpr int threashold = 3;
 
 	auto read_data_or_wait() { 
@@ -185,49 +189,44 @@ public:
 
 		struct myLazyInFn {
 			int myID;
+			int myIdx;
+
 			void who() const { printf("WHO: myLazyInFn with myID = %d\n", myID); }
 			std::experimental::coroutine_handle<> who_is_awaiting;
 
-			size_t myIdx;
-			bool isData = false;
-
-
-			myLazyInFn(size_t myIdx_) {
+			myLazyInFn(int myIdx_) {
 				myID = getID();
 				myIdx = myIdx_;
-				printf( "myLazyInFn::myLazyInFn() with id %zd, myID = %zd\n", myIdx, myID );
+				printf( "myLazyInFn::myLazyInFn() with id %d, myID = %d\n", myIdx, myID );
 			}
 
 			myLazyInFn(const myLazyInFn &) = delete;
 			myLazyInFn &operator = (const myLazyInFn &) = delete;
 
-			myLazyInFn(myLazyInFn &&s) {
+			/*myLazyInFn(myLazyInFn &&s) {
 				myID = getID();
 				myIdx = s.myIdx;
-				isData = s.isData;
-				printf( "myLazyInFn::myLazyInFn() with id %zd, myID = %zd from other.myID = %zd\n", myIdx, myID, s.myID );
+				printf( "myLazyInFn::myLazyInFn() with id %zd, myid = %d from other.myid = %d\n", myIdx, myID, s.myID );
 			}
 			myLazyInFn &operator = (myLazyInFn &&s) {
 				myIdx = s.myIdx;
-				isData = s.isData;
-				printf( "myLazyInFn::operator =() with id %zd, myID = %zd from other.myID = %zd\n", myIdx, myID, s.myID );
+				printf( "myLazyInFn::operator =() with id %zd, myid = %d from other.myid = %d\n", myIdx, myID, s.myID );
 				return *this;
-			}   
+			}  */ 
 	
 			~myLazyInFn() {}
 
 			bool await_ready() {
-				isData = is_data(myIdx);
-				printf( "   ---> ---> ---> In await_ready(): id = %zd\n", myIdx );
-				//return isData;
+				// consider checking is_data(myIdx) first
+				printf( "   ---> ---> ---> In await_ready(): id = %d\n", myIdx );
 				return false;
 			}
 
 			void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 				who_is_awaiting = awaiting;
-				printf( "   ---> ---> ---> In await_suspend(): about to call set_read_callback(); id = %zd\n", myIdx );
+				printf( "   ---> ---> ---> In await_suspend(): about to call set_read_callback(); id = %d\n", myIdx );
 				set_read_awaiting_handle( myIdx, this->who_is_awaiting );
-				printf( "   ---> ---> ---> In await_suspend(): after calling set_read_callback(); id = %zd\n", myIdx );
+				printf( "   ---> ---> ---> In await_suspend(): after calling set_read_callback(); id = %d\n", myIdx );
 			}
 
 			auto await_resume() {
@@ -245,9 +244,9 @@ public:
 	my_sync_awaitable<std::string> complete_block_1()
 	{
 		std::string accumulated;
+		int ctr = 0;
 		while ( accumulated.size() < threashold )
 		{
-			int ctr = 0;
 			printf( "   ---> my_sync<int> complete_block_1(): [1] (id = %d, ctr = %d)\n", myIdx, ctr );
 			try
 			{
@@ -316,9 +315,6 @@ class page_processor
 {
 public:
 	page_reader processor;
-	int ctr = 0;
-	static constexpr int threashold = 2;
-	size_t myIdx = (size_t)(-1);
 
 public:
 	my_sync_awaitable<int> run_ret;
@@ -330,10 +326,9 @@ public:
 	~page_processor() {
 		printf( "page_processor()::~page_processor\n" );
 	}
-	void set_idx( size_t idx ) { myIdx = idx; }
 	my_sync_awaitable<int> run()
 	{
-		for(;;)
+		for(int ctr = 0;;)
 		{
 			try
 			{
@@ -353,15 +348,8 @@ public:
 
 void processing_loop_3()
 { 
-	init_handler_context();
-
 	static constexpr size_t bep_cnt = 1;
 	page_processor preader[bep_cnt];
-
-	for ( size_t i=0; i<bep_cnt; ++i )
-	{
-		preader[i].set_idx( i );
-	}
 
 	for ( size_t i=0; i<bep_cnt; ++i )
 		preader[i].run_ret = preader[i].run();
@@ -369,7 +357,9 @@ void processing_loop_3()
 	for (;;)
 	{
 		char ch = getchar();
-		if ( ch > '0' && ch <= '0' + max_h_count )
+		static_assert( max_h_count < 10 );
+		static constexpr char max_cnt = (char)max_h_count;
+		if ( ch > '0' && ch <= '0' + max_cnt )
 		{
 			getchar(); // take '\n' out of stream
 			printf( "   --> got \'%c\' (continuing)\n", ch );
@@ -377,7 +367,7 @@ void processing_loop_3()
 			g_callbacks[ch - '1'].is_exception = false;
 			g_callbacks[ch - '1'].awaiting();
 		}
-		else if ( ch >= 'a' && ch < 'a' + max_h_count )
+		else if ( ch >= 'a' && ch < 'a' + max_cnt )
 		{
 			getchar(); // take '\n' out of stream
 			printf( "   --> got \'%c\' (continuing)\n", ch );
