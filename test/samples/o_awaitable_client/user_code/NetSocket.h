@@ -2,16 +2,16 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
-#include "../../../../include/nodecpp/common.h"
+#include <common.h>
 
 
 #include <fmt/format.h>
-#include "../../../../include/nodecpp/socket_type_list.h"
-#include "../../../../include/nodecpp/socket_t_base.h"
+#include <socket_type_list.h>
+#include <socket_t_base.h>
 
 
 using namespace nodecpp;
-using namespace fmt; 
+using namespace fmt;
 
 class MySampleTNode : public NodeBase
 {
