@@ -238,19 +238,22 @@ public:
 				return r.data;
 			}
 		};
-		printf( "   +++> +++> read_data_or_wait(): [2] (id = %d)\n", myIdx );
-		printf( "about to create myLazyInFn(%zd)\n", myIdx );
+		printf( "   +++> +++> read_data_or_wait(): [about to create myLazyInFn] (id = %d)\n", myIdx );
 		return myLazyInFn(myIdx);
 	}
 
-	my_sync_awaitable<int> complete_block_1()
+	my_sync_awaitable<std::string> complete_block_1()
 	{
-		while ( ctr < threashold )
+		std::string accumulated;
+		while ( accumulated.size() < threashold )
 		{
+			int ctr = 0;
 			printf( "   ---> my_sync<int> complete_block_1(): [1] (id = %d, ctr = %d)\n", myIdx, ctr );
 			try
 			{
 				auto v = co_await read_data_or_wait();
+				printf( "v.size() = %zd, v = %s\n", v.size(), v.c_str() );
+				accumulated += v;
 			}
 			catch (std::exception& e)
 			{
@@ -261,13 +264,11 @@ public:
 		}
 
 		printf( "   ---> my_sync<int> complete_block_1(): [about to exit] (id = %d), ctr = %d)\n", myIdx, ctr );
-		co_return ctr;
+		accumulated += '\n';
+		co_return accumulated;
 	}
 
 public:
-	bool is_block() { return ctr >= threashold; }
-	int get_ready_block() { int ret = ctr; ctr = 0; return ret ? 1 : 0; }
-
 	line_reader() { 
 		printf( "line_reader()::line_reader\n" );
 		myIdx = register_me();
@@ -284,29 +285,25 @@ public:
 	line_reader l_reader;
 
 public:
-	int ctr = 0;
-	size_t myIdx = (size_t)(-1);
 	static constexpr int threashold = 2;
 
-	my_sync_awaitable<int> complete_page_1()
+	my_sync_awaitable<std::string> complete_page_1()
 	{
+		int ctr = 0;
+		std::string accumulated;
 		while ( ctr < threashold )
 		{
-			printf( "   ---> my_sync<int> complete_page_1(): [1] (id = %d, ctr = %d)\n", myIdx, ctr );
-			co_await l_reader.complete_block_1();
-			printf( "   ---> my_sync<int> complete_page_1(): [2] (id = %d, ctr = %d)\n", myIdx, ctr );
-			l_reader.get_ready_block();
+			printf( "   ---> my_sync<int> complete_page_1(): [1] (ctr = %d)\n", ctr );
+			accumulated += co_await l_reader.complete_block_1();
+			printf( "   ---> my_sync<int> complete_page_1(): [2] (ctr = %d)\n", ctr );
 			++ctr;
 		}
-		printf( "   ---> my_sync<int> complete_page_1(): [about to exit] (id = %d)\n", myIdx );
+		printf( "   ---> my_sync<int> complete_page_1(): [about to exit]\n" );
 
-		co_return 0;
+		co_return accumulated;
 	}
 
 public:
-	bool is_page() { return ctr >= threashold; }
-	int get_ready_page() { int ret = ctr; ctr = 0; return ret ? 1 : 0; }
-
 	page_reader() {
 		printf( "page_reader()::page_reader\n" );
 	}
@@ -340,15 +337,14 @@ public:
 		{
 			try
 			{
-				co_await processor.complete_page_1();
+				auto page = co_await processor.complete_page_1();
+				++ctr;
+				printf( "PAGE %d HAS BEEN PROCESSED\n%s", ctr, page.c_str() );
 			}
 			catch (std::exception& e)
 			{
 				printf("Exception caught at run(): %s\n", e.what());
 			}
-			processor.get_ready_page();
-			++ctr;
-			printf( "PAGE %d HAS BEEN PROCESSED\n", ctr );
 		}
 
 		co_return 0;
