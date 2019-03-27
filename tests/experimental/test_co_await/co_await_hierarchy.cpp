@@ -26,7 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 
-#include "../../../include/nodecpp/awaitable.h"
+#include <awaitable.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string>
