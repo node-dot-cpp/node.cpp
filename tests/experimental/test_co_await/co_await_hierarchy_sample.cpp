@@ -231,19 +231,11 @@ public:
 			}
 
 			auto await_resume() {
-				printf( "   ---> ---> ---> In await_resume(): id = %zd\n", myIdx );
-				read_result r = std::move( read_data(myIdx) );
+				read_result r = read_data(myIdx);
+				printf( "   ---> ---> ---> In await_resume(): id = %d %s\n", myIdx, r.is_exception ? "with exception" : "" );
 				if ( r.is_exception )
-				{
-					printf("line_reader::read_data_or_wait(): resuming handle (idx = %zd), with exception\n", myIdx);
 					throw r.exception;
-					return r.data;
-				}
-				else
-				{
-					printf("line_reader::read_data_or_wait(): resuming handle (idx = %zd)\n", myIdx);
-					return r.data;
-				}
+				return r.data;
 			}
 		};
 		printf( "   +++> +++> read_data_or_wait(): [2] (id = %d)\n", myIdx );
@@ -267,8 +259,6 @@ public:
 			printf( "   ---> my_sync<int> complete_block_1(): [3] (id = %d, ctr = %d)\n", myIdx, ctr );
 			++ctr;
 		}
-
-		printf( "   ---> my_sync<int> complete_block_1(): [4] (id = %d), ctr = %d)\n", myIdx, ctr );
 
 		printf( "   ---> my_sync<int> complete_block_1(): [about to exit] (id = %d), ctr = %d)\n", myIdx, ctr );
 		co_return ctr;
@@ -335,19 +325,6 @@ public:
 
 public:
 	my_sync_awaitable<int> run_ret;
-	struct awaitable_ret_holder
-	{
-		my_sync_awaitable<int> call_ret;
-		int myID;
-		awaitable_ret_holder()
-		{
-			myID = getID();
-		}
-		~awaitable_ret_holder() {
-            printf( "page_processor::awaitable_ret_holder::~awaitable_ret_holder() with myID == %d\n", myID );
-		}
-	};
-	awaitable_ret_holder run_arh;
 
 public:
 	page_processor() {
@@ -391,8 +368,7 @@ void processing_loop_3()
 	}
 
 	for ( size_t i=0; i<bep_cnt; ++i )
-		preader[i].run_arh.call_ret = std::move( preader[i].run() );
-//		preader[i].run();
+		preader[i].run_ret = preader[i].run();
 
 	for (;;)
 	{
