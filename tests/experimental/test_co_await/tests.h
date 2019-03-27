@@ -1,6 +1,6 @@
 #ifndef TESTS_H
 #define TESTS_H
 
-void processing_loop_3();
+void processing_loop();
 
 #endif // TESTS_H

@@ -177,7 +177,7 @@ public:
 	}
 };
 
-void processing_loop_3()
+void processing_loop()
 { 
 	static constexpr size_t bep_cnt = 1;
 	page_processor preader[bep_cnt];
