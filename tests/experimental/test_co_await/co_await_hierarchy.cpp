@@ -117,7 +117,7 @@ class page_processor
 {
 	data_reader reader;
 
-	nodecpp::awaitable::coro_ret<std::string> complete_block_1()
+	nodecpp::awaitable<std::string> complete_block_1()
 	{
 		std::string accumulated;
 		while ( accumulated.size() < 3 ) // jus some sample condition
@@ -141,7 +141,7 @@ class page_processor
 	}
 
 protected:
-	nodecpp::awaitable::coro_ret<std::string> complete_page_1()
+	nodecpp::awaitable<std::string> complete_page_1()
 	{
 		int ctr = 0;
 		std::string accumulated;
@@ -158,13 +158,13 @@ public:
 	page_processor() {}
 	virtual ~page_processor() {}
 
-	virtual nodecpp::awaitable::coro_ret<int> run() = 0;
+	virtual nodecpp::awaitable<int> run() = 0;
 };
 
 class page_processor_A : public page_processor
 {
 public:
-	virtual nodecpp::awaitable::coro_ret<int> run()
+	virtual nodecpp::awaitable<int> run()
 	{
 		for(int ctr = 0;;)
 		{
@@ -187,7 +187,7 @@ public:
 class page_processor_B : public page_processor
 {
 public:
-	virtual nodecpp::awaitable::coro_ret<int> run()
+	virtual nodecpp::awaitable<int> run()
 	{
 		for(int ctr = 0;;)
 		{
@@ -211,7 +211,7 @@ void processing_loop()
 { 
 	static constexpr size_t bep_cnt = 2;
 	page_processor* preader[bep_cnt];
-	nodecpp::awaitable::coro_ret<int> run_ret[bep_cnt];
+	nodecpp::awaitable<int> run_ret[bep_cnt];
 
 	for ( size_t i=0; i<bep_cnt; ++i )
 	{

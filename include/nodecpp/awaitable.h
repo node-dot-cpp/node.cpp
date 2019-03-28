@@ -30,10 +30,10 @@
 
 #include <experimental/coroutine>
 
-namespace nodecpp::awaitable {
+namespace nodecpp {
 
 template<typename T>
-struct coro_ret  {
+struct awaitable  {
 	struct promise_type;
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
 	handle_type coro = nullptr;
@@ -41,22 +41,22 @@ struct coro_ret  {
 
 	int myID;
 
-	coro_ret()  {}
-	coro_ret(handle_type h) : coro(h) {}
+	awaitable()  {}
+	awaitable(handle_type h) : coro(h) {}
 
-    coro_ret(const coro_ret &) = delete;
-	coro_ret &operator = (const coro_ret &) = delete;
+    awaitable(const awaitable &) = delete;
+	awaitable &operator = (const awaitable &) = delete;
 
-	coro_ret(coro_ret &&s) : coro(s.coro) {
+	awaitable(awaitable &&s) : coro(s.coro) {
 		s.coro = nullptr;
 	}
-	coro_ret &operator = (coro_ret &&s) {
+	awaitable &operator = (awaitable &&s) {
 		coro = s.coro;
 		s.coro = nullptr;
 		return *this;
 	}   
 	
-	~coro_ret() {}
+	~awaitable() {}
 
     T get() {
         return coro.promise().value;
@@ -91,7 +91,7 @@ struct coro_ret  {
 
         auto get_return_object() {
 			auto h = handle_type::from_promise(*this);
-			return coro_ret<T>{h};
+			return awaitable<T>{h};
         }
         auto initial_suspend() {
 //            return std::experimental::suspend_always{};
