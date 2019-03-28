@@ -218,6 +218,7 @@ public:
 	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
 	static std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
+	static bool infraGetPacketBytes2(Buffer& buff, SOCKET sock);
 
 	//enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
 	//static ShouldEmit infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);

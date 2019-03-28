@@ -128,6 +128,12 @@ namespace nodecpp {
 			trim(size());
 		}
 
+		void set_size(size_t sz) { // NOTE: keeps pointers
+			assert(sz <= _capacity);
+			assert(_data != nullptr);
+			_size = sz;
+		}
+
 		size_t size() const { return _size; }
 		bool empty() const { return _size == 0; }
 		size_t capacity() const { return _capacity; }

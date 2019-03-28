@@ -661,6 +661,22 @@ std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 	return make_pair(true, std::move(res));
 }
 
+bool OSLayer::infraGetPacketBytes2(Buffer& buff, SOCKET sock)
+{
+	socklen_t fromlen = sizeof(struct ::sockaddr_in);
+	struct ::sockaddr_in sa_other;
+	size_t sz = 0;
+	buff.clear();
+	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
+
+	if (ret != COMMLAYER_RET_OK)
+		return false;
+
+	buff.set_size( sz );
+
+	return true;
+}
+
 NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	NetSocketManagerBase::ShouldEmit ret = EmitNone;
