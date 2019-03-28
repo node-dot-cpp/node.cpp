@@ -32,9 +32,71 @@
 
 namespace nodecpp {
 
+struct promise_type_struct_base {
+	std::experimental::coroutine_handle<> hr = nullptr;
+	std::exception_ptr e_pending = nullptr;
+
+	promise_type_struct_base() {}
+	promise_type_struct_base(const promise_type_struct_base &) = delete;
+	promise_type_struct_base &operator = (const promise_type_struct_base &) = delete;
+	~promise_type_struct_base() {}
+
+    auto initial_suspend() {
+//            return std::experimental::suspend_always{};
+        return std::experimental::suspend_never{};
+    }
+	auto final_suspend() {
+		if ( hr )
+		{
+			auto tmph = hr;
+			hr = nullptr;
+			tmph();
+		}
+//			return std::experimental::suspend_always{};
+		return std::experimental::suspend_never{};
+    }
+	void unhandled_exception() {
+		e_pending = std::current_exception();
+    }
+};
+
+template<typename T> struct awaitable; // forward declaration
+
+template<class T>
+struct promise_type_struct : public promise_type_struct_base {
+    T value;
+	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
+
+	promise_type_struct() : promise_type_struct_base() {}
+	promise_type_struct(const promise_type_struct &) = delete;
+	promise_type_struct &operator = (const promise_type_struct &) = delete;
+	~promise_type_struct() {}
+
+    auto get_return_object();
+    auto return_value(T v) {
+        value = v;
+        return std::experimental::suspend_never{};
+    }
+};
+
+template<>
+struct promise_type_struct<void> : public promise_type_struct_base {
+	using handle_type = std::experimental::coroutine_handle<promise_type_struct<void>>;
+	promise_type_struct() : promise_type_struct_base() {}
+	promise_type_struct(const promise_type_struct &) = delete;
+	promise_type_struct &operator = (const promise_type_struct &) = delete;
+	~promise_type_struct() {}
+
+    auto get_return_object();
+	auto return_void(void) {
+        return std::experimental::suspend_never{};
+    }
+};
+
+
 template<typename T>
 struct awaitable  {
-	struct promise_type;
+	using promise_type = promise_type_struct<T>;
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
 	handle_type coro = nullptr;
 	using value_type = T;
@@ -79,43 +141,18 @@ struct awaitable  {
 		return coro.promise().value; 
 	}
 
-	struct promise_type {
-        T value;
-		std::experimental::coroutine_handle<> hr = nullptr;
-		std::exception_ptr e_pending = nullptr;
-
-		promise_type() {}
-		promise_type(const promise_type &) = delete;
-		promise_type &operator = (const promise_type &) = delete;
-		~promise_type() {}
-
-        auto get_return_object() {
-			auto h = handle_type::from_promise(*this);
-			return awaitable<T>{h};
-        }
-        auto initial_suspend() {
-//            return std::experimental::suspend_always{};
-            return std::experimental::suspend_never{};
-        }
-        auto return_value(T v) {
-            value = v;
-            return std::experimental::suspend_never{};
-        }
-		auto final_suspend() {
-			if ( hr )
-			{
-				auto tmph = hr;
-				hr = nullptr;
-				tmph();
-			}
-//			return std::experimental::suspend_always{};
-			return std::experimental::suspend_never{};
-        }
-		void unhandled_exception() {
-			e_pending = std::current_exception();
-        }
-	};
 };
+
+auto promise_type_struct<void>::get_return_object() {
+		auto h = handle_type::from_promise(*this);
+		return awaitable<void>{h};
+}
+
+template<class T>
+auto promise_type_struct<T>::get_return_object() {
+		auto h = handle_type::from_promise(*this);
+		return awaitable<T>{h};
+}
 
 } // namespace nodecpp::awaitable
 
