@@ -320,6 +320,8 @@ namespace nodecpp {
 			std::string address;
 		};
 
+		enum Mode { callable, awaitable };
+
 		class SocketBase
 		{
 		public:
@@ -331,6 +333,7 @@ namespace nodecpp {
 		public:
 //			UserDefID userDefID;
 			NodeBase* node = nullptr;
+			net::Mode mode() { return dataForCommandProcessing.mode; }
 
 			public:
 			class DataForCommandProcessing {
@@ -338,6 +341,8 @@ namespace nodecpp {
 				enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
 				state = Uninitialized;
 				size_t index = 0;
+//				net::Mode mode = net::Mode::callable;
+				net::Mode mode = net::Mode::awaitable;
 
 			//	bool connecting = false;
 				bool remoteEnded = false;

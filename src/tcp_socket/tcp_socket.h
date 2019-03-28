@@ -37,6 +37,7 @@ class NetSocketEntry {
 	// TODO: revise everything around being 'refed'
 	enum State { Unused, SockIssued, SockAssociated, SockClosed }; // TODO: revise!
 	State state = State::Unused;
+	net::Mode mode = net::Mode::callable;
 
 public:
 	size_t index;
@@ -44,7 +45,7 @@ public:
 	OpaqueEmitter emitter;
 
 	NetSocketEntry(size_t index) : index(index), state(State::Unused) {}
-	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 ); mode = ptr->mode(); }
 	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
@@ -58,6 +59,7 @@ public:
 	void setAssociated() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, state == State::SockIssued && emitter.isValid() ); state = State::SockAssociated;}
 	void setSocketClosed() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, state != State::Unused ); state = State::SockClosed;}
 	void setUnused() {state = State::Unused; }
+	bool isCollable() { return mode == net::Mode::callable; }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
 	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
@@ -439,28 +441,36 @@ public:
 private:
 	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
-		auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
-		if (res.first)
+		if ( entry.isCollable() )
 		{
-			if (res.second.size() != 0)
+			auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
+			if (res.first)
 			{
-	//			entry.ptr->emitData(std::move(res.second));
+				if (res.second.size() != 0)
+				{
+		//			entry.ptr->emitData(std::move(res.second));
 
-	//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
-//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
-				EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
+	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
+					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+				}
+				else //if (!entry.remoteEnded)
+				{
+					infraProcessRemoteEnded(entry/*, evs*/);
+				}
 			}
-			else //if (!entry.remoteEnded)
+			else
 			{
-				infraProcessRemoteEnded(entry/*, evs*/);
+				internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
+		//		return errorCloseSocket(entry, storeError(Error()));
+				Error e;
+				errorCloseSocket(entry, e);
 			}
 		}
 		else
 		{
-			internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
-	//		return errorCloseSocket(entry, storeError(Error()));
-			Error e;
-			errorCloseSocket(entry, e);
+			Buffer b;
+			EmitterType::emitData(entry.getEmitter(), b);
 		}
 	}
 

@@ -55,6 +55,24 @@ public:
 		socket->write(buf);
 	}
 
+	nodecpp::awaitable<void> onWhateverData2(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket)
+	{
+		for (;;)
+		{
+			socket->read();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
+			++recvReplies;
+			if ( ( recvReplies & 0xFFF ) == 0 )
+	//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}, total received size = {}", recvReplies, *(socket->getExtra()), socket->dataForCommandProcessing.recvBuffer.size(), recvSize );
+	//		recvSize += buffer.size();
+			recvSize += socket->dataForCommandProcessing.recvBuffer.size();
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+			socket->write(buf);
+		}
+	}
+
 	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
 		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>,
 		nodecpp::net::OnData<&MySampleTNode::onWhateverData>

@@ -65,7 +65,7 @@ namespace nodecpp {
 			SocketO& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
 			SocketO& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
 
-		private:
+		//private:
 			size_t read() { bool ret = OSLayer::infraGetPacketBytes2(dataForCommandProcessing.recvBuffer, dataForCommandProcessing.osSocket ); if ( !ret) return 0; return dataForCommandProcessing.recvBuffer.size(); }
 		};
 
