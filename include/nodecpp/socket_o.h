@@ -70,10 +70,6 @@ namespace nodecpp {
 
 		//private:
 			auto read() { 
-				/*bool ret = OSLayer::infraGetPacketBytes2(dataForCommandProcessing.recvBuffer, dataForCommandProcessing.osSocket ); 
-				if ( !ret) 
-					co_return 0; 
-				co_return dataForCommandProcessing.recvBuffer.size(); */
 
 				struct read_data_awaiter {
 					SocketO& socket;
@@ -98,10 +94,6 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
-						/*read_result r = read_data(myIdx);
-						if ( r.is_exception )
-							throw r.exception;
-						return r.data;*/
 						bool ret = OSLayer::infraGetPacketBytes2(socket.dataForCommandProcessing.recvBuffer, socket.dataForCommandProcessing.osSocket ); 
 						if ( !ret) 
 							return (size_t)0; 
