@@ -265,6 +265,8 @@ namespace nodecpp {
 			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( emitter.getClientSocketPtr() ); callOnError<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
 			static void emitEnd( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( emitter.getClientSocketPtr() ); callOnEnd<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitAccepted( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( emitter.getClientSocketPtr() ); callOnAccepted<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+
+			static void resumeDataAwaiter( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); emitter.getClientSocketPtr()->dataForCommandProcessing.h_read(); }
 #endif // 0
 		};
 	} // namespace net

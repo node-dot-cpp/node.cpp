@@ -46,6 +46,7 @@
 #include <nodecpp_assert.h>
 #include <iibmalloc.h>
 #include <safe_ptr.h>
+#include <awaitable.h>
 
 #include <utility>
 

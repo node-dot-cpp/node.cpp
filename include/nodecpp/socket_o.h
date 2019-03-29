@@ -66,7 +66,47 @@ namespace nodecpp {
 			SocketO& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
 
 		//private:
-			size_t read() { bool ret = OSLayer::infraGetPacketBytes2(dataForCommandProcessing.recvBuffer, dataForCommandProcessing.osSocket ); if ( !ret) return 0; return dataForCommandProcessing.recvBuffer.size(); }
+			auto read() { 
+				/*bool ret = OSLayer::infraGetPacketBytes2(dataForCommandProcessing.recvBuffer, dataForCommandProcessing.osSocket ); 
+				if ( !ret) 
+					co_return 0; 
+				co_return dataForCommandProcessing.recvBuffer.size(); */
+
+				struct read_data_awaiter {
+					SocketO& socket;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					read_data_awaiter(SocketO& socket_) : socket( socket_ ) {}
+
+					read_data_awaiter(const read_data_awaiter &) = delete;
+					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+	
+					~read_data_awaiter() {}
+
+					bool await_ready() {
+						// consider checking is_data(myIdx) first
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						socket.dataForCommandProcessing.h_read = who_is_awaiting;
+					}
+
+					auto await_resume() {
+						/*read_result r = read_data(myIdx);
+						if ( r.is_exception )
+							throw r.exception;
+						return r.data;*/
+						bool ret = OSLayer::infraGetPacketBytes2(socket.dataForCommandProcessing.recvBuffer, socket.dataForCommandProcessing.osSocket ); 
+						if ( !ret) 
+							return (size_t)0; 
+						return socket.dataForCommandProcessing.recvBuffer.size();
+					}
+				};
+				return read_data_awaiter(*this);
+			}
 		};
 
 		

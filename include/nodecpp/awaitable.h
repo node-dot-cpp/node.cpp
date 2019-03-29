@@ -143,6 +143,7 @@ struct awaitable  {
 
 };
 
+inline
 auto promise_type_struct<void>::get_return_object() {
 		auto h = handle_type::from_promise(*this);
 		return awaitable<void>{h};
@@ -154,7 +155,7 @@ auto promise_type_struct<T>::get_return_object() {
 		return awaitable<T>{h};
 }
 
-} // namespace nodecpp::awaitable
+} // namespace nodecpp
 
 
 #endif // NODECPP_AWAITABLE_H
