@@ -21,8 +21,6 @@ class MySampleTNode : public NodeBase
 
 	using SocketIdType = int;
 
-//	awaitable<void> data_loop;
-
 public:
 	MySampleTNode() : clientSock( this )
 	{
@@ -35,7 +33,6 @@ public:
 
 		*( clientSock.getExtra() ) = 17;
 		clientSock.connect(2000, "127.0.0.1");
-//		data_loop = onWhateverData2( &clientSock );
 	}
 	
 	void onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
@@ -66,9 +63,7 @@ public:
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
 			++recvReplies;
 			if ( ( recvReplies & 0xFFF ) == 0 )
-	//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, socket->dataForCommandProcessing.recvBuffer.size(), recvSize );
-	//		recvSize += buffer.size();
 			recvSize += socket->dataForCommandProcessing.recvBuffer.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
