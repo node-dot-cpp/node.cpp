@@ -21,7 +21,7 @@ class MySampleTNode : public NodeBase
 
 	using SocketIdType = int;
 
-	awaitable<void> data_loop;
+//	awaitable<void> data_loop;
 
 public:
 	MySampleTNode() : clientSock( this )
@@ -35,7 +35,7 @@ public:
 
 		*( clientSock.getExtra() ) = 17;
 		clientSock.connect(2000, "127.0.0.1");
-		data_loop = onWhateverData2( &clientSock );
+//		data_loop = onWhateverData2( &clientSock );
 	}
 	
 	void onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
@@ -58,7 +58,7 @@ public:
 		socket->write(buf);
 	}
 
-	awaitable<void> onWhateverData2(nodecpp::net::SocketO* socket)
+	awaitable<void> incomingDataLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket)
 	{
 		for (;;)
 		{
@@ -79,7 +79,8 @@ public:
 
 	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
 		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>,
-		nodecpp::net::OnData<&MySampleTNode::onWhateverData>
+		nodecpp::net::OnData<&MySampleTNode::onWhateverData>,
+		nodecpp::net::OnDataAwaitable<&MySampleTNode::incomingDataLoop>
 	>;
 	ClientSockType clientSock;
 

@@ -63,7 +63,7 @@ void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
 	nodecpp::safememory::soft_ptr<SocketO> p = myThis.getSoftPtr<SocketO>(this);
 	registerWithInfraAndAssignSocket(this->node, p, netSocketManagerBase->typeIndexOfSocketO, sdata);
 }
-void SocketO::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
+void SocketO::connect(uint16_t port, const char* ip) {data_loop = onDataAwaitable(); connectSocket(this, ip, port);}
 
 void Socket::registerMeAndAcquireSocket() {
 	nodecpp::safememory::soft_ptr<Socket> p = myThis.getSoftPtr<Socket>(this);

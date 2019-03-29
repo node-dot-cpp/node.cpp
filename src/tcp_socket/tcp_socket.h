@@ -441,7 +441,8 @@ public:
 private:
 	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
-		if ( entry.isCollable() )
+		bool resumed = EmitterType::resumeDataAwaiter(entry.getEmitter());
+		if ( !resumed )
 		{
 			auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
 			if (res.first)
@@ -466,11 +467,6 @@ private:
 				Error e;
 				errorCloseSocket(entry, e);
 			}
-		}
-		else
-		{
-			Buffer b;
-			EmitterType::emitData(entry.getEmitter(), b);
 		}
 	}
 
