@@ -20,6 +20,7 @@ class MySampleTNode : public NodeBase
 	Buffer buf;
 
 	using SocketIdType = int;
+	awaitable<void> dataProcessorcallRet;
 
 public:
 	MySampleTNode() : clientSock( this )
@@ -33,6 +34,7 @@ public:
 
 		*( clientSock.getExtra() ) = 17;
 		clientSock.connect(2000, "127.0.0.1");
+		dataProcessorcallRet = doWhateverWithIncomingData();
 	}
 	
 	void onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
@@ -72,10 +74,26 @@ public:
 		co_return;
 	}
 
+	awaitable<void> doWhateverWithIncomingData()
+	{
+		for (;;)
+		{
+			size_t read_ret = co_await clientSock.read();
+			++recvReplies;
+			if ( ( recvReplies & 0xFFF ) == 0 )
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, clientSock.dataForCommandProcessing.recvBuffer.size(), recvSize );
+			recvSize += clientSock.dataForCommandProcessing.recvBuffer.size();
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+			clientSock.write(buf);
+		}
+		co_return;
+	}
+
 	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
-		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>,
+		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>/*,
 		nodecpp::net::OnData<&MySampleTNode::onWhateverData>,
-		nodecpp::net::OnDataAwaitable<&MySampleTNode::incomingDataLoop>
+		nodecpp::net::OnDataAwaitable<&MySampleTNode::incomingDataLoop>*/
 	>;
 	ClientSockType clientSock;
 
