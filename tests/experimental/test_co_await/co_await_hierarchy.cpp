@@ -233,7 +233,12 @@ void processing_loop()
 			printf( "   --> got \'%c\' (continuing)\n", ch );
 			g_callbacks[ch - '1'].data.push_back( ch );
 			g_callbacks[ch - '1'].is_exception = false;
-			g_callbacks[ch - '1'].awaiting();
+			if ( g_callbacks[ch - '1'].awaiting != nullptr )
+			{
+				auto tmp = g_callbacks[ch - '1'].awaiting;
+				g_callbacks[ch - '1'].awaiting = nullptr;
+				tmp();
+			}
 		}
 		else if ( ch >= 'a' && ch < 'a' + max_cnt )
 		{
@@ -241,7 +246,12 @@ void processing_loop()
 			printf( "   --> got \'%c\' (continuing)\n", ch );
 			g_callbacks[ch - 'a'].exception = std::exception();
 			g_callbacks[ch - 'a'].is_exception = true;
-			g_callbacks[ch - 'a'].awaiting();
+			if ( g_callbacks[ch - 'a'].awaiting != nullptr )
+			{
+				auto tmp = g_callbacks[ch - 'a'].awaiting;
+				g_callbacks[ch - 'a'].awaiting = nullptr;
+				tmp();
+			}
 		}
 		else
 		{
