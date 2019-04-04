@@ -159,6 +159,8 @@ public:
 	virtual ~page_processor() {}
 
 	virtual nodecpp::awaitable<void> run() = 0;
+	virtual nodecpp::awaitable<void> run1(size_t count) = 0;
+	virtual nodecpp::awaitable<size_t> run2() = 0;
 };
 
 class page_processor_A : public page_processor
@@ -181,6 +183,49 @@ public:
 		}
 
 		co_return;
+	}
+	virtual nodecpp::awaitable<void> run1(size_t count)
+	{
+		printf ( "run1( %zd )\n", count ); 
+		for(size_t ctr = 0; ctr<count;)
+		{
+			printf ( "run1(): starting page %zd\n", ctr );
+			try
+			{
+				auto page = co_await complete_page_1();
+				++ctr;
+				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_A::run(): %s\n", e.what());
+			}
+		}
+
+		printf ( "run1( %zd ): about to co_return...\n", count ); 
+		co_return;
+	}
+	virtual nodecpp::awaitable<size_t> run2()
+	{
+		size_t count = 2;
+		printf ( "run1( %zd )\n", count ); 
+		for(size_t ctr = 0; ctr<count;)
+		{
+			printf ( "run1(): starting page %zd\n", ctr );
+			try
+			{
+				auto page = co_await complete_page_1();
+				++ctr;
+				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_A::run(): %s\n", e.what());
+			}
+		}
+
+		printf ( "type A run2( %zd ): about to co_return...\n", count ); 
+		co_return count;
 	}
 };
 
@@ -205,9 +250,239 @@ public:
 
 		co_return;
 	}
+	virtual nodecpp::awaitable<void> run1(size_t count)
+	{
+		printf ( "run1( %zd )\n", count ); 
+		for(size_t ctr = 0; ctr<count;)
+		{
+			printf ( "run1(): starting page %zd\n", ctr );
+			try
+			{
+				auto page = co_await complete_page_1();
+				++ctr;
+				printf( "PAGE %zd HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_B::run(): %s\n", e.what());
+			}
+		}
+
+		printf ( "run1( %zd ): about to co_return...\n", count ); 
+		co_return;
+	}
+	virtual nodecpp::awaitable<size_t> run2()
+	{
+		size_t count = 1;
+		printf ( "run1( %zd )\n", count ); 
+		for(size_t ctr = 0; ctr<count;)
+		{
+			printf ( "run1(): starting page %zd\n", ctr );
+			try
+			{
+				auto page = co_await complete_page_1();
+				++ctr;
+				printf( "PAGE %zd HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_B::run(): %s\n", e.what());
+			}
+		}
+
+		printf ( "type B run2( %zd ): about to co_return...\n", count ); 
+		co_return count;
+	}
 };
 
-void processing_loop()
+
+
+template<class ... TT>
+constexpr size_t count( TT ... callls )
+{
+	constexpr size_t ret = count( calls ... );
+	return ret + 1;
+}
+
+template<>
+constexpr size_t count()
+{
+	return 1;
+}
+
+template<class T, class ... TT>
+constexpr size_t run_them( nodecpp::awaitable<void>* call_holder, T call_1, TT ... callls )
+{
+	size_t ret = run_them( call_holder, calls... );
+	call_holder[ret]();
+	return ret + 1;
+}
+
+template<class T>
+constexpr size_t run_them( nodecpp::awaitable<void>* call_holder, T call_1 )
+{
+	call_holder[0]();
+	return 1;
+}
+
+template<class T, class ... TT>
+constexpr size_t run_them_2( nodecpp::awaitable<void>* call_holder, T call_1, TT ... callls )
+{
+	size_t ret = run_them_2( call_holder, calls... );
+	call_holder[ret] = std::move( call_1 );
+	return ret + 1;
+}
+
+template<class T>
+constexpr size_t run_them_2( nodecpp::awaitable<void>* call_holder, T&& call_1 )
+{
+	call_holder[0] = std::move( call_1 );
+	return 1;
+}
+
+/*template<class T, class ... TT>
+constexpr size_t co_await_them( nodecpp::awaitable<void>* call_holder, T call_1, TT ... callls )
+{
+	size_t ret = co_await_them( call_holder, calls... );
+	call_holder[ret]();
+	return ret + 1;
+}
+
+template<class T>
+constexpr size_t co_await_them( nodecpp::awaitable<void>* call_holder, T call_1 )
+{
+	co_await call_holder[0]();
+	return 1;
+}*/
+
+template<class T, class ... TT>
+nodecpp::awaitable<void> wait_for_all( T call_1, TT ... callls )
+{
+	constexpr size_t c = count( call1, calls ... );
+	nodecpp::awaitable<void> call_holder[c];
+	run_them( call_holder, call1, calls ... );
+	co_await call_1();
+	//wait_for_all( calls );
+	for ( size_t i=0; i<c; ++i )
+		co_await call_holder[i];
+	printf( "all of %zd are done now\n", c );
+	co_return;
+}
+
+template<class T, class ... TT>
+nodecpp::awaitable<void> wait_for_all_2( T&& call_1, TT&& ... callls )
+{
+	constexpr size_t c = count( call1, calls ... );
+	nodecpp::awaitable<void> call_holder[c];
+	run_them_2( call_holder, call1, calls ... );
+	//wait_for_all( calls );
+	for ( size_t i=0; i<c; ++i )
+		co_await call_holder[i];
+	printf( "all of %zd are done now\n", c );
+	co_return;
+}
+
+class void_placeholder
+{
+	bool dummy = false;
+public:
+	void_placeholder() {}
+	void_placeholder(const void_placeholder&) {}
+	void_placeholder(void_placeholder&&) {}
+	void_placeholder operator = (const void_placeholder&) {return *this;}
+	void_placeholder operator = (void_placeholder&&) {return *this;}
+};
+
+template<class T>
+struct void_type_filter
+{
+	using type = T;
+};
+
+template<>
+struct void_type_filter<void>
+{
+	using type = void_placeholder;
+};
+
+template<class TupleT, class RetTupleT, size_t idx>
+nodecpp::awaitable<int> co_await_them( TupleT& t, RetTupleT& ret )
+{
+	printf( "co_await_them<%zd>()...\n", idx );
+	using value_type = typename std::tuple_element<idx, RetTupleT>::type;
+	if constexpr ( std::is_same< void_placeholder, value_type >::value )
+		co_await std::get<idx>(t);
+	else
+		std::get<idx>(ret) = co_await std::get<idx>(t);
+	printf( "co_await_them<%zd>(): continuing after awaiting\n", idx );
+	if constexpr (idx )
+		co_await co_await_them<TupleT, RetTupleT, idx-1>(t,ret);
+	co_return 0;
+}
+
+/*template<class T>
+constexpr size_t co_await_them( nodecpp::awaitable<void>* call_holder, T call_1 )
+{
+	co_await call_holder[0]();
+	return 1;
+}*/
+
+template<class ... T>
+nodecpp::awaitable<int> wait_for_all_3( nodecpp::awaitable<T>& ... calls )
+{
+	using tuple_type = std::tuple<nodecpp::awaitable<T>...>;
+	using ret_tuple_type = std::tuple<void_type_filter<T>::type...>;
+	tuple_type t( std::move(calls)... );
+	ret_tuple_type ret_t;
+	constexpr size_t c = std::tuple_size<tuple_type>::value;
+//	for ( size_t i=0; i<c; ++i )
+//		co_await std::get<i>(t);
+	co_await co_await_them<tuple_type, ret_tuple_type, c-1>(t, ret_t);
+	printf( "all of %zd are done now\n", c );
+	printf( "   results: %zd, %zd\n", std::get<0>(ret_t), std::get<1>(ret_t) );
+//	printf( "all of zd are done now\n" );
+	co_return 0;
+}
+
+#if 1
+nodecpp::awaitable<int> wait_for_all_4( nodecpp::awaitable<int>& call_1, nodecpp::awaitable<int>& call_2 )
+{
+	using tuple_type = std::tuple<nodecpp::awaitable<int>,nodecpp::awaitable<int> >;
+	tuple_type t( std::move(call_1), std::move(call_2) );
+	constexpr size_t c = std::tuple_size<tuple_type>::value;
+//	for ( size_t i=0; i<c; ++i )
+//		co_await std::get<i>(t);
+	int n;
+	n = co_await std::get<0>(t);
+	printf( "1st is done now\n" );
+	n += co_await std::get<0>(t);
+	printf( "all of %zd are done now\n", c );
+//	printf( "all of zd are done now\n" );
+	co_return 0;
+}
+#endif
+
+nodecpp::awaitable<int> wait_for_all_5(nodecpp::awaitable<int>& call_1, nodecpp::awaitable<int>& call_2)
+{
+	int n;
+	n = co_await call_1;
+	printf( "1st is done now\n" );
+//	bool ok = call_2.coro.done();
+//	if ( !call_2.coro.promise().is_value )
+//	if (!ok)
+		n += co_await call_2;
+	printf( "all are done now\n" );
+
+	co_return 0;
+}
+
+/*template<class T>
+nodecpp::awaitable<void> wait_for_all( T call )
+{
+	co_await call();
+}*/
+
+void processing_loop_2()
 { 
 	static constexpr size_t bep_cnt = 2;
 	page_processor* preader[bep_cnt];
@@ -239,6 +514,8 @@ void processing_loop()
 				g_callbacks[ch - '1'].awaiting = nullptr;
 				tmp();
 			}
+			else
+				printf("   --> ... just saving (nothing to resume)\n");
 		}
 		else if ( ch >= 'a' && ch < 'a' + max_cnt )
 		{
@@ -252,6 +529,77 @@ void processing_loop()
 				g_callbacks[ch - 'a'].awaiting = nullptr;
 				tmp();
 			}
+			else
+				printf("   --> ... just saving (nothing to resume)\n");
+		}
+		else
+		{
+			printf( "   --> got \'%c\' (terminating)\n", ch );
+			break;
+			for ( size_t i=0; i<max_h_count; ++i )
+			{
+				if ( g_callbacks[i].awaiting )
+					g_callbacks[i].awaiting.destroy();
+			}
+		}
+	}
+}
+
+void processing_loop()
+{ 
+	static constexpr size_t bep_cnt = 2; // do not change it for a present implementation
+	//nodecpp::awaitable<void> run_ret[bep_cnt];
+
+	page_processor_A* preader_0 = new page_processor_A;
+	page_processor_B* preader_1 = new page_processor_B;
+
+	typedef nodecpp::awaitable<void> (page_processor_A::*my_pointer_to_function_A) ();
+	typedef nodecpp::awaitable<void> (page_processor_B::*my_pointer_to_function_B) ();
+
+//	my_pointer_to_function_A p_A = &page_processor_A::run2;
+//	my_pointer_to_function_B p_B = &page_processor_B::run2;
+
+//	nodecpp::awaitable<void> run_all_ret = wait_for_all( (*preader_0).*p_A, &((*(preader_1)).*page_processor_B::run2) );
+//	nodecpp::awaitable<void> run_all_ret = wait_for_all( preader_0->*p_A, &((*(preader_1)).*page_processor_B::run2) );
+//	nodecpp::awaitable<int> run_all_ret = std::move( wait_for_all_4( preader_0->run2(), preader_1->run2() ) );
+//	auto a = preader_0->run2();
+//	nodecpp::awaitable<int> run_all_ret = std::move( wait_for_all_5( std::move( a ) ) );
+	nodecpp::awaitable<int> run_all_ret = std::move( wait_for_all_3( preader_0->run2(), preader_1->run2() ) );
+
+	for (;;)
+	{
+		char ch = getchar();
+		static_assert( max_h_count < 10 );
+		static constexpr char max_cnt = (char)max_h_count;
+		if ( ch > '0' && ch <= '0' + max_cnt )
+		{
+			getchar(); // take '\n' out of stream
+			printf( "   --> got \'%c\' (continuing)\n", ch );
+			g_callbacks[ch - '1'].data.push_back( ch );
+			g_callbacks[ch - '1'].is_exception = false;
+			if ( g_callbacks[ch - '1'].awaiting != nullptr )
+			{
+				auto tmp = g_callbacks[ch - '1'].awaiting;
+				g_callbacks[ch - '1'].awaiting = nullptr;
+				tmp();
+			}
+			else
+				printf("   --> ... just saving (nothing to resume)\n");
+		}
+		else if ( ch >= 'a' && ch < 'a' + max_cnt )
+		{
+			getchar(); // take '\n' out of stream
+			printf( "   --> got \'%c\' (continuing)\n", ch );
+			g_callbacks[ch - 'a'].exception = std::exception();
+			g_callbacks[ch - 'a'].is_exception = true;
+			if ( g_callbacks[ch - 'a'].awaiting != nullptr )
+			{
+				auto tmp = g_callbacks[ch - 'a'].awaiting;
+				g_callbacks[ch - 'a'].awaiting = nullptr;
+				tmp();
+			}
+			else
+				printf("   --> ... just saving (nothing to resume)\n");
 		}
 		else
 		{

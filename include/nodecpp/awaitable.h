@@ -35,6 +35,7 @@ namespace nodecpp {
 struct promise_type_struct_base {
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
+	bool is_value = false;
 
 	promise_type_struct_base() {}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
@@ -75,6 +76,7 @@ struct promise_type_struct : public promise_type_struct_base {
     auto get_return_object();
     auto return_value(T v) {
         value = v;
+		is_value = true;
         return std::experimental::suspend_never{};
     }
 };
@@ -89,6 +91,7 @@ struct promise_type_struct<void> : public promise_type_struct_base {
 
     auto get_return_object();
 	auto return_void(void) {
+		is_value = true;
         return std::experimental::suspend_never{};
     }
 };
@@ -100,8 +103,6 @@ struct awaitable  {
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
 	handle_type coro = nullptr;
 	using value_type = T;
-
-	int myID;
 
 	awaitable()  {}
 	awaitable(handle_type h) : coro(h) {}
@@ -125,7 +126,8 @@ struct awaitable  {
     }
 
 	bool await_ready() noexcept { 
-		return false;
+        return coro.promise().is_value;
+//		return false;
 	}
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
 		if ( coro )
