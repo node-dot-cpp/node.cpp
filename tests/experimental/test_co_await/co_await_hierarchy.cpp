@@ -26,6 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 
+#include <common.h>
 #include <awaitable.h>
 #include <assert.h>
 #include <stdio.h>
@@ -297,6 +298,38 @@ public:
 
 
 
+/*template<class T, class ... TT>
+constexpr size_t count_all_types(T x  NODECPP_UNUSED_VAR)
+{
+	constexpr size_t ret = count_all_types<TT...>(x);
+	return ret + 1;
+}
+
+template<class T>
+constexpr size_t count_all_types(T& x)
+{
+	return 1;
+}*/
+
+template<class T, class ... TT>
+constexpr size_t count_void_type()
+{
+	constexpr size_t ret = count_void_type<TT...>();
+	if constexpr ( std::is_same<void, T>::value )
+		return ret + 1;
+	else
+		return ret;
+}
+
+template<class T>
+constexpr size_t count_void_type()
+{
+	if constexpr ( std::is_same<void, T>::value )
+		return 1;
+	else
+		return 0;
+}
+
 #if 0
 template<class T, class ... TT>
 constexpr size_t count( T call, TT ... callls )
@@ -419,7 +452,6 @@ void_placeholder void_value_wrapper(void)
 	return void_placeholder;
 };*/
 
-#if 0
 template<class TupleT, class RetTupleT, size_t idx>
 nodecpp::awaitable<int> co_await_them( TupleT& t, RetTupleT& ret )
 {
@@ -433,6 +465,26 @@ nodecpp::awaitable<int> co_await_them( TupleT& t, RetTupleT& ret )
 	if constexpr (idx )
 		co_await co_await_them<TupleT, RetTupleT, idx-1>(t,ret);
 	co_return 0;
+}
+
+template<class T, class TupleT, size_t idx>
+constexpr size_t count_type( TupleT& t NODECPP_UNUSED_VAR )
+{
+	using item_value_type = typename std::tuple_element<idx, TupleT>::type;
+	if constexpr ( idx == 0 )
+	{
+		if constexpr ( std::is_same< T, item_value_type >::value )
+			return 1;
+		else
+			return 0;
+	}
+	else
+	{
+		if constexpr ( std::is_same< T, item_value_type >::value )
+			return 1 + count_type<T, TupleT, idx-1>(t);
+		else
+			return count_type<T, TupleT, idx-1>(t);
+	}
 }
 
 /*template<class T>
@@ -459,10 +511,9 @@ auto wait_for_all_3( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<st
 	co_return ret_t;
 //	co_return 0;
 }
-#endif // 0
 
 template<class T>
-nodecpp::awaitable<T> await_me( nodecpp::awaitable<T> a )
+nodecpp::awaitable<T> await_me( nodecpp::awaitable<T>& a )
 {
 	if constexpr ( std::is_same<void, T>::value )
 	{
@@ -478,12 +529,25 @@ template<class ... T>
 auto wait_for_all_6( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std::tuple<typename void_type_filter<T>::type...>>
 //nodecpp::awaitable<size_t> wait_for_all_3( nodecpp::awaitable<T>& ... calls )
 {
-	//( std::is_same<void, T>::value ? std::move(co_await calls) : void_placeholder() )
-	using tuple_type = std::tuple<nodecpp::awaitable<T>...>;
 	using ret_tuple_type = std::tuple<typename void_type_filter<T>::type...>;
-	ret_tuple_type ret_t( std::move(co_await calls) ... );
-//	ret_tuple_type ret_t( std::move(co_await await_me(calls)) ... );
-	co_return ret_t;
+	constexpr size_t total_cnt = std::tuple_size<ret_tuple_type>::value;
+	ret_tuple_type t;
+	constexpr size_t void_cnt = count_type<void_placeholder, ret_tuple_type, total_cnt-1>(t);
+	if constexpr ( void_cnt == 0 )
+	{
+		ret_tuple_type ret_t(std::move(co_await calls) ...);
+		co_return ret_t;
+	}
+	else if constexpr ( void_cnt == total_cnt )
+	{
+		ret_tuple_type ret_t( (co_await calls, std::move( void_placeholder())) ...);
+		co_return ret_t;
+	}
+	else
+	{
+		ret_tuple_type ret_t( std::move(co_await await_me(calls)) ... );
+		co_return ret_t;
+	}
 }
 
 /*nodecpp::awaitable<size_t> wait_for_all_3()
@@ -522,12 +586,6 @@ nodecpp::awaitable<int> wait_for_all_5(nodecpp::awaitable<int>& call_1, nodecpp:
 	co_return 0;
 }
 #endif
-
-/*template<class T>
-nodecpp::awaitable<void> wait_for_all( T call )
-{
-	co_await call();
-}*/
 
 #if 0
 void processing_loop_2()
@@ -602,7 +660,7 @@ nodecpp::awaitable<void> processing_loop_core()
 	auto a2 = preader_1->run2();
 	auto run_all_ret = wait_for_all_6( a1, a2 );
 	auto fin_state = co_await run_all_ret;
-	printf( "   results: %zd, %zd\n", std::get<0>(fin_state), std::get<1>(fin_state) );
+	printf( "   results after waiting for all: %zd, %zd\n", std::get<0>(fin_state), std::get<1>(fin_state) );
 }
 
 void processing_loop()
