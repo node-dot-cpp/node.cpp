@@ -297,20 +297,6 @@ public:
 };
 
 
-
-/*template<class T, class ... TT>
-constexpr size_t count_all_types(T x  NODECPP_UNUSED_VAR)
-{
-	constexpr size_t ret = count_all_types<TT...>(x);
-	return ret + 1;
-}
-
-template<class T>
-constexpr size_t count_all_types(T& x)
-{
-	return 1;
-}*/
-
 template<class T, class ... TT>
 constexpr size_t count_void_type()
 {
@@ -417,18 +403,6 @@ nodecpp::awaitable<void> wait_for_all_2( T&& call_1, TT&& ... callls )
 }
 #endif // 0
 
-/*template<class T>
-T void_value_wrapper(T t)
-{
-	return t;
-};
-
-template<>
-placeholder_for_void_ret_type void_value_wrapper(void)
-{
-	return placeholder_for_void_ret_type;
-};*/
-
 template<class TupleT, class RetTupleT, size_t idx>
 nodecpp::awaitable<int> co_await_them( TupleT& t, RetTupleT& ret )
 {
@@ -463,13 +437,6 @@ constexpr size_t count_type( TupleT& t NODECPP_UNUSED_VAR )
 			return count_type<T, TupleT, idx-1>(t);
 	}
 }
-
-/*template<class T>
-constexpr size_t co_await_them( nodecpp::awaitable<void>* call_holder, T call_1 )
-{
-	co_await call_holder[0]();
-	return 1;
-}*/
 
 template<class ... T>
 auto wait_for_all_3( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std::tuple<typename nodecpp::void_type_converter<T>::type...>>
@@ -529,11 +496,6 @@ auto wait_for_all_6( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<st
 	co_return ret_t;
 }
 
-/*nodecpp::awaitable<size_t> wait_for_all_3()
-{
-	co_return 0;
-}*/
-
 #if 0
 nodecpp::awaitable<int> wait_for_all_4( nodecpp::awaitable<int>& call_1, nodecpp::awaitable<int>& call_2 )
 {
@@ -566,7 +528,6 @@ nodecpp::awaitable<int> wait_for_all_5(nodecpp::awaitable<int>& call_1, nodecpp:
 }
 #endif
 
-#if 0
 void processing_loop_2()
 { 
 	static constexpr size_t bep_cnt = 2;
@@ -629,7 +590,6 @@ void processing_loop_2()
 		}
 	}
 }
-#endif // 0
 
 nodecpp::awaitable<void> processing_loop_core()
 {
@@ -647,28 +607,6 @@ nodecpp::awaitable<void> processing_loop_core()
 void processing_loop()
 { 
 	auto core = processing_loop_core();
-//	static constexpr size_t bep_cnt = 2; // do not change it for a present implementation
-	//nodecpp::awaitable<void> run_ret[bep_cnt];
-
-
-//	typedef nodecpp::awaitable<void> (page_processor_A::*my_pointer_to_function_A) ();
-//	typedef nodecpp::awaitable<void> (page_processor_B::*my_pointer_to_function_B) ();
-
-//	my_pointer_to_function_A p_A = &page_processor_A::run2;
-//	my_pointer_to_function_B p_B = &page_processor_B::run2;
-
-//	nodecpp::awaitable<void> run_all_ret = wait_for_all( (*preader_0).*p_A, &((*(preader_1)).*page_processor_B::run2) );
-//	nodecpp::awaitable<void> run_all_ret = wait_for_all( preader_0->*p_A, &((*(preader_1)).*page_processor_B::run2) );
-//	nodecpp::awaitable<int> run_all_ret = std::move( wait_for_all_4( preader_0->run2(), preader_1->run2() ) );
-//	auto a = preader_0->run2();
-//	nodecpp::awaitable<int> run_all_ret = std::move( wait_for_all_5( std::move( a ) ) );
-//	nodecpp::awaitable<int> run_all_ret = std::move( wait_for_all_3( preader_0->run2(), preader_1->run2() ) );
-
-//	auto run_all_ret = std::move( wait_for_all_3( preader_0->run2(), preader_1->run2() ) );
-//	nodecpp::awaitable<std::tuple<size_t, size_t>> run_all_ret = std::move( wait_for_all_3( preader_0->run2(), preader_1->run2() ) );
-//	std::tuple<size_t, size_t> run_all_ret = co_await wait_for_all_3( preader_0->run2(), preader_1->run2() );
-//	size_t run_all_ret = co_await wait_for_all_3( preader_0->run2(), preader_1->run2() );
-//	size_t run_all_ret = co_await wait_for_all_3();
 
 	for (;;)
 	{
