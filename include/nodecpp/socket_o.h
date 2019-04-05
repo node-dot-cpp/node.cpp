@@ -102,6 +102,35 @@ namespace nodecpp {
 				};
 				return read_data_awaiter(*this);
 			}
+			auto a_connect(uint16_t port, const char* ip) { 
+
+				struct read_data_awaiter {
+					SocketO& socket;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					read_data_awaiter(SocketO& socket_) : socket( socket_ ) {}
+
+					read_data_awaiter(const read_data_awaiter &) = delete;
+					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+	
+					~read_data_awaiter() {}
+
+					bool await_ready() {
+						// consider checking is_data(myIdx) first
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						socket.dataForCommandProcessing.h_connect = who_is_awaiting;
+					}
+
+					auto await_resume() {}
+				};
+				connect( port, ip );
+				return read_data_awaiter(*this);
+			}
 		};
 
 		

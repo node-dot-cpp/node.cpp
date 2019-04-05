@@ -511,7 +511,8 @@ private:
 		switch ( status )
 		{
 			case NetSocketManagerBase::ShouldEmit::EmitConnect:
-				EmitterType::emitConnect(current.getEmitter());
+				if ( !EmitterType::resumeConnectAwaiter(current.getEmitter()) )
+					EmitterType::emitConnect(current.getEmitter());
 				break;
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:
 				EmitterType::emitDrain(current.getEmitter());

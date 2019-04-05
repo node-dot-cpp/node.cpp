@@ -255,6 +255,16 @@ namespace nodecpp {
 				}
 				return false;
 			}
+
+			static bool resumeConnectAwaiter( const OpaqueEmitter& emitter ) { 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); 
+				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect )
+				{
+					emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect();
+					return true;
+				}
+				return false;
+			}
 		};
 	} // namespace net
 
