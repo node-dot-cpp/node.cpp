@@ -417,29 +417,6 @@ nodecpp::awaitable<void> wait_for_all_2( T&& call_1, TT&& ... callls )
 }
 #endif // 0
 
-class void_placeholder
-{
-	bool dummy = false;
-public:
-	void_placeholder() {}
-	void_placeholder(const void_placeholder&) {}
-	void_placeholder(void_placeholder&&) {}
-	void_placeholder operator = (const void_placeholder&) {return *this;}
-	void_placeholder operator = (void_placeholder&&) {return *this;}
-};
-
-template<class T>
-struct void_type_filter
-{
-	using type = T;
-};
-
-template<>
-struct void_type_filter<void>
-{
-	using type = void_placeholder;
-};
-
 /*template<class T>
 T void_value_wrapper(T t)
 {
@@ -447,9 +424,9 @@ T void_value_wrapper(T t)
 };
 
 template<>
-void_placeholder void_value_wrapper(void)
+placeholder_for_void_ret_type void_value_wrapper(void)
 {
-	return void_placeholder;
+	return placeholder_for_void_ret_type;
 };*/
 
 template<class TupleT, class RetTupleT, size_t idx>
@@ -457,7 +434,7 @@ nodecpp::awaitable<int> co_await_them( TupleT& t, RetTupleT& ret )
 {
 	printf( "co_await_them<%zd>()...\n", idx );
 	using value_type = typename std::tuple_element<idx, RetTupleT>::type;
-	if constexpr ( std::is_same< void_placeholder, value_type >::value )
+	if constexpr ( std::is_same< nodecpp::placeholder_for_void_ret_type, value_type >::value )
 		co_await std::get<idx>(t);
 	else
 		std::get<idx>(ret) = co_await std::get<idx>(t);
@@ -495,11 +472,11 @@ constexpr size_t co_await_them( nodecpp::awaitable<void>* call_holder, T call_1 
 }*/
 
 template<class ... T>
-auto wait_for_all_3( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std::tuple<typename void_type_filter<T>::type...>>
+auto wait_for_all_3( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std::tuple<typename nodecpp::void_type_converter<T>::type...>>
 //nodecpp::awaitable<size_t> wait_for_all_3( nodecpp::awaitable<T>& ... calls )
 {
 	using tuple_type = std::tuple<nodecpp::awaitable<T>...>;
-	using ret_tuple_type = std::tuple<void_type_filter<T>::type...>;
+	using ret_tuple_type = std::tuple<typename nodecpp::void_type_converter<T>::type...>;
 	tuple_type t( std::move(calls)... );
 	ret_tuple_type ret_t;
 	constexpr size_t c = std::tuple_size<tuple_type>::value;
@@ -517,7 +494,7 @@ nodecpp::awaitable<T> await_me( nodecpp::awaitable<T>& a )
 {
 	if constexpr ( std::is_same<void, T>::value )
 	{
-		void_placeholder vp;
+		nodecpp::placeholder_for_void_ret_type vp;
 		co_await a;
 		co_return vp;
 	}
@@ -526,13 +503,13 @@ nodecpp::awaitable<T> await_me( nodecpp::awaitable<T>& a )
 }
 
 template<class ... T>
-auto wait_for_all_6( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std::tuple<typename void_type_filter<T>::type...>>
+auto wait_for_all_6( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std::tuple<typename nodecpp::void_type_converter<T>::type...>>
 //nodecpp::awaitable<size_t> wait_for_all_3( nodecpp::awaitable<T>& ... calls )
 {
-	using ret_tuple_type = std::tuple<typename void_type_filter<T>::type...>;
-	constexpr size_t total_cnt = std::tuple_size<ret_tuple_type>::value;
+	using ret_tuple_type = std::tuple<typename nodecpp::void_type_converter<T>::type...>;
+	/*constexpr size_t total_cnt = std::tuple_size<ret_tuple_type>::value;
 	ret_tuple_type t;
-	constexpr size_t void_cnt = count_type<void_placeholder, ret_tuple_type, total_cnt-1>(t);
+	constexpr size_t void_cnt = count_type<nodecpp::placeholder_for_void_ret_type, ret_tuple_type, total_cnt-1>(t);
 	if constexpr ( void_cnt == 0 )
 	{
 		ret_tuple_type ret_t(std::move(co_await calls) ...);
@@ -540,14 +517,16 @@ auto wait_for_all_6( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<st
 	}
 	else if constexpr ( void_cnt == total_cnt )
 	{
-		ret_tuple_type ret_t( (co_await calls, std::move( void_placeholder())) ...);
+		ret_tuple_type ret_t( (co_await calls, std::move( nodecpp::placeholder_for_void_ret_type())) ...);
 		co_return ret_t;
 	}
 	else
 	{
 		ret_tuple_type ret_t( std::move(co_await await_me(calls)) ... );
 		co_return ret_t;
-	}
+	}*/
+	ret_tuple_type ret_t(std::move(co_await calls) ...);
+	co_return ret_t;
 }
 
 /*nodecpp::awaitable<size_t> wait_for_all_3()
@@ -656,9 +635,11 @@ nodecpp::awaitable<void> processing_loop_core()
 {
 	page_processor_A* preader_0 = new page_processor_A;
 	page_processor_B* preader_1 = new page_processor_B;
+	page_processor_A* preader_2 = new page_processor_A;
 	auto a1 = preader_0->run2();
 	auto a2 = preader_1->run2();
-	auto run_all_ret = wait_for_all_6( a1, a2 );
+	auto a3 = preader_2->run1(1);
+	auto run_all_ret = wait_for_all_6( a1, a2, a3 );
 	auto fin_state = co_await run_all_ret;
 	printf( "   results after waiting for all: %zd, %zd\n", std::get<0>(fin_state), std::get<1>(fin_state) );
 }
