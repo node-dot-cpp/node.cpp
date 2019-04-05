@@ -639,7 +639,7 @@ nodecpp::awaitable<void> processing_loop_core()
 	auto a1 = preader_0->run2();
 	auto a2 = preader_1->run2();
 	auto a3 = preader_2->run1(1);
-	auto run_all_ret = wait_for_all_6( a1, a2, a3 );
+	auto run_all_ret = nodecpp::wait_for_all( a1, a2, a3 );
 	auto fin_state = co_await run_all_ret;
 	printf( "   results after waiting for all: %zd, %zd\n", std::get<0>(fin_state), std::get<1>(fin_state) );
 }

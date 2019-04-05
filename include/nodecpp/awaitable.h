@@ -186,6 +186,14 @@ auto promise_type_struct<T>::get_return_object() {
 		return awaitable<T>{h};
 }
 
+template<class ... T>
+auto wait_for_all( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std::tuple<typename nodecpp::void_type_converter<T>::type...>>
+{
+	using ret_tuple_type = std::tuple<typename nodecpp::void_type_converter<T>::type...>;
+	ret_tuple_type ret_t(std::move(co_await calls) ...);
+	co_return ret_t;
+}
+
 } // namespace nodecpp
 
 
