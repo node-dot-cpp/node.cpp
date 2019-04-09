@@ -250,7 +250,9 @@ namespace nodecpp {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); 
 				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.h_read )
 				{
-					emitter.getClientSocketPtr()->dataForCommandProcessing.h_read();
+					auto h_tmp = emitter.getClientSocketPtr()->dataForCommandProcessing.h_read;
+					emitter.getClientSocketPtr()->dataForCommandProcessing.h_read = nullptr;
+					h_tmp();
 					return true;
 				}
 				return false;
@@ -260,7 +262,9 @@ namespace nodecpp {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); 
 				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect )
 				{
-					emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect();
+					auto h_tmp = emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect;
+					emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect = nullptr;
+					h_tmp();
 					return true;
 				}
 				return false;
