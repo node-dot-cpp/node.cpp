@@ -37,7 +37,8 @@ public:
 		co_await clientSock.a_connect(2000, "127.0.0.1");
 		buf.writeInt8( 2, 0 );
 		buf.writeInt8( 1, 1 );
-		clientSock.write(buf);
+		bool write_ok = co_await clientSock.a_write(buf);
+		// TODO: address failure
 		co_await doWhateverWithIncomingData();
 		co_return;
 	}
@@ -90,7 +91,8 @@ public:
 			recvSize += clientSock.dataForCommandProcessing.recvBuffer.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-			clientSock.write(buf);
+			bool write_ok = co_await clientSock.a_write(buf);
+			// TODO: address failure
 		}
 		co_return;
 	}

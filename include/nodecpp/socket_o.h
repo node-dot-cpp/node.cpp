@@ -131,6 +131,38 @@ namespace nodecpp {
 				connect( port, ip );
 				return read_data_awaiter(*this);
 			}
+			auto a_write(Buffer& buff) { 
+
+				struct read_data_awaiter {
+					SocketO& socket;
+					Buffer& buff;
+					bool write_ok = false;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					read_data_awaiter(SocketO& socket_, Buffer& buff_) : socket( socket_ ), buff( buff_ )  {}
+
+					read_data_awaiter(const read_data_awaiter &) = delete;
+					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+	
+					~read_data_awaiter() {}
+
+					bool await_ready() {
+						write_ok = socket.write( buff ); // so far we do it sync TODO: extend implementation for more complex (= requiring really async processing) cases
+						return write_ok; // well, here we have no option to deliver failure
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !write_ok ); // otherwise, why are we here?
+						awaiting(); // resume immediately
+					}
+
+					auto await_resume() {
+						return write_ok;
+					}
+				};
+				return read_data_awaiter(*this, buff);
+			}
 		};
 
 		
