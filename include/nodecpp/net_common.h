@@ -344,6 +344,7 @@ namespace nodecpp {
 //				net::Mode mode = net::Mode::callable;
 				net::Mode mode = net::Mode::awaitable;
 				std::experimental::coroutine_handle<> h_connect = nullptr;
+				std::experimental::coroutine_handle<> h_accepted = nullptr;
 				std::experimental::coroutine_handle<> h_read = nullptr;
 
 			//	bool connecting = false;
