@@ -241,6 +241,7 @@ public:
 		ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
 	}
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
+	bool appWrite2(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
 	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
 	{
 		Ip4 remoteIp;
@@ -441,18 +442,51 @@ public:
 private:
 	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
-		bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
 		auto hr = entry.getClientSocketData()->ahd_read.h;
 		if ( hr )
 		{
+			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->ahd_read.b, entry.getClientSocketData()->osSocket);
 			entry.getClientSocketData()->ahd_read.is_exception = !read_ok;
 			if ( !read_ok )
+			{
 				entry.getClientSocketData()->ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
-			entry.getClientSocketData()->ahd_read.h = nullptr;
-			hr();
+				entry.getClientSocketData()->ahd_read.h = nullptr;
+				hr();
+			}
+			else if ( entry.getClientSocketData()->ahd_read.b.size() >= entry.getClientSocketData()->ahd_read.min_bytes )
+			{
+				entry.getClientSocketData()->ahd_read.h = nullptr;
+				hr();
+			}
+		}
+		else
+		{
+			auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
+			if (res.first)
+			{
+				if (res.second.size() != 0)
+				{
+		//			entry.ptr->emitData(std::move(res.second));
+
+		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
+	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
+					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+				}
+				else //if (!entry.remoteEnded)
+				{
+					infraProcessRemoteEnded(entry);
+				}
+			}
+			else
+			{
+				internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
+		//		return errorCloseSocket(entry, storeError(Error()));
+				Error e;
+				errorCloseSocket(entry, e);
+			}
 		}
 
-		if (read_ok)
+/*		if (read_ok)
 		{
 			size_t sz = entry.getClientSocketData()->recvBuffer.size();
 			Buffer res(sz);
@@ -472,7 +506,7 @@ private:
 			internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
 			Error e;
 			errorCloseSocket(entry, e);
-		}
+		}*/
 
 //		bool resumed = EmitterType::resumeDataAwaiter(entry.getEmitter());
 //		if ( !resumed )

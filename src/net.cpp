@@ -52,6 +52,11 @@ bool SocketBase::write(const uint8_t* data, uint32_t size)
 //	return OSLayer::appWrite(dataForCommandProcessing, data, size);
 	return netSocketManagerBase->appWrite(dataForCommandProcessing, data, size);
 }
+bool SocketBase::write2(const uint8_t* data, uint32_t size)
+{
+	_bytesWritten += size;
+	return netSocketManagerBase->appWrite2(dataForCommandProcessing, data, size);
+}
 
 void SocketO::registerMeAndAcquireSocket() {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );

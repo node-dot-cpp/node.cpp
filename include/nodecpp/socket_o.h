@@ -98,12 +98,10 @@ namespace nodecpp {
 				connect( port, ip );
 				return read_data_awaiter(*this);
 			}
-			auto a_read() { 
-
+#if 0
+			auto a_read(Buffer& buff)
 				struct read_data_awaiter {
 					SocketO& socket;
-
-					std::experimental::coroutine_handle<> who_is_awaiting;
 
 					read_data_awaiter(SocketO& socket_) : socket( socket_ ) {}
 
@@ -118,8 +116,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						socket.dataForCommandProcessing.ahd_read.h = who_is_awaiting;
+						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 					}
 
 					auto await_resume() {
@@ -138,6 +135,43 @@ namespace nodecpp {
 				};
 				return read_data_awaiter(*this);
 			}
+#endif // 0
+			auto a_read( Buffer& buff, size_t min_bytes = 1 ) { 
+
+				struct read_data_awaiter {
+					SocketO& socket;
+					Buffer& buff;
+					size_t min_bytes;
+
+					read_data_awaiter(SocketO& socket_, Buffer& buff_, size_t min_bytes_) : socket( socket_ ), buff( buff_ ), min_bytes( min_bytes_ ) {}
+
+					read_data_awaiter(const read_data_awaiter &) = delete;
+					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+	
+					~read_data_awaiter() {}
+
+					bool await_ready() {
+						// consider checking is_data(myIdx) first
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						socket.dataForCommandProcessing.ahd_read.b = std::move( buff );
+						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
+						socket.dataForCommandProcessing.ahd_read.h = awaiting;
+					}
+
+					auto await_resume() {
+						if ( socket.dataForCommandProcessing.ahd_read.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_read.exception;
+						}
+						buff = std::move( socket.dataForCommandProcessing.ahd_read.b );
+					}
+				};
+				return read_data_awaiter(*this, buff, min_bytes);
+			}
 			auto a_write(Buffer& buff) { 
 
 				struct read_data_awaiter {
@@ -155,17 +189,21 @@ namespace nodecpp {
 					~read_data_awaiter() {}
 
 					bool await_ready() {
-						write_ok = socket.write( buff ); // so far we do it sync TODO: extend implementation for more complex (= requiring really async processing) cases
-						return write_ok; // well, here we have no option to deliver failure
+						write_ok = socket.write2( buff ); // so far we do it sync TODO: extend implementation for more complex (= requiring really async processing) cases
+						return write_ok; // false means waiting (incl. exceptional cases)
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !write_ok ); // otherwise, why are we here?
-						awaiting(); // resume immediately
+						socket.dataForCommandProcessing.ahd_write.h = awaiting;
 					}
 
 					auto await_resume() {
-						return write_ok;
+						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_read.exception;
+						}
 					}
 				};
 				return read_data_awaiter(*this, buff);

@@ -355,7 +355,14 @@ namespace nodecpp {
 				std::experimental::coroutine_handle<> h_connect = nullptr;
 				std::experimental::coroutine_handle<> h_accepted = nullptr;
 				//std::experimental::coroutine_handle<> h_read = nullptr;
-				awaitable_handle_data ahd_read;
+				//std::experimental::coroutine_handle<> h_write = nullptr;
+				struct awaitable_read_handle_data : public awaitable_handle_data
+				{
+					Buffer b;
+					size_t min_bytes;
+				};
+				awaitable_read_handle_data ahd_read;
+				awaitable_handle_data ahd_write;
 
 			//	bool connecting = false;
 				bool remoteEnded = false;
@@ -443,6 +450,9 @@ namespace nodecpp {
 
 			bool write(const uint8_t* data, uint32_t size);
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
+
+			bool write2(const uint8_t* data, uint32_t size);
+			bool write2(Buffer& buff) { return write2( buff.begin(), (uint32_t)(buff.size()) ); }
 		};
 
 	} //namespace net

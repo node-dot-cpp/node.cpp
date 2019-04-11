@@ -644,6 +644,58 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 	}
 }
 
+bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size)
+{
+	if (!sockData.isValid())
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected StreamSocket {} on sendStreamSegment", sockData.index);
+		throw Error();
+	}
+
+	sockData.ahd_write.is_exception = false;
+	if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding || sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnded)
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("StreamSocket {} already ended", sockData.index);
+		sockData.ahd_write.is_exception = true;
+		sockData.ahd_write.exception = std::exception(); // TODO: switch to nodecpp exceptions ASAP!
+//		errorCloseSocket(sockData, storeError(Error()));
+		Error e;
+		OSLayer::errorCloseSocket(sockData, e);
+		return false;
+	}
+
+	if (sockData.writeBuffer.size() == 0)
+	{
+		size_t sentSize = 0;
+		uint8_t res = internal_usage_only::internal_send_packet(data, size, sockData.osSocket, sentSize);
+		if (res == COMMLAYER_RET_FAILED)
+		{
+			sockData.ahd_write.is_exception = true;
+			sockData.ahd_write.exception = std::exception(); // TODO: switch to nodecpp exceptions ASAP!
+//			errorCloseSocket(sockData, storeError(Error()));
+			Error e;
+			OSLayer::errorCloseSocket(sockData, e);
+			return false;
+		}
+		else if (sentSize == size)
+		{
+			return true;
+		}
+		else 
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < size);
+			sockData.writeBuffer.append(data + sentSize, size - sentSize);
+			ioSockets.setPollout( sockData.index );
+			return false;
+		}
+	}
+	else
+	{
+		sockData.writeBuffer.append(data, size);
+		return false;
+	}
+}
+
 std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
@@ -667,12 +719,12 @@ bool OSLayer::infraGetPacketBytes2(Buffer& buff, SOCKET sock)
 	struct ::sockaddr_in sa_other;
 	size_t sz = 0;
 	buff.clear();
-	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
+	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin() + buff.size(), buff.capacity(), sz, sa_other, fromlen);
 
 	if (ret != COMMLAYER_RET_OK)
 		return false;
 
-	buff.set_size( sz );
+	buff.set_size( buff.size() + sz );
 
 	return true;
 }
