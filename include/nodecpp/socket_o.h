@@ -61,8 +61,8 @@ namespace nodecpp {
 			virtual void onAccepted() {}
 			virtual void onError(Error& err) {}
 
-			::nodecpp::awaitable<void> data_loop;
-			virtual ::nodecpp::awaitable<void> onDataAwaitable() {co_return;}
+			//::nodecpp::awaitable<void> data_loop;
+			//virtual ::nodecpp::awaitable<void> onDataAwaitable() {co_return;}
 
 			void connect(uint16_t port, const char* ip);
 			SocketO& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
@@ -194,8 +194,8 @@ namespace nodecpp {
 		template<auto x>
 		struct OnEnd {};
 
-		template<auto x>
-		struct OnDataAwaitable {};
+		/*template<auto x>
+		struct OnDataAwaitable {};*/
 
 		template<typename ... args>
 		struct SocketOInitializer2;
@@ -249,12 +249,12 @@ namespace nodecpp {
 			static constexpr auto onAccepted = F;
 		};
 
-		//partial template specialization:
+		/*//partial template specialization:
 		template<auto F, typename ... args>
 		struct SocketOInitializer2<OnDataAwaitable<F>, args...>
 		: public SocketOInitializer2<args...> {
 			static constexpr auto onDataAwaitable = F;
-		};
+		};*/
 
 		//partial template specialiazation to end recursion
 		template<>
@@ -267,7 +267,7 @@ namespace nodecpp {
 			static constexpr auto onEnd = nullptr;
 			static constexpr auto onAccepted = nullptr;
 
-			static constexpr auto onDataAwaitable = nullptr;
+			//static constexpr auto onDataAwaitable = nullptr;
 		};
 
 		template<class Node, class Extra>
@@ -409,7 +409,7 @@ namespace nodecpp {
 					SocketO::onAccepted();
 			}
 
-			::nodecpp::awaitable<void> onDataAwaitable() override
+			/*::nodecpp::awaitable<void> onDataAwaitable() override
 			{ 
 				if constexpr ( Initializer::onDataAwaitable != nullptr )
 				{
@@ -418,7 +418,7 @@ namespace nodecpp {
 				}
 				else
 					co_return SocketO::onDataAwaitable();
-			}
+			}*/
 		};
 
 #if 0
