@@ -441,8 +441,42 @@ public:
 private:
 	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
-		bool resumed = EmitterType::resumeDataAwaiter(entry.getEmitter());
-		if ( !resumed )
+		bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
+		auto hr = entry.getClientSocketData()->ahd_read.h;
+		if ( hr )
+		{
+			entry.getClientSocketData()->ahd_read.is_exception = !read_ok;
+			if ( !read_ok )
+				entry.getClientSocketData()->ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+			entry.getClientSocketData()->ahd_read.h = nullptr;
+			hr();
+		}
+
+		if (read_ok)
+		{
+			size_t sz = entry.getClientSocketData()->recvBuffer.size();
+			Buffer res(sz);
+			res.append( entry.getClientSocketData()->recvBuffer.begin(), sz);
+			entry.getClientSocketData()->recvBuffer.clear();
+			if (res.size() != 0)
+			{
+				EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res))));
+			}
+			else //if (!entry.remoteEnded)
+			{
+				infraProcessRemoteEnded(entry);
+			}
+		}
+		else
+		{
+			internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
+			Error e;
+			errorCloseSocket(entry, e);
+		}
+
+//		bool resumed = EmitterType::resumeDataAwaiter(entry.getEmitter());
+//		if ( !resumed )
+/*		if (false)
 		{
 			auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
 			if (res.first)
@@ -457,7 +491,7 @@ private:
 				}
 				else //if (!entry.remoteEnded)
 				{
-					infraProcessRemoteEnded(entry/*, evs*/);
+					infraProcessRemoteEnded(entry);
 				}
 			}
 			else
@@ -467,7 +501,7 @@ private:
 				Error e;
 				errorCloseSocket(entry, e);
 			}
-		}
+		}*/
 	}
 
 	void infraProcessRemoteEnded(NetSocketEntry& entry)

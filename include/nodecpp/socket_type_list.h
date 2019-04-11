@@ -270,17 +270,17 @@ namespace nodecpp {
 				return false;
 			}
 
-			static bool resumeDataAwaiter( const OpaqueEmitter& emitter ) { 
+			/*static bool resumeDataAwaiter( const OpaqueEmitter& emitter ) { 
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); 
-				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.h_read )
+				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_read.h )
 				{
-					auto h_tmp = emitter.getClientSocketPtr()->dataForCommandProcessing.h_read;
-					emitter.getClientSocketPtr()->dataForCommandProcessing.h_read = nullptr;
+					auto h_tmp = emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_read.h;
+					emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_read.h = nullptr;
 					h_tmp();
 					return true;
 				}
 				return false;
-			}
+			}*/
 		};
 	} // namespace net
 

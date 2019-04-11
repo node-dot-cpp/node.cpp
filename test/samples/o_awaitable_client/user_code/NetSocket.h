@@ -67,12 +67,21 @@ public:
 	{
 		for (;;)
 		{
-			size_t read_ret = co_await socket->read();
+			nodecpp::Buffer r_buff;
+			try
+			{
+				r_buff = std::move( co_await socket->a_read() );
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				break;
+			}
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
 			++recvReplies;
 			if ( ( recvReplies & 0xFFF ) == 0 )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, socket->dataForCommandProcessing.recvBuffer.size(), recvSize );
-			recvSize += socket->dataForCommandProcessing.recvBuffer.size();
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+			recvSize += r_buff.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
 			socket->write(buf);
@@ -84,11 +93,21 @@ public:
 	{
 		for (;;)
 		{
-			size_t read_ret = co_await clientSock.read();
+			nodecpp::Buffer r_buff;
+			try
+			{
+				r_buff = std::move( co_await clientSock.a_read() );
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(clientSock.getExtra()));
+				break;
+			}
+//			size_t read_ret = co_await clientSock.read();
 			++recvReplies;
 			if ( ( recvReplies & 0xFFF ) == 0 )
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, clientSock.dataForCommandProcessing.recvBuffer.size(), recvSize );
-			recvSize += clientSock.dataForCommandProcessing.recvBuffer.size();
+			recvSize += r_buff.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
 			bool write_ok = co_await clientSock.a_write(buf);

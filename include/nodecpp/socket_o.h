@@ -69,39 +69,6 @@ namespace nodecpp {
 			SocketO& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
 
 		//private:
-			auto read() { 
-
-				struct read_data_awaiter {
-					SocketO& socket;
-
-					std::experimental::coroutine_handle<> who_is_awaiting;
-
-					read_data_awaiter(SocketO& socket_) : socket( socket_ ) {}
-
-					read_data_awaiter(const read_data_awaiter &) = delete;
-					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
-	
-					~read_data_awaiter() {}
-
-					bool await_ready() {
-						// consider checking is_data(myIdx) first
-						return false;
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						socket.dataForCommandProcessing.h_read = who_is_awaiting;
-					}
-
-					auto await_resume() {
-						bool ret = OSLayer::infraGetPacketBytes2(socket.dataForCommandProcessing.recvBuffer, socket.dataForCommandProcessing.osSocket ); 
-						if ( !ret) 
-							return (size_t)0; 
-						return socket.dataForCommandProcessing.recvBuffer.size();
-					}
-				};
-				return read_data_awaiter(*this);
-			}
 			auto a_connect(uint16_t port, const char* ip) { 
 
 				struct read_data_awaiter {
@@ -129,6 +96,46 @@ namespace nodecpp {
 					auto await_resume() {}
 				};
 				connect( port, ip );
+				return read_data_awaiter(*this);
+			}
+			auto a_read() { 
+
+				struct read_data_awaiter {
+					SocketO& socket;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					read_data_awaiter(SocketO& socket_) : socket( socket_ ) {}
+
+					read_data_awaiter(const read_data_awaiter &) = delete;
+					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+	
+					~read_data_awaiter() {}
+
+					bool await_ready() {
+						// consider checking is_data(myIdx) first
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						socket.dataForCommandProcessing.ahd_read.h = who_is_awaiting;
+					}
+
+					auto await_resume() {
+						if ( socket.dataForCommandProcessing.ahd_read.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_read.exception;
+						}
+						Buffer b( std::move( socket.dataForCommandProcessing.recvBuffer.clone() ) );
+						return b;
+						/*bool ret = OSLayer::infraGetPacketBytes2(socket.dataForCommandProcessing.recvBuffer, socket.dataForCommandProcessing.osSocket ); 
+						if ( !ret) 
+							return (size_t)0; 
+						return socket.dataForCommandProcessing.recvBuffer.size();*/
+					}
+				};
 				return read_data_awaiter(*this);
 			}
 			auto a_write(Buffer& buff) { 

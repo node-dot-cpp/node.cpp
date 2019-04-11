@@ -341,11 +341,21 @@ namespace nodecpp {
 				enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
 				state = Uninitialized;
 				size_t index = 0;
+
 //				net::Mode mode = net::Mode::callable;
 				net::Mode mode = net::Mode::awaitable;
+
+				struct awaitable_handle_data
+				{
+					std::experimental::coroutine_handle<> h = nullptr;
+					bool is_exception = false;
+					std::exception exception; // TODO: consider possibility of switching to nodecpp::error
+				};
+
 				std::experimental::coroutine_handle<> h_connect = nullptr;
 				std::experimental::coroutine_handle<> h_accepted = nullptr;
-				std::experimental::coroutine_handle<> h_read = nullptr;
+				//std::experimental::coroutine_handle<> h_read = nullptr;
+				awaitable_handle_data ahd_read;
 
 			//	bool connecting = false;
 				bool remoteEnded = false;
