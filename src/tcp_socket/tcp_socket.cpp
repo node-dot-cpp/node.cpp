@@ -644,7 +644,7 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 	}
 }
 
-bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size)
+bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& sockData, Buffer& buff )
 {
 	if (!sockData.isValid())
 	{
@@ -667,7 +667,7 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 	if (sockData.writeBuffer.size() == 0)
 	{
 		size_t sentSize = 0;
-		uint8_t res = internal_usage_only::internal_send_packet(data, size, sockData.osSocket, sentSize);
+		uint8_t res = internal_usage_only::internal_send_packet(buff.begin(), buff.size(), sockData.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
 			sockData.ahd_write.is_exception = true;
@@ -677,22 +677,31 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 			OSLayer::errorCloseSocket(sockData, e);
 			return false;
 		}
-		else if (sentSize == size)
+		else if (sentSize == buff.size())
 		{
 			return true;
 		}
 		else 
 		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < size);
-			sockData.writeBuffer.append(data + sentSize, size - sentSize);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < buff.size());
+			sockData.writeBuffer.append(buff.begin() + sentSize, buff.size() - sentSize);
 			ioSockets.setPollout( sockData.index );
 			return false;
 		}
 	}
 	else
 	{
-		sockData.writeBuffer.append(data, size);
-		return false;
+		if ( sockData.writeBuffer.capacity() - sockData.writeBuffer.size() >= buff.size() )
+		{
+			sockData.writeBuffer.append(buff.begin(), buff.size());
+			return true;
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sockData.ahd_write.b.size() == 0 );
+			sockData.ahd_write.b = std::move( buff );
+			return false;
+		}
 	}
 }
 
@@ -731,8 +740,7 @@ bool OSLayer::infraGetPacketBytes2(Buffer& buff, SOCKET sock)
 
 NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData)
 {
-	NetSocketManagerBase::ShouldEmit ret = EmitNone;
-//	if (current.connecting)
+	NetSocketManagerBase::ShouldEmit ret = EmitNone; // as a base assumption
 	if(sockData.state == net::SocketBase::DataForCommandProcessing::Connecting)
 	{
 //		current.connecting = false;
@@ -762,7 +770,6 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 	}
 	else if (!sockData.writeBuffer.empty())
 	{
-//		assert(entry.writeBuffer.size() != 0);
 		size_t sentSize = 0;
 		uint8_t res = internal_usage_only::internal_send_packet(sockData.writeBuffer.begin(), sockData.writeBuffer.size(), sockData.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
@@ -776,28 +783,49 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 		{
 //			entry.writeEvents = false;
 			sockData.writeBuffer.clear();
-			//updateEventMaskOnWriteBufferStatusChanged( sockData.index, true );
-			if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
-			{
-				internal_usage_only::internal_shutdown_send(sockData.osSocket);
-				//current.pendingLocalEnd = false;
-				//current.localEnded = true;
 
-				if (sockData.remoteEnded)
+			bool all_done = true;
+
+			if ( sockData.ahd_write.b.size() )
+			{
+				res = internal_usage_only::internal_send_packet(sockData.ahd_write.b.begin(), sockData.ahd_write.b.size(), sockData.osSocket, sentSize);
+				if (res == COMMLAYER_RET_FAILED)
 				{
-					//current.state = net::SocketBase::DataForCommandProcessing::Closing;
-					//pendingCloseEvents.emplace_back(current.index, false);
-					OSLayer::closeSocket(sockData);
+					Error e;
+					OSLayer::errorCloseSocket(sockData, e);
 				}
+				else if (sentSize == sockData.ahd_write.b.size())
+					sockData.ahd_write.b.clear();
 				else
-					sockData.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
+					all_done = false;
 			}
-			ioSockets.unsetPollout( sockData.index );
+
+			if ( all_done )
+			{
+				//updateEventMaskOnWriteBufferStatusChanged( sockData.index, true );
+				if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
+				{
+					internal_usage_only::internal_shutdown_send(sockData.osSocket);
+					//current.pendingLocalEnd = false;
+					//current.localEnded = true;
+
+					if (sockData.remoteEnded)
+					{
+						//current.state = net::SocketBase::DataForCommandProcessing::Closing;
+						//pendingCloseEvents.emplace_back(current.index, false);
+						OSLayer::closeSocket(sockData);
+					}
+					else
+						sockData.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
+				}
+				ioSockets.unsetPollout( sockData.index );
 				
-//			entry.ptr->emitDrain();
-//			evs.add(&net::Socket::emitDrain, current.getPtr());
-//			current.getEmitter().emitDrain();
-			ret = EmitDrain;
+	//			entry.ptr->emitDrain();
+	//			evs.add(&net::Socket::emitDrain, current.getPtr());
+	//			current.getEmitter().emitDrain();
+
+				ret = EmitDrain;
+			}
 		}
 		else
 		{

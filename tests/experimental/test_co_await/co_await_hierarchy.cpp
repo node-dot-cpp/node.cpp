@@ -74,8 +74,6 @@ public:
 		struct read_data_awaiter {
 			int myIdx;
 
-			std::experimental::coroutine_handle<> who_is_awaiting;
-
 			read_data_awaiter(int myIdx_) {
 				myIdx = myIdx_;
 			}
@@ -91,8 +89,7 @@ public:
 			}
 
 			void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-				who_is_awaiting = awaiting;
-				set_read_awaiting_handle( myIdx, this->who_is_awaiting );
+				set_read_awaiting_handle( myIdx, awaiting );
 			}
 
 			auto await_resume() {

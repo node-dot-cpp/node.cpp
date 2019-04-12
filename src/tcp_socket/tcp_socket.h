@@ -241,7 +241,7 @@ public:
 		ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
 	}
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
-	bool appWrite2(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
+	bool appWrite2(net::SocketBase::DataForCommandProcessing& sockData, Buffer& b );
 	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
 	{
 		Ip4 remoteIp;
@@ -359,6 +359,15 @@ public:
 					EmitterType::emitClose(entry.getEmitter(), err);
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 #else // new version
+					if (entry.isUsed())
+					{
+						if ( entry.getClientSocketData()->ahd_read.h != nullptr )
+						{
+						}
+						if ( entry.getClientSocketData()->ahd_write.h != nullptr )
+						{
+						}
+					}
 					EmitterType::emitClose(entry.getEmitter(), err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
@@ -583,8 +592,14 @@ private:
 					EmitterType::emitConnect(current.getEmitter());
 				break;
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:
-				EmitterType::emitDrain(current.getEmitter());
+			{
+				auto hr = current.getClientSocketData()->ahd_write.h;
+				if ( hr )
+					hr();
+				else // TODO: make sure we never have both cases in the same time
+					EmitterType::emitDrain(current.getEmitter());
 				break;
+			}
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,status == NetSocketManagerBase::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
 		}
