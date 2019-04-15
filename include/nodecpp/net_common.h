@@ -207,6 +207,51 @@ namespace nodecpp {
 		}
 	};
 
+	class CircularByteBuffer
+	{
+		size_t size_exp;
+		std::unique_ptr<uint8_t[]> buff; // TODO: switch to using safe memory objects ASAP
+		uint8_t* begin = nullptr;
+		uint8_t* end = nullptr;
+	public:
+		CircularByteBuffer(size_t sz_exp) { 
+			size_exp = sz_exp; 
+			buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc(alloc_size())));
+			begin = end = buff.get();
+		}
+		size_t used_size() { return begin < end ? end - begin : alloc_size() - (begin - end); }
+		size_t remaining_capacity() { return alloc_size() - 1 - used_size(); }
+		size_t alloc_size() { return 1<<size_exp; }
+		bool append( uint8_t* ptr, size_t sz ) { 
+			if ( sz > remaining_capacity() )
+				return false;
+			size_t fwd_free_sz = buff.get() + alloc_size() - end;
+			if ( sz <= fwd_free_sz )
+			{
+				memcpy( end,  ptr, sz );
+				end += sz;
+			}
+			else
+			{
+				memcpy( end,  ptr, fwd_free_sz );
+				memcpy( buff.get(),  ptr + fwd_free_sz, sz - fwd_free_sz );
+				end = buff.get() + sz - fwd_free_sz;
+			}
+			return true; 
+		}
+		bool pop_back( size_t sz ) {
+			if ( begin <= end ) {
+				if ( begin + sz <= end )
+					begin += sz;
+				else
+					begin = end;
+			}
+			else
+			{
+			}
+		}
+	};
+
 	template <class ListItem>
 	class IntrusiveList
 	{
