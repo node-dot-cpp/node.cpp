@@ -235,7 +235,7 @@ namespace nodecpp {
 		size_t remaining_capacity() const { return alloc_size() - 1 - used_size(); }
 		bool empty() const { return begin == end; }
 		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
-		bool append( uint8_t* ptr, size_t sz ) { 
+		bool write_to_end( const uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )
 				return false;
 			size_t fwd_free_sz = buff.get() + alloc_size() - end;
@@ -268,7 +268,7 @@ namespace nodecpp {
 			}
 			return true;
 		}
-		bool pop_back( size_t sz ) {
+		bool pop_begin( size_t sz ) {
 			if ( sz > used_size() ) // TODO: think about void function and assertion
 				return false;
 			
@@ -295,6 +295,35 @@ namespace nodecpp {
 				return std::make_pair( end, buff.get() + alloc_size() - end );
 			else
 				return std::make_pair( end, begin - end - 1 );
+		}
+		template<class Writer>
+		bool write_( Writer writer, size_t& bytesWritten ) {
+			bool ret;
+			if ( begin <= end )
+			{
+				ret = writer.write( begin, end - begin, bytesWritten );
+				begin += bytesWritten;
+			}
+			else
+			{
+				ret = writer.write( begin, buff.get() + alloc_size() - begin, bytesWritten );
+				begin += bytesWritten;
+				if( begin == buff.get() + alloc_size() )
+					begin = buff.get();
+			}
+			return ret;
+		}
+		template<class Writer>
+		void write( Writer writer, size_t& bytesWritten ) {
+			bytesWritten = 0;
+			size_t bw = 0;
+			bool goon = begin != end;
+			while ( goon )
+			{
+				goon = write_( writer, bw );
+				bytesWritten += bw;
+				goon = goon && begin != end;
+			}
 		}
 	};
 
