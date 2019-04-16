@@ -221,7 +221,7 @@ namespace nodecpp {
 		}
 		size_t used_size() { return begin < end ? end - begin : alloc_size() - (begin - end); }
 		size_t remaining_capacity() { return alloc_size() - 1 - used_size(); }
-		size_t alloc_size() { return 1<<size_exp; }
+		size_t alloc_size() { return ((size_t)1)<<size_exp; }
 		bool append( uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )
 				return false;
@@ -239,16 +239,49 @@ namespace nodecpp {
 			}
 			return true; 
 		}
-		bool pop_back( size_t sz ) {
-			if ( begin <= end ) {
-				if ( begin + sz <= end )
-					begin += sz;
-				else
-					begin = end;
+		bool push_front( size_t sz ) {
+			if ( sz > remaining_capacity() )
+				return false;
+			if ( begin > end ) {
+				end += sz;
 			}
 			else
 			{
+				size_t sz_at_end = buff.get() + alloc_size() - begin;
+				if ( sz <= sz_at_end )
+					end += sz;
+				else
+					end = buff.get() + sz - sz_at_end;
 			}
+			return true;
+		}
+		bool pop_back( size_t sz ) {
+			if ( sz > used_size() ) // TODO: think about void function and assertion
+				return false;
+			
+			if ( begin <= end )
+				begin += sz;
+			else
+			{
+				size_t sz_at_end = buff.get() + alloc_size() - begin;
+				if ( sz < sz_at_end )
+					begin += sz;
+				else
+					begin = buff.get() + sz - sz_at_end;
+			}
+			return true;
+		}
+		std::pair<uint8_t*, size_t> get_begin() {
+			if ( begin <= end )
+				return std::make_pair( begin, end - begin );
+			else
+				return std::make_pair( begin, buff.get() + alloc_size() - begin );
+		}
+		std::pair<uint8_t*, size_t> get_end() {
+			if ( begin <= end )
+				return std::make_pair( end, buff.get() + alloc_size() - end );
+			else
+				return std::make_pair( end, begin - end - 1 );
 		}
 	};
 
