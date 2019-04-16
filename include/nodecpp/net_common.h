@@ -209,8 +209,8 @@ namespace nodecpp {
 
 	class CircularByteBuffer
 	{
-		size_t size_exp;
 		std::unique_ptr<uint8_t[]> buff; // TODO: switch to using safe memory objects ASAP
+		size_t size_exp;
 		uint8_t* begin = nullptr;
 		uint8_t* end = nullptr;
 	public:
@@ -219,9 +219,22 @@ namespace nodecpp {
 			buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc(alloc_size())));
 			begin = end = buff.get();
 		}
-		size_t used_size() { return begin < end ? end - begin : alloc_size() - (begin - end); }
-		size_t remaining_capacity() { return alloc_size() - 1 - used_size(); }
-		size_t alloc_size() { return ((size_t)1)<<size_exp; }
+		CircularByteBuffer( const CircularByteBuffer& ) = delete;
+		CircularByteBuffer& operator = ( const CircularByteBuffer& ) = delete;
+		CircularByteBuffer( CircularByteBuffer&& other ) : buff( std::move( other.buff ) ) {
+			size_exp = other.size_exp;
+			begin = other.begin;
+			end = other.end;
+		}
+		CircularByteBuffer& operator = ( CircularByteBuffer&& other ) {
+			size_exp = other.size_exp;
+			begin = other.begin;
+			end = other.end;
+		}
+		size_t used_size() const { return begin < end ? end - begin : alloc_size() - (begin - end); }
+		size_t remaining_capacity() const { return alloc_size() - 1 - used_size(); }
+		bool empty() const { return begin == end; }
+		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
 		bool append( uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )
 				return false;
@@ -455,7 +468,8 @@ namespace nodecpp {
 
 				bool refed = false;
 
-				Buffer writeBuffer = Buffer(64 * 1024);
+				//Buffer writeBuffer = Buffer(64 * 1024);
+				CircularByteBuffer writeBuffer = CircularByteBuffer( 16 );
 				Buffer recvBuffer = Buffer(64 * 1024);
 
 				//SOCKET osSocket = INVALID_SOCKET;
@@ -504,7 +518,7 @@ namespace nodecpp {
 
 			const Address& address() const { return _local; }
 
-			size_t bufferSize() const { return dataForCommandProcessing.writeBuffer.size(); }
+			size_t bufferSize() const { return dataForCommandProcessing.writeBuffer.used_size(); }
 			size_t bytesRead() const { return _bytesRead; }
 			size_t bytesWritten() const { return _bytesWritten; }
 

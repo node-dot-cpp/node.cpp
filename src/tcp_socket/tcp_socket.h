@@ -189,7 +189,7 @@ public:
 		size_t id = ptr->dataForCommandProcessing.index;
 		pendingAcceptedEvents.push_back(id);
 		ptr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connected;
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.writeBuffer.size() == 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.writeBuffer.used_size() == 0 );
 		ioSockets.unsetPollout(id);
 		ptr->dataForCommandProcessing.refed = true;
 		auto& entry = appGetEntry(id);
