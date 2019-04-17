@@ -466,6 +466,21 @@ namespace nodecpp
 			return COMMLAYER_RET_OK;
 		}
 
+		class internal_read_packet_object
+		{
+			SOCKET sock;
+			uint8_t ret;
+		public:
+			internal_read_packet_object( SOCKET sock_ ) : sock( sock_ ) {};
+			bool read( uint8_t* data, size_t size, size_t& sentSize_ ) {
+				socklen_t fromlen = sizeof(struct ::sockaddr_in);
+				struct ::sockaddr_in sa_other;
+				ret =  internal_get_packet_bytes2( sock, data, size, sentSize_, sa_other, fromlen );
+				return ret == COMMLAYER_RET_OK;
+			}
+			uint8_t get_ret_value() const { return ret; }
+		};
+
 	} // internal_usage_only
 } // nodecpp
 
@@ -721,9 +736,9 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 
 std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
+	size_t sz = 0;
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;
-	size_t sz = 0;
 	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
 
 	if (ret != COMMLAYER_RET_OK)
@@ -736,18 +751,18 @@ std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 	return make_pair(true, std::move(res));
 }
 
-bool OSLayer::infraGetPacketBytes2(Buffer& buff, SOCKET sock)
+bool OSLayer::infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock)
 {
-	socklen_t fromlen = sizeof(struct ::sockaddr_in);
-	struct ::sockaddr_in sa_other;
 	size_t sz = 0;
+/*	socklen_t fromlen = sizeof(struct ::sockaddr_in);
+	struct ::sockaddr_in sa_other;
 	buff.clear();
-	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin() + buff.size(), buff.capacity(), sz, sa_other, fromlen);
+	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin() + buff.size(), buff.capacity(), sz, sa_other, fromlen);*/
+	internal_usage_only::internal_read_packet_object reader( sock );
+	buff.read( reader, sz );
 
-	if (ret != COMMLAYER_RET_OK)
+	if (reader.get_ret_value() != COMMLAYER_RET_OK)
 		return false;
-
-	buff.set_size( buff.size() + sz );
 
 	return true;
 }
@@ -848,8 +863,6 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < sockData.writeBuffer.used_size());
 //			entry.writeEvents = true;
-//			sockData.writeBuffer.pop_begin(sentSize);
-			sockData.writeBuffer.write(writer, sentSize);
 		}
 	}
 	else //ignore?

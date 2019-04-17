@@ -214,7 +214,7 @@ namespace nodecpp {
 		uint8_t* begin = nullptr;
 		uint8_t* end = nullptr;
 	public:
-		CircularByteBuffer(size_t sz_exp) { 
+		CircularByteBuffer(size_t sz_exp = 16) { 
 			size_exp = sz_exp; 
 			buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc(alloc_size())));
 			begin = end = buff.get();
@@ -385,7 +385,7 @@ namespace nodecpp {
 			return ret;
 		}
 		template<class Reader>
-		bool read( Reader reader, size_t& bytesRead ) {
+		void read( Reader reader, size_t& bytesRead ) {
 			bytesRead = 0;
 			size_t br;
 			bool goon = remaining_capacity();
@@ -550,7 +550,6 @@ namespace nodecpp {
 				//std::experimental::coroutine_handle<> h_write = nullptr;
 				struct awaitable_read_handle_data : public awaitable_handle_data
 				{
-					Buffer b;
 					size_t min_bytes;
 				};
 				struct awaitable_write_handle_data : public awaitable_handle_data
@@ -571,6 +570,7 @@ namespace nodecpp {
 
 				//Buffer writeBuffer = Buffer(64 * 1024);
 				CircularByteBuffer writeBuffer = CircularByteBuffer( 16 );
+				CircularByteBuffer readBuffer = CircularByteBuffer( 16 );
 				Buffer recvBuffer = Buffer(64 * 1024);
 
 				//SOCKET osSocket = INVALID_SOCKET;
