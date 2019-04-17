@@ -645,14 +645,14 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 		else 
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < size);
-			sockData.writeBuffer.write_to_end(data + sentSize, size - sentSize);
+			sockData.writeBuffer.append(data + sentSize, size - sentSize);
 			ioSockets.setPollout( sockData.index );
 			return false;
 		}
 	}
 	else
 	{
-		sockData.writeBuffer.write_to_end(data, size);
+		sockData.writeBuffer.append(data, size);
 		return false;
 	}
 }
@@ -698,7 +698,7 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 		else 
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < buff.size());
-			sockData.writeBuffer.write_to_end(buff.begin() + sentSize, buff.size() - sentSize);
+			sockData.writeBuffer.append(buff.begin() + sentSize, buff.size() - sentSize);
 			ioSockets.setPollout( sockData.index );
 			return false;
 		}
@@ -707,7 +707,7 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 	{
 		if ( sockData.writeBuffer.remaining_capacity() >= buff.size() )
 		{
-			sockData.writeBuffer.write_to_end(buff.begin(), buff.size());
+			sockData.writeBuffer.append(buff.begin(), buff.size());
 			return true;
 		}
 		else
@@ -848,7 +848,8 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < sockData.writeBuffer.used_size());
 //			entry.writeEvents = true;
-			sockData.writeBuffer.pop_begin(sentSize);
+//			sockData.writeBuffer.pop_begin(sentSize);
+			sockData.writeBuffer.write(writer, sentSize);
 		}
 	}
 	else //ignore?

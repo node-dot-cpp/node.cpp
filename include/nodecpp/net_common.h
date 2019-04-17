@@ -235,24 +235,7 @@ namespace nodecpp {
 		size_t remaining_capacity() const { return alloc_size() - 1 - used_size(); }
 		bool empty() const { return begin == end; }
 		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
-		bool write_to_end( const uint8_t* ptr, size_t sz ) { 
-			if ( sz > remaining_capacity() )
-				return false;
-			size_t fwd_free_sz = buff.get() + alloc_size() - end;
-			if ( sz <= fwd_free_sz )
-			{
-				memcpy( end,  ptr, sz );
-				end += sz;
-			}
-			else
-			{
-				memcpy( end,  ptr, fwd_free_sz );
-				memcpy( buff.get(),  ptr + fwd_free_sz, sz - fwd_free_sz );
-				end = buff.get() + sz - fwd_free_sz;
-			}
-			return true; 
-		}
-		bool push_front( size_t sz ) {
+		/*bool push_front( size_t sz ) {
 			if ( sz > remaining_capacity() )
 				return false;
 			if ( begin > end ) {
@@ -295,9 +278,30 @@ namespace nodecpp {
 				return std::make_pair( end, buff.get() + alloc_size() - end );
 			else
 				return std::make_pair( end, begin - end - 1 );
+		}*/
+
+
+		// writer-related
+		bool append( const uint8_t* ptr, size_t sz ) { 
+			if ( sz > remaining_capacity() )
+				return false;
+			size_t fwd_free_sz = buff.get() + alloc_size() - end;
+			if ( sz <= fwd_free_sz )
+			{
+				memcpy( end,  ptr, sz );
+				end += sz;
+			}
+			else
+			{
+				memcpy( end,  ptr, fwd_free_sz );
+				memcpy( buff.get(),  ptr + fwd_free_sz, sz - fwd_free_sz );
+				end = buff.get() + sz - fwd_free_sz;
+			}
+			return true; 
 		}
 		template<class Writer>
 		bool write_( Writer writer, size_t& bytesWritten ) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, bytesWritten == 0 );
 			bool ret;
 			if ( begin <= end )
 			{
@@ -316,13 +320,81 @@ namespace nodecpp {
 		template<class Writer>
 		void write( Writer writer, size_t& bytesWritten ) {
 			bytesWritten = 0;
-			size_t bw = 0;
+			size_t bw;
 			bool goon = begin != end;
 			while ( goon )
 			{
+				bw = 0;
 				goon = write_( writer, bw );
 				bytesWritten += bw;
 				goon = goon && begin != end;
+			}
+		}
+
+		// reader-related
+		void get_ready_data( Buffer& b ) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.size() == 0 );
+			if ( begin <= end )
+			{
+				size_t sz2copy = b.capacity() >= end - begin ? end - begin : b.capacity();
+				b.append( begin, sz2copy );
+				begin += sz2copy;
+			}
+			else
+			{
+				//size_t sz2copy = b.capacity() >= used_size() ? used_size() : b.capacity();
+				size_t sz2copy = buff.get() + alloc_size() - begin;
+				if ( sz2copy > b.capacity() )
+				{
+					b.append( begin, sz2copy );
+					begin += sz2copy;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, begin < buff.get() + alloc_size() );
+				}
+				else if ( sz2copy < b.capacity() )
+				{
+					b.append( begin, sz2copy );
+					size_t sz2copy2 = b.capacity() - sz2copy;
+					if ( sz2copy2 < b.capacity() )
+						sz2copy2 = b.capacity();
+					b.append( begin, sz2copy2 );
+					begin = buff.get() + sz2copy2;
+				}
+				else
+				{
+					b.append( begin, sz2copy );
+					begin = buff.get();
+				}
+			}
+		}
+		template<class Reader>
+		bool read_( Reader reader, size_t& bytesRead ) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, bytesRead == 0 );
+			bool ret;
+			if ( begin <= end )
+			{
+				ret = reader.read( end, buff.get() + alloc_size() - end, bytesRead );
+				end += bytesRead;
+				if( end == buff.get() + alloc_size() )
+					end = buff.get();
+			}
+			else
+			{
+				ret = reader.read( end, end - begin - 1, bytesRead );
+				end += bytesRead;
+			}
+			return ret;
+		}
+		template<class Reader>
+		bool read( Reader reader, size_t& bytesRead ) {
+			bytesRead = 0;
+			size_t br;
+			bool goon = remaining_capacity();
+			while ( goon )
+			{
+				br = 0;
+				goon = read_( reader, br );
+				bytesRead += br;
+				goon = goon && remaining_capacity();
 			}
 		}
 	};
