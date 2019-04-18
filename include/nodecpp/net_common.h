@@ -220,7 +220,7 @@ namespace nodecpp {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff != nullptr );
 			size_t total_sz = used_size() + data_size;
 			size_t new_size_exp = size_exp + 1;
-			while ( (1 << new_size_exp) < total_sz + 1 )
+			while ( (((size_t)1) << new_size_exp) < total_sz + 1 )
 			{
 				// TODO: add upper bound control
 				++new_size_exp;
