@@ -210,9 +210,49 @@ namespace nodecpp {
 	class CircularByteBuffer
 	{
 		std::unique_ptr<uint8_t[]> buff; // TODO: switch to using safe memory objects ASAP
+		size_t max_allowed_size_exp = 32;
 		size_t size_exp;
 		uint8_t* begin = nullptr;
 		uint8_t* end = nullptr;
+
+		bool resize_up_and_append( const uint8_t* data, size_t data_size) {
+			// TODO: introduce upper limit and make this call bool
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff != nullptr );
+			size_t total_sz = used_size() + data_size;
+			size_t new_size_exp = size_exp + 1;
+			while ( (1 << new_size_exp) < total_sz + 1 )
+			{
+				// TODO: add upper bound control
+				++new_size_exp;
+				if ( new_size_exp > max_allowed_size_exp )
+					return false;
+			}
+			size_t new_alloc_size = ((size_t)1) << new_size_exp;
+			std::unique_ptr<uint8_t[]> new_buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc( new_alloc_size )));
+			size_t sz = 0;
+			if ( begin <= end )
+			{
+				sz = end - begin;
+				memcpy( new_buff.get(), begin, sz );
+			}
+			else
+			{
+				sz = buff.get() + alloc_size() - begin;
+				memcpy( new_buff.get(), begin, sz );
+				memcpy( new_buff.get() + sz, buff.get(), end - buff.get() );
+				sz += end - buff.get();
+			}
+			buff = std::move( new_buff );
+			size_exp = new_size_exp;
+			begin = buff.get();
+			end = begin + sz;
+
+			memcpy( end, data, data_size );
+			end += data_size;
+
+			return true;
+		}
+
 	public:
 		CircularByteBuffer(size_t sz_exp = 16) { 
 			size_exp = sz_exp; 
@@ -284,7 +324,11 @@ namespace nodecpp {
 		// writer-related
 		bool append( const uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )
-				return false;
+			{
+				//return false;
+				return resize_up_and_append( ptr, sz );
+			}
+
 			size_t fwd_free_sz = buff.get() + alloc_size() - end;
 			if ( sz <= fwd_free_sz )
 			{
