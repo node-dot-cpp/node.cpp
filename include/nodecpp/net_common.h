@@ -271,7 +271,7 @@ namespace nodecpp {
 			begin = other.begin;
 			end = other.end;
 		}
-		size_t used_size() const { return begin < end ? end - begin : alloc_size() - (begin - end); }
+		size_t used_size() const { return begin <= end ? end - begin : alloc_size() - (begin - end); }
 		size_t remaining_capacity() const { return alloc_size() - 1 - used_size(); }
 		bool empty() const { return begin == end; }
 		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
@@ -344,7 +344,7 @@ namespace nodecpp {
 			return true; 
 		}
 		template<class Writer>
-		bool write_( Writer writer, size_t& bytesWritten ) {
+		bool write_( Writer& writer, size_t& bytesWritten ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, bytesWritten == 0 );
 			bool ret;
 			if ( begin <= end )
@@ -362,7 +362,7 @@ namespace nodecpp {
 			return ret;
 		}
 		template<class Writer>
-		void write( Writer writer, size_t& bytesWritten ) {
+		void write( Writer& writer, size_t& bytesWritten ) {
 			bytesWritten = 0;
 			size_t bw;
 			bool goon = begin != end;
@@ -410,35 +410,32 @@ namespace nodecpp {
 				}
 			}
 		}
+
 		template<class Reader>
-		bool read_( Reader reader, size_t& bytesRead ) {
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, bytesRead == 0 );
-			bool ret;
-			if ( begin <= end )
+		void read( Reader& reader, size_t& bytesRead ) {
+			bytesRead = 0;
+			if ( begin > end )
 			{
-				ret = reader.read( end, buff.get() + alloc_size() - end, bytesRead );
+				reader.read( end, begin - end - 1, bytesRead );
 				end += bytesRead;
-				if( end == buff.get() + alloc_size() )
-					end = buff.get();
 			}
 			else
 			{
-				ret = reader.read( end, end - begin - 1, bytesRead );
+				bool can_continue = reader.read( end, buff.get() + alloc_size() - end, bytesRead );
 				end += bytesRead;
-			}
-			return ret;
-		}
-		template<class Reader>
-		void read( Reader reader, size_t& bytesRead ) {
-			bytesRead = 0;
-			size_t br;
-			bool goon = remaining_capacity();
-			while ( goon )
-			{
-				br = 0;
-				goon = read_( reader, br );
-				bytesRead += br;
-				goon = goon && remaining_capacity();
+				bool till_end = end == (buff.get() + alloc_size());
+				if( till_end )
+					end = buff.get();
+				/*if (!can_continue || !till_end)
+					return;
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, end == buff.get() );
+				if ( begin - end > 1 )
+				{
+					size_t br = 0;
+					reader.read( end, end - begin - 1, br );
+					end += br;
+					bytesRead += br;
+				}*/
 			}
 		}
 	};

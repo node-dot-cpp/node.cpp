@@ -168,8 +168,8 @@ namespace nodecpp {
 							throw socket.dataForCommandProcessing.ahd_read.exception;
 						}
 						//buff = std::move( socket.dataForCommandProcessing.ahd_read.b );
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes);
 						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes);
 					}
 				};
 				return read_data_awaiter(*this, buff, min_bytes);

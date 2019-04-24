@@ -42,9 +42,9 @@
 #define NODECPP_UNUSED_VAR 
 #endif
 
-#include <foundation.h>
+/*#include <foundation.h>
 #include <nodecpp_assert.h>
-#include <iibmalloc.h>
+#include <iibmalloc.h>*/
 #include <safe_ptr.h>
 #include <awaitable.h>
 
@@ -57,7 +57,7 @@
 #include <algorithm>
 
 //#include <cassert>
-#include <fmt/format.h>
+//#include <fmt/format.h>
 //#include "trace.h"
 //#include "assert.h"
 #include "mallocator.h"
