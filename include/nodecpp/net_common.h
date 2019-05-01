@@ -343,35 +343,33 @@ namespace nodecpp {
 			}
 			return true; 
 		}
-		template<class Writer>
-		bool write_( Writer& writer, size_t& bytesWritten ) {
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, bytesWritten == 0 );
-			bool ret;
-			if ( begin <= end )
-			{
-				ret = writer.write( begin, end - begin, bytesWritten );
-				begin += bytesWritten;
-			}
-			else
-			{
-				ret = writer.write( begin, buff.get() + alloc_size() - begin, bytesWritten );
-				begin += bytesWritten;
-				if( begin == buff.get() + alloc_size() )
-					begin = buff.get();
-			}
-			return ret;
-		}
+
 		template<class Writer>
 		void write( Writer& writer, size_t& bytesWritten ) {
 			bytesWritten = 0;
-			size_t bw;
-			bool goon = begin != end;
-			while ( goon )
+			if ( begin < end )
 			{
-				bw = 0;
-				goon = write_( writer, bw );
-				bytesWritten += bw;
-				goon = goon && begin != end;
+				writer.write( begin, end - begin, bytesWritten );
+				begin += bytesWritten;
+			}
+			else if ( begin > end )
+			{
+				size_t sz2write = buff.get() + alloc_size() - begin;
+				bool can_continue = writer.write( end, sz2write, bytesWritten );
+				begin += bytesWritten;
+				bool till_end = begin == (buff.get() + alloc_size());
+				if( till_end )
+					begin = buff.get();
+				if (!can_continue || !till_end)
+					return;
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, begin == buff.get() );
+				if ( begin != end )
+				{
+					size_t bw = 0;
+					writer.write( begin, end - begin, bw );
+					begin += bw;
+					bytesWritten += bw;
+				}
 			}
 		}
 
@@ -421,21 +419,22 @@ namespace nodecpp {
 			}
 			else
 			{
-				bool can_continue = reader.read( end, buff.get() + alloc_size() - end, bytesRead );
+				size_t sz2read = buff.get() + alloc_size() - end;
+				bool can_continue = reader.read( end, sz2read, bytesRead );
 				end += bytesRead;
 				bool till_end = end == (buff.get() + alloc_size());
 				if( till_end )
 					end = buff.get();
-				/*if (!can_continue || !till_end)
+				if (!can_continue || !till_end)
 					return;
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, end == buff.get() );
 				if ( begin - end > 1 )
 				{
 					size_t br = 0;
-					reader.read( end, end - begin - 1, br );
+					reader.read( end, begin - end - 1, br );
 					end += br;
 					bytesRead += br;
-				}*/
+				}
 			}
 		}
 	};

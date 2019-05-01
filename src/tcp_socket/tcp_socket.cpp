@@ -432,7 +432,7 @@ namespace nodecpp
 			internal_send_packet_object( SOCKET sock_ ) : sock( sock_ ) {};
 			bool write( const uint8_t* data, size_t size, size_t& sentSize_ ) {
 				ret =  internal_send_packet( data, size, sock, sentSize_ );
-				return ret == COMMLAYER_RET_OK;
+				return ret == COMMLAYER_RET_OK && size == sentSize_;
 			}
 			uint8_t get_ret_value() const { return ret; }
 		};
@@ -476,7 +476,7 @@ namespace nodecpp
 				socklen_t fromlen = sizeof(struct ::sockaddr_in);
 				struct ::sockaddr_in sa_other;
 				ret =  internal_get_packet_bytes2( sock, data, size, sentSize_, sa_other, fromlen );
-				return ret == COMMLAYER_RET_OK;
+				return ret == COMMLAYER_RET_OK && size == sentSize_;
 			}
 			uint8_t get_ret_value() const { return ret; }
 		};
