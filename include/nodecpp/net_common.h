@@ -289,6 +289,8 @@ namespace nodecpp {
 			{
 				memcpy( end,  ptr, sz );
 				end += sz;
+				if ( buff.get() + alloc_size() == end )
+					end = buff.get();
 			}
 			else
 			{
@@ -343,8 +345,8 @@ namespace nodecpp {
 				size_t sz2copy = buff.get() + alloc_size() - begin;
 				if ( sz2copy > b.capacity() )
 				{
-					b.append( begin, sz2copy );
-					begin += sz2copy;
+					b.append( begin, b.capacity() );
+					begin += b.capacity();
 					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, begin < buff.get() + alloc_size() );
 				}
 				else if ( sz2copy < b.capacity() )
