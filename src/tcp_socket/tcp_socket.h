@@ -495,57 +495,6 @@ private:
 				errorCloseSocket(entry, e);
 			}
 		}
-
-/*		if (read_ok)
-		{
-			size_t sz = entry.getClientSocketData()->recvBuffer.size();
-			Buffer res(sz);
-			res.append( entry.getClientSocketData()->recvBuffer.begin(), sz);
-			entry.getClientSocketData()->recvBuffer.clear();
-			if (res.size() != 0)
-			{
-				EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res))));
-			}
-			else //if (!entry.remoteEnded)
-			{
-				infraProcessRemoteEnded(entry);
-			}
-		}
-		else
-		{
-			internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
-			Error e;
-			errorCloseSocket(entry, e);
-		}*/
-
-//		bool resumed = EmitterType::resumeDataAwaiter(entry.getEmitter());
-//		if ( !resumed )
-/*		if (false)
-		{
-			auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
-			if (res.first)
-			{
-				if (res.second.size() != 0)
-				{
-		//			entry.ptr->emitData(std::move(res.second));
-
-		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
-	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
-					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
-				}
-				else //if (!entry.remoteEnded)
-				{
-					infraProcessRemoteEnded(entry);
-				}
-			}
-			else
-			{
-				internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
-		//		return errorCloseSocket(entry, storeError(Error()));
-				Error e;
-				errorCloseSocket(entry, e);
-			}
-		}*/
 	}
 
 	void infraProcessRemoteEnded(NetSocketEntry& entry)
