@@ -454,7 +454,8 @@ private:
 		auto hr = entry.getClientSocketData()->ahd_read.h;
 		if ( hr )
 		{
-			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket);
+			size_t target_sz = entry.getClientSocketData()->ahd_read.min_bytes;
+			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, target_sz);
 			entry.getClientSocketData()->ahd_read.is_exception = !read_ok;
 			if ( !read_ok )
 			{

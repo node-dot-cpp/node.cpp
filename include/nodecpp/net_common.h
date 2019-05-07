@@ -367,7 +367,7 @@ namespace nodecpp {
 		}
 
 		template<class Reader>
-		void read( Reader& reader, size_t& bytesRead ) {
+		void read( Reader& reader, size_t& bytesRead, size_t target_sz ) {
 			bytesRead = 0;
 			if ( begin > end )
 			{
@@ -382,9 +382,11 @@ namespace nodecpp {
 				bool till_end = end == (buff.get() + alloc_size());
 				if( till_end )
 					end = buff.get();
-				if (!can_continue || !till_end)
+				if (!can_continue || !till_end )
 					return;
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, end == buff.get() );
+				if ( buff.get() + alloc_size() - begin >= target_sz )
+					return;
 				if ( begin - end > 1 )
 				{
 					size_t br = 0;
