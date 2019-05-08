@@ -61,9 +61,6 @@ namespace nodecpp {
 			virtual void onAccepted() {}
 			virtual void onError(Error& err) {}
 
-			//::nodecpp::awaitable<void> data_loop;
-			//virtual ::nodecpp::awaitable<void> onDataAwaitable() {co_return;}
-
 			void connect(uint16_t port, const char* ip);
 			SocketO& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
 			SocketO& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
@@ -84,7 +81,6 @@ namespace nodecpp {
 					~connect_awaiter() {}
 
 					bool await_ready() {
-						// consider checking is_data(myIdx) first
 						return false;
 					}
 
@@ -238,9 +234,6 @@ namespace nodecpp {
 		template<auto x>
 		struct OnEnd {};
 
-		/*template<auto x>
-		struct OnDataAwaitable {};*/
-
 		template<typename ... args>
 		struct SocketOInitializer2;
 
@@ -293,13 +286,6 @@ namespace nodecpp {
 			static constexpr auto onAccepted = F;
 		};
 
-		/*//partial template specialization:
-		template<auto F, typename ... args>
-		struct SocketOInitializer2<OnDataAwaitable<F>, args...>
-		: public SocketOInitializer2<args...> {
-			static constexpr auto onDataAwaitable = F;
-		};*/
-
 		//partial template specialiazation to end recursion
 		template<>
 		struct SocketOInitializer2<> {
@@ -310,8 +296,6 @@ namespace nodecpp {
 			static constexpr auto onError = nullptr;
 			static constexpr auto onEnd = nullptr;
 			static constexpr auto onAccepted = nullptr;
-
-			//static constexpr auto onDataAwaitable = nullptr;
 		};
 
 		template<class Node, class Extra>
@@ -452,98 +436,7 @@ namespace nodecpp {
 				else
 					SocketO::onAccepted();
 			}
-
-			/*::nodecpp::awaitable<void> onDataAwaitable() override
-			{ 
-				if constexpr ( Initializer::onDataAwaitable != nullptr )
-				{
-					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
-					co_return ((static_cast<Node*>(this->node))->*(Initializer::onDataAwaitable))(ptr2this); 
-				}
-				else
-					co_return SocketO::onDataAwaitable();
-			}*/
 		};
-
-#if 0
-		template<class Node, class Initializer>
-		class SocketN2<Node, Initializer, void> : public SocketO
-		{
-	//		Node* node;
-	//		static constexpr auto x = void (Node::*onConnect)(const void*);
-//			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
-	//		typename void (Node::*)(const void*) y;
-	#if 1
-			static_assert( Initializer::onConnect != nullptr );
-	//		static_assert( std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value );
-	//		static_assert( std::is_same< typename std::remove_cv<decltype((Initializer::onConnect))>::type, typename std::remove_cv<void (Node::*)(const void*)>::type >::value );
-	//		static_assert( std::is_same< typename std::remove_reference<typename std::remove_cv<decltype((Initializer::onConnect))>::type>::type, typename std::remove_reference<typename std::remove_cv<void (Node::*)(const void*)>::type>::type >::value );
-	//		static_assert( std::is_same< typename std::remove_cv<decltype(x)>::type, typename std::remove_reference<decltype((Initializer::onConnect))>::type >::value );
-	//		static_assert( Initializer::onConnect == nullptr || std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value );
-	//		static_assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
-	#endif
-		public:
-	//		SocketN2(Node* node) : SocketO( node ) {}
-	//		SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
-			SocketN2(Node* node) : SocketO( node ) {}
-			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketO( node, sdata ) {}
-			void* getExtra() { return nullptr; }
-
-			void onConnect() override
-			{ 
-	//assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
-				//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("type 1 = \'{}\', hash = 0x{:x}", typeid(x).name(), typeid(x).hash_code() );
-				//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("type 2 = \'{}\', hash = 0x{:x}", typeid(void (Node::*)(const void*)).name(), typeid(x).hash_code() );
-				//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("type 3 = \'{}\', hash = 0x{:x}", typeid(Initializer::onConnect).name(), typeid(x).hash_code() );
-				if constexpr ( Initializer::onConnect != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onConnect))(this->getExtra()); 
-				else
-					SocketO::onConnect();
-			}
-			void onClose(bool b) override
-			{ 
-				if constexpr ( Initializer::onClose != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onClose))(this->getExtra(),b); 
-				else
-					SocketO::onClose(b);
-			}
-			void onData(nodecpp::Buffer& b) override
-			{ 
-				if constexpr ( Initializer::onData != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onData))(this->getExtra(),b); 
-				else
-					SocketO::onData(b);
-			}
-			void onDrain() override
-			{
-				if constexpr ( Initializer::onDrain != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onDrain))(this->getExtra());
-				else
-					SocketO::onDrain();
-			}
-			void onError(nodecpp::Error& e) override
-			{
-				if constexpr ( Initializer::onError != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onError))(this->getExtra(),e);
-				else
-					SocketO::onError(e);
-			}
-			void onEnd() override
-			{
-				if constexpr ( Initializer::onEnd != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onEnd))(this->getExtra());
-				else
-					SocketO::onEnd();
-			}
-			void onAccepted() override
-			{
-				if constexpr ( Initializer::onAccepted != nullptr )
-					((static_cast<Node*>(this->node))->*(Initializer::onAccepted))(this->getExtra());
-				else
-					SocketO::onAccepted();
-			}
-		};
-#endif // 0
 
 		template<class Node, class Extra, class ... Handlers>
 		class SocketN : public SocketN2<Node, SocketOInitializer2<Handlers...>, Extra>
