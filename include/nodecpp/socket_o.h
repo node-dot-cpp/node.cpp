@@ -151,12 +151,10 @@ namespace nodecpp {
 					~read_data_awaiter() {}
 
 					bool await_ready() {
-						// consider checking is_data(myIdx) first
-						return false;
+						return socket.dataForCommandProcessing.readBuffer.used_size() >= min_bytes;
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						//socket.dataForCommandProcessing.ahd_read.b = std::move( buff );
 						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 					}
@@ -167,7 +165,6 @@ namespace nodecpp {
 							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
 							throw socket.dataForCommandProcessing.ahd_read.exception;
 						}
-						//buff = std::move( socket.dataForCommandProcessing.ahd_read.b );
 						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes);
 					}

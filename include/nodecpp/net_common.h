@@ -331,6 +331,12 @@ namespace nodecpp {
 		}
 
 		// reader-related
+		/*bool get_ready_data( Buffer& b, size_t minsz ) {
+			if ( used_size() < minsz )
+				return false;
+			get_ready_data( b );
+			return true;
+		}*/
 		void get_ready_data( Buffer& b ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.size() == 0 );
 			if ( begin <= end )
@@ -341,7 +347,6 @@ namespace nodecpp {
 			}
 			else
 			{
-				//size_t sz2copy = b.capacity() >= used_size() ? used_size() : b.capacity();
 				size_t sz2copy = buff.get() + alloc_size() - begin;
 				if ( sz2copy > b.capacity() )
 				{
@@ -352,11 +357,13 @@ namespace nodecpp {
 				else if ( sz2copy < b.capacity() )
 				{
 					b.append( begin, sz2copy );
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, begin + sz2copy == buff.get() + alloc_size() );
+					begin = buff.get();
 					size_t sz2copy2 = b.capacity() - sz2copy;
-					if ( sz2copy2 < b.capacity() )
-						sz2copy2 = b.capacity();
+					if ( sz2copy2 > end - begin )
+						sz2copy2 = end - begin;
 					b.append( begin, sz2copy2 );
-					begin = buff.get() + sz2copy2;
+					begin += sz2copy2;
 				}
 				else
 				{
