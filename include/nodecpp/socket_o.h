@@ -143,21 +143,22 @@ namespace nodecpp {
 				};
 				return read_data_awaiter(*this, buff, min_bytes);
 			}
+
 			auto a_write(Buffer& buff) { 
 
-				struct read_data_awaiter {
+				struct write_data_awaiter {
 					SocketO& socket;
 					Buffer& buff;
 					bool write_ok = false;
 
 					std::experimental::coroutine_handle<> who_is_awaiting;
 
-					read_data_awaiter(SocketO& socket_, Buffer& buff_) : socket( socket_ ), buff( buff_ )  {}
+					write_data_awaiter(SocketO& socket_, Buffer& buff_) : socket( socket_ ), buff( buff_ )  {}
 
-					read_data_awaiter(const read_data_awaiter &) = delete;
-					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+					write_data_awaiter(const write_data_awaiter &) = delete;
+					write_data_awaiter &operator = (const write_data_awaiter &) = delete;
 	
-					~read_data_awaiter() {}
+					~write_data_awaiter() {}
 
 					bool await_ready() {
 						write_ok = socket.write2( buff ); // so far we do it sync TODO: extend implementation for more complex (= requiring really async processing) cases
@@ -172,12 +173,12 @@ namespace nodecpp {
 					auto await_resume() {
 						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
 						{
-							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_read.exception;
+							socket.dataForCommandProcessing.ahd_write.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_write.exception;
 						}
 					}
 				};
-				return read_data_awaiter(*this, buff);
+				return write_data_awaiter(*this, buff);
 			}
 		};
 

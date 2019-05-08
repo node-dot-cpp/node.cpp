@@ -550,8 +550,6 @@ namespace nodecpp {
 					std::exception exception; // TODO: consider possibility of switching to nodecpp::error
 				};
 
-				std::experimental::coroutine_handle<> h_connect = nullptr;
-				std::experimental::coroutine_handle<> h_accepted = nullptr;
 				//std::experimental::coroutine_handle<> h_read = nullptr;
 				//std::experimental::coroutine_handle<> h_write = nullptr;
 				struct awaitable_read_handle_data : public awaitable_handle_data
@@ -562,8 +560,11 @@ namespace nodecpp {
 				{
 					Buffer b;
 				};
+				awaitable_handle_data ahd_connect;
+				awaitable_handle_data ahd_accepted;
 				awaitable_read_handle_data ahd_read;
 				awaitable_write_handle_data ahd_write;
+				awaitable_handle_data ahd_drain;
 
 			//	bool connecting = false;
 				bool remoteEnded = false;

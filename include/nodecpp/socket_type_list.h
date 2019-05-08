@@ -248,10 +248,10 @@ namespace nodecpp {
 
 			static bool resumeConnectAwaiter( const OpaqueEmitter& emitter ) { 
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); 
-				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect )
+				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_connect.h )
 				{
-					auto h_tmp = emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect;
-					emitter.getClientSocketPtr()->dataForCommandProcessing.h_connect = nullptr;
+					auto h_tmp = emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_connect.h;
+					emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_connect.h = nullptr;
 					h_tmp();
 					return true;
 				}
@@ -260,10 +260,10 @@ namespace nodecpp {
 
 			static bool resumeAcceptedAwaiter( const OpaqueEmitter& emitter ) { 
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); 
-				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.h_accepted )
+				if ( emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_accepted.h )
 				{
-					auto h_tmp = emitter.getClientSocketPtr()->dataForCommandProcessing.h_accepted;
-					emitter.getClientSocketPtr()->dataForCommandProcessing.h_accepted = nullptr;
+					auto h_tmp = emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_accepted.h;
+					emitter.getClientSocketPtr()->dataForCommandProcessing.ahd_accepted.h = nullptr;
 					h_tmp();
 					return true;
 				}
