@@ -107,6 +107,9 @@ namespace nodecpp {
 
 			auto a_read( Buffer& buff, size_t min_bytes = 1 ) { 
 
+				buff.clear();
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.capacity() >= min_bytes, "indeed: {} vs. {} bytes", buff.capacity(), min_bytes );
+
 				struct read_data_awaiter {
 					SocketO& socket;
 					Buffer& buff;
