@@ -71,17 +71,17 @@ namespace nodecpp {
 		//private:
 			auto a_connect(uint16_t port, const char* ip) { 
 
-				struct read_data_awaiter {
+				struct connect_awaiter {
 					SocketO& socket;
 
 					std::experimental::coroutine_handle<> who_is_awaiting;
 
-					read_data_awaiter(SocketO& socket_) : socket( socket_ ) {}
+					connect_awaiter(SocketO& socket_) : socket( socket_ ) {}
 
-					read_data_awaiter(const read_data_awaiter &) = delete;
-					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+					connect_awaiter(const connect_awaiter &) = delete;
+					connect_awaiter &operator = (const connect_awaiter &) = delete;
 	
-					~read_data_awaiter() {}
+					~connect_awaiter() {}
 
 					bool await_ready() {
 						// consider checking is_data(myIdx) first
@@ -90,52 +90,21 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						who_is_awaiting = awaiting;
-						socket.dataForCommandProcessing.h_connect = who_is_awaiting;
-					}
-
-					auto await_resume() {}
-				};
-				connect( port, ip );
-				return read_data_awaiter(*this);
-			}
-#if 0
-			auto a_read(Buffer& buff)
-				struct read_data_awaiter {
-					SocketO& socket;
-
-					read_data_awaiter(SocketO& socket_) : socket( socket_ ) {}
-
-					read_data_awaiter(const read_data_awaiter &) = delete;
-					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
-	
-					~read_data_awaiter() {}
-
-					bool await_ready() {
-						// consider checking is_data(myIdx) first
-						return false;
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						socket.dataForCommandProcessing.ahd_read.h = awaiting;
+						socket.dataForCommandProcessing.ahd_connect.h = who_is_awaiting;
 					}
 
 					auto await_resume() {
-						if ( socket.dataForCommandProcessing.ahd_read.is_exception )
+						if ( socket.dataForCommandProcessing.ahd_connect.is_exception )
 						{
-							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_read.exception;
+							socket.dataForCommandProcessing.ahd_connect.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_connect.exception;
 						}
-						Buffer b( std::move( socket.dataForCommandProcessing.recvBuffer.clone() ) );
-						return b;
-						/*bool ret = OSLayer::infraGetPacketBytes2(socket.dataForCommandProcessing.recvBuffer, socket.dataForCommandProcessing.osSocket ); 
-						if ( !ret) 
-							return (size_t)0; 
-						return socket.dataForCommandProcessing.recvBuffer.size();*/
 					}
 				};
-				return read_data_awaiter(*this);
+				connect( port, ip );
+				return connect_awaiter(*this);
 			}
-#endif // 0
+
 			auto a_read( Buffer& buff, size_t min_bytes = 1 ) { 
 
 				struct read_data_awaiter {
