@@ -180,6 +180,40 @@ namespace nodecpp {
 				};
 				return write_data_awaiter(*this, buff);
 			}
+
+			auto a_drain() { 
+
+				struct drain_awaiter {
+					SocketO& socket;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					drain_awaiter(SocketO& socket_) : socket( socket_ )  {}
+
+					drain_awaiter(const drain_awaiter &) = delete;
+					drain_awaiter &operator = (const drain_awaiter &) = delete;
+	
+					~drain_awaiter() {}
+
+					bool await_ready() {
+						return socket.dataForCommandProcessing.writeBuffer.empty();
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
+						socket.dataForCommandProcessing.ahd_drain.h = awaiting;
+					}
+
+					auto await_resume() {
+						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_drain.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_drain.exception;
+						}
+					}
+				};
+				return drain_awaiter(*this);
+			}
 		};
 
 		

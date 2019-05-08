@@ -538,14 +538,25 @@ private:
 		switch ( status )
 		{
 			case NetSocketManagerBase::ShouldEmit::EmitConnect:
-				if ( !EmitterType::resumeConnectAwaiter(current.getEmitter()) )
+			{
+				auto hr = current.getClientSocketData()->ahd_connect.h;
+				if ( hr )
+				{
+					current.getClientSocketData()->ahd_connect.h = nullptr;
+					hr();
+				}
+				else // TODO: make sure we never have both cases in the same time
 					EmitterType::emitConnect(current.getEmitter());
 				break;
+			}
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:
 			{
-				auto hr = current.getClientSocketData()->ahd_write.h;
+				auto hr = current.getClientSocketData()->ahd_drain.h;
 				if ( hr )
+				{
+					current.getClientSocketData()->ahd_drain.h = nullptr;
 					hr();
+				}
 				else // TODO: make sure we never have both cases in the same time
 					EmitterType::emitDrain(current.getEmitter());
 				break;
