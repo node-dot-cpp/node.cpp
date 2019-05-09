@@ -391,7 +391,14 @@ public:
 //				if (entry.isValid())
 				if (entry.isUsed())
 				{
-					EmitterType::emitAccepted(entry.getEmitter());
+					auto hr = entry.getClientSocketData()->ahd_accepted.h;
+					if ( hr )
+					{
+						entry.getClientSocketData()->ahd_accepted.h = nullptr;
+						hr();
+					}
+					else // TODO: make sure we never have both cases in the same time
+						EmitterType::emitAccepted(entry.getEmitter());
 					//entry.setAssociated();
 					//ioSockets.setAssociated( idx );
 				}
