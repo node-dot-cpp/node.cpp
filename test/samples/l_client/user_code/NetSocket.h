@@ -50,7 +50,7 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
@@ -148,6 +148,8 @@ public:
 #endif
 
 		clientSock.connect(2000, "127.0.0.1");
+		
+		co_return;
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;

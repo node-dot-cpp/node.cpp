@@ -41,15 +41,15 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-#ifndef NET_CLIENT_ONLY
 		srv.listen(2000, "127.0.0.1", 5);
 		srvCtrl.listen(2001, "127.0.0.1", 5);
-#endif // NO_SERVER_STAFF
+		
+		co_return;
 	}
 
 	// server socket

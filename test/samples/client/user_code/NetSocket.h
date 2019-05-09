@@ -27,12 +27,14 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		*( clientSock.getExtra() ) = 17;
 		clientSock.connect(2000, "127.0.0.1");
+		
+		co_return;
 	}
 	
 	void onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket) 

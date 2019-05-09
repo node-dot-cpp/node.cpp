@@ -165,7 +165,7 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		srv = nodecpp::safememory::make_owning<net::Server>();
 		srvCtrl = nodecpp::safememory::make_owning<net::Server>();
@@ -180,6 +180,8 @@ public:
 
 		srv->listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
 		srvCtrl->listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
+		
+		co_return;
 	}
 
 	nodecpp::safememory::owning_ptr<net::Server> srv;
