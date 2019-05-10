@@ -41,7 +41,7 @@ namespace nodecpp {
 			virtual ~ServerO() {}
 
 			virtual void onClose(bool hadError) {}
-			virtual void onConnection(SocketBase* socket) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
+			virtual void onConnection(nodecpp::safememory::soft_ptr<SocketBase> socket) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
 			virtual void onListening(size_t id, Address addr) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
 			virtual void onError(Error& err) {}
 
@@ -134,7 +134,7 @@ namespace nodecpp {
 				else
 					ServerO::onClose(b);
 			}
-			void onConnection(SocketBase* socket) override
+			void onConnection(nodecpp::safememory::soft_ptr<SocketBase> socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
 				{
