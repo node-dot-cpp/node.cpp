@@ -33,12 +33,19 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		*( clientSock.getExtra() ) = 17;
-		co_await clientSock.a_connect(2000, "127.0.0.1");
-		buf.writeInt8( 2, 0 );
-		buf.writeInt8( 1, 1 );
-		co_await clientSock.a_write(buf);
-		// TODO: address failure
-		co_await doWhateverWithIncomingData();
+		try
+		{
+			co_await clientSock.a_connect(2000, "127.0.0.1");
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( 1, 1 );
+			co_await clientSock.a_write(buf);
+			// TODO: address failure
+			co_await doWhateverWithIncomingData();
+		}
+		catch (...)
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("processing on socket with extra = {} failed. Exiting...", *(clientSock.getExtra()));
+		}
 		co_return;
 	}
 
