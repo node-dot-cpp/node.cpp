@@ -110,7 +110,15 @@ public:
 			recvSize += r_buff.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-			co_await clientSock.a_write(buf);
+			try
+			{
+				co_await clientSock.a_write(buf);
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(clientSock.getExtra()));
+				break;
+			}
 			// TODO: address failure
 		}
 		co_return;
