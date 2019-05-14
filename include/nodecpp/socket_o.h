@@ -101,50 +101,11 @@ namespace nodecpp {
 				};
 				return connect_awaiter(ahd_conn);
 			}
-
-#if 0
-			auto a_connect(uint16_t port, const char* ip) { 
-
-				struct connect_awaiter {
-					SocketO& socket;
-
-					std::experimental::coroutine_handle<> who_is_awaiting;
-
-					connect_awaiter(SocketO& socket_) : socket( socket_ ) {}
-
-					connect_awaiter(const connect_awaiter &) = delete;
-					connect_awaiter &operator = (const connect_awaiter &) = delete;
-	
-					~connect_awaiter() {}
-
-					bool await_ready() {
-						return false;
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						socket.dataForCommandProcessing.ahd_connect.h = who_is_awaiting;
-					}
-
-					auto await_resume() {
-						if ( socket.dataForCommandProcessing.ahd_connect.is_exception )
-						{
-							socket.dataForCommandProcessing.ahd_connect.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_connect.exception;
-						}
-					}
-				};
-				connect( port, ip );
-				return connect_awaiter(*this);
-			}
-#else
-
 			auto a_connect(uint16_t port, const char* ip)
 			{
 				connect( port, ip );
 				return a_connect_core(dataForCommandProcessing.ahd_connect);
 			}
-#endif
 			auto a_read( Buffer& buff, size_t min_bytes = 1 ) { 
 
 				buff.clear();
@@ -356,18 +317,8 @@ namespace nodecpp {
 		template<class Node, class Extra>
 		class SocketOUserBase : public SocketO
 		{
-	#if 0
-			static constexpr bool is_void_extra = std::is_same< Extra, void >::value;
-			static_assert( Initializer::onConnect != nullptr );
-			static_assert( !is_void_extra );
-			static_assert( std::is_same< decltype(Initializer::onConnect), void (Node::*)() >::value );
-			static_assert( Initializer::onConnect == nullptr || (is_void_extra && std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value) || ( (!is_void_extra) && std::is_same< decltype(Initializer::onConnect), void (Node::*)(const Extra*) >::value ) );
-	#endif
-			//Node* node;
 			Extra extra;
 		public:
-//			SocketN2(Node* node_) : SocketO( node_ ) { node = node_;}
-//			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
 			SocketOUserBase(Node* node) : SocketO( node ) {}
 			SocketOUserBase(Node* node, OpaqueSocketData& sdata) : SocketO( node, sdata ) {}
 			Extra* getExtra() { return &extra; }
@@ -376,22 +327,7 @@ namespace nodecpp {
 		template<class Node>
 		class SocketOUserBase<Node, void> : public SocketO
 		{
-	//		Node* node;
-	//		static constexpr auto x = void (Node::*onConnect)(const void*);
-//			typename std::remove_reference<decltype((Initializer::onConnect))>::type x;
-	//		typename void (Node::*)(const void*) y;
-	#if 1
-	//		static_assert( Initializer::onConnect != nullptr );
-	//		static_assert( std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value );
-	//		static_assert( std::is_same< typename std::remove_cv<decltype((Initializer::onConnect))>::type, typename std::remove_cv<void (Node::*)(const void*)>::type >::value );
-	//		static_assert( std::is_same< typename std::remove_reference<typename std::remove_cv<decltype((Initializer::onConnect))>::type>::type, typename std::remove_reference<typename std::remove_cv<void (Node::*)(const void*)>::type>::type >::value );
-	//		static_assert( std::is_same< typename std::remove_cv<decltype(x)>::type, typename std::remove_reference<decltype((Initializer::onConnect))>::type >::value );
-	//		static_assert( Initializer::onConnect == nullptr || std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value );
-	//		static_assert( Initializer::onConnect == nullptr || typeid(Initializer::onConnect).hash_code() == typeid(void (Node::*)(const void*)).hash_code() );
-	#endif
 		public:
-	//		SocketN2(Node* node) : SocketO( node ) {}
-	//		SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
 			SocketOUserBase(Node* node) : SocketO( node ) {}
 			SocketOUserBase(Node* node, OpaqueSocketData& sdata) : SocketO( node, sdata ) {}
 			void* getExtra() { return nullptr; }
@@ -400,27 +336,9 @@ namespace nodecpp {
 		template<class Node, class Initializer, class Extra>
 		class SocketN2 : public SocketOUserBase<Node, Extra>
 		{
-	#if 0
-			static constexpr bool is_void_extra = std::is_same< Extra, void >::value;
-			static_assert( Initializer::onConnect != nullptr );
-			static_assert( !is_void_extra );
-			static_assert( std::is_same< decltype(Initializer::onConnect), void (Node::*)() >::value );
-			static_assert( Initializer::onConnect == nullptr || (is_void_extra && std::is_same< decltype(Initializer::onConnect), void (Node::*)(const void*) >::value) || ( (!is_void_extra) && std::is_same< decltype(Initializer::onConnect), void (Node::*)(const Extra*) >::value ) );
-	#endif
-
 		public:
 			using StorableType = SocketOUserBase<Node, Extra>;
 
-		public:
-//			SocketN2(Node* node_) : SocketO( node_ ) { node = node_;}
-//			SocketN2(Node* node_, OpaqueSocketData& sdata) : SocketO( sdata ) { node = node_;}
-			void startNewConnectHandlerInstance()
-			{
-				nodecpp::safememory::owning_ptr<nodecpp::awaitable<void>> awaitor = nodecpp::safememory::make_owning<nodecpp::awaitable<void>>();
-				nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>> soft_awaitor = awaitor;
-				*awaitor = std::move( this->a_connect_handler_entry_point(soft_awaitor) );
-				this->dataForCommandProcessing.handlerAwaiterList.add( std::move( awaitor ) );
-			}
 			nodecpp::awaitable<void> a_connect_handler_entry_point(nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>> me) 
 			{
 				if constexpr ( Initializer::onConnectA != nullptr )
@@ -431,42 +349,28 @@ namespace nodecpp {
 					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
 					co_await ((static_cast<Node*>(this->node))->*(Initializer::onConnectA))(ptr2this); 
 				}
-				else
-				{
-					printf( "OnConnectA is NOT present\n" ); 
-				}
-				co_await this->dataForCommandProcessing.handlerAwaiterList.cleanup(); // IMPORTANT: before (!!!) adding me
+				co_await this->dataForCommandProcessing.handlerAwaiterList.cleanup(); // IMPORTANT: do it before (!!!) adding me
 				this->dataForCommandProcessing.handlerAwaiterList.mark_done( std::move( me ) );
 				co_return;
 			}
+			void startNewConnectHandlerInstance()
+			{
+				nodecpp::safememory::owning_ptr<nodecpp::awaitable<void>> awaitor = nodecpp::safememory::make_owning<nodecpp::awaitable<void>>();
+				nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>> soft_awaitor = awaitor;
+				*awaitor = std::move( this->a_connect_handler_entry_point(soft_awaitor) );
+				this->dataForCommandProcessing.handlerAwaiterList.add( std::move( awaitor ) );
+			}
+
+		public:
 			SocketN2(Node* node) : SocketOUserBase<Node, Extra>( node )
 			{
 				if constexpr ( Initializer::onConnectA != nullptr )
-				{
-					printf( "OnConnectA is present\n" ); 
-					/*nodecpp::safememory::owning_ptr<nodecpp::awaitable<void>> awaitor = nodecpp::safememory::make_owning<nodecpp::awaitable<void>>();
-					nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>> soft_awaitor = awaitor;
-//					this->onConnectAwaitor = std::move( this->a_connect_handler_entry_point() );
-					*awaitor = std::move( this->a_connect_handler_entry_point(soft_awaitor) );
-					this->dataForCommandProcessing.handlerAwaiterList.add( std::move( awaitor ) );*/
 					startNewConnectHandlerInstance();
-				}
-				else
-				{
-					printf( "OnConnectA is NOT present\n" ); 
-				}
 			}
 			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketOUserBase<Node, Extra>( node, sdata )
 			{
 				if constexpr ( Initializer::onConnectA != nullptr )
-				{
-					printf( "OnConnectA is present\n" ); 
-					this->onConnectAwaitor = std::move( this->a_connect_handler_entry_point() );
-				}
-				else
-				{
-					printf( "OnConnectA is NOT present\n" ); 
-				}
+					startNewConnectHandlerInstance();
 			}
 
 			void onConnect() override
