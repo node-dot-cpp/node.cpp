@@ -553,7 +553,16 @@ private:
 					hr();
 				}
 				else // TODO: make sure we never have both cases in the same time
-					EmitterType::emitConnect(current.getEmitter());
+				{
+					auto hr = current.getClientSocketData()->ahd_connect_2.h;
+					if ( hr )
+					{
+						current.getClientSocketData()->ahd_connect_2.h = nullptr;
+						hr();
+					}
+					else
+						EmitterType::emitConnect(current.getEmitter());
+				}
 				break;
 			}
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:

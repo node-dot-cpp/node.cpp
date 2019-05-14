@@ -566,6 +566,33 @@ namespace nodecpp {
 				awaitable_write_handle_data ahd_write;
 				awaitable_handle_data ahd_drain;
 
+				awaitable_handle_data ahd_connect_2;
+
+				class HandlerAwaiterHolder
+				{
+					MultiOwner<nodecpp::awaitable<void>> handlerAwaiterList;
+					std::vector<nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>>> to_remove;
+				public:
+					HandlerAwaiterHolder() {};
+					HandlerAwaiterHolder( HandlerAwaiterHolder& other ) = delete;
+					HandlerAwaiterHolder& operator = ( HandlerAwaiterHolder& other ) = delete;
+
+					void add( nodecpp::safememory::owning_ptr<nodecpp::awaitable<void>>&& item ) { handlerAwaiterList.add( std::move( item ) ); }
+					void mark_done( nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>>&& item ) { to_remove.push_back( std::move( item ) ); }
+					nodecpp::awaitable<void> cleanup()
+					{
+						for ( auto a:to_remove )
+						{
+							co_await *a;
+							handlerAwaiterList.removeAndDelete( a );
+						}
+						handlerAwaiterList.clear();
+					}
+					size_t getCount() { return handlerAwaiterList.getCount(); }
+				};
+				HandlerAwaiterHolder handlerAwaiterList;
+
+
 			//	bool connecting = false;
 				bool remoteEnded = false;
 				//bool localEnded = false;

@@ -33,18 +33,38 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		*( clientSock.getExtra() ) = 17;
+		clientSock.connect(2000, "127.0.0.1");
 		try
 		{
-			co_await clientSock.a_connect(2000, "127.0.0.1");
+			/*co_await clientSock.a_connect(2000, "127.0.0.1");
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
-			co_await clientSock.a_write(buf);
+			co_await clientSock.a_write(buf);*/
 			// TODO: address failure
 			co_await doWhateverWithIncomingData();
 		}
 		catch (...)
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("processing on socket with extra = {} failed. Exiting...", *(clientSock.getExtra()));
+		}
+		co_return;
+	}
+	
+	nodecpp::awaitable<void> onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
+	{
+		printf( "onWhateverConnect()\n" );
+		Buffer buf(2);
+		buf.writeInt8( 2, 0 );
+		buf.writeInt8( 1, 1 );
+		socket->a_write(buf);
+		try
+		{
+			co_await clientSock.a_write(buf);
+		}
+		catch (...)
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(clientSock.getExtra()));
+			// TODO: address failure
 		}
 		co_return;
 	}
@@ -83,7 +103,9 @@ public:
 		co_return;
 	}
 
-	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
+		nodecpp::net::OnConnectA<&MySampleTNode::onWhateverConnect>
+	>;
 	ClientSockType clientSock;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
