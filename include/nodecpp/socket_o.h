@@ -341,15 +341,30 @@ namespace nodecpp {
 
 			nodecpp::awaitable<void> a_connect_handler_entry_point(nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>> me) 
 			{
+				co_await this->dataForCommandProcessing.handlerAwaiterList.cleanup(); // IMPORTANT: do it before (!!!) adding me
 				if constexpr ( Initializer::onConnectA != nullptr )
 				{
-					printf( "OnConnectA is present\n" ); 
-					co_await this->a_connect_core(this->dataForCommandProcessing.ahd_connect_2);
-					startNewConnectHandlerInstance();
+					try
+					{
+						co_await this->a_connect_core(this->dataForCommandProcessing.ahd_connect_2);
+						startNewConnectHandlerInstance();
+					}
+					catch (...)
+					{
+						// TODO: proceed to closing socket
+						this->dataForCommandProcessing.handlerAwaiterList.mark_done(std::move(me));
+						co_return;
+					}
 					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+#ifndef NODECPP_FAIL_HARD
+					try { co_await ((static_cast<Node*>(this->node))->*(Initializer::onConnectA))(ptr2this); }
+					catch (std::exception& e) { nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("error caught: {}", e.what()); }
+					catch (nodecpp::error::error e) { nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() ); }
+					catch (...) { nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("error cought!"); }
+#else
 					co_await ((static_cast<Node*>(this->node))->*(Initializer::onConnectA))(ptr2this); 
+#endif // !NODECPP_FAIL_HARD
 				}
-				co_await this->dataForCommandProcessing.handlerAwaiterList.cleanup(); // IMPORTANT: do it before (!!!) adding me
 				this->dataForCommandProcessing.handlerAwaiterList.mark_done( std::move( me ) );
 				co_return;
 			}
