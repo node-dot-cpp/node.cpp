@@ -24,6 +24,33 @@
     <ClCompile Include="co_await_hierarchy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\safe_ptr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc_windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\page_allocator_windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\cpu_exceptions_translator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\safe_memory_error.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tests.h">

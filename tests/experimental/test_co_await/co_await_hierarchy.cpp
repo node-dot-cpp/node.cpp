@@ -356,62 +356,98 @@ void processing_loop_2()
 	}
 }
 
-nodecpp::awaitable<void> processing_loop_core()
+struct Processors
 {
-	page_processor_A* preader_0 = new page_processor_A;
-	page_processor_B* preader_1 = new page_processor_B;
-	page_processor_A* preader_2 = new page_processor_A;
-	auto a1 = preader_0->run2();
-	auto a2 = preader_1->run2();
-	auto a3 = preader_2->run1(1);
+	page_processor_A* preader_0;
+	page_processor_B* preader_1;
+	page_processor_A* preader_2;
+	Processors()
+	{
+		preader_0 = new page_processor_A;
+		preader_1 = new page_processor_B;
+		preader_2 = new page_processor_A;
+	}
+	~Processors()
+	{
+		delete preader_0;
+		delete preader_1;
+		delete preader_2;
+	}
+};
+
+nodecpp::awaitable<void> processing_loop_core(Processors& p)
+{
+	auto a1 = p.preader_0->run2();
+	auto a2 = p.preader_1->run2();
+	auto a3 = p.preader_2->run1(1);
 	auto run_all_ret = nodecpp::wait_for_all( a1, a2, a3 );
 	auto fin_state = co_await run_all_ret;
 	printf( "   results after waiting for all: %zd, %zd\n", std::get<0>(fin_state), std::get<1>(fin_state) );
 }
 
+void processing_loop_core_2(Processors& p)
+{
+	p.preader_0->run2();
+	p.preader_1->run2();
+	p.preader_2->run1(1);
+}
+
+nodecpp::awaitable<void> processing_loop_core_3(Processors& p)
+{
+	p.preader_0->run2();
+	p.preader_1->run2();
+	p.preader_2->run1(1);
+	co_return;
+}
+
 void processing_loop()
 { 
-	auto core = processing_loop_core();
-
-	for (;;)
+	nodecpp::safememory::interceptNewDeleteOperators(true);
 	{
-		char ch = getchar();
-		static_assert( max_h_count < 10 );
-		static constexpr char max_cnt = (char)max_h_count;
-		if ( ch > '0' && ch <= '0' + max_cnt )
+		Processors p;
+		/*auto core =*/ processing_loop_core_3(p);
+
+		for (;;)
 		{
-			getchar(); // take '\n' out of stream
-			printf( "   --> got \'%c\' (continuing)\n", ch );
-			g_callbacks[ch - '1'].data.push_back( ch );
-			g_callbacks[ch - '1'].is_exception = false;
-			if ( g_callbacks[ch - '1'].awaiting != nullptr )
+			char ch = getchar();
+			static_assert( max_h_count < 10 );
+			static constexpr char max_cnt = (char)max_h_count;
+			if ( ch > '0' && ch <= '0' + max_cnt )
 			{
-				auto tmp = g_callbacks[ch - '1'].awaiting;
-				g_callbacks[ch - '1'].awaiting = nullptr;
-				tmp();
+				getchar(); // take '\n' out of stream
+				printf( "   --> got \'%c\' (continuing)\n", ch );
+				g_callbacks[ch - '1'].data.push_back( ch );
+				g_callbacks[ch - '1'].is_exception = false;
+				if ( g_callbacks[ch - '1'].awaiting != nullptr )
+				{
+					auto tmp = g_callbacks[ch - '1'].awaiting;
+					g_callbacks[ch - '1'].awaiting = nullptr;
+					tmp();
+				}
+				else
+					printf("   --> ... just saving (nothing to resume)\n");
+			}
+			else if ( ch >= 'a' && ch < 'a' + max_cnt )
+			{
+				getchar(); // take '\n' out of stream
+				printf( "   --> got \'%c\' (continuing)\n", ch );
+				g_callbacks[ch - 'a'].exception = std::exception();
+				g_callbacks[ch - 'a'].is_exception = true;
+				if ( g_callbacks[ch - 'a'].awaiting != nullptr )
+				{
+					auto tmp = g_callbacks[ch - 'a'].awaiting;
+					g_callbacks[ch - 'a'].awaiting = nullptr;
+					tmp();
+				}
+				else
+					printf("   --> ... just saving (nothing to resume)\n");
 			}
 			else
-				printf("   --> ... just saving (nothing to resume)\n");
-		}
-		else if ( ch >= 'a' && ch < 'a' + max_cnt )
-		{
-			getchar(); // take '\n' out of stream
-			printf( "   --> got \'%c\' (continuing)\n", ch );
-			g_callbacks[ch - 'a'].exception = std::exception();
-			g_callbacks[ch - 'a'].is_exception = true;
-			if ( g_callbacks[ch - 'a'].awaiting != nullptr )
 			{
-				auto tmp = g_callbacks[ch - 'a'].awaiting;
-				g_callbacks[ch - 'a'].awaiting = nullptr;
-				tmp();
+				printf( "   --> got \'%c\' (terminating)\n", ch );
+				break;
 			}
-			else
-				printf("   --> ... just saving (nothing to resume)\n");
-		}
-		else
-		{
-			printf( "   --> got \'%c\' (terminating)\n", ch );
-			break;
 		}
 	}
+	nodecpp::safememory::interceptNewDeleteOperators(false);
 }
