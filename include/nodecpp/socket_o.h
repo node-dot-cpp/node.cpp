@@ -60,22 +60,21 @@ namespace nodecpp {
 			virtual void onEnd() {}
 			virtual void onAccepted() {}
 			virtual void onError(Error& err) {}
-
-			nodecpp::awaitable<void> onConnectAwaitor;
+			virtual nodecpp::awaitable<void> onConnectA() {co_return;}
 
 			void connect(uint16_t port, const char* ip);
 			SocketO& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
 			SocketO& setKeepAlive(bool enable = false) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
 
 		//private:
-			auto a_connect_core(DataForCommandProcessing::awaitable_handle_data& ahd_conn) { 
+			auto a_connect(uint16_t port, const char* ip) { 
 
 				struct connect_awaiter {
-					DataForCommandProcessing::awaitable_handle_data& ahd_conn;
+					SocketO& socket;
 
 					std::experimental::coroutine_handle<> who_is_awaiting;
 
-					connect_awaiter(DataForCommandProcessing::awaitable_handle_data& ahd_conn_) : ahd_conn( ahd_conn_ ) {}
+					connect_awaiter(SocketO& socket_) : socket( socket_ ) {}
 
 					connect_awaiter(const connect_awaiter &) = delete;
 					connect_awaiter &operator = (const connect_awaiter &) = delete;
@@ -88,24 +87,21 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						who_is_awaiting = awaiting;
-						ahd_conn.h = who_is_awaiting;
+						socket.dataForCommandProcessing.ahd_connect.h = who_is_awaiting;
 					}
 
 					auto await_resume() {
-						if ( ahd_conn.is_exception )
+						if ( socket.dataForCommandProcessing.ahd_connect.is_exception )
 						{
-							ahd_conn.is_exception = false; // now we will throw it and that's it
-							ahd_conn.exception;
+							socket.dataForCommandProcessing.ahd_connect.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_connect.exception;
 						}
 					}
 				};
-				return connect_awaiter(ahd_conn);
-			}
-			auto a_connect(uint16_t port, const char* ip)
-			{
 				connect( port, ip );
-				return a_connect_core(dataForCommandProcessing.ahd_connect);
+				return connect_awaiter(*this);
 			}
+
 			auto a_read( Buffer& buff, size_t min_bytes = 1 ) { 
 
 				buff.clear();
@@ -339,54 +335,9 @@ namespace nodecpp {
 		public:
 			using StorableType = SocketOUserBase<Node, Extra>;
 
-			nodecpp::awaitable<void> a_connect_handler_entry_point(nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>> me) 
-			{
-				co_await this->dataForCommandProcessing.handlerAwaiterList.cleanup(); // IMPORTANT: do it before (!!!) adding me
-				if constexpr ( Initializer::onConnectA != nullptr )
-				{
-					try
-					{
-						co_await this->a_connect_core(this->dataForCommandProcessing.ahd_connect_2);
-						startNewConnectHandlerInstance();
-					}
-					catch (...)
-					{
-						// TODO: proceed to closing socket
-						this->dataForCommandProcessing.handlerAwaiterList.mark_done(std::move(me));
-						co_return;
-					}
-					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
-#ifndef NODECPP_FAIL_HARD
-					try { co_await ((static_cast<Node*>(this->node))->*(Initializer::onConnectA))(ptr2this); }
-					catch (std::exception& e) { nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("error caught: {}", e.what()); }
-					catch (nodecpp::error::error e) { nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("error caught; e.name = {}, e.description = {}", e.name().c_str(), e.description().c_str() ); }
-					catch (...) { nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("error cought!"); }
-#else
-					co_await ((static_cast<Node*>(this->node))->*(Initializer::onConnectA))(ptr2this); 
-#endif // !NODECPP_FAIL_HARD
-				}
-				this->dataForCommandProcessing.handlerAwaiterList.mark_done( std::move( me ) );
-				co_return;
-			}
-			void startNewConnectHandlerInstance()
-			{
-				nodecpp::safememory::owning_ptr<nodecpp::awaitable<void>> awaitor = nodecpp::safememory::make_owning<nodecpp::awaitable<void>>();
-				nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>> soft_awaitor = awaitor;
-				*awaitor = std::move( this->a_connect_handler_entry_point(soft_awaitor) );
-				this->dataForCommandProcessing.handlerAwaiterList.add( std::move( awaitor ) );
-			}
-
 		public:
-			SocketN2(Node* node) : SocketOUserBase<Node, Extra>( node )
-			{
-				if constexpr ( Initializer::onConnectA != nullptr )
-					startNewConnectHandlerInstance();
-			}
-			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketOUserBase<Node, Extra>( node, sdata )
-			{
-				if constexpr ( Initializer::onConnectA != nullptr )
-					startNewConnectHandlerInstance();
-			}
+			SocketN2(Node* node) : SocketOUserBase<Node, Extra>( node ) {}
+			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketOUserBase<Node, Extra>( node, sdata ) {}
 
 			void onConnect() override
 			{ 
@@ -461,6 +412,22 @@ namespace nodecpp {
 				}
 				else
 					SocketO::onAccepted();
+			}
+
+			nodecpp::awaitable<void> onConnectA() override
+			{ 
+				if constexpr ( Initializer::onConnectA != nullptr )
+				{
+	//				static_assert( Initializer::onConnectA == nullptr || std::is_same< decltype(Initializer::onConnectA), void (Node::*)(const Extra*) >::value );
+					nodecpp::safememory::soft_ptr<SocketOUserBase<Node, Extra>> ptr2this = this->myThis.template getSoftPtr<SocketOUserBase<Node, Extra>>(this);
+					((static_cast<Node*>(this->node))->*(Initializer::onConnectA))(ptr2this); 
+				}
+				else
+				{
+	//		static_assert( Initializer::onConnectA == nullptr || std::is_same< decltype(Initializer::onConnectA), void (Node::*)() >::value );
+					SocketO::onConnectA();
+				}
+				co_return;
 			}
 		};
 

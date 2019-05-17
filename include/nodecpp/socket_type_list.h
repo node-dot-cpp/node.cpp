@@ -220,6 +220,34 @@ namespace nodecpp {
 		}
 
 
+		template<class T, class T1, class ... args>
+		void callOnConnectA( void* nodePtr, T* ptr, int type )
+		{
+			if ( type == 0 )
+			{
+				if constexpr (std::is_same< T1, SocketO >::value)
+					(nodecpp::safememory::soft_ptr_static_cast<SocketO>(ptr->getPtr()))->onConnectA();
+				/*else if constexpr (std::is_same< T1, Socket >::value)
+					(nodecpp::safememory::soft_ptr_static_cast<Socket>(ptr->getPtr()))->emitConnectA();
+				else 
+				{
+					if constexpr( T1::Handlers::onConnectA != nullptr )
+						(static_cast<typename T1::userNodeType*>(nodePtr)->*T1::Handlers::onConnectA)(nodecpp::safememory::soft_ptr_static_cast<T1>(ptr->getPtr()));
+				}*/
+			}
+			else
+				callOnConnectA<T, args...>(nodePtr, ptr, type-1);
+			//co_return;
+		}
+
+		template<class T>
+		void callOnConnectA( void* nodePtr, T* ptr, int type )
+		{
+			assert( false );
+			//co_return;
+		}
+
+
 		template< class ... args >
 		class SocketTEmitter
 		{
@@ -245,6 +273,8 @@ namespace nodecpp {
 			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( emitter.getClientSocketPtr() ); callOnError<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e); }
 			static void emitEnd( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( emitter.getClientSocketPtr() ); callOnEnd<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 			static void emitAccepted( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( emitter.getClientSocketPtr() ); callOnAccepted<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
+
+			static void emitConnectA( const OpaqueEmitter& emitter ) { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); Ptr emitter_ptr( emitter.getClientSocketPtr() ); callOnConnectA<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type); }
 		};
 	} // namespace net
 

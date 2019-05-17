@@ -34,6 +34,14 @@ thread_local size_t nodecpp::safememory::onStackSafePtrDestructionCount;
 #endif // NODECPP_ENABLE_ONSTACK_SOFTPTR_COUNTING
 thread_local void* nodecpp::safememory::thg_stackPtrForMakeOwningCall = 0;
 
+#if defined NODECPP_USE_NEW_DELETE_ALLOC
+thread_local void** nodecpp::safememory::zombieList_ = nullptr;
+#ifndef NODECPP_DISABLE_ZOMBIE_ACCESS_EARLY_DETECTION
+thread_local std::map<uint8_t*, size_t, std::greater<uint8_t*>> nodecpp::safememory::zombieMap;
+thread_local bool nodecpp::safememory::doZombieEarlyDetection_ = true;
+#endif // NODECPP_DISABLE_ZOMBIE_ACCESS_EARLY_DETECTION
+#endif // NODECPP_USE_xxx_ALLOC
+
 class NodeFactoryMap{
 	typedef std::basic_string<char, std::char_traits<char>, GlobalObjectAllocator<char>> StringT;
 	typedef std::map<StringT, RunnableFactoryBase*, std::less<StringT>, GlobalObjectAllocator<std::pair<const StringT, RunnableFactoryBase*>>> MapT;

@@ -552,7 +552,7 @@ private:
 					current.getClientSocketData()->ahd_connect.h = nullptr;
 					hr();
 				}
-				else // TODO: make sure we never have both cases in the same time
+				/*else // TODO: make sure we never have both cases in the same time
 				{
 					auto hr = current.getClientSocketData()->ahd_connect_2.h;
 					if ( hr )
@@ -562,7 +562,9 @@ private:
 					}
 					else
 						EmitterType::emitConnect(current.getEmitter());
-				}
+				}*/
+				else
+					EmitterType::emitConnectA(current.getEmitter());
 				break;
 			}
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:

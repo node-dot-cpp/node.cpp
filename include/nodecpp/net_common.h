@@ -560,14 +560,16 @@ namespace nodecpp {
 				{
 					Buffer b;
 				};
+
+				// NOTE: make sure all of them are addressed at forceResumeWithThrowing()
 				awaitable_handle_data ahd_connect;
 				awaitable_handle_data ahd_accepted;
 				awaitable_read_handle_data ahd_read;
 				awaitable_write_handle_data ahd_write;
 				awaitable_handle_data ahd_drain;
 
+#if 0
 				awaitable_handle_data ahd_connect_2;
-
 				class HandlerAwaiterHolder
 				{
 					MultiOwner<nodecpp::awaitable<void>> handlerAwaiterList;
@@ -586,12 +588,13 @@ namespace nodecpp {
 							co_await *a;
 							handlerAwaiterList.removeAndDelete( a );
 						}
-						handlerAwaiterList.clear();
+						to_remove.clear();
+						co_return;
 					}
 					size_t getCount() { return handlerAwaiterList.getCount(); }
 				};
 				HandlerAwaiterHolder handlerAwaiterList;
-
+#endif // 0
 
 			//	bool connecting = false;
 				bool remoteEnded = false;
