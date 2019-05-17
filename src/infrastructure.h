@@ -309,6 +309,7 @@ class Runnable : public RunnableBase
 		node = make_owning<Node>();
 		node->main();
 		infra.runInfraLoop2();
+		interceptNewDeleteOperators(false);
 	}
 public:
 	using NodeType = Node;
