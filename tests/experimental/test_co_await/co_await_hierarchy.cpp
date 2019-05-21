@@ -26,8 +26,8 @@
 * -------------------------------------------------------------------------------*/
 
 
-#include <common.h>
-#include <awaitable.h>
+#include <nodecpp/common.h>
+#include <nodecpp/awaitable.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string>
@@ -400,12 +400,32 @@ nodecpp::awaitable<void> processing_loop_core_3(Processors& p)
 	co_return;
 }
 
+template<class P>
+nodecpp::awaitable<void> processing_loop_core_4(P& p)
+{
+	p.preader_0->run2();
+	p.preader_1->run2();
+	p.preader_2->run1(1);
+	co_return;
+}
+
+template<class P, class ... args>
+nodecpp::awaitable<void> processing_loop_core_5(P& p)
+{
+	p.preader_0->run2();
+	p.preader_1->run2();
+	p.preader_2->run1(1);
+	co_return;
+}
+
 void processing_loop()
 { 
 	nodecpp::safememory::interceptNewDeleteOperators(true);
 	{
 		Processors p;
-		/*auto core =*/ processing_loop_core_3(p);
+//		/*auto core =*/ processing_loop_core_3(p);
+//		processing_loop_core_4(p);
+		processing_loop_core_5<Processors, int>(p);
 
 		for (;;)
 		{
