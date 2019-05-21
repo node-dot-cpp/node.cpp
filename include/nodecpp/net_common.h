@@ -40,7 +40,7 @@ namespace nodecpp {
 	private:
 		size_t _size = 0;
 		size_t _capacity = 0;
-		std::unique_ptr<uint8_t> _data;
+		std::unique_ptr<uint8_t[]> _data;
 
 	private:
 		void ensureCapacity(size_t sz) { // NOTE: may invalidate pointers
@@ -49,7 +49,8 @@ namespace nodecpp {
 			}
 			else if (sz > _capacity) {
 				size_t cp = std::max(sz, MIN_BUFFER);
-				std::unique_ptr<uint8_t> tmp(static_cast<uint8_t*>(malloc(cp)));
+//				std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
+				std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
 				memcpy(tmp.get(), _data.get(), _size);
 				_capacity = cp;
 				_data = std::move(tmp);
@@ -85,7 +86,8 @@ namespace nodecpp {
 			assert(_data == nullptr);
 
 			size_t cp = std::max(sz, MIN_BUFFER);
-			std::unique_ptr<uint8_t> tmp(static_cast<uint8_t*>(malloc(cp)));
+//			std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
+			std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
 
 			_capacity = cp;
 			_data = std::move(tmp);
@@ -103,7 +105,7 @@ namespace nodecpp {
 			}
 			else {
 				size_t cp = std::max(sz + _size, MIN_BUFFER);
-				std::unique_ptr<uint8_t> tmp(static_cast<uint8_t*>(malloc(cp)));
+				std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
 
 
 				memcpy(tmp.get(), _data.get(), _size);
@@ -228,7 +230,8 @@ namespace nodecpp {
 					return false;
 			}
 			size_t new_alloc_size = ((size_t)1) << new_size_exp;
-			std::unique_ptr<uint8_t[]> new_buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc( new_alloc_size )));
+//			std::unique_ptr<uint8_t[]> new_buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc( new_alloc_size )));
+			std::unique_ptr<uint8_t[]> new_buff( new uint8_t[new_alloc_size] );
 			size_t sz = 0;
 			if ( begin <= end )
 			{
@@ -256,7 +259,8 @@ namespace nodecpp {
 	public:
 		CircularByteBuffer(size_t sz_exp = 16) { 
 			size_exp = sz_exp; 
-			buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc(alloc_size())));
+//			buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc(alloc_size())));
+			buff = std::unique_ptr<uint8_t[]>(new uint8_t[alloc_size()]);
 			begin = end = buff.get();
 		}
 		CircularByteBuffer( const CircularByteBuffer& ) = delete;
