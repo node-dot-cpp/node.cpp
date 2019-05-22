@@ -196,6 +196,93 @@ public:
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
+
+	nodecpp::awaitable<void> serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket )
+	{
+		nodecpp::Buffer buffer(0x20);
+
+		for ( ;; )
+		{
+			buffer.clear();
+			try
+			{
+				co_await socket->a_read( buffer, 2 );
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				break;
+			}
+
+			size_t receivedSz = buffer.begin()[0];
+			if ( receivedSz != buffer.size() )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
+				socket->unref();
+				break;
+			}
+
+			size_t requestedSz = buffer.begin()[1];
+			if ( requestedSz )
+			{
+				Buffer reply(requestedSz);
+				//buffer.begin()[0] = (uint8_t)requestedSz;
+				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
+				socket->write(reply.begin(), requestedSz);
+				try
+				{
+					co_await socket->a_write(reply);
+				}
+				catch (...)
+				{
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+					break;
+				}
+			}
+
+			stats.recvSize += receivedSz;
+			stats.sentSize += requestedSz;
+			++(stats.rqCnt);
+		}
+
+		co_return;
+	}
+	nodecpp::awaitable<void> serverCtrlSocketLoop( nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket)
+	{
+		nodecpp::Buffer buffer(0x20);
+		Buffer reply(sizeof(stats));
+
+		for ( ;; )
+		{
+			buffer.clear();
+			try
+			{
+				co_await socket->a_read( buffer, 2 );
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				break;
+			}
+			size_t requestedSz = buffer.begin()[1];
+			if ( requestedSz )
+			{
+				stats.connCnt = srv.getSockCount();
+				size_t replySz = sizeof(Stats);
+				reply.clear();
+				reply.append( &stats, replySz );
+				try
+				{
+					co_await socket->a_write(reply);
+				}
+				catch (...)
+				{
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+					break;
+				}
+			}
+		}
+	}
 };
 
 #endif // NET_SOCKET_H
