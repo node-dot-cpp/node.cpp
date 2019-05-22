@@ -564,7 +564,7 @@ private:
 						EmitterType::emitConnect(current.getEmitter());
 				}*/
 				else
-					EmitterType::emitConnectA(current.getEmitter());
+					EmitterType::emitConnect(current.getEmitter());
 				break;
 			}
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:
