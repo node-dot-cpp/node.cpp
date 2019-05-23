@@ -41,8 +41,8 @@ namespace nodecpp {
 			virtual ~ServerO() {}
 
 			virtual void onClose(bool hadError) {}
-			virtual void onConnection(nodecpp::safememory::soft_ptr<SocketBase> socket) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
-			virtual void onListening(size_t id, Address addr) {} // NOTE: strange name is an MS compiler bug temporry workaround. TODO: go back to a reasonable nabe as soon as MS fixes its bug
+			virtual nodecpp::awaitable<void> onConnection(nodecpp::safememory::soft_ptr<SocketBase> socket) {co_return;}
+			virtual nodecpp::awaitable<void> onListening(size_t id, Address addr) {co_return;}
 			virtual void onError(Error& err) {}
 
 			virtual soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) = 0;
@@ -134,7 +134,7 @@ namespace nodecpp {
 				else
 					ServerO::onClose(b);
 			}
-			void onConnection(nodecpp::safememory::soft_ptr<SocketBase> socket) override
+			nodecpp::awaitable<void> onConnection(nodecpp::safememory::soft_ptr<SocketBase> socket) override
 			{ 
 				if constexpr ( Initializer::onConnection != nullptr )
 				{
@@ -143,8 +143,9 @@ namespace nodecpp {
 				}
 				else
 					ServerO::onConnection(socket);
+				co_return;
 			}
-			void onListening(size_t id, Address addr) override
+			nodecpp::awaitable<void> onListening(size_t id, Address addr) override
 			{ 
 				if constexpr ( Initializer::onListening != nullptr )
 				{
@@ -153,6 +154,7 @@ namespace nodecpp {
 				}
 				else
 					ServerO::onListening(id, addr);
+				co_return;
 			}
 			void onError(nodecpp::Error& e) override
 			{
