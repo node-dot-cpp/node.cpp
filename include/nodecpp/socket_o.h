@@ -53,14 +53,13 @@ namespace nodecpp {
 
 			virtual ~SocketO() { if (state == CONNECTING || state == CONNECTED) destroy(); }
 
+			virtual nodecpp::awaitable<void> onConnect() {co_return;}
+			virtual nodecpp::awaitable<void> onAccepted() {co_return;}
+			virtual nodecpp::awaitable<void> onData(Buffer& buffer) {co_return;}
+			virtual nodecpp::awaitable<void> onDrain() {co_return;}
 			virtual void onClose(bool hadError) {}
-			virtual void onConnect() {}
-			virtual void onData(Buffer& buffer) {}
-			virtual void onDrain() {}
 			virtual void onEnd() {}
-			virtual void onAccepted() {}
 			virtual void onError(Error& err) {}
-			virtual nodecpp::awaitable<void> onConnectA() {co_return;}
 
 			void connect(uint16_t port, const char* ip);
 			SocketO& setNoDelay(bool noDelay = true) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
@@ -328,7 +327,7 @@ namespace nodecpp {
 			SocketN2(Node* node) : SocketOUserBase<Node, Extra>( node ) {}
 			SocketN2(Node* node, OpaqueSocketData& sdata) : SocketOUserBase<Node, Extra>( node, sdata ) {}
 
-			void onConnect() override
+			nodecpp::awaitable<void> onConnect() override
 			{ 
 				if constexpr ( Initializer::onConnect != nullptr )
 				{
@@ -341,6 +340,7 @@ namespace nodecpp {
 	//		static_assert( Initializer::onConnect == nullptr || std::is_same< decltype(Initializer::onConnect), void (Node::*)() >::value );
 					SocketO::onConnect();
 				}
+				co_return;
 			}
 			void onClose(bool b) override
 			{ 
@@ -352,7 +352,7 @@ namespace nodecpp {
 				else
 					SocketO::onClose(b);
 			}
-			void onData(nodecpp::Buffer& b) override
+			nodecpp::awaitable<void> onData(nodecpp::Buffer& b) override
 			{ 
 				if constexpr ( Initializer::onData != nullptr )
 				{
@@ -361,8 +361,9 @@ namespace nodecpp {
 				}
 				else
 					SocketO::onData(b);
+				co_return;
 			}
-			void onDrain() override
+			nodecpp::awaitable<void> onDrain() override
 			{
 				if constexpr ( Initializer::onDrain != nullptr )
 				{
@@ -371,6 +372,7 @@ namespace nodecpp {
 				}
 				else
 					SocketO::onDrain();
+				co_return;
 			}
 			void onError(nodecpp::Error& e) override
 			{
@@ -392,7 +394,7 @@ namespace nodecpp {
 				else
 					SocketO::onEnd();
 			}
-			void onAccepted() override
+			nodecpp::awaitable<void> onAccepted() override
 			{
 				if constexpr ( Initializer::onAccepted != nullptr )
 				{
@@ -401,6 +403,7 @@ namespace nodecpp {
 				}
 				else
 					SocketO::onAccepted();
+				co_return;
 			}
 		};
 
