@@ -73,7 +73,7 @@ namespace nodecpp {
 			void emitListening(size_t id, Address addr) {
 				//this->id = id;
 				this->dataForCommandProcessing.index = id;
-				localAddress = std::move(addr);
+				this->dataForCommandProcessing.localAddress = std::move(addr);
 				state = LISTENING;
 				eListening.emit(id, addr);
 			}

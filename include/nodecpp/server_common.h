@@ -49,7 +49,6 @@ namespace nodecpp {
 				//SOCKET osSocket = INVALID_SOCKET;
 				unsigned long long osSocket = 0;
 
-
 				DataForCommandProcessing() {}
 				DataForCommandProcessing(const DataForCommandProcessing& other) = delete;
 				DataForCommandProcessing& operator=(const DataForCommandProcessing& other) = delete;
@@ -57,13 +56,15 @@ namespace nodecpp {
 				DataForCommandProcessing(DataForCommandProcessing&& other) = default;
 				DataForCommandProcessing& operator=(DataForCommandProcessing&& other) = default;
 
-				//bool isValid() const { return state != State::Uninitialized; }
+				Address localAddress;
+
+				awaitable_handle_data ahd_listen;
+				awaitable_handle_data ahd_connection;
 			};
 		//protected:
 			DataForCommandProcessing dataForCommandProcessing;
 
 		protected:
-			Address localAddress;
 //			uint16_t localPort = 0;
 
 //			size_t id = 0;
@@ -73,7 +74,7 @@ namespace nodecpp {
 			ServerBase() {}
 			~ServerBase() {reportBeingDestructed();}
 
-			const Address& address() const { return localAddress; }
+			const Address& address() const { return dataForCommandProcessing.localAddress; }
 			void close();
 
 			bool listening() const { return state == LISTENING; }

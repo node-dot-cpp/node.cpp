@@ -104,7 +104,7 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					(nodecpp::safememory::soft_ptr_static_cast<ServerO>(ptr->getPtr()))->onListeningX(id, addr);
+					(nodecpp::safememory::soft_ptr_static_cast<ServerO>(ptr->getPtr()))->onListening(id, addr);
 				else if constexpr (std::is_same< T1, Server >::value)
 					(nodecpp::safememory::soft_ptr_static_cast<Server>(ptr->getPtr()))->emitListening(id, addr);
 				else

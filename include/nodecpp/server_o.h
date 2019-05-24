@@ -47,6 +47,41 @@ namespace nodecpp {
 
 			virtual soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) = 0;
 			void listen(uint16_t port, const char* ip, int backlog);
+
+			auto a_listen(uint16_t port, const char* ip, int backlog) { 
+
+				struct listen_awaiter {
+					ServerO& server;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					listen_awaiter(ServerO& server_) : server( server_ ) {}
+
+					listen_awaiter(const listen_awaiter &) = delete;
+					listen_awaiter &operator = (const listen_awaiter &) = delete;
+	
+					~listen_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						server.dataForCommandProcessing.ahd_listen.h = who_is_awaiting;
+					}
+
+					auto await_resume() {
+						if ( server.dataForCommandProcessing.ahd_listen.is_exception )
+						{
+							server.dataForCommandProcessing.ahd_listen.is_exception = false; // now we will throw it and that's it
+							throw server.dataForCommandProcessing.ahd_listen.exception;
+						}
+					}
+				};
+				listen( port, ip, backlog );
+				return listen_awaiter(*this);
+			}
 		};
 		
 		template<auto x>
