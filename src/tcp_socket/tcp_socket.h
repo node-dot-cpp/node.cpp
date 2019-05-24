@@ -723,17 +723,11 @@ public:
 
 	void infraEmitListeningEvents()
 	{
-		// if there is an issue with a socket, we may need to close it,
-		// and push an event here to notify later.
-
 		for (auto& current : pendingListenEvents)
 		{
-			//first remove any pending event for this socket
-			//pendingListenEvents.remove(current.first);
 			if (current < ioSockets.size())
 			{
 				auto& entry = ioSockets.at(current);
-//				if (entry.isValid())
 				if (entry.isUsed())
 				{
 					auto hr = entry.getServerSocketData()->ahd_listen.h;
@@ -745,7 +739,6 @@ public:
 					else
 						EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress );
 				}
-				entry = NetSocketEntry(current);
 			}
 		}
 		pendingCloseEvents.clear();
