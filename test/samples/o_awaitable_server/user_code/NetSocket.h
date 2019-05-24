@@ -17,6 +17,10 @@ using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
+#define IMPL_VERSION 1 // old fashion
+//#define IMPL_VERSION 2 // main() is a single coro
+//#define IMPL_VERSION 3 // onConnect is a coro
+
 class MySampleTNode : public NodeBase
 {
 	struct Stats
@@ -41,6 +45,8 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
+#if IMPL_VERSION == 1
+
 	virtual nodecpp::awaitable<void> main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
@@ -64,35 +70,8 @@ public:
 		co_return;
 	}
 	nodecpp::awaitable<void> onDataServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
-		if ( buffer.size() < 2 )
-		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
-			socket->unref();
-			co_return;
-		}
-//		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *(socket->getExtra()) );
-
-		size_t receivedSz = buffer.begin()[0];
-		if ( receivedSz != buffer.size() )
-		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
-			socket->unref();
-			co_return;
-		}
-
-		size_t requestedSz = buffer.begin()[1];
-		if ( requestedSz )
-		{
-			Buffer reply(requestedSz);
-			//buffer.begin()[0] = (uint8_t)requestedSz;
-			memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-			socket->write(reply.begin(), requestedSz);
-		}
-
-		stats.recvSize += receivedSz;
-		stats.sentSize += requestedSz;
-		++(stats.rqCnt);
-			co_return;
+		co_await onDataServerSocket_(socket, buffer);
+		co_return;
 	}
 	nodecpp::awaitable<void> onDrainServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onDrain!");
@@ -132,16 +111,7 @@ public:
 	}
 	nodecpp::awaitable<void> onDataCtrlServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
 
-		size_t requestedSz = buffer.begin()[1];
-		if ( requestedSz )
-		{
-			Buffer reply(sizeof(stats));
-			stats.connCnt = srv.getSockCount();
-			size_t replySz = sizeof(Stats);
-			uint8_t* buff = ptr.get();
-			memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
-			socket->write(buff, replySz);
-		}
+		co_await onDataCtrlServerSocket(socket, buffer);
 		co_return;
 	}
 	nodecpp::awaitable<void> onEndCtrlServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) {
@@ -308,6 +278,174 @@ public:
 				}
 			}
 		}
+	}
+
+#elif IMPL_VERSION == 2
+	virtual nodecpp::awaitable<void> main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		ptr.reset(static_cast<uint8_t*>(malloc(size)));
+
+		co_await srv.a_listen(2000, "127.0.0.1", 5);
+		co_await srvCtrl.a_listen(2001, "127.0.0.1", 5);
+
+		acceptServerLoop();
+		acceptCtrlServerLoop();
+
+		co_return;
+	}
+
+	nodecpp::awaitable<void> acceptServerLoop()
+	{
+		for (;;)
+		{
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket;
+			co_await srv.a_connection<nodecpp::net::SocketO>( socket );
+			socketLoop(socket);
+		}
+		co_return;
+	}
+
+	nodecpp::awaitable<void> socketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket)
+	{
+		nodecpp::Buffer r_buff(0x200);
+		for (;;)
+		{
+			co_await socket->a_read( r_buff, 2 );
+			co_await onDataServerSocket_(socket, r_buff);
+		}
+		co_return;
+	}
+
+	nodecpp::awaitable<void> acceptCtrlServerLoop()
+	{
+		for (;;)
+		{
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket;
+			co_await srv.a_connection<nodecpp::net::SocketO>( socket );
+			socketCtrlLoop(socket);
+		}
+		co_return;
+	}
+
+	nodecpp::awaitable<void> socketCtrlLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket)
+	{
+		nodecpp::Buffer r_buff(0x200);
+		for (;;)
+		{
+			co_await socket->a_read( r_buff, 2 );
+			co_await onDataCtrlServerSocket_(socket, r_buff);
+		}
+		co_return;
+	}
+
+	using SockTypeServerSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+
+	using ServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerSocket,ServerIdType>;
+	ServerType srv; 
+
+	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>;
+	CtrlServerType srvCtrl;
+
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
+
+#elif IMPL_VERSION == 3
+#else
+#error
+#endif // IMPL_VERSION
+
+	nodecpp::awaitable<void> onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
+		if ( buffer.size() < 2 )
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
+			socket->unref();
+			co_return;
+		}
+//		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *(socket->getExtra()) );
+
+		size_t receivedSz = buffer.begin()[0];
+		if ( receivedSz != buffer.size() )
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
+			socket->unref();
+			co_return;
+		}
+
+		size_t requestedSz = buffer.begin()[1];
+		if ( requestedSz )
+		{
+			Buffer reply(requestedSz);
+			//buffer.begin()[0] = (uint8_t)requestedSz;
+			memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
+			socket->write(reply.begin(), requestedSz);
+		}
+
+		stats.recvSize += receivedSz;
+		stats.sentSize += requestedSz;
+		++(stats.rqCnt);
+		co_return;
+	}
+	nodecpp::awaitable<void> onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
+
+		size_t requestedSz = buffer.begin()[1];
+		if ( requestedSz )
+		{
+			Buffer reply(sizeof(stats));
+			stats.connCnt = srv.getSockCount();
+			size_t replySz = sizeof(Stats);
+			uint8_t* buff = ptr.get();
+			memcpy( buff, &stats, replySz ); // naive marshalling will work for a limited number of cases
+			socket->write(buff, replySz);
+		}
+		co_return;
+	}
+
+	nodecpp::awaitable<void> onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket, Buffer& buffer) {
+		if ( buffer.size() < 2 )
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket" );
+			socket->unref();
+			co_return;
+		}
+//		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *(socket->getExtra()) );
+
+		size_t receivedSz = buffer.begin()[0];
+		if ( receivedSz != buffer.size() )
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size() );
+			socket->unref();
+			co_return;
+		}
+
+		size_t requestedSz = buffer.begin()[1];
+		if ( requestedSz )
+		{
+			Buffer reply(requestedSz);
+			//buffer.begin()[0] = (uint8_t)requestedSz;
+			memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
+			reply.set_size( requestedSz );
+			co_await socket->a_write(reply);
+		}
+
+		stats.recvSize += receivedSz;
+		stats.sentSize += requestedSz;
+		++(stats.rqCnt);
+		co_return;
+	}
+	nodecpp::awaitable<void> onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket, Buffer& buffer) {
+
+		size_t requestedSz = buffer.begin()[1];
+		if ( requestedSz )
+		{
+			Buffer reply(sizeof(stats));
+			stats.connCnt = srv.getSockCount();
+			size_t replySz = sizeof(Stats);
+			reply.append( &stats, replySz ); // naive marshalling will work for a limited number of cases
+			co_await socket->a_write(reply);
+		}
+		co_return;
 	}
 };
 

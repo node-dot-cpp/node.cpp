@@ -83,15 +83,16 @@ namespace nodecpp {
 				return listen_awaiter(*this);
 			}
 
-			auto a_connection(nodecpp::safememory::soft_ptr<SocketBase>& socket) { 
+			template<class SocketT>
+			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket) { 
 
 				struct connection_awaiter {
 					ServerO& server;
-					nodecpp::safememory::soft_ptr<SocketBase>& socket;
+					nodecpp::safememory::soft_ptr<SocketT>& socket;
 
 					std::experimental::coroutine_handle<> who_is_awaiting;
 
-					connection_awaiter(ServerO& server_, nodecpp::safememory::soft_ptr<SocketBase>& socket_) : server( server_ ), socket( socket_ ) {}
+					connection_awaiter(ServerO& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_) : server( server_ ), socket( socket_ ) {}
 
 					connection_awaiter(const connection_awaiter &) = delete;
 					connection_awaiter &operator = (const connection_awaiter &) = delete;
@@ -113,6 +114,10 @@ namespace nodecpp {
 							server.dataForCommandProcessing.ahd_connection.is_exception = false; // now we will throw it and that's it
 							throw server.dataForCommandProcessing.ahd_connection.exception;
 						}
+						if constexpr ( std::is_same<SocketT, SocketBase>::value )
+							socket = server.dataForCommandProcessing.ahd_connection.sock;
+						else
+							socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 					}
 				};
 				return connection_awaiter(*this, socket);

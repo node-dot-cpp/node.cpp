@@ -37,6 +37,9 @@ namespace nodecpp {
 
 		class [[nodecpp::owning_only]] SocketO : public SocketBase {
 
+		public:
+			using StorableType = SocketO;
+
 		private:
 			void registerMeAndAcquireSocket();
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
