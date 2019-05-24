@@ -82,6 +82,42 @@ namespace nodecpp {
 				listen( port, ip, backlog );
 				return listen_awaiter(*this);
 			}
+
+			auto a_connection(nodecpp::safememory::soft_ptr<SocketBase>& socket) { 
+
+				struct connection_awaiter {
+					ServerO& server;
+					nodecpp::safememory::soft_ptr<SocketBase>& socket;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					connection_awaiter(ServerO& server_, nodecpp::safememory::soft_ptr<SocketBase>& socket_) : server( server_ ), socket( socket_ ) {}
+
+					connection_awaiter(const connection_awaiter &) = delete;
+					connection_awaiter &operator = (const connection_awaiter &) = delete;
+	
+					~connection_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						server.dataForCommandProcessing.ahd_connection.h = who_is_awaiting;
+					}
+
+					auto await_resume() {
+						if ( server.dataForCommandProcessing.ahd_connection.is_exception )
+						{
+							server.dataForCommandProcessing.ahd_connection.is_exception = false; // now we will throw it and that's it
+							throw server.dataForCommandProcessing.ahd_connection.exception;
+						}
+					}
+				};
+				return connection_awaiter(*this, socket);
+			}
+
 		};
 		
 		template<auto x>

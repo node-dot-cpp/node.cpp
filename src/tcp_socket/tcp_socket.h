@@ -741,7 +741,7 @@ public:
 				}
 			}
 		}
-		pendingCloseEvents.clear();
+		pendingListenEvents.clear();
 	}
 
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
@@ -774,7 +774,16 @@ private:
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
-		EmitterType::emitConnection( entry.getEmitter(), ptr );
+
+		auto hr = entry.getServerSocketData()->ahd_connection.h;
+		if ( hr )
+		{
+			entry.getServerSocketData()->ahd_connection.sock = ptr;
+			entry.getServerSocketData()->ahd_connection.h = nullptr;
+			hr();
+		}
+		else
+			EmitterType::emitConnection(entry.getEmitter(), ptr);
 
 		return;
 	}

@@ -59,7 +59,11 @@ namespace nodecpp {
 				Address localAddress;
 
 				awaitable_handle_data ahd_listen;
-				awaitable_handle_data ahd_connection;
+				struct awaitable_connection_handle_data : public awaitable_handle_data
+				{
+					soft_ptr<SocketBase> sock;
+				};
+				awaitable_connection_handle_data ahd_connection;
 			};
 		//protected:
 			DataForCommandProcessing dataForCommandProcessing;
