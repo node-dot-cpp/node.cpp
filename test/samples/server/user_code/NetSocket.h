@@ -174,7 +174,7 @@ public:
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
+	void onListeningServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
 	void onErrorServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServer!");}
 
 	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
@@ -196,7 +196,7 @@ public:
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
+	void onListeningCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
 	void onErrorServerCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServerCtrl!");}
 
 	using CtrlServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType,
