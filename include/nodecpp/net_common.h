@@ -524,6 +524,13 @@ namespace nodecpp {
 
 		enum Mode { callable, awaitable };
 
+		struct awaitable_handle_data
+		{
+			std::experimental::coroutine_handle<> h = nullptr;
+			bool is_exception = false;
+			std::exception exception; // TODO: consider possibility of switching to nodecpp::error
+		};
+
 		class SocketBase
 		{
 		public:
@@ -547,13 +554,6 @@ namespace nodecpp {
 //				net::Mode mode = net::Mode::callable;
 				net::Mode mode = net::Mode::awaitable;
 
-				struct awaitable_handle_data
-				{
-					std::experimental::coroutine_handle<> h = nullptr;
-					bool is_exception = false;
-					std::exception exception; // TODO: consider possibility of switching to nodecpp::error
-				};
-
 				//std::experimental::coroutine_handle<> h_read = nullptr;
 				//std::experimental::coroutine_handle<> h_write = nullptr;
 				struct awaitable_read_handle_data : public awaitable_handle_data
@@ -571,34 +571,6 @@ namespace nodecpp {
 				awaitable_read_handle_data ahd_read;
 				awaitable_write_handle_data ahd_write;
 				awaitable_handle_data ahd_drain;
-
-#if 0
-				awaitable_handle_data ahd_connect_2;
-				class HandlerAwaiterHolder
-				{
-					MultiOwner<nodecpp::awaitable<void>> handlerAwaiterList;
-					std::vector<nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>>> to_remove;
-				public:
-					HandlerAwaiterHolder() {};
-					HandlerAwaiterHolder( HandlerAwaiterHolder& other ) = delete;
-					HandlerAwaiterHolder& operator = ( HandlerAwaiterHolder& other ) = delete;
-
-					void add( nodecpp::safememory::owning_ptr<nodecpp::awaitable<void>>&& item ) { handlerAwaiterList.add( std::move( item ) ); }
-					void mark_done( nodecpp::safememory::soft_ptr<nodecpp::awaitable<void>>&& item ) { to_remove.push_back( std::move( item ) ); }
-					nodecpp::awaitable<void> cleanup()
-					{
-						for ( auto a:to_remove )
-						{
-							co_await *a;
-							handlerAwaiterList.removeAndDelete( a );
-						}
-						to_remove.clear();
-						co_return;
-					}
-					size_t getCount() { return handlerAwaiterList.getCount(); }
-				};
-				HandlerAwaiterHolder handlerAwaiterList;
-#endif // 0
 
 			//	bool connecting = false;
 				bool remoteEnded = false;
