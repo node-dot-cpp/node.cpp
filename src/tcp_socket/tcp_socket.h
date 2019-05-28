@@ -112,8 +112,8 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() );
 		ourSide[idx].setAssociated();
 		osSide[idx].fd = (SOCKET)(-((int64_t)(osSide[idx].fd)));
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].events == 0 );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].revents == 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].events == 0, "indeed: {}", osSide[idx].events );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].revents == 0, "indeed: {}", osSide[idx].revents );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].fd > 0 );
 		++associatedCount;
 	}
@@ -723,25 +723,28 @@ public:
 
 	void infraEmitListeningEvents()
 	{
-		for (auto& current : pendingListenEvents)
+		while ( pendingListenEvents.size() )
 		{
-			if (current < ioSockets.size())
+			std::vector<size_t> currentPendingListenEvents = std::move( pendingListenEvents );
+			for (auto& current : currentPendingListenEvents)
 			{
-				auto& entry = ioSockets.at(current);
-				if (entry.isUsed())
+				if (ioSockets.isValidId(current))
 				{
-					auto hr = entry.getServerSocketData()->ahd_listen.h;
-					if ( hr != nullptr )
+					auto& entry = ioSockets.at(current);
+					if (entry.isUsed())
 					{
-						entry.getServerSocketData()->ahd_listen.h = nullptr;
-						hr();
+						auto hr = entry.getServerSocketData()->ahd_listen.h;
+						if ( hr != nullptr )
+						{
+							entry.getServerSocketData()->ahd_listen.h = nullptr;
+							hr();
+						}
+						else
+							EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress );
 					}
-					else
-						EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress );
 				}
 			}
 		}
-		pendingListenEvents.clear();
 	}
 
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)

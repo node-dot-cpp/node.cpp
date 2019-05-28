@@ -229,6 +229,7 @@ public:
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
 				netServer.infraGetPendingEvents(queue);
+				netServer.infraEmitListeningEvents();
 				queue.emit();
 			}
 
@@ -248,7 +249,6 @@ public:
 			netSocket.infraProcessSockAcceptedEvents();
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
-				netServer.infraEmitListeningEvents();
 				netServer.infraGetCloseEvents(/*queue*/);
 			}
 			queue.emit();

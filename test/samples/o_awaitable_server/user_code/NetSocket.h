@@ -17,8 +17,8 @@ using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
-#define IMPL_VERSION 1 // old fashion
-//#define IMPL_VERSION 2 // main() is a single coro
+//#define IMPL_VERSION 1 // old fashion
+#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
 
 class MySampleTNode : public NodeBase
@@ -322,7 +322,7 @@ public:
 		for (;;)
 		{
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket;
-			co_await srv.a_connection<nodecpp::net::SocketO>( socket );
+			co_await srvCtrl.a_connection<nodecpp::net::SocketO>( socket );
 			socketCtrlLoop(socket);
 		}
 		co_return;
