@@ -18,8 +18,8 @@ using namespace nodecpp;
 using namespace fmt;
 
 //#define IMPL_VERSION 1 // old fashion
-#define IMPL_VERSION 2 // main() is a single coro
-//#define IMPL_VERSION 3 // onConnect is a coro
+//#define IMPL_VERSION 2 // main() is a single coro
+#define IMPL_VERSION 3 // onConnect is a coro
 
 class MySampleTNode : public NodeBase
 {
@@ -352,14 +352,69 @@ public:
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
 
 #elif IMPL_VERSION == 3
+
+	virtual nodecpp::awaitable<void> main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		ptr.reset(static_cast<uint8_t*>(malloc(size)));
+
+		srv.listen(2000, "127.0.0.1", 5);
+		srvCtrl.listen(2001, "127.0.0.1", 5);
+
+		co_return;
+	}
+
+	nodecpp::awaitable<void> onConnectionx(nodecpp::safememory::soft_ptr<nodecpp::net::ServerOUserBase<MySampleTNode,ServerIdType>>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+		//srv.unref();
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
+		nodecpp::Buffer r_buff(0x200);
+		for (;;)
+		{
+			co_await socket->a_read( r_buff, 2 );
+			co_await onDataServerSocket_(socket, r_buff);
+		}
+		co_return;
+	}
+
+	nodecpp::awaitable<void> onConnectionCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerOUserBase<MySampleTNode,ServerIdType>>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+		//srv.unref();
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
+		nodecpp::Buffer r_buff(0x200);
+		for (;;)
+		{
+			co_await socket->a_read( r_buff, 2 );
+			co_await onDataCtrlServerSocket_(socket, r_buff);
+		}
+		co_return;
+	}
+
+	using SockTypeServerSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+
+	using ServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerSocket,ServerIdType,
+			nodecpp::net::OnConnectionSO<&MySampleTNode::onConnectionCtrl>
+	>;
+	ServerType srv; 
+
+	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType,
+		nodecpp::net::OnConnectionSO<&MySampleTNode::onConnectionx>
+	>;
+	CtrlServerType srvCtrl;
+
+	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
+
 #else
 #error
 #endif // IMPL_VERSION
 
-	nodecpp::awaitable<void> onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
+	nodecpp::awaitable<void> onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 		if ( buffer.size() < 2 )
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
+//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data: received {} bytes", buffer.size() );
 			socket->unref();
 			co_return;
 		}
@@ -368,7 +423,8 @@ public:
 		size_t receivedSz = buffer.begin()[0];
 		if ( receivedSz != buffer.size() )
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
+//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data: received {}, expected: {} bytes", receivedSz, buffer.size() );
 			socket->unref();
 			co_return;
 		}
@@ -387,7 +443,7 @@ public:
 		++(stats.rqCnt);
 		co_return;
 	}
-	nodecpp::awaitable<void> onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
+	nodecpp::awaitable<void> onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if ( requestedSz )

@@ -662,6 +662,154 @@ namespace nodecpp {
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 
 			bool write2(Buffer& b);
+			void connect(uint16_t port, const char* ip);
+
+
+		//private:
+			auto a_connect(uint16_t port, const char* ip) { 
+
+				struct connect_awaiter {
+					SocketBase& socket;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					connect_awaiter(SocketBase& socket_) : socket( socket_ ) {}
+
+					connect_awaiter(const connect_awaiter &) = delete;
+					connect_awaiter &operator = (const connect_awaiter &) = delete;
+	
+					~connect_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						socket.dataForCommandProcessing.ahd_connect.h = who_is_awaiting;
+					}
+
+					auto await_resume() {
+						if ( socket.dataForCommandProcessing.ahd_connect.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_connect.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_connect.exception;
+						}
+					}
+				};
+				connect( port, ip );
+				return connect_awaiter(*this);
+			}
+
+			auto a_read( Buffer& buff, size_t min_bytes = 1 ) { 
+
+				buff.clear();
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.capacity() >= min_bytes, "indeed: {} vs. {} bytes", buff.capacity(), min_bytes );
+
+				struct read_data_awaiter {
+					SocketBase& socket;
+					Buffer& buff;
+					size_t min_bytes;
+
+					read_data_awaiter(SocketBase& socket_, Buffer& buff_, size_t min_bytes_) : socket( socket_ ), buff( buff_ ), min_bytes( min_bytes_ ) {}
+
+					read_data_awaiter(const read_data_awaiter &) = delete;
+					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+	
+					~read_data_awaiter() {}
+
+					bool await_ready() {
+						return socket.dataForCommandProcessing.readBuffer.used_size() >= min_bytes;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
+						socket.dataForCommandProcessing.ahd_read.h = awaiting;
+					}
+
+					auto await_resume() {
+						if ( socket.dataForCommandProcessing.ahd_read.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_read.exception;
+						}
+						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes);
+					}
+				};
+				return read_data_awaiter(*this, buff, min_bytes);
+			}
+
+			auto a_write(Buffer& buff) { 
+
+				struct write_data_awaiter {
+					SocketBase& socket;
+					Buffer& buff;
+					bool write_ok = false;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					write_data_awaiter(SocketBase& socket_, Buffer& buff_) : socket( socket_ ), buff( buff_ )  {}
+
+					write_data_awaiter(const write_data_awaiter &) = delete;
+					write_data_awaiter &operator = (const write_data_awaiter &) = delete;
+	
+					~write_data_awaiter() {}
+
+					bool await_ready() {
+						write_ok = socket.write2( buff ); // so far we do it sync TODO: extend implementation for more complex (= requiring really async processing) cases
+						return write_ok; // false means waiting (incl. exceptional cases)
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !write_ok ); // otherwise, why are we here?
+						socket.dataForCommandProcessing.ahd_write.h = awaiting;
+					}
+
+					auto await_resume() {
+						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_write.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_write.exception;
+						}
+					}
+				};
+				return write_data_awaiter(*this, buff);
+			}
+
+			auto a_drain() { 
+
+				struct drain_awaiter {
+					SocketBase& socket;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					drain_awaiter(SocketBase& socket_) : socket( socket_ )  {}
+
+					drain_awaiter(const drain_awaiter &) = delete;
+					drain_awaiter &operator = (const drain_awaiter &) = delete;
+	
+					~drain_awaiter() {}
+
+					bool await_ready() {
+						return socket.dataForCommandProcessing.writeBuffer.empty();
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
+						socket.dataForCommandProcessing.ahd_drain.h = awaiting;
+					}
+
+					auto await_resume() {
+						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_drain.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_drain.exception;
+						}
+					}
+				};
+				return drain_awaiter(*this);
+			}
 		};
 
 	} //namespace net
