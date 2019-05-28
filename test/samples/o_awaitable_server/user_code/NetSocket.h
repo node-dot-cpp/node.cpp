@@ -394,12 +394,12 @@ public:
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
 
 	using ServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerSocket,ServerIdType,
-			nodecpp::net::OnConnectionSO<&MySampleTNode::onConnectionCtrl>
+		nodecpp::net::OnConnectionSO<&MySampleTNode::onConnectionx>
 	>;
 	ServerType srv; 
 
 	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType,
-		nodecpp::net::OnConnectionSO<&MySampleTNode::onConnectionx>
+		nodecpp::net::OnConnectionSO<&MySampleTNode::onConnectionCtrl>
 	>;
 	CtrlServerType srvCtrl;
 

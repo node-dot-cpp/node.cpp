@@ -45,7 +45,7 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				if constexpr (std::is_same< T1, ServerO >::value)
-					/*(static_cast<ServerO*>(ptr->getPtr()))->onConnection(sock)*/;
+					(nodecpp::safememory::soft_ptr_static_cast<ServerO>(ptr->getPtr()))->onConnection(sock);
 				else if constexpr (std::is_same< T1, Server >::value)
 				{
 					soft_ptr<net::Socket> s = soft_ptr_static_cast<net::Socket>(sock);
