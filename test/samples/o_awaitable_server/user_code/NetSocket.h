@@ -111,7 +111,7 @@ public:
 	}
 	nodecpp::awaitable<void> onDataCtrlServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, Buffer& buffer) {
 
-		co_await onDataCtrlServerSocket(socket, buffer);
+		co_await onDataCtrlServerSocket_(socket, buffer);
 		co_return;
 	}
 	nodecpp::awaitable<void> onEndCtrlServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) {
