@@ -78,7 +78,6 @@ namespace nodecpp {
 				template<class T>
 				using userListenMemberHandler = void (T::*)(size_t, nodecpp::net::Address);
 
-//				template<class ObjectT, class MemberFnT>
 				template<class ObjectT, userListenMemberHandler<ObjectT> MemberFnT>
 				static void listenHandler( void* objPtr, size_t id, nodecpp::net::Address addr)
 				{
@@ -87,12 +86,8 @@ namespace nodecpp {
 
 				template<class ObjectT, userListenMemberHandler<ObjectT> memmberFn>
 				void registerListenHandler(ObjectT* object )
-//				static void registerListenHandler(ObjectT* object )
 				{
-//					userDefListenHandler = &listenHandler<ObjectT, userListenMemberHandler<ObjectT>>;
 					userDefListenHandler = &listenHandler<ObjectT, memmberFn>;
-					//listenHandler<ObjectT, memmberFn>( object, 5, nodecpp::net::Address() );
-					//void* objPtr = object; 	((reinterpret_cast<ObjectT*>(objPtr))->*memmberFn)(5, nodecpp::net::Address());
 					userDefListenHandlerObjectPtr = object;
 				}
 			};
