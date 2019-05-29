@@ -28,13 +28,13 @@
 #ifndef SERVER_O_H
 #define SERVER_O_H
 
-#include "server_t_base.h"
+#include "server_common.h"
 
 namespace nodecpp {
 
 	namespace net {
 
-		class ServerO : public ServerTBase
+		class ServerO : public ServerBase
 		{
 		public:
 			ServerO();

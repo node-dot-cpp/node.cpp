@@ -46,7 +46,7 @@ public:
 
 	NetSocketEntry(size_t index) : index(index), state(State::Unused) {}
 	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 ); mode = ptr->mode(); }
-	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -63,7 +63,7 @@ public:
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
 	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
-	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
+	net::ServerBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
 };
 
 class NetSockets
@@ -609,7 +609,7 @@ public:
 	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
 	void appClose(size_t id);
-	void appAddServer(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int typeId) {
+	void appAddServer(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
@@ -619,7 +619,7 @@ public:
 		size_t id = addServerEntry(node, ptr, typeId);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
 	}
-	void appListen(soft_ptr<net::ServerTBase> ptr, const char* ip, uint16_t port, int backlog) {
+	void appListen(soft_ptr<net::ServerBase> ptr, const char* ip, uint16_t port, int backlog) {
 		Ip4 myIp = Ip4::parse(ip);
 		Port myPort = Port::fromHost(port);
 		if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort)) {
@@ -668,7 +668,7 @@ public:
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 
 protected:
-	size_t addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int typeId);
+	size_t addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };

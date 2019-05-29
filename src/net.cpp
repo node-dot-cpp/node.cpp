@@ -26,6 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 #include "../include/nodecpp/net_common.h"
+#include "../include/nodecpp/server_common.h"
 
 #include "infrastructure.h"
 #include "../include/nodecpp/socket_o.h"
@@ -93,27 +94,27 @@ void ServerBase::close()
 
 
 ServerO::ServerO() {
-	nodecpp::safememory::soft_ptr<ServerTBase> p = myThis.getSoftPtr<ServerTBase>(this);
+	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
 }
 Server::Server() {
-	nodecpp::safememory::soft_ptr<ServerTBase> p = myThis.getSoftPtr<ServerTBase>(this);
+	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerL);
 }
 
-void ServerTBase::listen(uint16_t port, const char* ip, int backlog)
+void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 {
-	nodecpp::safememory::soft_ptr<ServerTBase> p = myThis.getSoftPtr<ServerTBase>(this);
+	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	netServerManagerBase->appListen(p, ip, port, backlog);
 }
 
 void ServerO::listen(uint16_t port, const char* ip, int backlog)
 {
-	nodecpp::safememory::soft_ptr<ServerTBase> p = myThis.getSoftPtr<ServerTBase>(this);
+	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	netServerManagerBase->appListen(p, ip, port, backlog);
 }
 
-void ServerTBase::registerServerByID(NodeBase* node, soft_ptr<net::ServerTBase> t, int typeId) { registerServer(node, t, typeId); }
+void ServerBase::registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId) { registerServer(node, t, typeId); }
 
 
 

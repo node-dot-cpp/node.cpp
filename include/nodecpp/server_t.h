@@ -28,7 +28,7 @@
 #ifndef SERVER_T_H
 #define SERVER_T_H
 
-#include "server_t_base.h"
+#include "server_common.h"
 #include "../../src/infrastructure.h"
 
 namespace nodecpp {
@@ -84,7 +84,7 @@ namespace nodecpp {
 		};
 
 		template<class Node, class Socket, class Extra>
-		class ServerTUserBase : public ServerTBase
+		class ServerTUserBase : public ServerBase
 		{
 		public:
 			using userIdType = Extra;
@@ -102,7 +102,7 @@ namespace nodecpp {
 		};
 
 		template<class Node, class Socket>
-		class ServerTUserBase<Node, Socket, void> : public ServerTBase
+		class ServerTUserBase<Node, Socket, void> : public ServerBase
 		{
 			public:
 				using userIdType = void;

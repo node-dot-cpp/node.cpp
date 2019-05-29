@@ -191,7 +191,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\server_o.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\server_t.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\server_type_list.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\server_t_base.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_l.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_o.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_t.h" />

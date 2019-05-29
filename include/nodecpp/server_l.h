@@ -28,14 +28,14 @@
 #ifndef SERVER_L_H
 #define SERVER_L_H
 
-#include "server_t_base.h"
+#include "server_common.h"
 #include "socket_l.h"
 
 namespace nodecpp {
 
 	namespace net {
 
-		class Server : public ServerTBase
+		class Server : public ServerBase
 		{
 //			IntrusiveList<net::SocketBase> socketList;
 			MultiOwner<net::Socket> socketList;
@@ -104,7 +104,7 @@ namespace nodecpp {
 
 			void listen(uint16_t port, const char* ip, int backlog, std::function<void(size_t, net::Address)> cb) {
 				once(event::listening, std::move(cb));
-				ServerTBase::listen(port, ip, backlog);
+				ServerBase::listen(port, ip, backlog);
 			}
 
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER

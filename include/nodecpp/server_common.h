@@ -65,7 +65,6 @@ namespace nodecpp {
 				};
 				awaitable_connection_handle_data ahd_connection;
 			};
-		//protected:
 			DataForCommandProcessing dataForCommandProcessing;
 
 		protected:
@@ -73,6 +72,12 @@ namespace nodecpp {
 
 //			size_t id = 0;
 			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
+
+		protected:
+			void registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId);
+
+		public:
+			NodeBase* node = nullptr;
 
 		public:
 			ServerBase() {}
@@ -85,6 +90,8 @@ namespace nodecpp {
 			void ref();
 			void unref();
 			void reportBeingDestructed();
+
+			void listen(uint16_t port, const char* ip, int backlog);
 
 		};
 
