@@ -83,13 +83,6 @@ namespace nodecpp {
 				{
 					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(id, addr);
 				}
-
-				template<class ObjectT, userListenMemberHandler<ObjectT> memmberFn>
-				void registerListenHandler(ObjectT* object )
-				{
-					userDefListenHandler = &listenHandler<ObjectT, memmberFn>;
-					userDefListenHandlerObjectPtr = object;
-				}
 			};
 			DataForCommandProcessing dataForCommandProcessing;
 
@@ -118,6 +111,13 @@ namespace nodecpp {
 			void reportBeingDestructed();
 
 			void listen(uint16_t port, const char* ip, int backlog);
+
+			template<auto memmberFn, class ObjectT>
+			void registerListenHandler(ObjectT* object )
+			{
+				dataForCommandProcessing.userDefListenHandler = &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>;
+				dataForCommandProcessing.userDefListenHandlerObjectPtr = object;
+			}
 
 		};
 

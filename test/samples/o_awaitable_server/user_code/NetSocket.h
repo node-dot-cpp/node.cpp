@@ -360,7 +360,7 @@ public:
 
 	virtual nodecpp::awaitable<void> main()
 	{
-		srv.dataForCommandProcessing.registerListenHandler<MySampleTNode, &MySampleTNode::dummy>( this );
+		srv.registerListenHandler<&MySampleTNode::dummy>( this );
 		if ( srv.dataForCommandProcessing.userDefListenHandler != nullptr )
 			(*(srv.dataForCommandProcessing.userDefListenHandler))( srv.dataForCommandProcessing.userDefListenHandlerObjectPtr, 3, nodecpp::net::Address() );
 		else
