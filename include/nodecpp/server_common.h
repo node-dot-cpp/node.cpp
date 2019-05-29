@@ -64,6 +64,37 @@ namespace nodecpp {
 					soft_ptr<SocketBase> sock;
 				};
 				awaitable_connection_handle_data ahd_connection;
+
+				void (*userDefListenHandler)(void*, size_t, nodecpp::net::Address) = nullptr;
+				void (*userDefConnectionHandler)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>) = nullptr;
+				void (*userDefCloseHandler)(void*, bool) = nullptr;
+				void (*userDefErrorHandler)(void*, Error&) = nullptr;
+
+				void *userDefListenHandlerObjectPtr = nullptr;
+				void *userDefConnectionHandlerObjectPtr = nullptr;
+				void *userDefCloseHandlerObjectPtr = nullptr;
+				void *userDefErrorHandlerObjectPtr = nullptr;
+
+				template<class T>
+				using userListenMemberHandler = void (T::*)(size_t, nodecpp::net::Address);
+
+//				template<class ObjectT, class MemberFnT>
+				template<class ObjectT, userListenMemberHandler<ObjectT> MemberFnT>
+				static void listenHandler( void* objPtr, size_t id, nodecpp::net::Address addr)
+				{
+					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(id, addr);
+				}
+
+				template<class ObjectT, userListenMemberHandler<ObjectT> memmberFn>
+				void registerListenHandler(ObjectT* object )
+//				static void registerListenHandler(ObjectT* object )
+				{
+//					userDefListenHandler = &listenHandler<ObjectT, userListenMemberHandler<ObjectT>>;
+					userDefListenHandler = &listenHandler<ObjectT, memmberFn>;
+					//listenHandler<ObjectT, memmberFn>( object, 5, nodecpp::net::Address() );
+					//void* objPtr = object; 	((reinterpret_cast<ObjectT*>(objPtr))->*memmberFn)(5, nodecpp::net::Address());
+					userDefListenHandlerObjectPtr = object;
+				}
 			};
 			DataForCommandProcessing dataForCommandProcessing;
 

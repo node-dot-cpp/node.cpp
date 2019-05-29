@@ -353,8 +353,20 @@ public:
 
 #elif IMPL_VERSION == 3
 
+	void dummy(size_t n, nodecpp::net::Address)
+	{
+		printf( "dummy(%zd, ...)\n", n );
+	}
+
 	virtual nodecpp::awaitable<void> main()
 	{
+		srv.dataForCommandProcessing.registerListenHandler<MySampleTNode, &MySampleTNode::dummy>( this );
+		if ( srv.dataForCommandProcessing.userDefListenHandler != nullptr )
+			(*(srv.dataForCommandProcessing.userDefListenHandler))( srv.dataForCommandProcessing.userDefListenHandlerObjectPtr, 3, nodecpp::net::Address() );
+		else
+			printf( "no handler\n" );
+		co_return;
+
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
