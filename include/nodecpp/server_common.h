@@ -75,13 +75,33 @@ namespace nodecpp {
 				void *userDefCloseHandlerObjectPtr = nullptr;
 				void *userDefErrorHandlerObjectPtr = nullptr;
 
-				template<class T>
-				using userListenMemberHandler = void (T::*)(size_t, nodecpp::net::Address);
+				template<class T> using userListenMemberHandler = void (T::*)(size_t, nodecpp::net::Address);
+				template<class T> using userConnectionMemberHandler = void (T::*)(nodecpp::safememory::soft_ptr<net::SocketBase>);
+				template<class T> using userCloseMemberHandler = void (T::*)(bool);
+				template<class T> using userErrorMemberHandler = void (T::*)(Error&);
 
 				template<class ObjectT, userListenMemberHandler<ObjectT> MemberFnT>
-				static void listenHandler( void* objPtr, size_t id, nodecpp::net::Address addr)
+				static void listenHandler( void* objPtr, size_t id, nodecpp::net::Address addr )
 				{
 					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(id, addr);
+				}
+
+				template<class ObjectT, userConnectionMemberHandler<ObjectT> MemberFnT>
+				static void connectionHandler( void* objPtr, nodecpp::safememory::soft_ptr<net::SocketBase> socket )
+				{
+					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(socket);
+				}
+
+				template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
+				static void closeHandler( void* objPtr, bool hadError )
+				{
+					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
+				}
+
+				template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
+				static void errorHandler( void* objPtr, Error& e )
+				{
+					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
 				}
 			};
 			DataForCommandProcessing dataForCommandProcessing;
@@ -112,11 +132,31 @@ namespace nodecpp {
 
 			void listen(uint16_t port, const char* ip, int backlog);
 
-			template<auto memmberFn, class ObjectT>
-			void registerListenHandler(ObjectT* object )
+			enum class Handler { Listen, Connection, Close, Error };
+			template<Handler handler, auto memmberFn, class ObjectT>
+			void addHandler(ObjectT* object )
 			{
-				dataForCommandProcessing.userDefListenHandler = &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>;
-				dataForCommandProcessing.userDefListenHandlerObjectPtr = object;
+				if constexpr ( handler == Handler::Listen )
+				{
+					dataForCommandProcessing.userDefListenHandler = &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>;
+					dataForCommandProcessing.userDefListenHandlerObjectPtr = object;
+				} 
+				else if constexpr ( handler == Handler::Connection )
+				{
+					dataForCommandProcessing.userDefConnectionHandler = &DataForCommandProcessing::connectionHandler<ObjectT, memmberFn>;
+					dataForCommandProcessing.userDefConnectionHandlerObjectPtr = object;
+				}
+				else if constexpr ( handler == Handler::Close )
+				{
+					dataForCommandProcessing.userDefCloseHandler = &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>;
+					dataForCommandProcessing.userDefCloseHandlerObjectPtr = object;
+				}
+				else
+				{
+					static_assert( handler == Handler::Error ); // the only remaining option
+					dataForCommandProcessing.userDefErrorHandler = &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>;
+					dataForCommandProcessing.userDefErrorHandlerObjectPtr = object;
+				}
 			}
 
 		};
