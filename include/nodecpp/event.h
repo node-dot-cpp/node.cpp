@@ -118,6 +118,7 @@ namespace nodecpp
 			virtual void onEnd() {}
 			virtual void onAccepted() {}
 			virtual void onError(Error& err) {}
+			virtual ~SocketListener() {}
 	};
 
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
@@ -128,6 +129,7 @@ namespace nodecpp
 			virtual void onConnection(soft_ptr<net::SocketBase> socket) {}
 			virtual void onListening(size_t id, net::Address addr) {}
 			virtual void onError(Error& err) {}
+			virtual ~ServerListener() {}
 	};
 #endif
 

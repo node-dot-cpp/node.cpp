@@ -76,6 +76,7 @@ class NodeBase
 {
 public:
 	NodeBase() {}
+	virtual ~NodeBase() {}
 	virtual nodecpp::awaitable<void> main() = 0;
 
 	using EmitterType = void;

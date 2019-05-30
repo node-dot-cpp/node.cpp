@@ -44,9 +44,9 @@ public:
 	bool refed = false;
 	OpaqueEmitter emitter;
 
-	NetSocketEntry(size_t index) : index(index), state(State::Unused) {}
-	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 ); mode = ptr->mode(); }
-	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index) : state(State::Unused), index(index) {}
+	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 ); mode = ptr->mode(); }
+	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;

@@ -32,7 +32,6 @@ class MySampleTNode : public NodeBase
 
 	std::unique_ptr<uint8_t> ptr;
 	size_t size = 64 * 1024;
-	bool letOnDrain = false;
 
 	using SocketIdType = int;
 	using ServerIdType = int;

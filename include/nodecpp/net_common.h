@@ -274,6 +274,7 @@ namespace nodecpp {
 			size_exp = other.size_exp;
 			begin = other.begin;
 			end = other.end;
+			return *this;
 		}
 		size_t used_size() const { return begin <= end ? end - begin : alloc_size() - (begin - end); }
 		size_t remaining_capacity() const { return alloc_size() - 1 - used_size(); }
