@@ -30,10 +30,8 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
+
 #include <nodecpp/common.h>
-
-
-#include <fmt/format.h>
 #include <nodecpp/socket_type_list.h>
 #include <nodecpp/socket_t_base.h>
 #include <nodecpp/server_t.h>

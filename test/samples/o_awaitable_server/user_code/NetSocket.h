@@ -2,15 +2,13 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
-#include "../../../../include/nodecpp/common.h"
 
 
-#include "../../../../include/nodecpp/socket_type_list.h"
-#include "../../../../include/nodecpp/socket_t_base.h"
-#include "../../../../include/nodecpp/server_t.h"
-#include "../../../../include/nodecpp/server_type_list.h"
-
-#include <functional>
+#include <nodecpp/common.h>
+#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_t_base.h>
+#include <nodecpp/server_t.h>
+#include <nodecpp/server_type_list.h>
 
 
 using namespace std;

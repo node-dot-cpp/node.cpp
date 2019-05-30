@@ -2,12 +2,10 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
-#include <common.h>
 
-
-#include <fmt/format.h>
-#include <socket_type_list.h>
-#include <socket_t_base.h>
+#include <nodecpp/common.h>
+#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_t_base.h>
 
 
 using namespace nodecpp;
