@@ -46,27 +46,19 @@ namespace nodecpp {
 
 	class OpaqueEmitter
 	{
-		//using PtrType = void*;
-		//PtrType ptr = nullptr;
-		//using UnderlyingType = nodecpp::net::SocketBase;
 		using UnderlyingType = void;
 		nodecpp::safememory::soft_ptr<UnderlyingType> ptr;
 	public:
-	//	using PtrType = nodecpp::net::SocketBase*;
 		enum ObjectType { Undefined, ClientSocket, ServerSocket };
 		ObjectType objectType;
 		int type = -1;
 		NodeBase* nodePtr = nullptr;
 		OpaqueEmitter() : /*ptr( nullptr), */type(-1), objectType(ObjectType::Undefined) {}
-//		OpaqueEmitter( ObjectType ot, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr_, int type_ ) : objectType(ot), ptr( nodecpp::safememory::soft_ptr_static_cast<UnderlyingType>(ptr_)), type(type_), nodePtr( node ) {}
 		OpaqueEmitter( ObjectType ot, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr_, int type_ ) : objectType(ot), ptr( ptr_), type(type_), nodePtr( node ) {}
-//		OpaqueEmitter( ObjectType ot, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr_, int type_ ) : objectType(ot), ptr( nodecpp::safememory::soft_ptr_static_cast<UnderlyingType>(ptr_)), type(type_), nodePtr( node ) {}
 		OpaqueEmitter( ObjectType ot, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr_, int type_ ) : objectType(ot), ptr( ptr_), type(type_), nodePtr( node ) {}
 		bool isValid() const { return (bool)ptr; }
 		nodecpp::safememory::soft_ptr<net::SocketBase> getClientSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ClientSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::SocketBase>(ptr); }
-//		const net::SocketBase* getClientSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ClientSocket ); return static_cast<const net::SocketBase*>(ptr); }
 		nodecpp::safememory::soft_ptr<net::ServerBase> getServerSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ServerSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::ServerBase>(ptr); }
-//		const net::ServerBase* getServerSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ServerSocket ); return static_cast<const net::ServerBase*>(ptr); }
 	};
 } // namespace nodecpp
 
