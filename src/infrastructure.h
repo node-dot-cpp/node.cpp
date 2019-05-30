@@ -29,6 +29,8 @@
 #ifndef INFRASTRUCTURE_H
 #define INFRASTRUCTURE_H
 
+#include "../include/nodecpp/common.h"
+
 #include "ev_queue.h"
 #include "tcp_socket/tcp_socket.h"
 
