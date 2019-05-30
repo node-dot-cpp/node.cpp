@@ -65,43 +65,47 @@ namespace nodecpp {
 				};
 				awaitable_connection_handle_data ahd_connection;
 
-				void (*userDefListenHandler)(void*, size_t, nodecpp::net::Address) = nullptr;
-				void (*userDefConnectionHandler)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>) = nullptr;
-				void (*userDefCloseHandler)(void*, bool) = nullptr;
-				void (*userDefErrorHandler)(void*, Error&) = nullptr;
+				nodecpp::awaitable<void> (*userDefListenHandler)(void*, size_t, nodecpp::net::Address) = nullptr;
+				nodecpp::awaitable<void> (*userDefConnectionHandler)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>) = nullptr;
+				nodecpp::awaitable<void> (*userDefCloseHandler)(void*, bool) = nullptr;
+				nodecpp::awaitable<void> (*userDefErrorHandler)(void*, Error&) = nullptr;
 
 				void *userDefListenHandlerObjectPtr = nullptr;
 				void *userDefConnectionHandlerObjectPtr = nullptr;
 				void *userDefCloseHandlerObjectPtr = nullptr;
 				void *userDefErrorHandlerObjectPtr = nullptr;
 
-				template<class T> using userListenMemberHandler = void (T::*)(size_t, nodecpp::net::Address);
-				template<class T> using userConnectionMemberHandler = void (T::*)(nodecpp::safememory::soft_ptr<net::SocketBase>);
-				template<class T> using userCloseMemberHandler = void (T::*)(bool);
-				template<class T> using userErrorMemberHandler = void (T::*)(Error&);
+				template<class T> using userListenMemberHandler = nodecpp::awaitable<void> (T::*)(size_t, nodecpp::net::Address);
+				template<class T> using userConnectionMemberHandler = nodecpp::awaitable<void> (T::*)(nodecpp::safememory::soft_ptr<net::SocketBase>);
+				template<class T> using userCloseMemberHandler = nodecpp::awaitable<void> (T::*)(bool);
+				template<class T> using userErrorMemberHandler = nodecpp::awaitable<void> (T::*)(Error&);
 
 				template<class ObjectT, userListenMemberHandler<ObjectT> MemberFnT>
-				static void listenHandler( void* objPtr, size_t id, nodecpp::net::Address addr )
+				static nodecpp::awaitable<void> listenHandler( void* objPtr, size_t id, nodecpp::net::Address addr )
 				{
 					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(id, addr);
+					co_return;
 				}
 
 				template<class ObjectT, userConnectionMemberHandler<ObjectT> MemberFnT>
-				static void connectionHandler( void* objPtr, nodecpp::safememory::soft_ptr<net::SocketBase> socket )
+				static nodecpp::awaitable<void> connectionHandler( void* objPtr, nodecpp::safememory::soft_ptr<net::SocketBase> socket )
 				{
 					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(socket);
+					co_return;
 				}
 
 				template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
-				static void closeHandler( void* objPtr, bool hadError )
+				static nodecpp::awaitable<void> closeHandler( void* objPtr, bool hadError )
 				{
 					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
+					co_return;
 				}
 
 				template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
-				static void errorHandler( void* objPtr, Error& e )
+				static nodecpp::awaitable<void> errorHandler( void* objPtr, Error& e )
 				{
 					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
+					co_return;
 				}
 			};
 			DataForCommandProcessing dataForCommandProcessing;
