@@ -65,10 +65,47 @@ namespace nodecpp {
 				};
 				awaitable_connection_handle_data ahd_connection;
 
-				nodecpp::awaitable<void> (*userDefListenHandler)(void*, size_t, nodecpp::net::Address) = nullptr;
+
+				/*nodecpp::awaitable<void> (*userDefListenHandler)(void*, size_t, nodecpp::net::Address) = nullptr;
 				nodecpp::awaitable<void> (*userDefConnectionHandler)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>) = nullptr;
 				nodecpp::awaitable<void> (*userDefCloseHandler)(void*, bool) = nullptr;
-				nodecpp::awaitable<void> (*userDefErrorHandler)(void*, Error&) = nullptr;
+				nodecpp::awaitable<void> (*userDefErrorHandler)(void*, Error&) = nullptr;*/
+
+				using userDefListenHandlerFnT = nodecpp::awaitable<void> (*)(void*, size_t, nodecpp::net::Address);
+				using userDefConnectionHandlerFnT = nodecpp::awaitable<void> (*)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>);
+				using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
+				using userDefErrorHandlerFnT = nodecpp::awaitable<void> (*)(void*, Error&);
+
+				userDefListenHandlerFnT userDefListenHandler = nullptr;
+				userDefConnectionHandlerFnT userDefConnectionHandler = nullptr;
+				userDefCloseHandlerFnT userDefCloseHandler = nullptr;
+				userDefErrorHandlerFnT userDefErrorHandler = nullptr;
+
+				template<class FnT>
+				class UserDefHandlers
+				{
+					struct HandlerInstance
+					{
+						FnT handler = nullptr;
+						void *object = nullptr;
+					};
+					std::vector<HandlerInstance> handlers;
+					bool empty() { return handlers.empty(); }
+					/*template<class ObjectT, auto memmberFn>
+					bool add( ObjectT* object )
+					{
+						HandlerInstance inst;
+						inst.handler = &FnT<ObjectT, memmberFn>;
+					dataForCommandProcessing.userDefListenHandler = &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>;
+						ints.object = object;
+						handlers.push_back( instance );
+					}*/
+				};
+
+				UserDefHandlers<userDefListenHandlerFnT> userDefListenHandlers;
+				UserDefHandlers<userDefConnectionHandlerFnT> userDefConnectionHandlers;
+				UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
+				UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;
 
 				void *userDefListenHandlerObjectPtr = nullptr;
 				void *userDefConnectionHandlerObjectPtr = nullptr;
