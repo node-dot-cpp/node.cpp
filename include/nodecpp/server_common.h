@@ -90,16 +90,25 @@ namespace nodecpp {
 						void *object = nullptr;
 					};
 					std::vector<HandlerInstance> handlers;
+				public:
 					bool empty() { return handlers.empty(); }
 					/*template<class ObjectT, auto memmberFn>
 					bool add( ObjectT* object )
 					{
 						HandlerInstance inst;
 						inst.handler = &FnT<ObjectT, memmberFn>;
-					dataForCommandProcessing.userDefListenHandler = &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>;
-						ints.object = object;
+						inst.object = object;
 						handlers.push_back( instance );
 					}*/
+					template<class ObjectT>
+					bool add( ObjectT* object, FnT handler )
+					{
+						HandlerInstance inst;
+						inst.object = object;
+						inst.handler = handler;
+						handlers.push_back(inst);
+						return true;
+					}
 				};
 
 				UserDefHandlers<userDefListenHandlerFnT> userDefListenHandlers;
@@ -179,8 +188,9 @@ namespace nodecpp {
 			{
 				if constexpr ( handler == Handler::Listen )
 				{
-					dataForCommandProcessing.userDefListenHandler = &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>;
-					dataForCommandProcessing.userDefListenHandlerObjectPtr = object;
+					//dataForCommandProcessing.userDefListenHandler = &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>;
+					//dataForCommandProcessing.userDefListenHandlerObjectPtr = object;
+					dataForCommandProcessing.userDefListenHandlers.add(object, &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>);
 				} 
 				else if constexpr ( handler == Handler::Connection )
 				{
