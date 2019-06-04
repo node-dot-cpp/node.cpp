@@ -66,11 +66,6 @@ namespace nodecpp {
 				awaitable_connection_handle_data ahd_connection;
 
 
-				/*nodecpp::awaitable<void> (*userDefListenHandler)(void*, size_t, nodecpp::net::Address) = nullptr;
-				nodecpp::awaitable<void> (*userDefConnectionHandler)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>) = nullptr;
-				nodecpp::awaitable<void> (*userDefCloseHandler)(void*, bool) = nullptr;
-				nodecpp::awaitable<void> (*userDefErrorHandler)(void*, Error&) = nullptr;*/
-
 				using userDefListenHandlerFnT = nodecpp::awaitable<void> (*)(void*, size_t, nodecpp::net::Address);
 				using userDefConnectionHandlerFnT = nodecpp::awaitable<void> (*)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>);
 				using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
@@ -128,11 +123,6 @@ namespace nodecpp {
 
 				bool isErrorEventHandler() { return userDefErrorHandlers.willHandle(); }
 				void handleErrorEvent(Error& e) { for (auto h : userDefErrorHandlers.handlers) h.handler(h.object, e); }
-
-				/*void *userDefListenHandlerObjectPtr = nullptr;
-				void *userDefConnectionHandlerObjectPtr = nullptr;
-				void *userDefCloseHandlerObjectPtr = nullptr;
-				void *userDefErrorHandlerObjectPtr = nullptr;*/
 
 				template<class T> using userListenMemberHandler = nodecpp::awaitable<void> (T::*)(size_t, nodecpp::net::Address);
 				template<class T> using userConnectionMemberHandler = nodecpp::awaitable<void> (T::*)(nodecpp::safememory::soft_ptr<net::SocketBase>);
@@ -201,27 +191,19 @@ namespace nodecpp {
 			{
 				if constexpr ( handler == Handler::Listen )
 				{
-					//dataForCommandProcessing.userDefListenHandler = &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>;
-					//dataForCommandProcessing.userDefListenHandlerObjectPtr = object;
 					dataForCommandProcessing.userDefListenHandlers.add(object, &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>);
 				} 
 				else if constexpr ( handler == Handler::Connection )
 				{
-					//dataForCommandProcessing.userDefConnectionHandler = &DataForCommandProcessing::connectionHandler<ObjectT, memmberFn>;
-					//dataForCommandProcessing.userDefConnectionHandlerObjectPtr = object;
 					dataForCommandProcessing.userDefConnectionHandlers.add(object, &DataForCommandProcessing::connectionHandler<ObjectT, memmberFn>);
 				}
 				else if constexpr ( handler == Handler::Close )
 				{
-					//dataForCommandProcessing.userDefCloseHandler = &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>;
-					//dataForCommandProcessing.userDefCloseHandlerObjectPtr = object;
 					dataForCommandProcessing.userDefCloseHandlers.add(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
 				}
 				else
 				{
 					static_assert( handler == Handler::Error ); // the only remaining option
-					//dataForCommandProcessing.userDefErrorHandler = &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>;
-					//dataForCommandProcessing.userDefErrorHandlerObjectPtr = object;
 					dataForCommandProcessing.userDefErrorHandlers.add(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
 				}
 			}
