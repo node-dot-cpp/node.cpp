@@ -97,13 +97,24 @@ namespace nodecpp {
 						handlers.push_back( instance );
 					}*/
 					template<class ObjectT>
-					bool add( ObjectT* object, FnT handler )
+					void add( ObjectT* object, FnT handler )
 					{
+						for (auto h : handlers)
+							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.handler != handler || h.object != object, "already added" );
 						HandlerInstance inst;
 						inst.object = object;
 						inst.handler = handler;
 						handlers.push_back(inst);
-						return true;
+					}
+					template<class ObjectT>
+					void remove(ObjectT* object, FnT handler)
+					{
+						for (size_t i=0; i<handlers.size(); ++i)
+							if (handlers[i].handler == handler && handlers[i].object == object)
+							{
+								handlers.erase(handlers.begin() + i);
+								return;
+							}
 					}
 				};
 
@@ -205,6 +216,27 @@ namespace nodecpp {
 				{
 					static_assert( handler == Handler::Error ); // the only remaining option
 					dataForCommandProcessing.userDefErrorHandlers.add(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
+				}
+			}
+			template<Handler handler, auto memmberFn, class ObjectT>
+			void removeHandler(ObjectT* object)
+			{
+				if constexpr (handler == Handler::Listen)
+				{
+					dataForCommandProcessing.userDefListenHandlers.remove(object, &DataForCommandProcessing::listenHandler<ObjectT, memmberFn>);
+				}
+				else if constexpr (handler == Handler::Connection)
+				{
+					dataForCommandProcessing.userDefConnectionHandlers.remove(object, &DataForCommandProcessing::connectionHandler<ObjectT, memmberFn>);
+				}
+				else if constexpr (handler == Handler::Close)
+				{
+					dataForCommandProcessing.userDefCloseHandlers.remove(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
+				}
+				else
+				{
+					static_assert(handler == Handler::Error); // the only remaining option
+					dataForCommandProcessing.userDefErrorHandlers.remove(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
 				}
 			}
 
