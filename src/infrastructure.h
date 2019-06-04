@@ -299,19 +299,21 @@ class Runnable : public RunnableBase
 	void internalRun()
 	{
 		interceptNewDeleteOperators(true);
-		Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
-		netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
-		netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
-		netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
-		if constexpr( !std::is_same< ServerSocketEmitter, void >::value )
 		{
-			netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
-			netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
-			netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
+			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
+			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
+			netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
+			netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
+			if constexpr (!std::is_same< ServerSocketEmitter, void >::value)
+			{
+				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
+				netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
+				netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
+			}
+			node = make_owning<Node>();
+			node->main();
+			infra.runInfraLoop2();
 		}
-		node = make_owning<Node>();
-		node->main();
-		infra.runInfraLoop2();
 		interceptNewDeleteOperators(false);
 	}
 public:
