@@ -82,16 +82,17 @@ namespace nodecpp {
 				userDefErrorHandlerFnT userDefErrorHandler = nullptr;
 
 				template<class FnT>
-				class UserDefHandlers
+				struct UserDefHandlers
 				{
+					friend void handleListenEvent(size_t, nodecpp::net::Address);
 					struct HandlerInstance
 					{
 						FnT handler = nullptr;
 						void *object = nullptr;
 					};
 					std::vector<HandlerInstance> handlers;
-				public:
-					bool empty() { return handlers.empty(); }
+
+					bool willHandle() { return handlers.size(); }
 					/*template<class ObjectT, auto memmberFn>
 					bool add( ObjectT* object )
 					{
@@ -116,10 +117,22 @@ namespace nodecpp {
 				UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
 				UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;
 
-				void *userDefListenHandlerObjectPtr = nullptr;
+				bool isListenEventHandler() { return userDefListenHandlers.willHandle(); }
+				void handleListenEvent(size_t id, nodecpp::net::Address address) { for (auto h : userDefListenHandlers.handlers) h.handler(h.object, id, address); }
+
+				bool isConnectionEventHandler() { return userDefConnectionHandlers.willHandle(); }
+				void handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { for (auto h : userDefConnectionHandlers.handlers) h.handler(h.object, socket); }
+
+				bool isCloseEventHandler() { return userDefCloseHandlers.willHandle(); }
+				void handleCloseEvent(bool hasError) { for (auto h : userDefCloseHandlers.handlers) h.handler(h.object, hasError); }
+
+				bool isErrorEventHandler() { return userDefErrorHandlers.willHandle(); }
+				void handleErrorEvent(Error& e) { for (auto h : userDefErrorHandlers.handlers) h.handler(h.object, e); }
+
+				/*void *userDefListenHandlerObjectPtr = nullptr;
 				void *userDefConnectionHandlerObjectPtr = nullptr;
 				void *userDefCloseHandlerObjectPtr = nullptr;
-				void *userDefErrorHandlerObjectPtr = nullptr;
+				void *userDefErrorHandlerObjectPtr = nullptr;*/
 
 				template<class T> using userListenMemberHandler = nodecpp::awaitable<void> (T::*)(size_t, nodecpp::net::Address);
 				template<class T> using userConnectionMemberHandler = nodecpp::awaitable<void> (T::*)(nodecpp::safememory::soft_ptr<net::SocketBase>);
@@ -194,19 +207,22 @@ namespace nodecpp {
 				} 
 				else if constexpr ( handler == Handler::Connection )
 				{
-					dataForCommandProcessing.userDefConnectionHandler = &DataForCommandProcessing::connectionHandler<ObjectT, memmberFn>;
-					dataForCommandProcessing.userDefConnectionHandlerObjectPtr = object;
+					//dataForCommandProcessing.userDefConnectionHandler = &DataForCommandProcessing::connectionHandler<ObjectT, memmberFn>;
+					//dataForCommandProcessing.userDefConnectionHandlerObjectPtr = object;
+					dataForCommandProcessing.userDefConnectionHandlers.add(object, &DataForCommandProcessing::connectionHandler<ObjectT, memmberFn>);
 				}
 				else if constexpr ( handler == Handler::Close )
 				{
-					dataForCommandProcessing.userDefCloseHandler = &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>;
-					dataForCommandProcessing.userDefCloseHandlerObjectPtr = object;
+					//dataForCommandProcessing.userDefCloseHandler = &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>;
+					//dataForCommandProcessing.userDefCloseHandlerObjectPtr = object;
+					dataForCommandProcessing.userDefCloseHandlers.add(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
 				}
 				else
 				{
 					static_assert( handler == Handler::Error ); // the only remaining option
-					dataForCommandProcessing.userDefErrorHandler = &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>;
-					dataForCommandProcessing.userDefErrorHandlerObjectPtr = object;
+					//dataForCommandProcessing.userDefErrorHandler = &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>;
+					//dataForCommandProcessing.userDefErrorHandlerObjectPtr = object;
+					dataForCommandProcessing.userDefErrorHandlers.add(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
 				}
 			}
 
