@@ -711,9 +711,13 @@ public:
 				{
 					if (entry.getServerSocketData()->osSocket != INVALID_SOCKET)
 						internal_usage_only::internal_close(entry.getServerSocketData()->osSocket);
-					//			entry.getPtr()->emitClose(entry.second);
 					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
-					EmitterType::emitClose( entry.getEmitter(), current.second);
+					{
+						if (entry.getServerSocketData()->isCloseEventHandler())
+							entry.getServerSocketData()->handleCloseEvent(current.second);
+						//EmitterType::emitClose( entry.getEmitter(), current.second);
+						// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+					}
 				}
 				entry = NetSocketEntry(current.first);
 			}
@@ -740,7 +744,12 @@ public:
 							hr();
 						}
 						else
-							EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress );
+						{
+							if (entry.getServerSocketData()->isListenEventHandler() )
+								entry.getServerSocketData()->handleListenEvent(current, entry.getServerSocketData()->localAddress);
+							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+							// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+						}
 					}
 				}
 			}
@@ -786,7 +795,12 @@ private:
 			hr();
 		}
 		else
-			EmitterType::emitConnection(entry.getEmitter(), ptr);
+		{
+			if (entry.getServerSocketData()->isConnectionEventHandler())
+				entry.getServerSocketData()->handleConnectionEvent(ptr);
+			//EmitterType::emitConnection(entry.getEmitter(), ptr); 
+			// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+		}
 
 		return;
 	}
@@ -795,7 +809,10 @@ private:
 	{
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 		Error e;
-		EmitterType::emitError( entry.getEmitter(), e );
+		//EmitterType::emitError( entry.getEmitter(), e );
+		if (entry.getServerSocketData()->isErrorEventHandler())
+			entry.getServerSocketData()->handleErrorEvent(e);
+		// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 		pendingCloseEvents.emplace_back(entry.index, true);
 	}
 };
