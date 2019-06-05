@@ -577,7 +577,6 @@ namespace nodecpp {
 		public:
 //			UserDefID userDefID;
 			NodeBase* node = nullptr;
-			net::Mode mode() { return dataForCommandProcessing.mode; }
 
 			public:
 			class DataForCommandProcessing {
@@ -586,11 +585,6 @@ namespace nodecpp {
 				state = Uninitialized;
 				size_t index = 0;
 
-//				net::Mode mode = net::Mode::callable;
-				net::Mode mode = net::Mode::awaitable;
-
-				//std::experimental::coroutine_handle<> h_read = nullptr;
-				//std::experimental::coroutine_handle<> h_write = nullptr;
 				struct awaitable_read_handle_data : public awaitable_handle_data
 				{
 					size_t min_bytes;
@@ -683,10 +677,6 @@ namespace nodecpp {
 			const std::string& remoteFamily() const { return _remote.family; }
 			uint16_t remotePort() const { return _remote.port; }
 
-//			void ref() { dataForCommandProcessing.refed = true; }
-//			void resume() { dataForCommandProcessing.paused = false; }
-//			void unref() { dataForCommandProcessing.refed = false; }
-//			void pause() { dataForCommandProcessing.paused = true; }
 			void ref();
 			void unref();
 			void pause();
