@@ -71,40 +71,6 @@ namespace nodecpp {
 				using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
 				using userDefErrorHandlerFnT = nodecpp::awaitable<void> (*)(void*, Error&);
 
-				template<class FnT>
-				struct UserDefHandlers
-				{
-					friend void handleListenEvent(size_t, nodecpp::net::Address);
-					struct HandlerInstance
-					{
-						FnT handler = nullptr;
-						void *object = nullptr;
-					};
-					std::vector<HandlerInstance> handlers;
-
-					bool willHandle() { return handlers.size(); }
-					template<class ObjectT>
-					void add( ObjectT* object, FnT handler )
-					{
-						for (auto h : handlers)
-							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.handler != handler || h.object != object, "already added" );
-						HandlerInstance inst;
-						inst.object = object;
-						inst.handler = handler;
-						handlers.push_back(inst);
-					}
-					template<class ObjectT>
-					void remove(ObjectT* object, FnT handler)
-					{
-						for (size_t i=0; i<handlers.size(); ++i)
-							if (handlers[i].handler == handler && handlers[i].object == object)
-							{
-								handlers.erase(handlers.begin() + i);
-								return;
-							}
-					}
-				};
-
 				UserDefHandlers<userDefListenHandlerFnT> userDefListenHandlers;
 				UserDefHandlers<userDefConnectionHandlerFnT> userDefConnectionHandlers;
 				UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
