@@ -71,11 +71,6 @@ namespace nodecpp {
 				using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
 				using userDefErrorHandlerFnT = nodecpp::awaitable<void> (*)(void*, Error&);
 
-				userDefListenHandlerFnT userDefListenHandler = nullptr;
-				userDefConnectionHandlerFnT userDefConnectionHandler = nullptr;
-				userDefCloseHandlerFnT userDefCloseHandler = nullptr;
-				userDefErrorHandlerFnT userDefErrorHandler = nullptr;
-
 				template<class FnT>
 				struct UserDefHandlers
 				{
@@ -88,14 +83,6 @@ namespace nodecpp {
 					std::vector<HandlerInstance> handlers;
 
 					bool willHandle() { return handlers.size(); }
-					/*template<class ObjectT, auto memmberFn>
-					bool add( ObjectT* object )
-					{
-						HandlerInstance inst;
-						inst.handler = &FnT<ObjectT, memmberFn>;
-						inst.object = object;
-						handlers.push_back( instance );
-					}*/
 					template<class ObjectT>
 					void add( ObjectT* object, FnT handler )
 					{
