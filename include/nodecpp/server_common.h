@@ -28,9 +28,9 @@
 #ifndef SERVER_COMMON_H
 #define SERVER_COMMON_H
 
-#include "common.h"
-#include "event.h"
-#include "net_common.h"
+//#include "common.h"
+//#include "event.h"
+#include "socket_common.h"
 
 namespace nodecpp {
 

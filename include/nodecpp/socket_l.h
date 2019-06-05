@@ -28,7 +28,7 @@
 #ifndef SOCKET_L_H
 #define SOCKET_L_H
 
-#include "net_common.h"
+#include "socket_common.h"
 #include "socket_t_base.h"
 
 namespace nodecpp {

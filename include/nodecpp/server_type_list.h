@@ -29,7 +29,7 @@
 #define SERVER_TYPE_LIST_H
 
 #include "template_common.h"
-#include "net_common.h"
+#include "socket_common.h"
 #include "server_t.h"
 #include "server_o.h"
 #include "server_l.h"

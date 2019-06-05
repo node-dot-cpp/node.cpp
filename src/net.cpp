@@ -26,6 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 #include "../include/nodecpp/net_common.h"
+#include "../include/nodecpp/socket_common.h"
 #include "../include/nodecpp/server_common.h"
 
 #include "infrastructure.h"

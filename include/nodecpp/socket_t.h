@@ -29,7 +29,7 @@
 #define SOCKET_T_H
 
 #include "template_common.h"
-#include "net_common.h"
+#include "socket_common.h"
 #include "socket_t_base.h"
 #include "../../src/infrastructure.h"
 
