@@ -67,6 +67,10 @@ namespace nodecpp {
 
 				struct UserHandlers
 				{
+				private:
+					void* defaultObjectPtr = nullptr;
+
+				public:
 					using userDefListenHandlerFnT = nodecpp::awaitable<void> (*)(void*, size_t, nodecpp::net::Address);
 					using userDefConnectionHandlerFnT = nodecpp::awaitable<void> (*)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>);
 					using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
@@ -109,14 +113,57 @@ namespace nodecpp {
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
 						co_return;
 					}
+
+					template<class T>
+					void setPointerToMe(T* objPtr)
+					{
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objPtr != nullptr);
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr == nullptr);
+						defaultObjectPtr = objPtr;
+					}
+					void* ptrToMe()
+					{
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr != nullptr);
+						return defaultObjectPtr;
+					}
 				};
 				UserHandlers userHandlers;
+				UserHandlers* userHandlersPtr;
 
-				bool isListenEventHandler() { return userHandlers.userDefListenHandlers.willHandle(); }
-				void handleListenEvent(size_t id, nodecpp::net::Address address) { for (auto h : userHandlers.userDefListenHandlers.handlers) h.handler(h.object, id, address); }
+				/*bool isListenEventHandler() { return userHandlers.userDefListenHandlers.willHandle(); }
+				void handleListenEvent(size_t id, nodecpp::net::Address address) { 
+					for (auto h : userHandlers.userDefListenHandlers.handlers) 
+						if (h.object)
+							h.handler(h.object, id, address);
+						else
+							h.handler(userHandlers.ptrToMe(), id, address);
+				}
 
 				bool isConnectionEventHandler() { return userHandlers.userDefConnectionHandlers.willHandle(); }
-				void handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { for (auto h : userHandlers.userDefConnectionHandlers.handlers) h.handler(h.object, socket); }
+				void handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+					for (auto h : userHandlers.userDefConnectionHandlers.handlers) 
+						if ( h.object )
+							h.handler(h.object, socket);
+						else
+							h.handler(userHandlers.ptrToMe(), socket);
+				}*/
+				bool isListenEventHandler() { return userHandlersPtr->userDefListenHandlers.willHandle(); }
+				void handleListenEvent(size_t id, nodecpp::net::Address address) {
+					for (auto h : userHandlersPtr->userDefListenHandlers.handlers)
+						if (h.object)
+							h.handler(h.object, id, address);
+						else
+							h.handler(userHandlers.ptrToMe(), id, address);
+				}
+
+				bool isConnectionEventHandler() { return userHandlersPtr->userDefConnectionHandlers.willHandle(); }
+				void handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+					for (auto h : userHandlersPtr->userDefConnectionHandlers.handlers)
+						if (h.object)
+							h.handler(h.object, socket);
+						else
+							h.handler(userHandlers.ptrToMe(), socket);
+				}
 
 				bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
 				void handleCloseEvent(bool hasError) { for (auto h : userHandlers.userDefCloseHandlers.handlers) h.handler(h.object, hasError); }

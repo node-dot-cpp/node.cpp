@@ -554,11 +554,29 @@ namespace nodecpp {
 				inst.handler = handler;
 				handlers.push_back(inst);
 			}
+			void add(FnT handler)
+			{
+				for (auto h : handlers)
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.handler != handler || h.object != nullptr, "already added");
+				HandlerInstance inst;
+				inst.object = nullptr;
+				inst.handler = handler;
+				handlers.push_back(inst);
+			}
 			template<class ObjectT>
 			void remove(ObjectT* object, FnT handler)
 			{
 				for (size_t i=0; i<handlers.size(); ++i)
 					if (handlers[i].handler == handler && handlers[i].object == object)
+					{
+						handlers.erase(handlers.begin() + i);
+						return;
+					}
+			}
+			void remove(FnT handler)
+			{
+				for (size_t i = 0; i < handlers.size(); ++i)
+					if (handlers[i].handler == handler && handlers[i].object == nullptr)
 					{
 						handlers.erase(handlers.begin() + i);
 						return;

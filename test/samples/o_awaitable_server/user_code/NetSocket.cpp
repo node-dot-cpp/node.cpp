@@ -16,4 +16,7 @@ static NodeRegistrator<MySampleInheritanceOneNode> noname( "MySampleInheritanceO
 //static NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>> noname( "MySampleTemplateNode" );
 static NodeRegistrator<Runnable<MySampleTNode>> noname( "MySampleTemplateNode" );
 
+nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers MySampleTNode::MyServerSocketOne::myUserHandlers;
+nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers MySampleTNode::MyServerSocketTwo::myUserHandlers;
+
 #endif // USING_T_SOCKETS
