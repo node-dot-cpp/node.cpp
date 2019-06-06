@@ -681,15 +681,15 @@ public:
 		srv.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnection>(this);
 		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);*/
 
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Listen, &MyServerSocketOne::onListening>();
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListening>(this);
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MyServerSocketOne::onConnection>();
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnection>(this);
+		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::Handler::Listen, &MyServerSocketOne::onListening>();
+		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListening>(this);
+		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::Handler::Connection, &MyServerSocketOne::onConnection>();
+		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnection>(this);
 
-		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Listen, &MyServerSocketTwo::onListening>();
-		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListeningCtrl>(this);
-		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MyServerSocketTwo::onConnection>();
-		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::Handler::Listen, &MyServerSocketTwo::onListening>();
+		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListeningCtrl>(this);
+		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::Handler::Connection, &MyServerSocketTwo::onConnection>();
+		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
 		srv.listen(2000, "127.0.0.1", 5);
 		srvCtrl.listen(2001, "127.0.0.1", 5);
@@ -773,7 +773,7 @@ public:
 
 		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
 		template<Handler handler, auto memmberFn, class ObjectT>
-		void addHandler(ObjectT* object)
+		static void addHandler(ObjectT* object)
 		{
 			if constexpr (handler == Handler::Listen)
 			{
@@ -794,7 +794,7 @@ public:
 			}
 		}
 		template<Handler handler, auto memmberFn>
-		void addHandler()
+		static void addHandler()
 		{
 			if constexpr (handler == Handler::Listen)
 			{
@@ -815,7 +815,7 @@ public:
 			}
 		}
 		template<Handler handler, auto memmberFn, class ObjectT>
-		void removeHandler(ObjectT* object)
+		static void removeHandler(ObjectT* object)
 		{
 			if constexpr (handler == Handler::Listen)
 			{
@@ -858,7 +858,7 @@ public:
 
 		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
 		template<Handler handler, auto memmberFn, class ObjectT>
-		void addHandler(ObjectT* object)
+		static void addHandler(ObjectT* object)
 		{
 			if constexpr (handler == Handler::Listen)
 			{
@@ -879,7 +879,7 @@ public:
 			}
 		}
 		template<Handler handler, auto memmberFn>
-		void addHandler()
+		static void addHandler()
 		{
 			if constexpr (handler == Handler::Listen)
 			{
@@ -900,7 +900,7 @@ public:
 			}
 		}
 		template<Handler handler, auto memmberFn>
-		void removeHandler()
+		static void removeHandler()
 		{
 			if constexpr (handler == Handler::Listen)
 			{
