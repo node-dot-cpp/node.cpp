@@ -675,12 +675,6 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		/*srv.addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListening>(this);
-		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListeningCtrl>(this);
-
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnection>(this);
-		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);*/
-
 		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketOne::onListening>();
 		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListening>(this);
 		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketOne::onConnection>();
@@ -826,8 +820,6 @@ public:
 		}
 	};
 
-//	ServerType srv;
-//	CtrlServerType srvCtrl;
 	MyServerSocketOne srv, srv_1;
 	MyServerSocketTwo srvCtrl, srvCtrl_1;
 

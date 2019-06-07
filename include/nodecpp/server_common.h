@@ -243,50 +243,15 @@ namespace nodecpp {
 
 			void listen(uint16_t port, const char* ip, int backlog);
 
-			//enum class Handler { Listen, Connection, Close, Error };
 			template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 			void addHandler(ObjectT* object )
 			{
 				dataForCommandProcessing.userHandlers.addHandler<handler, memmberFn, ObjectT>(object);
-				/*if constexpr ( handler == Handler::Listen )
-				{
-					dataForCommandProcessing.userHandlers.userDefListenHandlers.add(object, &DataForCommandProcessing::UserHandlers::listenHandler<ObjectT, memmberFn>);
-				} 
-				else if constexpr ( handler == Handler::Connection )
-				{
-					dataForCommandProcessing.userHandlers.userDefConnectionHandlers.add(object, &DataForCommandProcessing::UserHandlers::connectionHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr ( handler == Handler::Close )
-				{
-					dataForCommandProcessing.userHandlers.userDefCloseHandlers.add(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
-				}
-				else
-				{
-					static_assert( handler == Handler::Error ); // the only remaining option
-					dataForCommandProcessing.userHandlers.userDefErrorHandlers.add(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
-				}*/
 			}
 			template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 			void removeHandler(ObjectT* object)
 			{
 				dataForCommandProcessing.userHandlers.removeHandler<handler, memmberFn, ObjectT>(object);
-				/*if constexpr (handler == Handler::Listen)
-				{
-					dataForCommandProcessing.userHandlers.userDefListenHandlers.remove(object, &DataForCommandProcessing::UserHandlers::listenHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr (handler == Handler::Connection)
-				{
-					dataForCommandProcessing.userHandlers.userDefConnectionHandlers.remove(object, &DataForCommandProcessing::UserHandlers::connectionHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr (handler == Handler::Close)
-				{
-					dataForCommandProcessing.userHandlers.userDefCloseHandlers.remove(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
-				}
-				else
-				{
-					static_assert(handler == Handler::Error); // the only remaining option
-					dataForCommandProcessing.userHandlers.userDefErrorHandlers.remove(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
-				}*/
 			}
 
 		};
