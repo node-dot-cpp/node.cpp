@@ -18,8 +18,8 @@ using namespace fmt;
 //#define IMPL_VERSION 1 // old fashion
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
-//#define IMPL_VERSION 4 // old fashion with registration
-#define IMPL_VERSION 5 // old fashion with registration
+//#define IMPL_VERSION 4 // old fashion with handler adding per socket instance
+#define IMPL_VERSION 5 // old fashion with handler adding per socket class
 
 class MySampleTNode : public NodeBase
 {
@@ -513,11 +513,11 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListening>(this);
-		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Listen, & MySampleTNode::onListeningCtrl>(this);
+		srv.addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListening>(this);
+		srvCtrl.addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, & MySampleTNode::onListeningCtrl>(this);
 
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Connection, & MySampleTNode::onConnection>(this);
-		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Connection, & MySampleTNode::onConnectionCtrl>(this);
+		srv.addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, & MySampleTNode::onConnection>(this);
+		srvCtrl.addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, & MySampleTNode::onConnectionCtrl>(this);
 
 		srv.listen(2000, "127.0.0.1", 5);
 		srvCtrl.listen(2001, "127.0.0.1", 5);
@@ -681,15 +681,15 @@ public:
 		srv.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnection>(this);
 		srvCtrl.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);*/
 
-		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::Handler::Listen, &MyServerSocketOne::onListening>();
-		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListening>(this);
-		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::Handler::Connection, &MyServerSocketOne::onConnection>();
-		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnection>(this);
+		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketOne::onListening>();
+		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListening>(this);
+		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketOne::onConnection>();
+		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnection>(this);
 
-		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::Handler::Listen, &MyServerSocketTwo::onListening>();
-		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::onListeningCtrl>(this);
-		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::Handler::Connection, &MyServerSocketTwo::onConnection>();
-		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketTwo::onListening>();
+		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListeningCtrl>(this);
+		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketTwo::onConnection>();
+		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
 		srv.listen(2000, "127.0.0.1", 5);
 		srvCtrl.listen(2001, "127.0.0.1", 5);
@@ -772,68 +772,20 @@ public:
 
 
 		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
-		template<Handler handler, auto memmberFn, class ObjectT>
+		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void addHandler(ObjectT* object)
 		{
-			if constexpr (handler == Handler::Listen)
-			{
-				myUserHandlers.userDefListenHandlers.add(object, &DataForCommandProcessing::UserHandlers::listenHandler<ObjectT, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Connection)
-			{
-				myUserHandlers.userDefConnectionHandlers.add(object, &DataForCommandProcessing::UserHandlers::connectionHandler<ObjectT, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Close)
-			{
-				myUserHandlers.userDefCloseHandlers.add(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
-			}
-			else
-			{
-				static_assert(handler == Handler::Error); // the only remaining option
-				myUserHandlers.userDefErrorHandlers.add(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
-			}
+			myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
 		}
-		template<Handler handler, auto memmberFn>
+		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
 		static void addHandler()
 		{
-			if constexpr (handler == Handler::Listen)
-			{
-				myUserHandlers.userDefListenHandlers.add(&DataForCommandProcessing::UserHandlers::listenHandler<MyServerSocketOne, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Connection)
-			{
-				myUserHandlers.userDefConnectionHandlers.add(&DataForCommandProcessing::UserHandlers::connectionHandler<MyServerSocketOne, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Close)
-			{
-				myUserHandlers.userDefCloseHandlers.add(&DataForCommandProcessing::UserHandlers::closeHandler<MyServerSocketOne, memmberFn>);
-			}
-			else
-			{
-				static_assert(handler == Handler::Error); // the only remaining option
-				myUserHandlers.userDefErrorHandlers.add(&DataForCommandProcessing::UserHandlers::errorHandler<MyServerSocketOne, memmberFn>);
-			}
+			myUserHandlers.addHandler<handler, memmberFn, MyServerSocketOne>();
 		}
-		template<Handler handler, auto memmberFn, class ObjectT>
+		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void removeHandler(ObjectT* object)
 		{
-			if constexpr (handler == Handler::Listen)
-			{
-				myUserHandlers.userDefListenHandlers.remove(object, &DataForCommandProcessing::UserHandlers::listenHandler<ObjectT, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Connection)
-			{
-				myUserHandlers.userDefConnectionHandlers.remove(object, &DataForCommandProcessing::UserHandlers::connectionHandler<ObjectT, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Close)
-			{
-				myUserHandlers.userDefCloseHandlers.remove(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
-			}
-			else
-			{
-				static_assert(handler == Handler::Error); // the only remaining option
-				myUserHandlers.userDefErrorHandlers.remove(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
-			}
+			myUserHandlers.removeHandler<handler, memmberFn, MyServerSocketOne>();
 		}
 	};
 
@@ -857,68 +809,20 @@ public:
 
 
 		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
-		template<Handler handler, auto memmberFn, class ObjectT>
+		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void addHandler(ObjectT* object)
 		{
-			if constexpr (handler == Handler::Listen)
-			{
-				myUserHandlers.userDefListenHandlers.add(object, &DataForCommandProcessing::UserHandlers::listenHandler<ObjectT, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Connection)
-			{
-				myUserHandlers.userDefConnectionHandlers.add(object, &DataForCommandProcessing::UserHandlers::connectionHandler<ObjectT, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Close)
-			{
-				myUserHandlers.userDefCloseHandlers.add(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
-			}
-			else
-			{
-				static_assert(handler == Handler::Error); // the only remaining option
-				myUserHandlers.userDefErrorHandlers.add(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
-			}
+			myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
 		}
-		template<Handler handler, auto memmberFn>
+		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
 		static void addHandler()
 		{
-			if constexpr (handler == Handler::Listen)
-			{
-				myUserHandlers.userDefListenHandlers.add(&DataForCommandProcessing::UserHandlers::listenHandler<MyServerSocketTwo, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Connection)
-			{
-				myUserHandlers.userDefConnectionHandlers.add(&DataForCommandProcessing::UserHandlers::connectionHandler<MyServerSocketTwo, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Close)
-			{
-				myUserHandlers.userDefCloseHandlers.add(&DataForCommandProcessing::UserHandlers::closeHandler<MyServerSocketTwo, memmberFn>);
-			}
-			else
-			{
-				static_assert(handler == Handler::Error); // the only remaining option
-				myUserHandlers.userDefErrorHandlers.add(&DataForCommandProcessing::UserHandlers::errorHandler<MyServerSocketTwo, memmberFn>);
-			}
+			myUserHandlers.addHandler<handler, memmberFn, MyServerSocketTwo>();
 		}
-		template<Handler handler, auto memmberFn>
-		static void removeHandler()
+		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
+		static void removeHandler(ObjectT* object)
 		{
-			if constexpr (handler == Handler::Listen)
-			{
-				myUserHandlers.userDefListenHandlers.remove(&DataForCommandProcessing::UserHandlers::listenHandler<MyServerSocketTwo, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Connection)
-			{
-				myUserHandlers.userDefConnectionHandlers.remove(&DataForCommandProcessing::UserHandlers::connectionHandler<MyServerSocketTwo, memmberFn>);
-			}
-			else if constexpr (handler == Handler::Close)
-			{
-				myUserHandlers.userDefCloseHandlers.remove(&DataForCommandProcessing::UserHandlers::closeHandler<MyServerSocketTwo, memmberFn>);
-			}
-			else
-			{
-				static_assert(handler == Handler::Error); // the only remaining option
-				myUserHandlers.userDefErrorHandlers.remove(&DataForCommandProcessing::UserHandlers::errorHandler<MyServerSocketTwo, memmberFn>);
-			}
+			myUserHandlers.removeHandler<handler, memmberFn, MyServerSocketTwo>();
 		}
 	};
 
