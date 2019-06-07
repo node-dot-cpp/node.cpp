@@ -170,6 +170,16 @@ namespace nodecpp {
 							userDefErrorHandlers.remove(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
 						}
 					}
+
+					void from( const UserHandlers& patternUH, void* defaultObjPtr )
+					{
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr == nullptr);
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
+						userDefListenHandlers.from(patternUH.userDefListenHandlers, defaultObjPtr);
+						userDefConnectionHandlers.from(patternUH.userDefConnectionHandlers, defaultObjPtr);
+						userDefCloseHandlers.from(patternUH.userDefCloseHandlers, defaultObjPtr);
+						userDefErrorHandlers.from(patternUH.userDefErrorHandlers, defaultObjPtr);
+					}
 				};
 				UserHandlers userHandlers;
 				UserHandlers* userHandlersPtr;

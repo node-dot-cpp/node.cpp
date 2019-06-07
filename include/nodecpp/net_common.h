@@ -582,6 +582,14 @@ namespace nodecpp {
 						return;
 					}
 			}
+			void from(const UserDefHandlers<FnT>& patternUH, void* defaultObjPtr)
+			{
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, handlers.size() == 0);
+				handlers = patternUH.handlers;
+				for (size_t i = 0; i < handlers.size(); ++i)
+					if (handlers[i].object == nullptr)
+						handlers[i].object = defaultObjPtr;
+			}
 		};
 
 	} //namespace net
