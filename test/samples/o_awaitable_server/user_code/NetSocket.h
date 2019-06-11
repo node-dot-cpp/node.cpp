@@ -1143,8 +1143,6 @@ public:
 	{
 	public:
 		MyServerSocketOne(MySampleTNode* node) : MyServerSocketBase(node) {
-//			dataForCommandProcessing.userHandlers.setPointerToMe(this);
-//			dataForCommandProcessing.userHandlersPtr = &myUserHandlers;
 			dataForCommandProcessing.userHandlers.from(myUserHandlers, this);
 			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
 		}
@@ -1182,8 +1180,6 @@ public:
 	{
 	public:
 		MyServerSocketTwo(MySampleTNode* node) : MyServerSocketBase(node) {
-//			dataForCommandProcessing.userHandlers.setPointerToMe(this);
-//			dataForCommandProcessing.userHandlersPtr = &myUserHandlers;
 			dataForCommandProcessing.userHandlers.from(myUserHandlers, this);
 			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
 		}
@@ -1199,12 +1195,12 @@ public:
 		}
 
 
-		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
+		/*static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void addHandler(ObjectT* object)
 		{
 			myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
-		}
+		}*/
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
 		static void addHandler()
 		{
