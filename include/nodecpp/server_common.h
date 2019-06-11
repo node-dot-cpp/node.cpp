@@ -28,8 +28,6 @@
 #ifndef SERVER_COMMON_H
 #define SERVER_COMMON_H
 
-//#include "common.h"
-//#include "event.h"
 #include "socket_common.h"
 
 namespace nodecpp {
@@ -183,6 +181,7 @@ namespace nodecpp {
 				};
 				UserHandlers userHandlers;
 				UserHandlers* userHandlersPtr;
+				thread_local static std::map<std::type_info, UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
 
 				/*bool isListenEventHandler() { return userHandlers.userDefListenHandlers.willHandle(); }
 				void handleListenEvent(size_t id, nodecpp::net::Address address) { 

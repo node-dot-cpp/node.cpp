@@ -274,6 +274,7 @@ namespace nodecpp {
 				};
 				UserHandlers userHandlers;
 				UserHandlers* userHandlersPtr;
+				thread_local static std::map<std::type_info, UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
 
 				bool isAcceptedEventHandler() { return userHandlersPtr->userDefAcceptedHandlers.willHandle(); }
 				void handleAcceptedEvent() { for (auto h : userHandlersPtr->userDefAcceptedHandlers.handlers) h.handler(h.object); }

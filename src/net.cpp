@@ -39,6 +39,9 @@ using namespace std;
 using namespace nodecpp;
 using namespace nodecpp::net;
 
+thread_local std::map<std::type_info, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers> nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern;
+thread_local std::map<std::type_info, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers> nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern;
+
 
 void SocketBase::ref() {netSocketManagerBase->appRef(dataForCommandProcessing.index); }
 void SocketBase::unref() { netSocketManagerBase->appUnref(dataForCommandProcessing.index); }

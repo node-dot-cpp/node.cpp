@@ -1195,12 +1195,12 @@ public:
 		}
 
 
-		/*static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
+		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void addHandler(ObjectT* object)
 		{
 			myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
-		}*/
+		}
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
 		static void addHandler()
 		{
