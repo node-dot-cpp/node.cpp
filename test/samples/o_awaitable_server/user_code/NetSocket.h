@@ -1073,10 +1073,6 @@ public:
 		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketTwo::onConnection, MyServerSocketTwo>();
 		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
-		/*srv = nodecpp::safememory::make_owning<MyServerSocketOne>(this);
-		srv_1 = nodecpp::safememory::make_owning<MyServerSocketOne>(this);
-		srvCtrl = nodecpp::safememory::make_owning<MyServerSocketTwo>(this);
-		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>(this);*/
 		srv = nodecpp::net::createServer<MyServerSocketOne>(this);
 		srv_1 = nodecpp::net::createServer<MyServerSocketOne>(this);
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo>(this);
@@ -1146,11 +1142,9 @@ public:
 	class MyServerSocketOne : public MyServerSocketBase
 	{
 	public:
-		MyServerSocketOne(MySampleTNode* node) : MyServerSocketBase(node) {
-//			dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>(), this);
-//			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
-		}
+		MyServerSocketOne(MySampleTNode* node) : MyServerSocketBase(node) {}
 		virtual ~MyServerSocketOne() {}
+
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onListening()!");
 			co_return;
@@ -1165,11 +1159,9 @@ public:
 	class MyServerSocketTwo : public MyServerSocketBase
 	{
 	public:
-		MyServerSocketTwo(MySampleTNode* node) : MyServerSocketBase(node) {
-//			dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>(), this);
-//			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
-		}
+		MyServerSocketTwo(MySampleTNode* node) : MyServerSocketBase(node) {}
 		virtual ~MyServerSocketTwo() {}
+
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onListening()!");
 			co_return;
