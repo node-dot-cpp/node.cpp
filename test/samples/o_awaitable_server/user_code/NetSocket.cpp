@@ -16,9 +16,9 @@ static NodeRegistrator<MySampleInheritanceOneNode> noname( "MySampleInheritanceO
 //static NodeRegistrator<Runnable<MySampleTNode>, Infrastructure<MySampleTNode::EmitterType>> noname( "MySampleTemplateNode" );
 static NodeRegistrator<Runnable<MySampleTNode>> noname( "MySampleTemplateNode" );
 
-#if (IMPL_VERSION == 5) || (IMPL_VERSION == 6)
-//nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers MySampleTNode::MyServerSocketOne::myUserHandlers;
-//nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers MySampleTNode::MyServerSocketTwo::myUserHandlers;
+#if (IMPL_VERSION == 5)
+nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers MySampleTNode::MyServerSocketOne::myUserHandlers;
+nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers MySampleTNode::MyServerSocketTwo::myUserHandlers;
 #endif
 
 #endif // USING_T_SOCKETS

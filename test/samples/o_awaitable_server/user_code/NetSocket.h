@@ -1063,20 +1063,24 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketOne::onListening>();
-		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListening>(this);
-		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketOne::onConnection>();
-		MyServerSocketOne::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnection>(this);
+		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketOne::onListening, MyServerSocketOne>();
+		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListening>(this);
+		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketOne::onConnection, MyServerSocketOne>();
+		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnection>(this);
 
-		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketTwo::onListening>();
-		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListeningCtrl>(this);
-		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketTwo::onConnection>();
-		MyServerSocketTwo::addHandler<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketTwo::onListening, MyServerSocketTwo>();
+		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListeningCtrl>(this);
+		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketTwo::onConnection, MyServerSocketTwo>();
+		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
-		srv = nodecpp::safememory::make_owning<MyServerSocketOne>(this);
+		/*srv = nodecpp::safememory::make_owning<MyServerSocketOne>(this);
 		srv_1 = nodecpp::safememory::make_owning<MyServerSocketOne>(this);
 		srvCtrl = nodecpp::safememory::make_owning<MyServerSocketTwo>(this);
-		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>(this);
+		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>(this);*/
+		srv = nodecpp::net::createServer<MyServerSocketOne>(this);
+		srv_1 = nodecpp::net::createServer<MyServerSocketOne>(this);
+		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo>(this);
+		srvCtrl_1 = nodecpp::net::createServer<MyServerSocketTwo>(this);
 
 		srv->listen(2000, "127.0.0.1", 5);
 		srvCtrl->listen(2001, "127.0.0.1", 5);
@@ -1143,9 +1147,8 @@ public:
 	{
 	public:
 		MyServerSocketOne(MySampleTNode* node) : MyServerSocketBase(node) {
-//			dataForCommandProcessing.userHandlers.from(myUserHandlers, this);
-			dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>(), this);
-			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
+//			dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>(), this);
+//			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
 		}
 		virtual ~MyServerSocketOne() {}
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
@@ -1157,36 +1160,14 @@ public:
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			co_return;
 		}
-
-
-//		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
-		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-		static void addHandler(ObjectT* object)
-		{
-//			myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
-			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>().addHandler<handler, memmberFn, ObjectT>(object);
-		}
-		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
-		static void addHandler()
-		{
-//			myUserHandlers.addHandler<handler, memmberFn, MyServerSocketOne>();
-			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>().addHandler<handler, memmberFn, MyServerSocketOne>();
-		}
-		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-		static void removeHandler(ObjectT* object)
-		{
-//			myUserHandlers.removeHandler<handler, memmberFn, MyServerSocketOne>();
-			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>().removeHandler<handler, memmberFn, ObjectT>(object);
-		}
 	};
 
 	class MyServerSocketTwo : public MyServerSocketBase
 	{
 	public:
 		MyServerSocketTwo(MySampleTNode* node) : MyServerSocketBase(node) {
-//			dataForCommandProcessing.userHandlers.from(myUserHandlers, this);
-			dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>(), this);
-			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
+//			dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>(), this);
+//			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
 		}
 		virtual ~MyServerSocketTwo() {}
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
@@ -1197,27 +1178,6 @@ public:
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			co_return;
-		}
-
-
-//		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
-		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-		static void addHandler(ObjectT* object)
-		{
-			//myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
-			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>().addHandler<handler, memmberFn, ObjectT>(object);
-		}
-		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
-		static void addHandler()
-		{
-//			myUserHandlers.addHandler<handler, memmberFn, MyServerSocketTwo>();
-			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>().addHandler<handler, memmberFn, MyServerSocketTwo>();
-		}
-		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-		static void removeHandler(ObjectT* object)
-		{
-//			myUserHandlers.removeHandler<handler, memmberFn, MyServerSocketTwo>();
-			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>().removeHandler<handler, memmberFn, MyServerSocketTwo>();
 		}
 	};
 

@@ -275,7 +275,7 @@ namespace nodecpp {
 
 			void listen(uint16_t port, const char* ip, int backlog);
 
-			template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
+			/*template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 			void addHandler(ObjectT* object )
 			{
 				dataForCommandProcessing.userHandlers.addHandler<handler, memmberFn, ObjectT>(object);
@@ -284,15 +284,30 @@ namespace nodecpp {
 			void removeHandler(ObjectT* object)
 			{
 				dataForCommandProcessing.userHandlers.removeHandler<handler, memmberFn, ObjectT>(object);
-			}
+			}*/
 
+
+			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
+			static void addHandler(ObjectT* object = nullptr)
+			{
+				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().addHandler<handler, memmberFn, ObjectT>(object);
+			}
+			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
+			static void removeHandler(ObjectT* object)
+			{
+				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().removeHandler<handler, memmberFn, ObjectT>(object);
+			}
 		};
 
-		//TODO don't use naked pointers, think
-		//template<class T>
-		//T* createServer() {
-		//	return new T();
-		//}
+		template<class T, class ... Types>
+		static
+		nodecpp::safememory::owning_ptr<T> createServer(Types&& ... args) {
+			nodecpp::safememory::owning_ptr<T> ret = nodecpp::safememory::make_owning<T>(::std::forward<Types>(args)...);
+			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<T>(), &(*ret));
+			ret->dataForCommandProcessing.userHandlersPtr = &(ret->dataForCommandProcessing.userHandlers);
+			return ret;
+		}
+
 		//template<class T>
 		//T* createServer(std::function<void()> cb) {
 		//	auto svr = new T();
