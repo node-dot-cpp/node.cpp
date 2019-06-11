@@ -40,7 +40,7 @@ using namespace nodecpp;
 using namespace nodecpp::net;
 
 thread_local std::map<std::type_info, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers> nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern;
-thread_local nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlerClassPatterns<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers> nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern;
+thread_local nodecpp::net::UserHandlerClassPatterns<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers> nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern;
 
 
 void SocketBase::ref() {netSocketManagerBase->appRef(dataForCommandProcessing.index); }

@@ -594,6 +594,28 @@ namespace nodecpp {
 			}
 		};
 
+		template<class UserHandlerType>
+		class UserHandlerClassPatterns
+		{
+			std::map<std::type_index, UserHandlerType> patterns;
+			UserHandlerType& getPattern( std::type_index idx )
+			{
+				auto pattern = patterns.find( idx );
+				if ( pattern != patterns.end() )
+					return pattern->second;
+				else
+				{
+					auto ins = patterns.insert( make_pair( idx, UserHandlerType() ) );
+					return ins.first->second;
+				}
+			}
+		public:
+			template<class UserClass>
+			UserHandlerType& getPattern()
+			{
+				return getPattern( std::type_index(typeid(UserClass)) );
+			}
+		};
 	} //namespace net
 
 } //namespace nodecpp
