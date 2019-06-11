@@ -197,32 +197,32 @@ namespace nodecpp {
 					{
 						if constexpr (handler == Handler::Accepted)
 						{
-							userDefAcceptedHandlers.add(object, &DataForCommandProcessing::acceptedHandler<ObjectT, memmberFn>);
+							userDefAcceptedHandlers.add(object, &DataForCommandProcessing::UserHandlers::acceptedHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::Connect)
 						{
-							userDefConnectHandlers.add(object, &DataForCommandProcessing::connectHandler<ObjectT, memmberFn>);
+							userDefConnectHandlers.add(object, &DataForCommandProcessing::UserHandlers::connectHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::Data)
 						{
-							userDefDataHandlers.add(object, &DataForCommandProcessing::dataHandler<ObjectT, memmberFn>);
+							userDefDataHandlers.add(object, &DataForCommandProcessing::UserHandlers::dataHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::Drain)
 						{
-							userDefDrainHandlers.add(object, &DataForCommandProcessing::drainHandler<ObjectT, memmberFn>);
+							userDefDrainHandlers.add(object, &DataForCommandProcessing::UserHandlers::drainHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::End)
 						{
-							userDefEndHandlers.add(object, &DataForCommandProcessing::endHandler<ObjectT, memmberFn>);
+							userDefEndHandlers.add(object, &DataForCommandProcessing::UserHandlers::endHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::Close)
 						{
-							userDefCloseHandlers.add(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
+							userDefCloseHandlers.add(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
 						}
 						else
 						{
 							static_assert(handler == Handler::Error); // the only remaining option
-							userDefErrorHandlers.add(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
+							userDefErrorHandlers.add(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
 						}
 					}
 					template<Handler handler, auto memmberFn, class ObjectT>
@@ -230,32 +230,32 @@ namespace nodecpp {
 					{
 						if constexpr (handler == Handler::Accepted)
 						{
-							userDefAcceptedHandlers.remove(object, &DataForCommandProcessing::acceptedHandler<ObjectT, memmberFn>);
+							userDefAcceptedHandlers.remove(object, &DataForCommandProcessing::UserHandlers::acceptedHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::Connect)
 						{
-							userDefConnectHandlers.remove(object, &DataForCommandProcessing::connectHandler<ObjectT, memmberFn>);
+							userDefConnectHandlers.remove(object, &DataForCommandProcessing::UserHandlers::connectHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::Data)
 						{
-							userDefDataHandlers.remove(object, &DataForCommandProcessing::dataHandler<ObjectT, memmberFn>);
+							userDefDataHandlers.remove(object, &DataForCommandProcessing::UserHandlers::dataHandler<ObjectT, memmberFn>);
 						}
 						if constexpr (handler == Handler::Drain)
 						{
-							userDefDrainHandlers.remove(object, &DataForCommandProcessing::drainHandler<ObjectT, memmberFn>);
+							userDefDrainHandlers.remove(object, &DataForCommandProcessing::UserHandlers::drainHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::End)
 						{
-							userDefEndHandlers.remove(object, &DataForCommandProcessing::endHandler<ObjectT, memmberFn>);
+							userDefEndHandlers.remove(object, &DataForCommandProcessing::UserHandlers::endHandler<ObjectT, memmberFn>);
 						}
 						else if constexpr (handler == Handler::Close)
 						{
-							userDefCloseHandlers.remove(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
+							userDefCloseHandlers.remove(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
 						}
 						else
 						{
 							static_assert(handler == Handler::Error); // the only remaining option
-							userDefErrorHandlers.remove(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
+							userDefErrorHandlers.remove(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
 						}
 					}
 
@@ -274,7 +274,8 @@ namespace nodecpp {
 				};
 				UserHandlers userHandlers;
 				UserHandlers* userHandlersPtr;
-				thread_local static std::map<std::type_info, UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
+				thread_local static UserHandlerClassPatterns<UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
+
 
 				bool isAcceptedEventHandler() { return userHandlersPtr->userDefAcceptedHandlers.willHandle(); }
 				void handleAcceptedEvent() { for (auto h : userHandlersPtr->userDefAcceptedHandlers.handlers) h.handler(h.object); }
@@ -504,17 +505,27 @@ namespace nodecpp {
 				return drain_awaiter(*this);
 			}
 
-			template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-			void addHandler(ObjectT* object)
+			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>			
+			static void addHandler(ObjectT* object = nullptr)
 			{
-				dataForCommandProcessing.userHandlers.addHandler<handler, memmberFn, ObjectT>(object);
+				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().addHandler<handler, memmberFn, ObjectT>(object);
 			}
-			template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-			void removeHandler(ObjectT* object)
+			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
+			static void removeHandler(ObjectT* object)
 			{
-				dataForCommandProcessing.userHandlers.removeHandler<handler, memmberFn, ObjectT>(object);
+				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().removeHandler<handler, memmberFn, ObjectT>(object);
 			}
 		};
+
+		template<class T, class ... Types>
+		static
+			nodecpp::safememory::owning_ptr<T> createSocket(Types&& ... args) {
+			static_assert( std::is_base_of< SocketBase, T >::value );
+			nodecpp::safememory::owning_ptr<T> ret = nodecpp::safememory::make_owning<T>(::std::forward<Types>(args)...);
+			ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<T>(), &(*ret));
+			ret->dataForCommandProcessing.userHandlersPtr = &(ret->dataForCommandProcessing.userHandlers);
+			return ret;
+		}
 
 	} //namespace net
 
