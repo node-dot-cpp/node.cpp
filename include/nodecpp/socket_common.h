@@ -50,7 +50,7 @@ namespace nodecpp {
 			public:
 			class DataForCommandProcessing {
 			public:
-				enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed}
+				enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed }
 				state = Uninitialized;
 				size_t index = 0;
 
@@ -99,99 +99,202 @@ namespace nodecpp {
 				bool isValid() const { return state != State::Uninitialized; }
 
 
-				using userDefAcceptedHandlerFnT = nodecpp::awaitable<void> (*)(void*);
-				using userDefConnectHandlerFnT = nodecpp::awaitable<void> (*)(void*);
-				using userDefDataHandlerFnT = nodecpp::awaitable<void> (*)(void*, Buffer& buffer);
-				using userDefDrainHandlerFnT = nodecpp::awaitable<void> (*)(void*);
-				using userDefEndHandlerFnT = nodecpp::awaitable<void> (*)(void*);
-				using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
-				using userDefErrorHandlerFnT = nodecpp::awaitable<void> (*)(void*, Error&);
-
-				UserDefHandlers<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
-				UserDefHandlers<userDefConnectHandlerFnT> userDefConnectHandlers;
-				UserDefHandlers<userDefDataHandlerFnT> userDefDataHandlers;
-				UserDefHandlers<userDefDrainHandlerFnT> userDefDrainHandlers;
-				UserDefHandlers<userDefEndHandlerFnT> userDefEndHandlers;
-				UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
-				UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;
-
-				bool isAcceptedEventHandler() { return userDefAcceptedHandlers.willHandle(); }
-				void handleAcceptedEvent() { for (auto h : userDefAcceptedHandlers.handlers) h.handler(h.object); }
-
-				bool isConnectEventHandler() { return userDefConnectHandlers.willHandle(); }
-				void handleConnectEvent() { for (auto h : userDefConnectHandlers.handlers) h.handler(h.object); }
-
-				bool isDataEventHandler() { return userDefDataHandlers.willHandle(); }
-				void handleDataEvent(Buffer& buffer) { for (auto h : userDefDataHandlers.handlers) h.handler(h.object, buffer); }
-
-				bool isDrainEventHandler() { return userDefDrainHandlers.willHandle(); }
-				void handleDrainEvent() { for (auto h : userDefDrainHandlers.handlers) h.handler(h.object); }
-
-				bool isEndEventHandler() { return userDefEndHandlers.willHandle(); }
-				void handleEndEvent() { for (auto h : userDefEndHandlers.handlers) h.handler(h.object); }
-
-				bool isCloseEventHandler() { return userDefCloseHandlers.willHandle(); }
-				void handleCloseEvent(bool hasError) { for (auto h : userDefCloseHandlers.handlers) h.handler(h.object, hasError); }
-
-				bool isErrorEventHandler() { return userDefErrorHandlers.willHandle(); }
-				void handleErrorEvent(Error& e) { for (auto h : userDefErrorHandlers.handlers) h.handler(h.object, e); }
-
-				template<class T> using userAcceptedMemberHandler = nodecpp::awaitable<void> (T::*)();
-				template<class T> using userConnectMemberHandler = nodecpp::awaitable<void> (T::*)();
-				template<class T> using userDataMemberHandler = nodecpp::awaitable<void> (T::*)(Buffer&);
-				template<class T> using userDrainMemberHandler = nodecpp::awaitable<void> (T::*)();
-				template<class T> using userEndMemberHandler = nodecpp::awaitable<void> (T::*)();
-				template<class T> using userCloseMemberHandler = nodecpp::awaitable<void> (T::*)(bool);
-				template<class T> using userErrorMemberHandler = nodecpp::awaitable<void> (T::*)(Error&);
-
-				template<class ObjectT, userAcceptedMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::awaitable<void> acceptedHandler( void* objPtr )
+				struct UserHandlers
 				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
-					co_return;
-				}
+				private:
+					void* defaultObjectPtr = nullptr;
 
-				template<class ObjectT, userConnectMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::awaitable<void> connectHandler( void* objPtr )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
-					co_return;
-				}
+				public:
+					using userDefAcceptedHandlerFnT = nodecpp::awaitable<void> (*)(void*);
+					using userDefConnectHandlerFnT = nodecpp::awaitable<void> (*)(void*);
+					using userDefDataHandlerFnT = nodecpp::awaitable<void> (*)(void*, Buffer& buffer);
+					using userDefDrainHandlerFnT = nodecpp::awaitable<void> (*)(void*);
+					using userDefEndHandlerFnT = nodecpp::awaitable<void> (*)(void*);
+					using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
+					using userDefErrorHandlerFnT = nodecpp::awaitable<void> (*)(void*, Error&);
 
-				template<class ObjectT, userDataMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::awaitable<void> dataHandler( void* objPtr, Buffer& buffer )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(buffer);
-					co_return;
-				}
+					UserDefHandlers<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
+					UserDefHandlers<userDefConnectHandlerFnT> userDefConnectHandlers;
+					UserDefHandlers<userDefDataHandlerFnT> userDefDataHandlers;
+					UserDefHandlers<userDefDrainHandlerFnT> userDefDrainHandlers;
+					UserDefHandlers<userDefEndHandlerFnT> userDefEndHandlers;
+					UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
+					UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;
 
-				template<class ObjectT, userDrainMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::awaitable<void> drainHandler( void* objPtr )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
-					co_return;
-				}
+					template<class T> using userAcceptedMemberHandler = nodecpp::awaitable<void> (T::*)();
+					template<class T> using userConnectMemberHandler = nodecpp::awaitable<void> (T::*)();
+					template<class T> using userDataMemberHandler = nodecpp::awaitable<void> (T::*)(Buffer&);
+					template<class T> using userDrainMemberHandler = nodecpp::awaitable<void> (T::*)();
+					template<class T> using userEndMemberHandler = nodecpp::awaitable<void> (T::*)();
+					template<class T> using userCloseMemberHandler = nodecpp::awaitable<void> (T::*)(bool);
+					template<class T> using userErrorMemberHandler = nodecpp::awaitable<void> (T::*)(Error&);
 
-				template<class ObjectT, userEndMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::awaitable<void> endHandler( void* objPtr )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
-					co_return;
-				}
+					template<class ObjectT, userAcceptedMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::awaitable<void> acceptedHandler(void* objPtr)
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
+						co_return;
+					}
 
-				template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::awaitable<void> closeHandler( void* objPtr, bool hadError )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
-					co_return;
-				}
+					template<class ObjectT, userConnectMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::awaitable<void> connectHandler(void* objPtr)
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
+						co_return;
+					}
 
-				template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::awaitable<void> errorHandler( void* objPtr, Error& e )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
-					co_return;
-				}
+					template<class ObjectT, userDataMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::awaitable<void> dataHandler(void* objPtr, Buffer& buffer)
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(buffer);
+						co_return;
+					}
+
+					template<class ObjectT, userDrainMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::awaitable<void> drainHandler(void* objPtr)
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
+						co_return;
+					}
+
+					template<class ObjectT, userEndMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::awaitable<void> endHandler(void* objPtr)
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
+						co_return;
+					}
+
+					template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::awaitable<void> closeHandler(void* objPtr, bool hadError)
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
+						co_return;
+					}
+
+					template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::awaitable<void> errorHandler(void* objPtr, Error& e)
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
+						co_return;
+					}
+
+					template<class T>
+					void setPointerToMe(T* objPtr)
+					{
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objPtr != nullptr);
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr == nullptr);
+						defaultObjectPtr = objPtr;
+					}
+					void* ptrToMe()
+					{
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr != nullptr);
+						return defaultObjectPtr;
+					}
+
+					enum class Handler { Accepted, Connect, Data, Drain, End, Close, Error };
+					template<Handler handler, auto memmberFn, class ObjectT>
+					void addHandler(ObjectT* object)
+					{
+						if constexpr (handler == Handler::Accepted)
+						{
+							userDefAcceptedHandlers.add(object, &DataForCommandProcessing::acceptedHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Connect)
+						{
+							userDefConnectHandlers.add(object, &DataForCommandProcessing::connectHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Data)
+						{
+							userDefDataHandlers.add(object, &DataForCommandProcessing::dataHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Drain)
+						{
+							userDefDrainHandlers.add(object, &DataForCommandProcessing::drainHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::End)
+						{
+							userDefEndHandlers.add(object, &DataForCommandProcessing::endHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Close)
+						{
+							userDefCloseHandlers.add(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
+						}
+						else
+						{
+							static_assert(handler == Handler::Error); // the only remaining option
+							userDefErrorHandlers.add(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
+						}
+					}
+					template<Handler handler, auto memmberFn, class ObjectT>
+					void removeHandler(ObjectT* object)
+					{
+						if constexpr (handler == Handler::Accepted)
+						{
+							userDefAcceptedHandlers.remove(object, &DataForCommandProcessing::acceptedHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Connect)
+						{
+							userDefConnectHandlers.remove(object, &DataForCommandProcessing::connectHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Data)
+						{
+							userDefDataHandlers.remove(object, &DataForCommandProcessing::dataHandler<ObjectT, memmberFn>);
+						}
+						if constexpr (handler == Handler::Drain)
+						{
+							userDefDrainHandlers.remove(object, &DataForCommandProcessing::drainHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::End)
+						{
+							userDefEndHandlers.remove(object, &DataForCommandProcessing::endHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Close)
+						{
+							userDefCloseHandlers.remove(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
+						}
+						else
+						{
+							static_assert(handler == Handler::Error); // the only remaining option
+							userDefErrorHandlers.remove(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
+						}
+					}
+
+					void from(const UserHandlers& patternUH, void* defaultObjPtr)
+					{
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr == nullptr);
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
+						userDefAcceptedHandlers.from(patternUH.userDefAcceptedHandlers, defaultObjPtr);
+						userDefConnectHandlers.from(patternUH.userDefConnectHandlers, defaultObjPtr);
+						userDefDataHandlers.from(patternUH.userDefDataHandlers, defaultObjPtr);
+						userDefDrainHandlers.from(patternUH.userDefDrainHandlers, defaultObjPtr);
+						userDefEndHandlers.from(patternUH.userDefEndHandlers, defaultObjPtr);
+						userDefCloseHandlers.from(patternUH.userDefCloseHandlers, defaultObjPtr);
+						userDefErrorHandlers.from(patternUH.userDefErrorHandlers, defaultObjPtr);
+					}
+				};
+				UserHandlers userHandlers;
+				UserHandlers* userHandlersPtr;
+
+				bool isAcceptedEventHandler() { return userHandlersPtr->userDefAcceptedHandlers.willHandle(); }
+				void handleAcceptedEvent() { for (auto h : userHandlersPtr->userDefAcceptedHandlers.handlers) h.handler(h.object); }
+
+				bool isConnectEventHandler() { return userHandlersPtr->userDefConnectHandlers.willHandle(); }
+				void handleConnectEvent() { for (auto h : userHandlersPtr->userDefConnectHandlers.handlers) h.handler(h.object); }
+
+				bool isDataEventHandler() { return userHandlersPtr->userDefDataHandlers.willHandle(); }
+				void handleDataEvent(Buffer& buffer) { for (auto h : userHandlersPtr->userDefDataHandlers.handlers) h.handler(h.object, buffer); }
+
+				bool isDrainEventHandler() { return userHandlersPtr->userDefDrainHandlers.willHandle(); }
+				void handleDrainEvent() { for (auto h : userHandlersPtr->userDefDrainHandlers.handlers) h.handler(h.object); }
+
+				bool isEndEventHandler() { return userHandlersPtr->userDefEndHandlers.willHandle(); }
+				void handleEndEvent() { for (auto h : userHandlersPtr->userDefEndHandlers.handlers) h.handler(h.object); }
+
+				bool isCloseEventHandler() { return userHandlersPtr->userDefCloseHandlers.willHandle(); }
+				void handleCloseEvent(bool hasError) { for (auto h : userHandlersPtr->userDefCloseHandlers.handlers) h.handler(h.object, hasError); }
+
+				bool isErrorEventHandler() { return userHandlersPtr->userDefErrorHandlers.willHandle(); }
+				void handleErrorEvent(Error& e) { for (auto h : userHandlersPtr->userDefErrorHandlers.handlers) h.handler(h.object, e); }
 			};
 		//protected:
 			DataForCommandProcessing dataForCommandProcessing;
@@ -400,72 +503,15 @@ namespace nodecpp {
 				return drain_awaiter(*this);
 			}
 
-			enum class Handler { Accepted, Connect, Data, Drain, End, Close, Error };
-			template<Handler handler, auto memmberFn, class ObjectT>
-			void addHandler(ObjectT* object )
+			template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
+			void addHandler(ObjectT* object)
 			{
-				if constexpr ( handler == Handler::Accepted )
-				{
-					dataForCommandProcessing.userDefAcceptedHandlers.add(object, &DataForCommandProcessing::acceptedHandler<ObjectT, memmberFn>);
-				} 
-				else if constexpr ( handler == Handler::Connect )
-				{
-					dataForCommandProcessing.userDefConnectHandlers.add(object, &DataForCommandProcessing::connectHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr ( handler == Handler::Data )
-				{
-					dataForCommandProcessing.userDefDataHandlers.add(object, &DataForCommandProcessing::dataHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr ( handler == Handler::Drain )
-				{
-					dataForCommandProcessing.userDefDrainHandlers.add(object, &DataForCommandProcessing::drainHandler<ObjectT, memmberFn>);
-				} 
-				else if constexpr ( handler == Handler::End )
-				{
-					dataForCommandProcessing.userDefEndHandlers.add(object, &DataForCommandProcessing::endHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr ( handler == Handler::Close )
-				{
-					dataForCommandProcessing.userDefCloseHandlers.add(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
-				}
-				else
-				{
-					static_assert( handler == Handler::Error ); // the only remaining option
-					dataForCommandProcessing.userDefErrorHandlers.add(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
-				}
+				dataForCommandProcessing.userHandlers.addHandler<handler, memmberFn, ObjectT>(object);
 			}
-			template<Handler handler, auto memmberFn, class ObjectT>
+			template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 			void removeHandler(ObjectT* object)
 			{
-				if constexpr (handler == Handler::Accepted)
-				{
-					dataForCommandProcessing.userDefAcceptedHandlers.remove(object, &DataForCommandProcessing::acceptedHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr (handler == Handler::Connect)
-				{
-					dataForCommandProcessing.userDefConnectHandlers.remove(object, &DataForCommandProcessing::connectHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr (handler == Handler::Data)
-				{
-					dataForCommandProcessing.userDefDataHandlers.remove(object, &DataForCommandProcessing::dataHandler<ObjectT, memmberFn>);
-				}
-				if constexpr (handler == Handler::Drain)
-				{
-					dataForCommandProcessing.userDefDrainHandlers.remove(object, &DataForCommandProcessing::drainHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr (handler == Handler::End)
-				{
-					dataForCommandProcessing.userDefEndHandlers.remove(object, &DataForCommandProcessing::endHandler<ObjectT, memmberFn>);
-				}
-				else if constexpr (handler == Handler::Close)
-				{
-					dataForCommandProcessing.userDefCloseHandlers.remove(object, &DataForCommandProcessing::closeHandler<ObjectT, memmberFn>);
-				}
-				else
-				{
-					static_assert(handler == Handler::Error); // the only remaining option
-					dataForCommandProcessing.userDefErrorHandlers.remove(object, &DataForCommandProcessing::errorHandler<ObjectT, memmberFn>);
-				}
+				dataForCommandProcessing.userHandlers.removeHandler<handler, memmberFn, ObjectT>(object);
 			}
 		};
 
