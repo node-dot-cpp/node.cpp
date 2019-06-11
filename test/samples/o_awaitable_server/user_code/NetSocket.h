@@ -1143,7 +1143,8 @@ public:
 	{
 	public:
 		MyServerSocketOne(MySampleTNode* node) : MyServerSocketBase(node) {
-			dataForCommandProcessing.userHandlers.from(myUserHandlers, this);
+//			dataForCommandProcessing.userHandlers.from(myUserHandlers, this);
+			dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>(), this);
 			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
 		}
 		virtual ~MyServerSocketOne() {}
@@ -1158,21 +1159,24 @@ public:
 		}
 
 
-		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
+//		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void addHandler(ObjectT* object)
 		{
-			myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
+//			myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
+			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>().addHandler<handler, memmberFn, ObjectT>(object);
 		}
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
 		static void addHandler()
 		{
-			myUserHandlers.addHandler<handler, memmberFn, MyServerSocketOne>();
+//			myUserHandlers.addHandler<handler, memmberFn, MyServerSocketOne>();
+			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>().addHandler<handler, memmberFn, MyServerSocketOne>();
 		}
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void removeHandler(ObjectT* object)
 		{
-			myUserHandlers.removeHandler<handler, memmberFn, MyServerSocketOne>();
+//			myUserHandlers.removeHandler<handler, memmberFn, MyServerSocketOne>();
+			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketOne>().removeHandler<handler, memmberFn, ObjectT>(object);
 		}
 	};
 
@@ -1180,7 +1184,8 @@ public:
 	{
 	public:
 		MyServerSocketTwo(MySampleTNode* node) : MyServerSocketBase(node) {
-			dataForCommandProcessing.userHandlers.from(myUserHandlers, this);
+//			dataForCommandProcessing.userHandlers.from(myUserHandlers, this);
+			dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>(), this);
 			dataForCommandProcessing.userHandlersPtr = &(dataForCommandProcessing.userHandlers);
 		}
 		virtual ~MyServerSocketTwo() {}
@@ -1195,21 +1200,24 @@ public:
 		}
 
 
-		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
+//		static nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers myUserHandlers;
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void addHandler(ObjectT* object)
 		{
-			myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
+			//myUserHandlers.addHandler<handler, memmberFn, ObjectT>(object);
+			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>().addHandler<handler, memmberFn, ObjectT>(object);
 		}
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
 		static void addHandler()
 		{
-			myUserHandlers.addHandler<handler, memmberFn, MyServerSocketTwo>();
+//			myUserHandlers.addHandler<handler, memmberFn, MyServerSocketTwo>();
+			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>().addHandler<handler, memmberFn, MyServerSocketTwo>();
 		}
 		template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 		static void removeHandler(ObjectT* object)
 		{
-			myUserHandlers.removeHandler<handler, memmberFn, MyServerSocketTwo>();
+//			myUserHandlers.removeHandler<handler, memmberFn, MyServerSocketTwo>();
+			ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<MyServerSocketTwo>().removeHandler<handler, memmberFn, MyServerSocketTwo>();
 		}
 	};
 

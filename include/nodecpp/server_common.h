@@ -181,7 +181,30 @@ namespace nodecpp {
 				};
 				UserHandlers userHandlers;
 				UserHandlers* userHandlersPtr;
-				thread_local static std::map<std::type_info, UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
+
+				template<class UserHandlerType>
+				class UserHandlerClassPatterns
+				{
+					std::map<std::type_index, UserHandlerType> patterns;
+					UserHandlerType& getPattern( std::type_index idx )
+					{
+						auto pattern = patterns.find( idx );
+						if ( pattern != patterns.end() )
+							return pattern->second;
+						else
+						{
+							auto ins = patterns.insert( make_pair( idx, UserHandlerType() ) );
+							return ins.first->second;
+						}
+					}
+				public:
+					template<class UserClass>
+					UserHandlerType& getPattern()
+					{
+						return getPattern( std::type_index(typeid(UserClass)) );
+					}
+				};
+				thread_local static UserHandlerClassPatterns<UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
 
 				/*bool isListenEventHandler() { return userHandlers.userDefListenHandlers.willHandle(); }
 				void handleListenEvent(size_t id, nodecpp::net::Address address) { 

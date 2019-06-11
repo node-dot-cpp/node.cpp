@@ -31,6 +31,7 @@
 #include "common.h"
 #include <map>
 #include <typeinfo>
+#include <typeindex>
 
 namespace nodecpp {
 
