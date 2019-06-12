@@ -366,12 +366,18 @@ public:
 						{
 						}
 					}
-					EmitterType::emitClose(entry.getEmitter(), err);
+//					EmitterType::emitClose(entry.getEmitter(), err);
+					if (entry.getClientSocketData()->isCloseEventHandler())
+						entry.getClientSocketData()->handleCloseEvent(err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 //					if (err && entry.isValid()) //if error closing, then first error event
 					if (err && entry.isUsed()) //if error closing, then first error event
-						EmitterType::emitError(entry.getEmitter(), current.second.second);
+					{
+//						EmitterType::emitError(entry.getEmitter(), current.second.second);
+						if (entry.getClientSocketData()->isErrorEventHandler())
+							entry.getClientSocketData()->handleErrorEvent(current.second.second);
+					}
 #endif // 0
 				}
 				entry = NetSocketEntry(current.first); 
@@ -396,7 +402,11 @@ public:
 						hr();
 					}
 					else // TODO: make sure we never have both cases in the same time
-						EmitterType::emitAccepted(entry.getEmitter());
+					{
+//						EmitterType::emitAccepted(entry.getEmitter());
+						if (entry.getClientSocketData()->isAcceptedEventHandler())
+							entry.getClientSocketData()->handleAcceptedEvent();
+					}
 					//entry.setAssociated();
 					//ioSockets.setAssociated( idx );
 				}
@@ -485,7 +495,9 @@ private:
 
 		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
 	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
-					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+//					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+					if (entry.getClientSocketData()->isDataEventHandler())
+						entry.getClientSocketData()->handleDataEvent(std::ref(infraStoreBuffer(std::move(res.second))));
 				}
 				else //if (!entry.remoteEnded)
 				{
@@ -509,7 +521,9 @@ private:
 			entry.getClientSocketData()->remoteEnded = true;
 			ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
 	//		evs.add(&net::Socket::emitEnd, entry.getPtr());
-			EmitterType::emitEnd(entry.getEmitter());
+//			EmitterType::emitEnd(entry.getEmitter());
+			if (entry.getClientSocketData()->isEndEventHandler())
+				entry.getClientSocketData()->handleEndEvent();
 			if (entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 			{
 				//pendingCloseEvents.emplace_back(entry.index, false);
@@ -550,19 +564,12 @@ private:
 					current.getClientSocketData()->ahd_connect.h = nullptr;
 					hr();
 				}
-				/*else // TODO: make sure we never have both cases in the same time
-				{
-					auto hr = current.getClientSocketData()->ahd_connect_2.h;
-					if ( hr )
-					{
-						current.getClientSocketData()->ahd_connect_2.h = nullptr;
-						hr();
-					}
-					else
-						EmitterType::emitConnect(current.getEmitter());
-				}*/
 				else
-					EmitterType::emitConnect(current.getEmitter());
+				{
+//					EmitterType::emitConnect(current.getEmitter());
+					if (current.getClientSocketData()->isConnectEventHandler())
+						current.getClientSocketData()->handleConnectEvent();
+				}
 				break;
 			}
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:
@@ -574,7 +581,11 @@ private:
 					hr();
 				}
 				else // TODO: make sure we never have both cases in the same time
-					EmitterType::emitDrain(current.getEmitter());
+				{
+//					EmitterType::emitDrain(current.getEmitter());
+					if (current.getClientSocketData()->isDrainEventHandler())
+						current.getClientSocketData()->handleDrainEvent();
+				}
 				break;
 			}
 			default:
