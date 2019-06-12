@@ -254,7 +254,7 @@ namespace nodecpp {
 			ServerN(Node* node_) : ServerN2<Node, ServerOInitializer<Handlers...>, Extra>( node_ ) {}
 			soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) { 
 				//return new Socket( static_cast<Node*>(this->node), sdata ); 
-				owning_ptr<Socket> sock_ = make_owning<Socket>(static_cast<Node*>(this->node), sdata);
+				owning_ptr<Socket> sock_ = nodecpp::net::createSocket<Socket>(static_cast<Node*>(this->node), sdata);
 				soft_ptr<Socket> retSock( sock_ );
 				this->socketList.add( std::move(sock_) );
 				return retSock;
