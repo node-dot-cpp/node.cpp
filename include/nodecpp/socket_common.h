@@ -531,9 +531,14 @@ namespace nodecpp {
 			}
 
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>			
-			static void addHandler(ObjectT* object = nullptr)
+			static void addHandler(ObjectT* object)
 			{
 				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().addHandler<handler, memmberFn, ObjectT>(object);
+			}
+			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>			
+			static void addHandler()
+			{
+				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
 			}
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 			static void removeHandler(ObjectT* object)
