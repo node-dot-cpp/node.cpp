@@ -101,9 +101,6 @@ namespace nodecpp {
 
 				struct UserHandlers
 				{
-				private:
-					void* defaultObjectPtr = nullptr;
-
 				public:
 					using userDefAcceptedHandlerFnT = nodecpp::awaitable<void> (*)(void*);
 					using userDefConnectHandlerFnT = nodecpp::awaitable<void> (*)(void*);
@@ -178,19 +175,6 @@ namespace nodecpp {
 						co_return;
 					}
 
-					template<class T>
-					void setPointerToMe(T* objPtr)
-					{
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objPtr != nullptr);
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr == nullptr);
-						defaultObjectPtr = objPtr;
-					}
-					void* ptrToMe()
-					{
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr != nullptr);
-						return defaultObjectPtr;
-					}
-
 					enum class Handler { Accepted, Connect, Data, Drain, End, Close, Error };
 					template<Handler handler, auto memmberFn, class ObjectT>
 					void addHandler(ObjectT* object)
@@ -261,7 +245,6 @@ namespace nodecpp {
 
 					void from(const UserHandlers& patternUH, void* defaultObjPtr)
 					{
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr == nullptr);
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
 						userDefAcceptedHandlers.from(patternUH.userDefAcceptedHandlers, defaultObjPtr);
 						userDefConnectHandlers.from(patternUH.userDefConnectHandlers, defaultObjPtr);
@@ -273,30 +256,72 @@ namespace nodecpp {
 					}
 				};
 				UserHandlers userHandlers;
-				UserHandlers* userHandlersPtr;
+
 				thread_local static UserHandlerClassPatterns<UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
 
 
-				bool isAcceptedEventHandler() { return userHandlersPtr->userDefAcceptedHandlers.willHandle(); }
-				void handleAcceptedEvent() { for (auto h : userHandlersPtr->userDefAcceptedHandlers.handlers) h.handler(h.object); }
+				bool isAcceptedEventHandler() { return userHandlers.userDefAcceptedHandlers.willHandle(); }
+				void handleAcceptedEvent() { 
+					for (auto h : userHandlers.userDefAcceptedHandlers.handlers) 
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object);
+					}
+				}
 
-				bool isConnectEventHandler() { return userHandlersPtr->userDefConnectHandlers.willHandle(); }
-				void handleConnectEvent() { for (auto h : userHandlersPtr->userDefConnectHandlers.handlers) h.handler(h.object); }
+				bool isConnectEventHandler() { return userHandlers.userDefConnectHandlers.willHandle(); }
+				void handleConnectEvent() { 
+					for (auto h : userHandlers.userDefConnectHandlers.handlers) 
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object);
+					}
+				}
 
-				bool isDataEventHandler() { return userHandlersPtr->userDefDataHandlers.willHandle(); }
-				void handleDataEvent(Buffer& buffer) { for (auto h : userHandlersPtr->userDefDataHandlers.handlers) h.handler(h.object, buffer); }
+				bool isDataEventHandler() { return userHandlers.userDefDataHandlers.willHandle(); }
+				void handleDataEvent(Buffer& buffer) { 
+					for (auto h : userHandlers.userDefDataHandlers.handlers)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object, buffer);
+					}
+				}
 
-				bool isDrainEventHandler() { return userHandlersPtr->userDefDrainHandlers.willHandle(); }
-				void handleDrainEvent() { for (auto h : userHandlersPtr->userDefDrainHandlers.handlers) h.handler(h.object); }
+				bool isDrainEventHandler() { return userHandlers.userDefDrainHandlers.willHandle(); }
+				void handleDrainEvent() { 
+					for (auto h : userHandlers.userDefDrainHandlers.handlers) 
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object);
+					}
+				}
 
-				bool isEndEventHandler() { return userHandlersPtr->userDefEndHandlers.willHandle(); }
-				void handleEndEvent() { for (auto h : userHandlersPtr->userDefEndHandlers.handlers) h.handler(h.object); }
+				bool isEndEventHandler() { return userHandlers.userDefEndHandlers.willHandle(); }
+				void handleEndEvent() { 
+					for (auto h : userHandlers.userDefEndHandlers.handlers) 
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object);
+					}
+				}
 
-				bool isCloseEventHandler() { return userHandlersPtr->userDefCloseHandlers.willHandle(); }
-				void handleCloseEvent(bool hasError) { for (auto h : userHandlersPtr->userDefCloseHandlers.handlers) h.handler(h.object, hasError); }
+				bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
+				void handleCloseEvent(bool hasError) { 
+					for (auto h : userHandlers.userDefCloseHandlers.handlers)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object, hasError);
+					}
+				}
 
-				bool isErrorEventHandler() { return userHandlersPtr->userDefErrorHandlers.willHandle(); }
-				void handleErrorEvent(Error& e) { for (auto h : userHandlersPtr->userDefErrorHandlers.handlers) h.handler(h.object, e); }
+				bool isErrorEventHandler() { return userHandlers.userDefErrorHandlers.willHandle(); }
+				void handleErrorEvent(Error& e) { 
+					for (auto h : userHandlers.userDefErrorHandlers.handlers) 
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object, e);
+					}
+				}
 			};
 		//protected:
 			DataForCommandProcessing dataForCommandProcessing;
@@ -523,7 +548,6 @@ namespace nodecpp {
 			static_assert( std::is_base_of< SocketBase, T >::value );
 			nodecpp::safememory::owning_ptr<T> ret = nodecpp::safememory::make_owning<T>(::std::forward<Types>(args)...);
 			ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<T>(), &(*ret));
-			ret->dataForCommandProcessing.userHandlersPtr = &(ret->dataForCommandProcessing.userHandlers);
 			return ret;
 		}
 

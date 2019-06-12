@@ -65,9 +65,6 @@ namespace nodecpp {
 
 				struct UserHandlers
 				{
-				private:
-					void* defaultObjectPtr = nullptr;
-
 				public:
 					using userDefListenHandlerFnT = nodecpp::awaitable<void> (*)(void*, size_t, nodecpp::net::Address);
 					using userDefConnectionHandlerFnT = nodecpp::awaitable<void> (*)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>);
@@ -110,19 +107,6 @@ namespace nodecpp {
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
 						co_return;
-					}
-
-					template<class T>
-					void setPointerToMe(T* objPtr)
-					{
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objPtr != nullptr);
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr == nullptr);
-						defaultObjectPtr = objPtr;
-					}
-					void* ptrToMe()
-					{
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr != nullptr);
-						return defaultObjectPtr;
 					}
 
 					enum class Handler { Listen, Connection, Close, Error };
@@ -171,7 +155,6 @@ namespace nodecpp {
 
 					void from( const UserHandlers& patternUH, void* defaultObjPtr )
 					{
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjectPtr == nullptr);
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
 						userDefListenHandlers.from(patternUH.userDefListenHandlers, defaultObjPtr);
 						userDefConnectionHandlers.from(patternUH.userDefConnectionHandlers, defaultObjPtr);
@@ -180,50 +163,44 @@ namespace nodecpp {
 					}
 				};
 				UserHandlers userHandlers;
-				UserHandlers* userHandlersPtr;
 
 				thread_local static UserHandlerClassPatterns<UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
 
-				/*bool isListenEventHandler() { return userHandlers.userDefListenHandlers.willHandle(); }
-				void handleListenEvent(size_t id, nodecpp::net::Address address) { 
-					for (auto h : userHandlers.userDefListenHandlers.handlers) 
-						if (h.object)
-							h.handler(h.object, id, address);
-						else
-							h.handler(userHandlers.ptrToMe(), id, address);
+				bool isListenEventHandler() { return userHandlers.userDefListenHandlers.willHandle(); }
+				void handleListenEvent(size_t id, nodecpp::net::Address address) {
+					for (auto h : userHandlers.userDefListenHandlers.handlers)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object, id, address);
+					}
 				}
 
 				bool isConnectionEventHandler() { return userHandlers.userDefConnectionHandlers.willHandle(); }
-				void handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-					for (auto h : userHandlers.userDefConnectionHandlers.handlers) 
-						if ( h.object )
-							h.handler(h.object, socket);
-						else
-							h.handler(userHandlers.ptrToMe(), socket);
-				}*/
-				bool isListenEventHandler() { return userHandlersPtr->userDefListenHandlers.willHandle(); }
-				void handleListenEvent(size_t id, nodecpp::net::Address address) {
-					for (auto h : userHandlersPtr->userDefListenHandlers.handlers)
-						if (h.object)
-							h.handler(h.object, id, address);
-						else
-							h.handler(userHandlers.ptrToMe(), id, address);
-				}
-
-				bool isConnectionEventHandler() { return userHandlersPtr->userDefConnectionHandlers.willHandle(); }
 				void handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-					for (auto h : userHandlersPtr->userDefConnectionHandlers.handlers)
-						if (h.object)
-							h.handler(h.object, socket);
-						else
-							h.handler(userHandlers.ptrToMe(), socket);
+					for (auto h : userHandlers.userDefConnectionHandlers.handlers)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object, socket);
+					}
 				}
 
 				bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
-				void handleCloseEvent(bool hasError) { for (auto h : userHandlers.userDefCloseHandlers.handlers) h.handler(h.object, hasError); }
+				void handleCloseEvent(bool hasError) { 
+					for (auto h : userHandlers.userDefCloseHandlers.handlers) 
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object, hasError); 
+					}
+				}
 
 				bool isErrorEventHandler() { return userHandlers.userDefErrorHandlers.willHandle(); }
-				void handleErrorEvent(Error& e) { for (auto h : userHandlers.userDefErrorHandlers.handlers) h.handler(h.object, e); }
+				void handleErrorEvent(Error& e) { 
+					for (auto h : userHandlers.userDefErrorHandlers.handlers) 
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object, e);
+					}
+				}
 			};
 			DataForCommandProcessing dataForCommandProcessing;
 
@@ -283,7 +260,6 @@ namespace nodecpp {
 			static_assert( std::is_base_of< ServerBase, T >::value );
 			nodecpp::safememory::owning_ptr<T> ret = nodecpp::safememory::make_owning<T>(::std::forward<Types>(args)...);
 			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<T>(), &(*ret));
-			ret->dataForCommandProcessing.userHandlersPtr = &(ret->dataForCommandProcessing.userHandlers);
 			return ret;
 		}
 
