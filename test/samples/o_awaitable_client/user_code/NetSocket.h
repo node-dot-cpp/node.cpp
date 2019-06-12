@@ -11,9 +11,10 @@
 using namespace nodecpp;
 using namespace fmt;
 
-#define IMPL_VERSION 1 // old fashion
+//#define IMPL_VERSION 1 // old fashion
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
+#define IMPL_VERSION 4 // onConnect is a coro
 
 class MySampleTNode : public NodeBase
 {
@@ -130,6 +131,62 @@ public:
 	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
 		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>
 	>;
+
+#elif IMPL_VERSION == 4
+	virtual nodecpp::awaitable<void> main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &MySampleTNode::onWhateverConnect>(this);
+
+		clientSock = nodecpp::net::createSocket<ClientSockType>(this);
+		*( clientSock->getExtra() ) = 17;
+		clientSock->connect(2000, "127.0.0.1");
+		co_return;
+	}
+
+	/*nodecpp::awaitable<void> onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
+	{
+		printf( "onWhateverConnect()\n" );
+		Buffer buf(2);
+		buf.writeInt8( 2, 0 );
+		buf.writeInt8( 1, 1 );
+		socket->a_write(buf);
+		try
+		{
+			co_await socket->a_write(buf);
+			co_await doWhateverWithIncomingData(socket);
+		}
+		catch (...)
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+			// TODO: address failure
+		}
+		co_return;
+	}*/
+
+	nodecpp::awaitable<void> onWhateverConnect() 
+	{
+		printf( "onWhateverConnect()\n" );
+		Buffer buf(2);
+		buf.writeInt8( 2, 0 );
+		buf.writeInt8( 1, 1 );
+		clientSock->a_write(buf);
+		try
+		{
+			co_await clientSock->a_write(buf);
+			co_await doWhateverWithIncomingData(clientSock);
+		}
+		catch (...)
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(clientSock->getExtra()));
+			// TODO: address failure
+		}
+		co_return;
+	}
+
+using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+
 #else
 #error
 #endif
