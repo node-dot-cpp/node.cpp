@@ -515,8 +515,8 @@ Port Port::fromNetwork(uint16_t port)
 
 //thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 thread_local NetSocketManagerBase* netSocketManagerBase;
-thread_local int typeIndexOfSocketO = -1;
-thread_local int typeIndexOfSocketL = -1;
+//thread_local int typeIndexOfSocketO = -1;
+//thread_local int typeIndexOfSocketL = -1;
 #ifndef NET_CLIENT_ONLY
 thread_local NetServerManagerBase* netServerManagerBase;
 #endif
@@ -897,9 +897,9 @@ void NetServerManagerBase::appClose(size_t id)
 	pendingCloseEvents.emplace_back(entry.index, false);
 }
 
-size_t NetServerManagerBase::addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+size_t NetServerManagerBase::addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr/*, int typeId*/)
 {
-	return ioSockets.addEntry<net::ServerBase>( node, ptr, typeId );
+	return ioSockets.addEntry<net::ServerBase>( node, ptr/*, typeId*/ );
 }
 
 #endif // NO_SERVER_STAFF

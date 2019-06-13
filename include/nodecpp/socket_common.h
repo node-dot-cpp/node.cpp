@@ -31,6 +31,8 @@
 #include "net_common.h"
 #include "event.h"
 
+class OpaqueSocketData;
+
 namespace nodecpp {
 
 	namespace net {
@@ -330,6 +332,10 @@ namespace nodecpp {
 		//protected:
 			DataForCommandProcessing dataForCommandProcessing;
 
+		private:
+			void registerMeAndAcquireSocket();
+			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
+
 		public:
 			Address _local;
 			Address _remote;
@@ -341,7 +347,8 @@ namespace nodecpp {
 
 			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
 
-			SocketBase(NodeBase* node_) {node = node_;}
+			SocketBase(NodeBase* node_) {node = node_; registerMeAndAcquireSocket();}
+			SocketBase(NodeBase* node_, OpaqueSocketData& sdata);
 
 			SocketBase(const SocketBase&) = delete;
 			SocketBase& operator=(const SocketBase&) = delete;

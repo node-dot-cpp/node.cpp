@@ -266,17 +266,17 @@ public:
 
 #ifdef USING_T_SOCKETS
 inline
-size_t registerWithInfraAndAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
+size_t registerWithInfraAndAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t/*, int typeId*/)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
+	return netSocketManagerBase->appAcquireSocket(node, t/*, typeId*/);
 }
 
 inline
-size_t registerWithInfraAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
+size_t registerWithInfraAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t/*, int typeId*/, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAssignSocket(node, t, typeId, sdata);
+	return netSocketManagerBase->appAssignSocket(node, t/*, typeId*/, sdata);
 }
 
 inline
@@ -286,10 +286,11 @@ void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 }
 
 inline
-void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId)
+void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t/*, int typeId*/)
 {
-	return netServerManagerBase->appAddServer(node, t, typeId);
+	return netServerManagerBase->appAddServer(node, t/*, typeId*/);
 }
+
 
 template<class Node>
 class Runnable : public RunnableBase
@@ -302,13 +303,13 @@ class Runnable : public RunnableBase
 		{
 			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
 			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
-			netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
-			netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
+			//netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
+			//netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
 			if constexpr (!std::is_same< ServerSocketEmitter, void >::value)
 			{
 				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
-				netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
-				netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
+				//netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
+				//netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
 			}
 			node = make_owning<Node>();
 			node->main();

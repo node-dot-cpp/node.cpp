@@ -208,6 +208,17 @@ namespace nodecpp {
 			};
 			DataForCommandProcessing dataForCommandProcessing;
 
+			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
+			static void addHandler(ObjectT* object)
+			{
+				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, ObjectT>(object);
+			}
+			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
+			static void addHandler()
+			{
+				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
+			}
+
 		protected:
 //			uint16_t localPort = 0;
 
@@ -215,13 +226,14 @@ namespace nodecpp {
 			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
 
 		protected:
-			void registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId);
+//			void registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId);
+			void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t);
 
 		public:
 			NodeBase* node = nullptr;
 
 		public:
-			ServerBase() {}
+			ServerBase();
 			virtual ~ServerBase() {reportBeingDestructed();}
 
 			const Address& address() const { return dataForCommandProcessing.localAddress; }
@@ -234,17 +246,97 @@ namespace nodecpp {
 
 			void listen(uint16_t port, const char* ip, int backlog);
 
+			auto a_listen(uint16_t port, const char* ip, int backlog) { 
 
-			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-			static void addHandler(ObjectT* object)
-			{
-				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, ObjectT>(object);
+				struct listen_awaiter {
+					ServerBase& server;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					listen_awaiter(ServerBase& server_) : server( server_ ) {}
+
+					listen_awaiter(const listen_awaiter &) = delete;
+					listen_awaiter &operator = (const listen_awaiter &) = delete;
+
+					~listen_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						server.dataForCommandProcessing.ahd_listen.h = who_is_awaiting;
+					}
+
+					auto await_resume() {
+						if ( server.dataForCommandProcessing.ahd_listen.is_exception )
+						{
+							server.dataForCommandProcessing.ahd_listen.is_exception = false; // now we will throw it and that's it
+							throw server.dataForCommandProcessing.ahd_listen.exception;
+						}
+					}
+				};
+				listen( port, ip, backlog );
+				return listen_awaiter(*this);
 			}
-			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
-			static void addHandler()
-			{
-				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
+
+			template<class SocketT>
+			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket) { 
+
+				struct connection_awaiter {
+					ServerBase& server;
+					nodecpp::safememory::soft_ptr<SocketT>& socket;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_) : server( server_ ), socket( socket_ ) {}
+
+					connection_awaiter(const connection_awaiter &) = delete;
+					connection_awaiter &operator = (const connection_awaiter &) = delete;
+
+					~connection_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						server.dataForCommandProcessing.ahd_connection.h = who_is_awaiting;
+					}
+
+					auto await_resume() {
+						if ( server.dataForCommandProcessing.ahd_connection.is_exception )
+						{
+							server.dataForCommandProcessing.ahd_connection.is_exception = false; // now we will throw it and that's it
+							throw server.dataForCommandProcessing.ahd_connection.exception;
+						}
+						if constexpr ( std::is_same<SocketT, SocketBase>::value )
+							socket = server.dataForCommandProcessing.ahd_connection.sock;
+						else
+							socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+					}
+				};
+				return connection_awaiter(*this, socket);
 			}
+
+			protected:
+				MultiOwner<SocketBase> socketList;
+		public:
+			soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) { 
+//			soft_ptr<SocketBase> makeSocket() { 
+				//return new Socket( static_cast<Node*>(this->node), sdata ); 
+//				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(sdata);
+				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(nullptr);
+				soft_ptr<SocketBase> retSock( sock_ );
+				this->socketList.add( std::move(sock_) );
+				return retSock;
+			}		
+			void removeSocket( soft_ptr<SocketBase> sock ) {
+				this->socketList.removeAndDelete( sock );
+			}
+			size_t getSockCount() {return this->socketList.getCount();}
 		};
 
 		template<class T, class ... Types>

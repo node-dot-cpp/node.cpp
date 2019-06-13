@@ -336,10 +336,10 @@ public:
 		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketTwo::onConnection>();
 		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
-		srv = nodecpp::safememory::make_owning<MyServerSocketOne>(this);
-		srv_1 = nodecpp::net::createServer<MyServerSocketOne>(this);
-		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo>(this);
-		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>(this);
+		srv = nodecpp::safememory::make_owning<MyServerSocketOne>();
+		srv_1 = nodecpp::net::createServer<MyServerSocketOne>();
+		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo>();
+		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>();
 
 		srv->listen(2000, "127.0.0.1", 5);
 		srvCtrl->listen(2001, "127.0.0.1", 5);
@@ -391,21 +391,22 @@ public:
 	using SockTypeServerSocket = nodecpp::net::SocketN<MySampleTNode, SocketIdType>;
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode, SocketIdType>;
 
-	using ServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerSocket, ServerIdType>;
+//	using ServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerSocket, ServerIdType>;
+	using ServerType = nodecpp::net::ServerBase;
 	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerCtrlSocket, ServerIdType>;
 
 
 	class MyServerSocketBase : public ServerType
 	{
 	public:
-		MyServerSocketBase(MySampleTNode* node) : ServerType(node) {}
+		MyServerSocketBase() {}
 		virtual ~MyServerSocketBase() {}
 	};
 
 	class MyServerSocketOne : public MyServerSocketBase
 	{
 	public:
-		MyServerSocketOne(MySampleTNode* node) : MyServerSocketBase(node) {}
+		MyServerSocketOne() {}
 		virtual ~MyServerSocketOne() {}
 
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
@@ -422,7 +423,7 @@ public:
 	class MyServerSocketTwo : public MyServerSocketBase
 	{
 	public:
-		MyServerSocketTwo(MySampleTNode* node) : MyServerSocketBase(node) {}
+		MyServerSocketTwo() {}
 		virtual ~MyServerSocketTwo() {}
 
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
