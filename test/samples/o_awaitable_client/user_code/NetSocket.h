@@ -14,7 +14,7 @@ using namespace fmt;
 //#define IMPL_VERSION 1 // old fashion
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
-#define IMPL_VERSION 4 // onConnect is a coro
+#define IMPL_VERSION 4 // registering handlers (per class)
 
 class MySampleTNode : public NodeBase
 {
@@ -23,7 +23,6 @@ class MySampleTNode : public NodeBase
 	Buffer buf;
 
 	using SocketIdType = int;
-	awaitable<void> dataProcessorcallRet;
 
 public:
 	MySampleTNode()
@@ -138,6 +137,7 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &MySampleTNode::onWhateverConnect>(this);
+		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &ClientSockType::onWhateverConnect>();
 
 		clientSock = nodecpp::net::createSocket<ClientSockType>(this);
 		*( clientSock->getExtra() ) = 17;
@@ -145,47 +145,81 @@ public:
 		co_return;
 	}
 
-	/*nodecpp::awaitable<void> onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
-	{
-		printf( "onWhateverConnect()\n" );
-		Buffer buf(2);
-		buf.writeInt8( 2, 0 );
-		buf.writeInt8( 1, 1 );
-		socket->a_write(buf);
-		try
-		{
-			co_await socket->a_write(buf);
-			co_await doWhateverWithIncomingData(socket);
-		}
-		catch (...)
-		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-			// TODO: address failure
-		}
-		co_return;
-	}*/
-
 	nodecpp::awaitable<void> onWhateverConnect() 
 	{
-		printf( "onWhateverConnect()\n" );
-		Buffer buf(2);
-		buf.writeInt8( 2, 0 );
-		buf.writeInt8( 1, 1 );
-		clientSock->a_write(buf);
-		try
-		{
-			co_await clientSock->a_write(buf);
-			co_await doWhateverWithIncomingData(clientSock);
-		}
-		catch (...)
-		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(clientSock->getExtra()));
-			// TODO: address failure
-		}
+		printf( "MySampleTNode::onWhateverConnect()\n" );
 		co_return;
 	}
 
-using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+	using ClientSockBaseType = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+
+	class MySocketOne : public ClientSockBaseType
+	{
+		size_t recvSize = 0;
+		size_t recvReplies = 0;
+		Buffer buf;
+
+	public:
+		MySocketOne(MySampleTNode* node) : ClientSockBaseType(node) {}
+		virtual ~MySocketOne() {}
+
+		nodecpp::awaitable<void> onWhateverConnect() 
+		{
+			printf( "onWhateverConnect()\n" );
+			Buffer buf(2);
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( 1, 1 );
+			a_write(buf);
+			try
+			{
+				co_await a_write(buf);
+				co_await processIncomingData();
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(getExtra()));
+				// TODO: address failure
+			}
+			co_return;
+		}
+
+		awaitable<void> processIncomingData()
+		{
+			for (;;)
+			{
+				nodecpp::Buffer r_buff(0x200);
+				try
+				{
+					co_await a_read(r_buff);
+				}
+				catch (...)
+				{
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(getExtra()));
+					break;
+				}
+				++recvReplies;
+				if ( ( recvReplies & 0xFFF ) == 0 )
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+				recvSize += r_buff.size();
+				buf.writeInt8( 2, 0 );
+				buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+				try
+				{
+					co_await a_write(buf);
+				}
+				catch (...)
+				{
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(getExtra()));
+					break;
+				}
+				// TODO: address failure
+			}
+			co_return;
+		}
+	};
+
+	using ClientSockType = MySocketOne;
+
 
 #else
 #error
