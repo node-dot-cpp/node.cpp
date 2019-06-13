@@ -218,7 +218,7 @@ namespace nodecpp {
 
 		public:
 			ServerBase() {}
-			~ServerBase() {reportBeingDestructed();}
+			virtual ~ServerBase() {reportBeingDestructed();}
 
 			const Address& address() const { return dataForCommandProcessing.localAddress; }
 			void close();

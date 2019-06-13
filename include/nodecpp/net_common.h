@@ -624,6 +624,12 @@ namespace nodecpp {
 				ret.second = true;
 				return ret.first;
 			}
+			const UserHandlerType& getPatternForApplying(std::type_index idx)
+			{
+				auto& ret = getPattern( idx );
+				ret.second = true;
+				return ret.first;
+			}
 		};
 	} //namespace net
 

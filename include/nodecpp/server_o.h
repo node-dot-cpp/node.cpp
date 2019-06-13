@@ -182,6 +182,7 @@ namespace nodecpp {
 			Extra extra;
 		public:
 			ServerOUserBase(Node* node_) { node = node_;}
+			virtual ~ServerOUserBase() {}
 			Extra* getExtra() { return &extra; }
 		};
 
@@ -199,6 +200,7 @@ namespace nodecpp {
 		{
 		public:
 			ServerN2(Node* node_) : ServerOUserBase<Node, Extra>(node_) {}
+			virtual ~ServerN2() {}
 
 			void onClose(bool b) override
 			{ 
@@ -252,6 +254,7 @@ namespace nodecpp {
 				MultiOwner<typename Socket::StorableType> socketList;
 		public:
 			ServerN(Node* node_) : ServerN2<Node, ServerOInitializer<Handlers...>, Extra>( node_ ) {}
+			virtual ~ServerN() {}
 			soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) { 
 				//return new Socket( static_cast<Node*>(this->node), sdata ); 
 				owning_ptr<Socket> sock_ = nodecpp::net::createSocket<Socket>(static_cast<Node*>(this->node), sdata);

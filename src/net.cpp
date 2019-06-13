@@ -109,12 +109,16 @@ Server::Server() {
 void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+	printf( "TYPEID = %s\n", typeid(*this).name() );
+	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	netServerManagerBase->appListen(p, ip, port, backlog);
 }
 
 void ServerO::listen(uint16_t port, const char* ip, int backlog)
 {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+	printf( "TYPEID = %s\n", typeid(*this).name() );
+	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	netServerManagerBase->appListen(p, ip, port, backlog);
 }
 
