@@ -597,23 +597,32 @@ namespace nodecpp {
 		template<class UserHandlerType>
 		class UserHandlerClassPatterns
 		{
-			std::map<std::type_index, UserHandlerType> patterns;
-			UserHandlerType& getPattern( std::type_index idx )
+			std::map<std::type_index, std::pair<UserHandlerType, bool>> patterns;
+			std::pair<UserHandlerType, bool>& getPattern( std::type_index idx )
 			{
 				auto pattern = patterns.find( idx );
 				if ( pattern != patterns.end() )
 					return pattern->second;
 				else
 				{
-					auto ins = patterns.insert( make_pair( idx, UserHandlerType() ) );
+					auto ins = patterns.insert( make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
 					return ins.first->second;
 				}
 			}
 		public:
 			template<class UserClass>
-			UserHandlerType& getPattern()
+			UserHandlerType& getPatternForUpdate()
 			{
-				return getPattern( std::type_index(typeid(UserClass)) );
+				auto& ret = getPattern( std::type_index(typeid(UserClass)) );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !ret.second, "handlers must be added before any instance is created" );
+				return ret.first;
+			}
+			template<class UserClass>
+			const UserHandlerType& getPatternForApplying()
+			{
+				auto& ret = getPattern( std::type_index(typeid(UserClass)) );
+				ret.second = true;
+				return ret.first;
 			}
 		};
 	} //namespace net

@@ -245,17 +245,17 @@ namespace nodecpp {
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 			static void addHandler(ObjectT* object)
 			{
-				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().addHandler<handler, memmberFn, ObjectT>(object);
+				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, ObjectT>(object);
 			}
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>
 			static void addHandler()
 			{
-				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
+				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
 			}
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 			static void removeHandler(ObjectT* object)
 			{
-				DataForCommandProcessing::userHandlerClassPattern.getPattern<UserClass>().removeHandler<handler, memmberFn, ObjectT>(object);
+				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().removeHandler<handler, memmberFn, ObjectT>(object);
 			}
 		};
 
@@ -264,7 +264,7 @@ namespace nodecpp {
 		nodecpp::safememory::owning_ptr<T> createServer(Types&& ... args) {
 			static_assert( std::is_base_of< ServerBase, T >::value );
 			nodecpp::safememory::owning_ptr<T> ret = nodecpp::safememory::make_owning<T>(::std::forward<Types>(args)...);
-			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPattern<T>(), &(*ret));
+			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<T>(), &(*ret));
 			return ret;
 		}
 
