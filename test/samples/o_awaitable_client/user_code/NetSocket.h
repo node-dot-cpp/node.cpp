@@ -139,7 +139,7 @@ public:
 		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &MySampleTNode::onWhateverConnect>(this);
 		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &ClientSockType::onWhateverConnect>();
 
-		clientSock = nodecpp::net::createSocket<ClientSockType>(this);
+		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
 		co_return;

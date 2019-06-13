@@ -794,10 +794,10 @@ public:
 		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketTwo::onConnection>();
 		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
-		srv = nodecpp::net::createServer<MyServerSocketOne>(this);
+		srv = nodecpp::safememory::make_owning<MyServerSocketOne>(this);
 		srv_1 = nodecpp::net::createServer<MyServerSocketOne>(this);
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo>(this);
-		srvCtrl_1 = nodecpp::net::createServer<MyServerSocketTwo>(this);
+		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>(this);
 
 		srv->listen(2000, "127.0.0.1", 5);
 		srvCtrl->listen(2001, "127.0.0.1", 5);

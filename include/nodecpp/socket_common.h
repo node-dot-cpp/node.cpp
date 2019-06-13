@@ -101,6 +101,7 @@ namespace nodecpp {
 
 				struct UserHandlers
 				{
+					bool initialized = false;
 				public:
 					using userDefAcceptedHandlerFnT = nodecpp::awaitable<void> (*)(void*);
 					using userDefConnectHandlerFnT = nodecpp::awaitable<void> (*)(void*);
@@ -245,6 +246,8 @@ namespace nodecpp {
 
 					void from(const UserHandlers& patternUH, void* defaultObjPtr)
 					{
+						if ( initialized )
+							return;
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
 						userDefAcceptedHandlers.from(patternUH.userDefAcceptedHandlers, defaultObjPtr);
 						userDefConnectHandlers.from(patternUH.userDefConnectHandlers, defaultObjPtr);
@@ -253,6 +256,7 @@ namespace nodecpp {
 						userDefEndHandlers.from(patternUH.userDefEndHandlers, defaultObjPtr);
 						userDefCloseHandlers.from(patternUH.userDefCloseHandlers, defaultObjPtr);
 						userDefErrorHandlers.from(patternUH.userDefErrorHandlers, defaultObjPtr);
+						initialized = true;
 					}
 				};
 				UserHandlers userHandlers;

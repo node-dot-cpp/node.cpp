@@ -65,6 +65,7 @@ namespace nodecpp {
 
 				struct UserHandlers
 				{
+					bool initialized = false;
 				public:
 					using userDefListenHandlerFnT = nodecpp::awaitable<void> (*)(void*, size_t, nodecpp::net::Address);
 					using userDefConnectionHandlerFnT = nodecpp::awaitable<void> (*)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>);
@@ -155,11 +156,14 @@ namespace nodecpp {
 
 					void from( const UserHandlers& patternUH, void* defaultObjPtr )
 					{
+						if ( initialized )
+							return;
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
 						userDefListenHandlers.from(patternUH.userDefListenHandlers, defaultObjPtr);
 						userDefConnectionHandlers.from(patternUH.userDefConnectionHandlers, defaultObjPtr);
 						userDefCloseHandlers.from(patternUH.userDefCloseHandlers, defaultObjPtr);
 						userDefErrorHandlers.from(patternUH.userDefErrorHandlers, defaultObjPtr);
+						initialized = true;
 					}
 				};
 				UserHandlers userHandlers;

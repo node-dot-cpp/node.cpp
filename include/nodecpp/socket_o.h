@@ -56,7 +56,10 @@ namespace nodecpp {
 
 			virtual ~SocketO() { if (state == CONNECTING || state == CONNECTED) destroy(); }
 
-			virtual nodecpp::awaitable<void> onConnect() {co_return;}
+			virtual nodecpp::awaitable<void> onConnect() {
+				dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
+				co_return;
+			}
 			virtual nodecpp::awaitable<void> onAccepted() {co_return;}
 			virtual nodecpp::awaitable<void> onData(Buffer& buffer) {co_return;}
 			virtual nodecpp::awaitable<void> onDrain() {co_return;}

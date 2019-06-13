@@ -73,7 +73,10 @@ void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
 	nodecpp::safememory::soft_ptr<SocketO> p = myThis.getSoftPtr<SocketO>(this);
 	registerWithInfraAndAssignSocket(this->node, p, netSocketManagerBase->typeIndexOfSocketO, sdata);
 }
-void SocketBase::connect(uint16_t port, const char* ip) {/*data_loop = onDataAwaitable();*/ connectSocket(this, ip, port);}
+void SocketBase::connect(uint16_t port, const char* ip) {
+	dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
+	connectSocket(this, ip, port);
+}
 
 void Socket::registerMeAndAcquireSocket() {
 	nodecpp::safememory::soft_ptr<Socket> p = myThis.getSoftPtr<Socket>(this);
@@ -82,7 +85,10 @@ void Socket::registerMeAndAcquireSocket() {
 void Socket::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
 	nodecpp::safememory::soft_ptr<Socket> p = myThis.getSoftPtr<Socket>(this);
 	registerWithInfraAndAssignSocket(this->node, p, netSocketManagerBase->typeIndexOfSocketL, sdata);}
-void Socket::connect(uint16_t port, const char* ip) {connectSocket(this, ip, port);}
+void Socket::connect(uint16_t port, const char* ip) {
+	dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
+	connectSocket(this, ip, port);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -109,7 +115,6 @@ Server::Server() {
 void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-	printf( "TYPEID = %s\n", typeid(*this).name() );
 	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	netServerManagerBase->appListen(p, ip, port, backlog);
 }
@@ -117,7 +122,6 @@ void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 void ServerO::listen(uint16_t port, const char* ip, int backlog)
 {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-	printf( "TYPEID = %s\n", typeid(*this).name() );
 	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	netServerManagerBase->appListen(p, ip, port, backlog);
 }
