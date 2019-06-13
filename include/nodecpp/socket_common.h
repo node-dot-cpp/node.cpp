@@ -544,11 +544,6 @@ namespace nodecpp {
 			{
 				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
 			}
-			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-			static void removeHandler(ObjectT* object)
-			{
-				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().removeHandler<handler, memmberFn, ObjectT>(object);
-			}
 		};
 
 		template<class T, class ... Types>

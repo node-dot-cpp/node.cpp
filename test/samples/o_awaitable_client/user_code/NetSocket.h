@@ -11,7 +11,6 @@
 using namespace nodecpp;
 using namespace fmt;
 
-//#define IMPL_VERSION 1 // old fashion
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
 #define IMPL_VERSION 4 // registering handlers (per class)
@@ -30,45 +29,7 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-#if IMPL_VERSION == 1
-	virtual nodecpp::awaitable<void> main()
-	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
-
-		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
-		*( clientSock->getExtra() ) = 17;
-		clientSock->connect(2000, "127.0.0.1");
-		co_return;
-	}
-	
-	nodecpp::awaitable<void> onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
-	{
-		buf.writeInt8( 2, 0 );
-		buf.writeInt8( 1, 1 );
-		socket->write(buf);
-		co_return;
-	}
-
-	nodecpp::awaitable<void> onWhateverData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket, nodecpp::Buffer& buffer)
-	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
-		++recvReplies;
-		if ( ( recvReplies & 0xFFFF ) == 0 )
-//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}", recvReplies, *(socket->getExtra()), buffer.size() );
-		recvSize += buffer.size();
-		buf.writeInt8( 2, 0 );
-		buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-		socket->write(buf);
-		co_return;
-	}
-
-	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
-		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>,
-		nodecpp::net::OnData<&MySampleTNode::onWhateverData>
-	>;
-
-#elif IMPL_VERSION == 2
+#if IMPL_VERSION == 2
 
 	virtual nodecpp::awaitable<void> main()
 	{

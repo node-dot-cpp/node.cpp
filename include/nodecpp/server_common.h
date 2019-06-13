@@ -234,17 +234,6 @@ namespace nodecpp {
 
 			void listen(uint16_t port, const char* ip, int backlog);
 
-			/*template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-			void addHandler(ObjectT* object )
-			{
-				dataForCommandProcessing.userHandlers.addHandler<handler, memmberFn, ObjectT>(object);
-			}
-			template<DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-			void removeHandler(ObjectT* object)
-			{
-				dataForCommandProcessing.userHandlers.removeHandler<handler, memmberFn, ObjectT>(object);
-			}*/
-
 
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
 			static void addHandler(ObjectT* object)
@@ -255,11 +244,6 @@ namespace nodecpp {
 			static void addHandler()
 			{
 				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
-			}
-			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>
-			static void removeHandler(ObjectT* object)
-			{
-				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().removeHandler<handler, memmberFn, ObjectT>(object);
 			}
 		};
 
