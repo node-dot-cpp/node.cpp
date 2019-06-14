@@ -30,15 +30,15 @@
 
 #include "template_common.h"
 #include "socket_common.h"
-#include "socket_t.h"
-#include "socket_o.h"
+//#include "socket_t.h"
+//#include "socket_o.h"
 #include "socket_l.h"
 
 namespace nodecpp {
 
 	namespace net {
 
-
+#if 0
 		template<class T, class T1, class ... args>
 		void callOnConnect( void* nodePtr, T* ptr, int type )
 		{
@@ -218,6 +218,7 @@ namespace nodecpp {
 		{
 			assert( false );
 		}
+#endif // 0
 
 		template< class ... args >
 		class SocketTEmitter

@@ -57,6 +57,40 @@ public:
 	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType
 	>;
 
+	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	{
+		for (;;)
+		{
+			nodecpp::Buffer r_buff(0x200);
+			try
+			{
+				co_await socket->a_read(r_buff);
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				break;
+			}
+			++recvReplies;
+			if ( ( recvReplies & 0xFFF ) == 0 )
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+			recvSize += r_buff.size();
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+			try
+			{
+				co_await socket->a_write(buf);
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				break;
+			}
+			// TODO: address failure
+		}
+		co_return;
+	}
+
 #elif IMPL_VERSION == 3
 	virtual nodecpp::awaitable<void> main()
 	{
@@ -92,6 +126,40 @@ public:
 		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>
 	>;
 
+	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	{
+		for (;;)
+		{
+			nodecpp::Buffer r_buff(0x200);
+			try
+			{
+				co_await socket->a_read(r_buff);
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				break;
+			}
+			++recvReplies;
+			if ( ( recvReplies & 0xFFF ) == 0 )
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+			recvSize += r_buff.size();
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+			try
+			{
+				co_await socket->a_write(buf);
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				break;
+			}
+			// TODO: address failure
+		}
+		co_return;
+	}
+
 #elif IMPL_VERSION == 4
 	virtual nodecpp::awaitable<void> main()
 	{
@@ -112,17 +180,21 @@ public:
 		co_return;
 	}
 
-	using ClientSockBaseType = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+//	using ClientSockBaseType = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+	using ClientSockBaseType = nodecpp::net::SocketBase;
 
 	class MySocketOne : public ClientSockBaseType
 	{
 		size_t recvSize = 0;
 		size_t recvReplies = 0;
 		Buffer buf;
+		int extraData;
 
 	public:
 		MySocketOne(MySampleTNode* node) : ClientSockBaseType(node) {}
 		virtual ~MySocketOne() {}
+
+		int* getExtra() { return &extraData; }
 
 		nodecpp::awaitable<void> onWhateverConnect() 
 		{
@@ -186,63 +258,9 @@ public:
 #error
 #endif
 
-#if 0
-	nodecpp::awaitable<void> onWhateverConnectA_1(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
-	{
-		printf( "onWhateverConnect()\n" );
-		Buffer buf(2);
-		buf.writeInt8( 2, 0 );
-		buf.writeInt8( 1, 1 );
-		try
-		{
-			co_await socket->a_write(buf);
-		}
-		catch (...)
-		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-			// TODO: address failure
-		}
-		co_return;
-	}
-#endif // 0
-
-	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket)
-	{
-		for (;;)
-		{
-			nodecpp::Buffer r_buff(0x200);
-			try
-			{
-				co_await socket->a_read(r_buff);
-			}
-			catch (...)
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
-				break;
-			}
-			++recvReplies;
-			if ( ( recvReplies & 0xFFF ) == 0 )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
-			recvSize += r_buff.size();
-			buf.writeInt8( 2, 0 );
-			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-			try
-			{
-				co_await socket->a_write(buf);
-			}
-			catch (...)
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-				break;
-			}
-			// TODO: address failure
-		}
-		co_return;
-	}
-
 	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
 
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
+	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO,*/ net::Socket>;
 };
 
 #endif // NET_SOCKET_H
