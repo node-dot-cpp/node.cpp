@@ -325,10 +325,8 @@ namespace nodecpp {
 				MultiOwner<SocketBase> socketList;
 		public:
 			soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) { 
-//			soft_ptr<SocketBase> makeSocket() { 
-				//return new Socket( static_cast<Node*>(this->node), sdata ); 
 //				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(sdata);
-				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(nullptr);
+				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(nullptr, sdata);
 				soft_ptr<SocketBase> retSock( sock_ );
 				this->socketList.add( std::move(sock_) );
 				return retSock;

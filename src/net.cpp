@@ -72,7 +72,7 @@ void SocketBase::registerMeAndAcquireSocket() {
 	registerWithInfraAndAcquireSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketO*/);
 }
 void SocketBase::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
+//	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
 	nodecpp::safememory::soft_ptr<SocketBase> p = myThis.getSoftPtr<SocketBase>(this);
 	registerWithInfraAndAssignSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketO*/, sdata);
 }
@@ -148,7 +148,7 @@ void ServerO::listen(uint16_t port, const char* ip, int backlog)
 }
 
 //void ServerBase::registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId) { registerServer(node, t, typeId); }
-void ServerBase::registerServer(NodeBase* node, soft_ptr<net::ServerBase> t) { registerServer(node, t); }
+void ServerBase::registerServer(NodeBase* node, soft_ptr<net::ServerBase> t) { ::registerServer(node, t); }
 
 
 
