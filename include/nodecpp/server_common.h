@@ -232,8 +232,13 @@ namespace nodecpp {
 		public:
 			NodeBase* node = nullptr;
 
+			using acceptedSocketCreationRoutineType = std::function<owning_ptr<SocketBase>(OpaqueSocketData&)>;
+		private:
+			acceptedSocketCreationRoutineType acceptedSocketCreationRoutine = nullptr;
+
 		public:
 			ServerBase();
+			ServerBase(acceptedSocketCreationRoutineType socketCreationCB);
 			virtual ~ServerBase() {
 				socketList.clear();
 				reportBeingDestructed();
@@ -329,7 +334,11 @@ namespace nodecpp {
 		public:
 			soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) { 
 //				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(sdata);
-				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(nullptr, sdata);
+				owning_ptr<SocketBase> sock_;
+				if ( acceptedSocketCreationRoutine == nullptr )
+					sock_ = nodecpp::net::createSocket<SocketBase>(nullptr, sdata);
+				else
+					sock_ = acceptedSocketCreationRoutine( sdata );
 				soft_ptr<SocketBase> retSock( sock_ );
 				this->socketList.add( std::move(sock_) );
 				return retSock;

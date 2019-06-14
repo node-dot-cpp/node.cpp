@@ -336,7 +336,11 @@ public:
 		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketTwo::onConnection>();
 		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
-		srv = nodecpp::safememory::make_owning<MyServerSocketOne>();
+		srv = nodecpp::safememory::make_owning<MyServerSocketOne>(
+			[this](OpaqueSocketData& sdata) {
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket\n");
+			return nodecpp::net::createSocket<nodecpp::net::SocketBase>(nullptr, sdata);
+				});
 		srv_1 = nodecpp::net::createServer<MyServerSocketOne>();
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo>();
 		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>();
@@ -403,6 +407,7 @@ public:
 	{
 	public:
 		MyServerSocketBase() {}
+		MyServerSocketBase(acceptedSocketCreationRoutineType socketCreationCB) : ServerBase(socketCreationCB) {};
 		virtual ~MyServerSocketBase() {}
 	};
 
@@ -410,6 +415,7 @@ public:
 	{
 	public:
 		MyServerSocketOne() {}
+		MyServerSocketOne(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {};
 		virtual ~MyServerSocketOne() {}
 
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
@@ -427,6 +433,7 @@ public:
 	{
 	public:
 		MyServerSocketTwo() {}
+		MyServerSocketTwo(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {};
 		virtual ~MyServerSocketTwo() {}
 
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {

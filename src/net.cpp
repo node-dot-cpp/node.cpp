@@ -79,33 +79,24 @@ void SocketBase::connect(uint16_t port, const char* ip) {
 	connectSocket(this, ip, port);
 }
 
-#if 0
-void SocketO::registerMeAndAcquireSocket() {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
-	nodecpp::safememory::soft_ptr<SocketO> p = myThis.getSoftPtr<SocketO>(this);
-	registerWithInfraAndAcquireSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketO*/);
-}
-void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
-	nodecpp::safememory::soft_ptr<SocketO> p = myThis.getSoftPtr<SocketO>(this);
-	registerWithInfraAndAssignSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketO*/, sdata);
-}
-
-void Socket::registerMeAndAcquireSocket() {
-	nodecpp::safememory::soft_ptr<Socket> p = myThis.getSoftPtr<Socket>(this);
-	registerWithInfraAndAcquireSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketL*/);
-}
-void Socket::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
-	nodecpp::safememory::soft_ptr<Socket> p = myThis.getSoftPtr<Socket>(this);
-	registerWithInfraAndAssignSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketL*/, sdata);}
-void Socket::connect(uint16_t port, const char* ip) {
-	dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
-	connectSocket(this, ip, port);
-}
-#endif // 0
-
 ///////////////////////////////////////////////////////////////////////////////
 
+
+ServerBase::ServerBase() {
+	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
+	registerServer(this->node, p);
+}
+
+ServerBase::ServerBase(acceptedSocketCreationRoutineType socketCreationCB) {
+	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+	//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
+	acceptedSocketCreationRoutine = std::move( socketCreationCB );
+	registerServer(this->node, p);
+}
+
+//void ServerBase::registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId) { registerServer(node, t, typeId); }
+void ServerBase::registerServer(NodeBase* node, soft_ptr<net::ServerBase> t) { ::registerServer(node, t); }
 
 void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing.index); }
 void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing.index); }
@@ -122,15 +113,6 @@ void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	netServerManagerBase->appListen(p, ip, port, backlog);
 }
-
-ServerBase::ServerBase() {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
-	registerServer(this->node, p);
-}
-
-//void ServerBase::registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId) { registerServer(node, t, typeId); }
-void ServerBase::registerServer(NodeBase* node, soft_ptr<net::ServerBase> t) { ::registerServer(node, t); }
 
 
 
