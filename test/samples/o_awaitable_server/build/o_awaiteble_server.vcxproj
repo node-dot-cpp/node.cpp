@@ -187,13 +187,8 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\_server_l.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\_server_o.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\_server_t.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\server_type_list.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_l.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_o.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_type_list.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_t_base.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />

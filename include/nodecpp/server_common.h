@@ -364,7 +364,7 @@ namespace nodecpp {
 				eClose.emit(hadError);
 			}
 
-			void emitConnection(soft_ptr<Socket> socket) {
+			void emitConnection(soft_ptr<SocketBase> socket) {
 				eConnection.emit(socket);
 			}
 

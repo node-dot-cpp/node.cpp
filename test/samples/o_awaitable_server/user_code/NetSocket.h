@@ -388,8 +388,10 @@ public:
 		co_return;
 	}
 
-	using SockTypeServerSocket = nodecpp::net::SocketN<MySampleTNode, SocketIdType>;
-	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode, SocketIdType>;
+//	using SockTypeServerSocket = nodecpp::net::SocketN<MySampleTNode, SocketIdType>;
+//	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode, SocketIdType>;
+	using SockTypeServerSocket = nodecpp::net::SocketBase;
+	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
 
 //	using ServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerSocket, ServerIdType>;
 	using ServerType = nodecpp::net::ServerBase;
@@ -441,10 +443,10 @@ public:
 	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv, srv_1;
 	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl, srvCtrl_1;
 
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
+	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter</*net::ServerO, net::Server*/>;
 
-	nodecpp::awaitable<void> serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode, SocketIdType>> socket)
+	nodecpp::awaitable<void> serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer buffer(0x20);
 
@@ -457,14 +459,16 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting...");
 				break;
 			}
 
 			size_t receivedSz = buffer.begin()[0];
 			if (receivedSz != buffer.size())
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size());
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size());
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size());
 				socket->unref();
 				break;
 			}
@@ -482,7 +486,8 @@ public:
 				}
 				catch (...)
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed. Exiting...");
 					break;
 				}
 			}
@@ -494,7 +499,7 @@ public:
 
 		co_return;
 	}
-	nodecpp::awaitable<void> serverCtrlSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode, SocketIdType>> socket)
+	nodecpp::awaitable<void> serverCtrlSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer buffer(0x20);
 		Buffer reply(sizeof(stats));
@@ -508,7 +513,8 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting..." );
 				break;
 			}
 			size_t requestedSz = buffer.begin()[1];
@@ -524,13 +530,14 @@ public:
 				}
 				catch (...)
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed). Exiting..." );
 					break;
 				}
 			}
 		}
 	}
-	nodecpp::awaitable<void> onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	nodecpp::awaitable<void> onDataCtrlServerSocket_1(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -544,7 +551,7 @@ public:
 		}
 		co_return;
 	}
-	nodecpp::awaitable<void> onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket, Buffer& buffer) {
+	nodecpp::awaitable<void> onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -596,7 +603,7 @@ public:
 		co_return;
 	}
 
-	nodecpp::awaitable<void> onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket, Buffer& buffer) {
+	nodecpp::awaitable<void> onDataServerSocket_1(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 		if ( buffer.size() < 2 )
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket" );

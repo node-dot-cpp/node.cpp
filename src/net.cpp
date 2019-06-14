@@ -30,9 +30,6 @@
 #include "../include/nodecpp/server_common.h"
 
 #include "infrastructure.h"
-//#include "../include/nodecpp/socket_o.h"
-#include "../include/nodecpp/socket_l.h"
-
 #include "../../src/tcp_socket/tcp_socket_base.h"
 
 
@@ -77,6 +74,10 @@ void SocketBase::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
 SocketBase& SocketBase::setNoDelay(bool noDelay) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
 SocketBase& SocketBase::setKeepAlive(bool enable) { OSLayer::appSetKeepAlive(dataForCommandProcessing, enable); return *this; }
 
+void SocketBase::connect(uint16_t port, const char* ip) {
+	dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
+	connectSocket(this, ip, port);
+}
 
 #if 0
 void SocketO::registerMeAndAcquireSocket() {
@@ -88,11 +89,6 @@ void SocketO::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
 	nodecpp::safememory::soft_ptr<SocketO> p = myThis.getSoftPtr<SocketO>(this);
 	registerWithInfraAndAssignSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketO*/, sdata);
-}
-#endif // 0
-void SocketBase::connect(uint16_t port, const char* ip) {
-	dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
-	connectSocket(this, ip, port);
 }
 
 void Socket::registerMeAndAcquireSocket() {
@@ -106,6 +102,7 @@ void Socket::connect(uint16_t port, const char* ip) {
 	dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	connectSocket(this, ip, port);
 }
+#endif // 0
 
 ///////////////////////////////////////////////////////////////////////////////
 

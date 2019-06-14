@@ -260,7 +260,7 @@ public:
 
 	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
 
-	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO,*/ net::Socket>;
+	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
 };
 
 #endif // NET_SOCKET_H

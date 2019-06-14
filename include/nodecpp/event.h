@@ -37,7 +37,7 @@
 namespace nodecpp
 {
 	class Buffer;
-	namespace net { class SocketBase; class Socket;}
+	namespace net { class SocketBase;}
 
 
 	struct event
@@ -94,7 +94,7 @@ namespace nodecpp
 
 		struct Connection
 		{
-			using callback = std::function<void(soft_ptr<net::Socket>[[nodecpp::owned_by_this]])>;
+			using callback = std::function<void(soft_ptr<net::SocketBase>[[nodecpp::owned_by_this]])>;
 			static constexpr const char* name = "connection";
 		};
 		static constexpr Connection connection = Connection();
