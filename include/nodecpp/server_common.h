@@ -234,7 +234,10 @@ namespace nodecpp {
 
 		public:
 			ServerBase();
-			virtual ~ServerBase() {reportBeingDestructed();}
+			virtual ~ServerBase() {
+				socketList.clear();
+				reportBeingDestructed();
+			}
 
 			const Address& address() const { return dataForCommandProcessing.localAddress; }
 			void close();
@@ -335,6 +338,167 @@ namespace nodecpp {
 				this->socketList.removeAndDelete( sock );
 			}
 			size_t getSockCount() {return this->socketList.getCount();}
+
+			/////////////////////////////////////////////////////////////////
+
+			// event emitters
+#ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
+			EventEmitterSupportingListeners<event::Close, ServerListener, &ServerListener::onClose> eClose;
+			EventEmitterSupportingListeners<event::Connection, ServerListener, &ServerListener::onConnection> eConnection;
+			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
+			EventEmitterSupportingListeners<event::Error, ServerListener, &ServerListener::onError> eError;
+
+			std::vector<nodecpp::safememory::owning_ptr<ServerListener>> ownedListeners;
+#else
+			EventEmitter<event::Close> eClose;
+			EventEmitter<event::Connection> eConnection;
+			EventEmitter<event::Listening> eListening;
+			EventEmitter<event::Error> eError;
+#endif
+
+		public:
+			void emitClose(bool hadError) {
+				state = CLOSED;
+				//id = 0;
+				dataForCommandProcessing.index = 0;
+				eClose.emit(hadError);
+			}
+
+			void emitConnection(soft_ptr<Socket> socket) {
+				eConnection.emit(socket);
+			}
+
+			void emitListening(size_t id, Address addr) {
+				//this->id = id;
+				this->dataForCommandProcessing.index = id;
+				this->dataForCommandProcessing.localAddress = std::move(addr);
+				state = LISTENING;
+				eListening.emit(id, addr);
+			}
+
+			void emitError(Error& err) {
+				eError.emit(err);
+			}
+
+			void close(std::function<void(bool)> cb) {
+				once(event::close, std::move(cb));
+				ServerBase::close();
+			}
+
+			void listen(uint16_t port, const char* ip, int backlog, std::function<void(size_t, net::Address)> cb) {
+				once(event::listening, std::move(cb));
+				ServerBase::listen(port, ip, backlog);
+			}
+
+#ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
+			void on( nodecpp::safememory::soft_ptr<ServerListener> l) {
+				eClose.on(l);
+				eConnection.on(l);
+				eListening.on(l);
+				eError.on(l);
+			}
+
+			void once( nodecpp::safememory::soft_ptr<ServerListener> l) {
+				eClose.once(l);
+				eConnection.once(l);
+				eListening.once(l);
+				eError.once(l);
+			}
+
+			void on( nodecpp::safememory::owning_ptr<ServerListener>& l) {
+				nodecpp::safememory::soft_ptr<ServerListener> sl( l );
+				ownedListeners.emplace_back( std::move( l ) );
+				on( sl );
+			}
+
+			void once( nodecpp::safememory::owning_ptr<ServerListener>& l) {
+				nodecpp::safememory::soft_ptr<ServerListener> sl( l );
+				ownedListeners.emplace_back( std::move( l ) );
+				once( sl );
+			}
+#endif
+			void on(std::string name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
+				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
+				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Close::callback, event::Error::callback >::value);
+				assert(name == event::Close::name);
+				eClose.on(std::move(cb));
+			}
+
+			void on(std::string name, event::Connection::callback cb [[nodecpp::may_extend_to_this]]) {
+				static_assert(!std::is_same< event::Connection::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Connection::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Connection::callback, event::Error::callback >::value);
+				assert(name == event::Connection::name);
+				eConnection.on(std::move(cb));
+			}
+
+			void on(std::string name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
+				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Connection::callback >::value);
+				assert(name == event::Error::name);
+				eError.on(std::move(cb));
+			}
+
+			void on(std::string name, event::Listening::callback cb [[nodecpp::may_extend_to_this]]) {
+				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
+				static_assert(!std::is_same< event::Listening::callback, event::Error::callback >::value);
+				assert(name == event::Listening::name);
+				eListening.on(std::move(cb));
+			}
+
+			void once(std::string name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
+				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
+				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Close::callback, event::Error::callback >::value);
+				assert(name == event::Close::name);
+				eClose.once(std::move(cb));
+			}
+
+			void once(std::string name, event::Connection::callback cb [[nodecpp::may_extend_to_this]]) {
+				static_assert(!std::is_same< event::Connection::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Connection::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Connection::callback, event::Error::callback >::value);
+				assert(name == event::Connection::name);
+				eConnection.once(std::move(cb));
+			}
+
+			void once(std::string name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
+				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Listening::callback >::value);
+				static_assert(!std::is_same< event::Error::callback, event::Connection::callback >::value);
+				assert(name == event::Error::name);
+				eError.once(std::move(cb));
+			}
+
+			void once(std::string name, event::Listening::callback cb [[nodecpp::may_extend_to_this]]) {
+				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
+				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
+				static_assert(!std::is_same< event::Listening::callback, event::Error::callback >::value);
+				assert(name == event::Listening::name);
+				eListening.once(std::move(cb));
+			}
+
+
+			template<class EV>
+			void on(EV, typename EV::callback cb [[nodecpp::may_extend_to_this]]) {
+				if constexpr (std::is_same< EV, event::Close >::value) { eClose.on(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.on(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.on(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Error >::value) { eError.on(std::move(cb)); }
+				else assert(false);
+			}
+
+			template<class EV>
+			void once(EV, typename EV::callback cb [[nodecpp::may_extend_to_this]]) {
+				if constexpr (std::is_same< EV, event::Close >::value) { eClose.once(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.once(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.once(std::move(cb)); }
+				else if constexpr (std::is_same< EV, event::Error >::value) { eError.once(std::move(cb)); }
+				else assert(false);
+			}
 		};
 
 		template<class T, class ... Types>

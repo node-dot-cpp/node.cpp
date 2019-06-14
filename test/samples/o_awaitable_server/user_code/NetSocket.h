@@ -7,7 +7,7 @@
 #include <nodecpp/common.h>
 #include <nodecpp/socket_type_list.h>
 #include <nodecpp/socket_t_base.h>
-#include <nodecpp/server_t.h>
+//#include <nodecpp/server_t.h>
 #include <nodecpp/server_type_list.h>
 
 
@@ -442,7 +442,7 @@ public:
 	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl, srvCtrl_1;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
-	using EmitterTypeForServer = nodecpp::net::ServerTEmitter</*net::ServerO,*/ net::Server>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter</*net::ServerO, net::Server*/>;
 
 	nodecpp::awaitable<void> serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode, SocketIdType>> socket)
 	{

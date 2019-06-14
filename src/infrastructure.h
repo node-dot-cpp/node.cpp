@@ -40,8 +40,6 @@
 #include "../include/nodecpp/loop.h"
 #include "../include/nodecpp/socket_o.h"
 #include "../include/nodecpp/socket_l.h"
-#include "../include/nodecpp/server_o.h"
-#include "../include/nodecpp/server_l.h"
 
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.

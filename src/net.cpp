@@ -32,8 +32,6 @@
 #include "infrastructure.h"
 #include "../include/nodecpp/socket_o.h"
 #include "../include/nodecpp/socket_l.h"
-#include "../include/nodecpp/server_o.h"
-#include "../include/nodecpp/server_l.h"
 
 #include "../../src/tcp_socket/tcp_socket_base.h"
 
@@ -58,7 +56,6 @@ void SocketBase::end() { OSLayer::appEnd(dataForCommandProcessing); }
 bool SocketBase::write(const uint8_t* data, uint32_t size)
 {
 	_bytesWritten += size;
-//	return OSLayer::appWrite(dataForCommandProcessing, data, size);
 	return netSocketManagerBase->appWrite(dataForCommandProcessing, data, size);
 }
 bool SocketBase::write2(Buffer& b)
@@ -116,23 +113,6 @@ void ServerBase::close()
 	netServerManagerBase->appClose(dataForCommandProcessing.index);
 }
 
-ServerBase::ServerBase() {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
-	registerServer(this->node, p);
-}
-
-ServerO::ServerO() {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
-	registerServer(this->node, p);
-}
-Server::Server() {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerL);
-	registerServer(this->node, p);
-}
-
 void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
@@ -140,11 +120,10 @@ void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 	netServerManagerBase->appListen(p, ip, port, backlog);
 }
 
-void ServerO::listen(uint16_t port, const char* ip, int backlog)
-{
+ServerBase::ServerBase() {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
-	netServerManagerBase->appListen(p, ip, port, backlog);
+//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
+	registerServer(this->node, p);
 }
 
 //void ServerBase::registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId) { registerServer(node, t, typeId); }
