@@ -393,7 +393,8 @@ public:
 
 //	using ServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerSocket, ServerIdType>;
 	using ServerType = nodecpp::net::ServerBase;
-	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerCtrlSocket, ServerIdType>;
+//	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerCtrlSocket, ServerIdType>;
+	using ServerType = nodecpp::net::ServerBase;
 
 
 	class MyServerSocketBase : public ServerType
@@ -441,7 +442,7 @@ public:
 	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl, srvCtrl_1;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
-	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter</*net::ServerO,*/ net::Server>;
 
 	nodecpp::awaitable<void> serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode, SocketIdType>> socket)
 	{
