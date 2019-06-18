@@ -535,9 +535,8 @@ namespace nodecpp {
 		};
 
 		template<class FnT>
-		struct UserDefHandlers
+		struct UserDefHandlersBase
 		{
-			friend void handleListenEvent(size_t, nodecpp::net::Address);
 			struct HandlerInstance
 			{
 				FnT handler = nullptr;
@@ -546,51 +545,114 @@ namespace nodecpp {
 			std::vector<HandlerInstance> handlers;
 
 			bool willHandle() { return handlers.size(); }
-			template<class ObjectT>
-			void add( ObjectT* object, FnT handler )
-			{
-				for (auto h : handlers)
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.handler != handler || h.object != object, "already added" );
-				HandlerInstance inst;
-				inst.object = object;
-				inst.handler = handler;
-				handlers.push_back(inst);
-			}
-			void add(FnT handler)
-			{
-				for (auto h : handlers)
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.handler != handler || h.object != nullptr, "already added");
-				HandlerInstance inst;
-				inst.object = nullptr;
-				inst.handler = handler;
-				handlers.push_back(inst);
-			}
-			template<class ObjectT>
-			void remove(ObjectT* object, FnT handler)
-			{
-				for (size_t i=0; i<handlers.size(); ++i)
-					if (handlers[i].handler == handler && handlers[i].object == object)
-					{
-						handlers.erase(handlers.begin() + i);
-						return;
-					}
-			}
-			void remove(FnT handler)
-			{
-				for (size_t i = 0; i < handlers.size(); ++i)
-					if (handlers[i].handler == handler && handlers[i].object == nullptr)
-					{
-						handlers.erase(handlers.begin() + i);
-						return;
-					}
-			}
-			void from(const UserDefHandlers<FnT>& patternUH, void* defaultObjPtr)
+			void from(const UserDefHandlersBase<FnT>& patternUH, void* defaultObjPtr)
 			{
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, handlers.size() == 0);
 				handlers = patternUH.handlers;
 				for (size_t i = 0; i < handlers.size(); ++i)
 					if (handlers[i].object == nullptr)
 						handlers[i].object = defaultObjPtr;
+			}
+		};
+
+		template<class FnT>
+		struct UserDefHandlersWithOptimizedStorage
+		{
+			struct HandlerInstance
+			{
+				FnT handler;// = nullptr;
+				void *object;// = nullptr;
+			};
+			enum Type { uninitialized, zero, one, two, many };
+			Type type = Type::uninitialized;
+			static constexpr size_t fixed_size = 2;
+			uint8_t basebytes[ sizeof( std::vector<HandlerInstance> ) > sizeof( HandlerInstance ) * fixed_size ? sizeof( std::vector<HandlerInstance> ) : sizeof( HandlerInstance ) * fixed_size ];
+			HandlerInstance* handlers_a() { return reinterpret_cast<HandlerInstance*>(basebytes); }
+			std::vector<HandlerInstance>& handlers_v() { return *reinterpret_cast<std::vector<HandlerInstance>*>(basebytes); }
+
+
+			bool willHandle() { 
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type != Type::uninitialized);
+				return type != Type::zero; 
+			}
+			void from(const UserDefHandlersBase<FnT>& patternUH, void* defaultObjPtr)
+			{
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type == Type::uninitialized);
+				if ( patternUH.handlers.size() == 0 )
+				{
+					type = Type::zero;
+					return;
+				}
+				else if ( patternUH.handlers.size() == 1 )
+				{
+					type = Type::one;
+					handlers_a()[0].handler = patternUH.handlers[0].handler;
+					handlers_a()[0].object = patternUH.handlers[0].object != nullptr ? patternUH.handlers[0].object : defaultObjPtr;
+					return;
+				}
+				else if ( patternUH.handlers.size() == 2 )
+				{
+					type = Type::two;
+					handlers_a()[0].handler = patternUH.handlers[0].handler;
+					handlers_a()[0].object = patternUH.handlers[0].object != nullptr ? patternUH.handlers[0].object : defaultObjPtr;
+					handlers_a()[1].handler = patternUH.handlers[1].handler;
+					handlers_a()[1].object = patternUH.handlers[1].object != nullptr ? patternUH.handlers[1].object : defaultObjPtr;
+					return;
+				}
+				else
+				{
+					type = Type::many;
+					new(basebytes)std::vector<HandlerInstance>();
+					handlers_v().resize( patternUH.handlers.size() );
+					for (size_t i = 0; i < handlers_v().size(); ++i)
+					{
+						handlers_v()[i].handler = patternUH.handlers[i].handler;
+						handlers_v()[i].object = patternUH.handlers[i].object != nullptr ? patternUH.handlers[i].object : defaultObjPtr;
+					}
+				}
+			}
+		};
+
+		template<class FnT>
+		struct UserDefHandlers : public UserDefHandlersBase<FnT>
+		{
+			template<class ObjectT>
+			void add( ObjectT* object, FnT handler )
+			{
+				for (auto h : this->handlers)
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.handler != handler || h.object != object, "already added" );
+				typename UserDefHandlersBase<FnT>::HandlerInstance inst;
+				inst.object = object;
+				inst.handler = handler;
+				this->handlers.push_back(inst);
+			}
+			void add(FnT handler)
+			{
+				for (auto h : this->handlers)
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.handler != handler || h.object != nullptr, "already added");
+				typename UserDefHandlersBase<FnT>::HandlerInstance inst;
+				inst.object = nullptr;
+				inst.handler = handler;
+				this->handlers.push_back(inst);
+			}
+			template<class ObjectT>
+			void remove(ObjectT* object, FnT handler)
+			{
+				for (size_t i=0; i<this->handlers.size(); ++i)
+					if (this->handlers[i].handler == handler && this->handlers[i].object == object)
+					{
+						this->handlers.erase(this->handlers.begin() + i);
+						return;
+					}
+			}
+			void remove(FnT handler)
+			{
+				for (size_t i = 0; i < this->handlers.size(); ++i)
+					if (this->handlers[i].handler == handler && this->handlers[i].object == nullptr)
+					{
+						this->handlers.erase(this->handlers.begin() + i);
+						return;
+					}
 			}
 		};
 

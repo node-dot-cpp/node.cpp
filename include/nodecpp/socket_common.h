@@ -101,9 +101,8 @@ namespace nodecpp {
 				bool isValid() const { return state != State::Uninitialized; }
 
 
-				struct UserHandlers
+				struct UserHandlersCommon
 				{
-					bool initialized = false;
 				public:
 					using userDefAcceptedHandlerFnT = nodecpp::awaitable<void> (*)(void*);
 					using userDefConnectHandlerFnT = nodecpp::awaitable<void> (*)(void*);
@@ -112,14 +111,6 @@ namespace nodecpp {
 					using userDefEndHandlerFnT = nodecpp::awaitable<void> (*)(void*);
 					using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
 					using userDefErrorHandlerFnT = nodecpp::awaitable<void> (*)(void*, Error&);
-
-					UserDefHandlers<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
-					UserDefHandlers<userDefConnectHandlerFnT> userDefConnectHandlers;
-					UserDefHandlers<userDefDataHandlerFnT> userDefDataHandlers;
-					UserDefHandlers<userDefDrainHandlerFnT> userDefDrainHandlers;
-					UserDefHandlers<userDefEndHandlerFnT> userDefEndHandlers;
-					UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
-					UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;
 
 					template<class T> using userAcceptedMemberHandler = nodecpp::awaitable<void> (T::*)();
 					template<class T> using userConnectMemberHandler = nodecpp::awaitable<void> (T::*)();
@@ -179,74 +170,45 @@ namespace nodecpp {
 					}
 
 					enum class Handler { Accepted, Connect, Data, Drain, End, Close, Error };
-					template<Handler handler, auto memmberFn, class ObjectT>
-					void addHandler(ObjectT* object)
-					{
-						if constexpr (handler == Handler::Accepted)
-						{
-							userDefAcceptedHandlers.add(object, &DataForCommandProcessing::UserHandlers::acceptedHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::Connect)
-						{
-							userDefConnectHandlers.add(object, &DataForCommandProcessing::UserHandlers::connectHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::Data)
-						{
-							userDefDataHandlers.add(object, &DataForCommandProcessing::UserHandlers::dataHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::Drain)
-						{
-							userDefDrainHandlers.add(object, &DataForCommandProcessing::UserHandlers::drainHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::End)
-						{
-							userDefEndHandlers.add(object, &DataForCommandProcessing::UserHandlers::endHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::Close)
-						{
-							userDefCloseHandlers.add(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
-						}
-						else
-						{
-							static_assert(handler == Handler::Error); // the only remaining option
-							userDefErrorHandlers.add(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
-						}
-					}
-					template<Handler handler, auto memmberFn, class ObjectT>
-					void removeHandler(ObjectT* object)
-					{
-						if constexpr (handler == Handler::Accepted)
-						{
-							userDefAcceptedHandlers.remove(object, &DataForCommandProcessing::UserHandlers::acceptedHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::Connect)
-						{
-							userDefConnectHandlers.remove(object, &DataForCommandProcessing::UserHandlers::connectHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::Data)
-						{
-							userDefDataHandlers.remove(object, &DataForCommandProcessing::UserHandlers::dataHandler<ObjectT, memmberFn>);
-						}
-						if constexpr (handler == Handler::Drain)
-						{
-							userDefDrainHandlers.remove(object, &DataForCommandProcessing::UserHandlers::drainHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::End)
-						{
-							userDefEndHandlers.remove(object, &DataForCommandProcessing::UserHandlers::endHandler<ObjectT, memmberFn>);
-						}
-						else if constexpr (handler == Handler::Close)
-						{
-							userDefCloseHandlers.remove(object, &DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
-						}
-						else
-						{
-							static_assert(handler == Handler::Error); // the only remaining option
-							userDefErrorHandlers.remove(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
-						}
-					}
+				};
 
-					void from(const UserHandlers& patternUH, void* defaultObjPtr)
+
+				struct UserHandlersForDataCollecting : public UserHandlersCommon
+				{
+					UserDefHandlers<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
+					UserDefHandlers<userDefConnectHandlerFnT> userDefConnectHandlers;
+					UserDefHandlers<userDefDataHandlerFnT> userDefDataHandlers;
+					UserDefHandlers<userDefDrainHandlerFnT> userDefDrainHandlers;
+					UserDefHandlers<userDefEndHandlerFnT> userDefEndHandlers;
+					UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
+					UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;
+				};
+				thread_local static UserHandlerClassPatterns<UserHandlersForDataCollecting> userHandlerClassPattern; // TODO: consider using thread-local allocator
+
+				struct UserHandlers : public UserHandlersCommon
+				{
+					bool initialized = false;
+
+#if 0
+					UserDefHandlers<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
+					UserDefHandlers<userDefConnectHandlerFnT> userDefConnectHandlers;
+					UserDefHandlers<userDefDataHandlerFnT> userDefDataHandlers;
+					UserDefHandlers<userDefDrainHandlerFnT> userDefDrainHandlers;
+					UserDefHandlers<userDefEndHandlerFnT> userDefEndHandlers;
+					UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
+					UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;
+#else
+					UserDefHandlersWithOptimizedStorage<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
+					UserDefHandlersWithOptimizedStorage<userDefConnectHandlerFnT> userDefConnectHandlers;
+					UserDefHandlersWithOptimizedStorage<userDefDataHandlerFnT> userDefDataHandlers;
+					UserDefHandlersWithOptimizedStorage<userDefDrainHandlerFnT> userDefDrainHandlers;
+					UserDefHandlersWithOptimizedStorage<userDefEndHandlerFnT> userDefEndHandlers;
+					UserDefHandlersWithOptimizedStorage<userDefCloseHandlerFnT> userDefCloseHandlers;
+					UserDefHandlersWithOptimizedStorage<userDefErrorHandlerFnT> userDefErrorHandlers;
+#endif
+
+
+					void from(const UserHandlersForDataCollecting& patternUH, void* defaultObjPtr)
 					{
 						if ( initialized )
 							return;
@@ -263,69 +225,104 @@ namespace nodecpp {
 				};
 				UserHandlers userHandlers;
 
-				thread_local static UserHandlerClassPatterns<UserHandlers> userHandlerClassPattern; // TODO: consider using thread-local allocator
 
 
 				bool isAcceptedEventHandler() { return userHandlers.userDefAcceptedHandlers.willHandle(); }
 				void handleAcceptedEvent() { 
-					for (auto h : userHandlers.userDefAcceptedHandlers.handlers) 
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, userHandlers.userDefAcceptedHandlers.type != UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::uninitialized );
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, userHandlers.userDefAcceptedHandlers.type != UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::zero );
+					if ( userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::one )
 					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object);
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, userHandlers.userDefAcceptedHandlers.handlers_a()[0].object != nullptr ); 
+						userHandlers.userDefAcceptedHandlers.handlers_a()[0].handler(userHandlers.userDefAcceptedHandlers.handlers_a()[0].object);
+					}
+					else if ( userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::two )
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, userHandlers.userDefAcceptedHandlers.handlers_a()[0].object != nullptr ); 
+						userHandlers.userDefAcceptedHandlers.handlers_a()[0].handler(userHandlers.userDefAcceptedHandlers.handlers_a()[0].object);
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, userHandlers.userDefAcceptedHandlers.handlers_a()[1].object != nullptr ); 
+						userHandlers.userDefAcceptedHandlers.handlers_a()[1].handler(userHandlers.userDefAcceptedHandlers.handlers_a()[1].object);
+					}
+					else
+					{
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::many );
+						for (auto h : userHandlers.userDefAcceptedHandlers.handlers_v()) 
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+							h.handler(h.object);
+						}
 					}
 				}
 
 				bool isConnectEventHandler() { return userHandlers.userDefConnectHandlers.willHandle(); }
 				void handleConnectEvent() { 
-					for (auto h : userHandlers.userDefConnectHandlers.handlers) 
+					if ( userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::many )
 					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object);
+						for (auto h : userHandlers.userDefConnectHandlers.handlers_v()) 
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+							h.handler(h.object);
+						}
 					}
 				}
 
 				bool isDataEventHandler() { return userHandlers.userDefDataHandlers.willHandle(); }
 				void handleDataEvent(Buffer& buffer) { 
-					for (auto h : userHandlers.userDefDataHandlers.handlers)
+					if ( userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::many )
 					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object, buffer);
+						for (auto h : userHandlers.userDefDataHandlers.handlers_v())
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+							h.handler(h.object, buffer);
+						}
 					}
 				}
 
 				bool isDrainEventHandler() { return userHandlers.userDefDrainHandlers.willHandle(); }
 				void handleDrainEvent() { 
-					for (auto h : userHandlers.userDefDrainHandlers.handlers) 
+					if ( userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::many )
 					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object);
+						for (auto h : userHandlers.userDefDrainHandlers.handlers_v()) 
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+							h.handler(h.object);
+						}
 					}
 				}
 
 				bool isEndEventHandler() { return userHandlers.userDefEndHandlers.willHandle(); }
 				void handleEndEvent() { 
-					for (auto h : userHandlers.userDefEndHandlers.handlers) 
+					if ( userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::many )
 					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object);
+						for (auto h : userHandlers.userDefEndHandlers.handlers_v()) 
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+							h.handler(h.object);
+						}
 					}
 				}
 
 				bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
 				void handleCloseEvent(bool hasError) { 
-					for (auto h : userHandlers.userDefCloseHandlers.handlers)
+					if ( userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::many )
 					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object, hasError);
+						for (auto h : userHandlers.userDefCloseHandlers.handlers_v())
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+							h.handler(h.object, hasError);
+						}
 					}
 				}
 
 				bool isErrorEventHandler() { return userHandlers.userDefErrorHandlers.willHandle(); }
 				void handleErrorEvent(Error& e) { 
-					for (auto h : userHandlers.userDefErrorHandlers.handlers) 
+					if ( userHandlers.userDefAcceptedHandlers.type == UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefAcceptedHandlerFnT>::Type::many )
 					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object, e);
+						for (auto h : userHandlers.userDefErrorHandlers.handlers_v()) 
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+							h.handler(h.object, e);
+						}
 					}
 				}
 			};
