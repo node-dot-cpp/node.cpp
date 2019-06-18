@@ -408,16 +408,7 @@ namespace nodecpp {
 			SocketBase& setNoDelay(bool noDelay = true);
 			SocketBase& setKeepAlive(bool enable = false);
 
-			/*virtual nodecpp::awaitable<void> onConnect() {co_return;}
-			virtual nodecpp::awaitable<void> onAccepted() {co_return;}
-			virtual nodecpp::awaitable<void> onData(Buffer& buffer) {co_return;}
-			virtual nodecpp::awaitable<void> onDrain() {co_return;}
-			virtual void onClose(bool hadError) {}
-			virtual void onEnd() {}
-			virtual void onError(Error& err) {}*/
 
-
-		//private:
 			auto a_connect(uint16_t port, const char* ip) { 
 
 				struct connect_awaiter {
