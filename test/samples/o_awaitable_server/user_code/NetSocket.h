@@ -338,11 +338,11 @@ public:
 
 		srv = nodecpp::safememory::make_owning<MyServerSocketOne>(
 			[this](OpaqueSocketData& sdata) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket as in node::main()\n");
 			return nodecpp::net::createSocket<nodecpp::net::SocketBase>(nullptr, sdata);
 				});
 		srv_1 = nodecpp::net::createServer<MyServerSocketOne>();
-		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo>();
+		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
 		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>();
 
 		srv->listen(2000, "127.0.0.1", 5);

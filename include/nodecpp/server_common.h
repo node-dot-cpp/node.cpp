@@ -510,12 +510,26 @@ namespace nodecpp {
 			}
 		};
 
-		template<class T, class ... Types>
+		template<class ServerT, class ... Types>
 		static
-		nodecpp::safememory::owning_ptr<T> createServer(Types&& ... args) {
-			static_assert( std::is_base_of< ServerBase, T >::value );
-			nodecpp::safememory::owning_ptr<T> ret = nodecpp::safememory::make_owning<T>(::std::forward<Types>(args)...);
-			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<T>(), &(*ret));
+		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
+			static_assert( std::is_base_of< ServerBase, ServerT >::value );
+			nodecpp::safememory::owning_ptr<ServerT> ret = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
+			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*ret));
+			return ret;
+		}
+
+		template<class ServerT, class SocketT, class ... Types>
+		static
+			nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
+			static_assert( std::is_base_of< ServerBase, ServerT >::value );
+			nodecpp::safememory::owning_ptr<ServerT> ret = nodecpp::safememory::make_owning<ServerT>(
+				[](OpaqueSocketData& sdata) {
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket as described at createServer()\n");
+				return nodecpp::net::createSocket<SocketT>(nullptr, sdata);
+				}, 
+				::std::forward<Types>(args)...);
+			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*ret));
 			return ret;
 		}
 
