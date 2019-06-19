@@ -560,8 +560,8 @@ namespace nodecpp {
 		{
 			struct HandlerInstance
 			{
-				FnT handler;// = nullptr;
-				void *object;// = nullptr;
+				FnT handler = nullptr;
+				void *object = nullptr;
 			};
 			enum Type { uninitialized, zero, one, two, many };
 			Type type = Type::uninitialized;
@@ -585,6 +585,7 @@ namespace nodecpp {
 				}
 				else if ( patternUH.handlers.size() == 1 )
 				{
+					static_assert( fixed_size >= 1 );
 					type = Type::one;
 					handlers_a()[0].handler = patternUH.handlers[0].handler;
 					handlers_a()[0].object = patternUH.handlers[0].object != nullptr ? patternUH.handlers[0].object : defaultObjPtr;
@@ -592,6 +593,7 @@ namespace nodecpp {
 				}
 				else if ( patternUH.handlers.size() == 2 )
 				{
+					static_assert( fixed_size >= 2 );
 					type = Type::two;
 					handlers_a()[0].handler = patternUH.handlers[0].handler;
 					handlers_a()[0].object = patternUH.handlers[0].object != nullptr ? patternUH.handlers[0].object : defaultObjPtr;
@@ -601,6 +603,7 @@ namespace nodecpp {
 				}
 				else
 				{
+					static_assert( fixed_size <= 2 );
 					type = Type::many;
 					new(basebytes)std::vector<HandlerInstance>();
 					handlers_v().resize( patternUH.handlers.size() );
@@ -635,6 +638,12 @@ namespace nodecpp {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
 						h.handler(h.object, ::std::forward<ARGS>(args)...);
 					}
+				}
+			}
+			~UserDefHandlersWithOptimizedStorage() {
+				if ( type == Type::many ) {
+					using myvectort = std::vector<HandlerInstance>;
+					handlers_v().~myvectort();
 				}
 			}
 		};

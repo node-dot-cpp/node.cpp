@@ -183,44 +183,16 @@ namespace nodecpp {
 				UserHandlers userHandlers;
 
 				bool isListenEventHandler() { return userHandlers.userDefListenHandlers.willHandle(); }
-				void handleListenEvent(size_t id, nodecpp::net::Address address) {
-					userHandlers.userDefListenHandlers.execute(id, address);
-					/*for (auto h : userHandlers.userDefListenHandlers.handlers)
-					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object, id, address);
-					}*/
-				}
+				void handleListenEvent(size_t id, nodecpp::net::Address address) { userHandlers.userDefListenHandlers.execute(id, address); }
 
 				bool isConnectionEventHandler() { return userHandlers.userDefConnectionHandlers.willHandle(); }
-				void handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-					userHandlers.userDefConnectionHandlers.execute(socket);
-					/*for (auto h : userHandlers.userDefConnectionHandlers.handlers)
-					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object, socket);
-					}*/
-				}
+				void handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { userHandlers.userDefConnectionHandlers.execute(socket); }
 
 				bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
-				void handleCloseEvent(bool hasError) { 
-					userHandlers.userDefCloseHandlers.execute(hasError);
-					/*for (auto h : userHandlers.userDefCloseHandlers.handlers) 
-					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object, hasError); 
-					}*/
-				}
+				void handleCloseEvent(bool hasError) { userHandlers.userDefCloseHandlers.execute(hasError); }
 
 				bool isErrorEventHandler() { return userHandlers.userDefErrorHandlers.willHandle(); }
-				void handleErrorEvent(Error& e) { 
-					userHandlers.userDefErrorHandlers.execute(e);
-					/*for (auto h : userHandlers.userDefErrorHandlers.handlers) 
-					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
-						h.handler(h.object, e);
-					}*/
-				}
+				void handleErrorEvent(Error& e) { userHandlers.userDefErrorHandlers.execute(e); }
 			};
 			DataForCommandProcessing dataForCommandProcessing;
 
