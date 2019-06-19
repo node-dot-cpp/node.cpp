@@ -611,6 +611,32 @@ namespace nodecpp {
 					}
 				}
 			}
+			template<class ... ARGS>
+			void execute(ARGS&& ... args) { 
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type != Type::uninitialized );
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type != Type::zero );
+				if ( type == Type::one )
+				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, handlers_a()[0].object != nullptr ); 
+					handlers_a()[0].handler(handlers_a()[0].object, ::std::forward<ARGS>(args)...);
+				}
+				else if ( type == Type::two )
+				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, handlers_a()[0].object != nullptr ); 
+					handlers_a()[0].handler(handlers_a()[0].object, ::std::forward<ARGS>(args)...);
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, handlers_a()[1].object != nullptr ); 
+					handlers_a()[1].handler(handlers_a()[1].object, ::std::forward<ARGS>(args)...);
+				}
+				else
+				{
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type == Type::many );
+					for (auto h : handlers_v()) 
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, h.object != nullptr ); 
+						h.handler(h.object, ::std::forward<ARGS>(args)...);
+					}
+				}
+			}
 		};
 
 		template<class FnT>
