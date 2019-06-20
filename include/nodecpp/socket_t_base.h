@@ -51,7 +51,7 @@ namespace nodecpp {
 	public:
 		enum ObjectType { Undefined, ClientSocket, ServerSocket };
 		ObjectType objectType;
-//		int type = -1;
+		int type = -1;
 		NodeBase* nodePtr = nullptr;
 		OpaqueEmitter() : objectType(ObjectType::Undefined)/*, type(-1)*/ {}
 		OpaqueEmitter( ObjectType ot, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr_/*, int type_*/ ) : ptr( ptr_), objectType(ot)/*, type(type_)*/, nodePtr( node ) {}
