@@ -35,6 +35,93 @@ namespace nodecpp {
 
 	namespace net {
 
+		// "iteration" over a list of handling functions for an event
+
+		template<class Node, class Server, class HandlerDataT, class ... args>
+		void callOnConnection( Node* nodePtr, Server* serverPtr, soft_ptr<SocketBase> sock )
+		{
+			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
+				(nodePtr->*HandlerDataT::memberFn)( sock );
+			else
+			{
+				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
+				(serverPtr->*HandlerDataT::memberFn)( sock );
+			}
+
+			callOnConnection<Node, Server, args...>(nodePtr, serverPtr, sock);
+		}
+
+		template<class Node, class Server>
+		void callOnConnection( Node* nodePtr, Server* ptr, soft_ptr<SocketBase> sock )
+		{
+			return;
+		}
+
+
+		template<class Node, class Server, class HandlerDataT, class ... args>
+		void callOnCloseServer( Node* nodePtr, Server* serverPtr, bool hadError )
+		{
+			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
+				(nodePtr->*HandlerDataT::memberFn)( hadError );
+			else
+			{
+				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
+				(serverPtr->*HandlerDataT::memberFn)( hadError );
+			}
+
+			callOnCloseServer<Node, Server, args...>(nodePtr, serverPtr, hadError);
+		}
+
+		template<class Node, class Server>
+		void callOnCloseServer( Node* nodePtr, Server* ptr, bool hadError )
+		{
+			return;
+		}
+
+
+		template<class Node, class Server, class HandlerDataT, class ... args>
+		void callOnListening( Node* nodePtr, Server* serverPtr, size_t id, Address addr )
+		{
+			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
+				(nodePtr->*HandlerDataT::memberFn)( id, addr );
+			else
+			{
+				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
+				(serverPtr->*HandlerDataT::memberFn)( id, addr );
+			}
+
+			callOnListening<Node, Server, args...>(nodePtr, serverPtr, id, addr);
+		}
+
+		template<class Node, class Server>
+		void callOnListening( Node* nodePtr, Server* ptr, size_t id, Address addr )
+		{
+			return;
+		}
+
+
+		template<class Node, class Server, class HandlerDataT, class ... args>
+		void callOnErrorServer( Node* nodePtr, Server* serverPtr, nodecpp::Error& e )
+		{
+			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
+				(nodePtr->*HandlerDataT::memberFn)( e );
+			else
+			{
+				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
+				(serverPtr->*HandlerDataT::memberFn)( e );
+			}
+
+			callOnErrorServer<Node, Server, args...>(nodePtr, serverPtr, e);
+		}
+
+		template<class Node, class Server>
+		void callOnErrorServer( Node* nodePtr, Server* ptr, nodecpp::Error& e )
+		{
+			return;
+		}
+
+
+
 		template< class ... args >
 		class ServerTEmitter
 		{
