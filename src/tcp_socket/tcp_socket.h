@@ -44,8 +44,8 @@ public:
 	OpaqueEmitter emitter;
 
 	NetSocketEntry(size_t index) : state(State::Unused), index(index) {}
-	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr/*, int type*/) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr/*, type*/) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
-	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr/*, int type*/) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr/*, type*/) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -81,14 +81,14 @@ public:
 	bool isValidId( size_t idx ) { return idx && idx < ourSide.size(); };
 
 	template<class SocketType>
-	size_t addEntry(NodeBase* node, nodecpp::safememory::soft_ptr<SocketType> ptr/*, int typeId*/) {
+	size_t addEntry(NodeBase* node, nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
 		{
 			if (!ourSide[i].isUsed())
 			{
-				NetSocketEntry entry(i, node, ptr/*, typeId*/);
+				NetSocketEntry entry(i, node, ptr, typeId);
 				ourSide[i] = std::move(entry);
 				osSide[i].fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 				osSide[i].events = 0;
@@ -98,7 +98,7 @@ public:
 		}
 
 		size_t ix = ourSide.size();
-		ourSide.emplace_back(ix, node, ptr/*, typeId*/);
+		ourSide.emplace_back(ix, node, ptr, typeId);
 		pollfd p;
 		p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 		p.events = 0;
@@ -201,24 +201,24 @@ public:
 	}
 
 #ifdef USING_T_SOCKETS
-	size_t appAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr/*, int typeId*/)
+	size_t appAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId)
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
-		return registerAndAssignSocket(node, ptr/*, typeId*/, s);
+		return registerAndAssignSocket(node, ptr, typeId, s);
 	}
 
-	size_t appAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr/*, int typeId*/, OpaqueSocketData& sdata)
+	size_t appAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, OpaqueSocketData& sdata)
 	{
 		SocketRiia s( sdata.s.release() );
-		return registerAndAssignSocket(node, ptr/*, typeId*/, s);
+		return registerAndAssignSocket(node, ptr, typeId, s);
 	}
 
 private:
-	size_t registerAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr/*, int typeId*/, SocketRiia& s)
+	size_t registerAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, SocketRiia& s)
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		size_t id = ioSockets.addEntry<net::SocketBase>(node, ptr/*, typeId*/);
+		size_t id = ioSockets.addEntry<net::SocketBase>(node, ptr, typeId);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
 		return id;
 	}
@@ -318,6 +318,7 @@ public:
 	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets) {}
 
 	// to help with 'poll'
+	template<class Node>
 	void infraGetCloseEvent(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to appClose it,
@@ -618,14 +619,14 @@ public:
 	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
 	void appClose(size_t id);
-	void appAddServer(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr/*, int typeId*/) {
+	void appAddServer(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		size_t id = addServerEntry(node, ptr/*, typeId*/);
+		size_t id = addServerEntry(node, ptr, typeId);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
 	}
 	void appListen(soft_ptr<net::ServerBase> ptr, const char* ip, uint16_t port, int backlog) {
@@ -677,7 +678,7 @@ public:
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 
 protected:
-	size_t addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr/*, int typeId*/);
+	size_t addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };
@@ -703,6 +704,7 @@ public:
 		errorStore.clear();
 	}
 
+	template<class Node>
 	void infraGetCloseEvents(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to close it,
@@ -734,6 +736,7 @@ public:
 		pendingCloseEvents.clear();
 	}
 
+	template<class Node>
 	void infraEmitListeningEvents()
 	{
 		while ( pendingListenEvents.size() )
@@ -765,6 +768,7 @@ public:
 		}
 	}
 
+	template<class Node>
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
@@ -776,7 +780,7 @@ public:
 		else if ((revents & POLLIN) != 0)
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", current.getServerSocketData()->osSocket);
-			infraProcessAcceptEvent(current/*, evs*/);
+			infraProcessAcceptEvent<Node>(current/*, evs*/);
 		}
 		else if (revents != 0)
 		{
@@ -786,6 +790,7 @@ public:
 		}
 	}
 private:
+	template<class Node>
 	void infraProcessAcceptEvent(NetSocketEntry& entry)
 	{
 		OpaqueSocketData osd( false );
@@ -808,6 +813,7 @@ private:
 			if (entry.getServerSocketData()->isConnectionEventHandler())
 				entry.getServerSocketData()->handleConnectionEvent(ptr);
 			//EmitterType::emitConnection(entry.getEmitter(), ptr); 
+			EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
 			// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 		}
 

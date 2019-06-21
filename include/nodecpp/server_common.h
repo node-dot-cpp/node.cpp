@@ -214,8 +214,8 @@ namespace nodecpp {
 			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
 
 		protected:
-//			void registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId);
-			void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t);
+			void registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId);
+			void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t) {registerServerByID(node, t, -1);}
 
 		public:
 			NodeBase* node = nullptr;

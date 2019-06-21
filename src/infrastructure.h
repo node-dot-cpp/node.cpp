@@ -134,6 +134,7 @@ public:
 		return timeout.infraNextTimeout();
 	}
 
+	template<class Node>
 	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
 	{
 /*		size_t fds_sz;
@@ -197,7 +198,7 @@ public:
 						case OpaqueEmitter::ObjectType::ServerSocket:
 							if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 							{
-								netServer.infraCheckPollFdSet(current, revents);
+								netServer.infraCheckPollFdSet<Node>(current, revents);
 								break;
 							}
 							else
@@ -215,6 +216,7 @@ public:
 		}
 	}
 
+	template<class Node>
 	void runInfraLoop2()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
@@ -227,7 +229,7 @@ public:
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
 				netServer.infraGetPendingEvents(queue);
-				netServer.infraEmitListeningEvents();
+				netServer.infraEmitListeningEvents<Node>();
 				queue.emit();
 			}
 
@@ -236,18 +238,18 @@ public:
 			queue.emit();
 
 			now = infraGetCurrentTime();
-			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now/*, queue*/);
+			bool refed = pollPhase2<Node>(refedTimeout(), nextTimeout(), now/*, queue*/);
 			if(!refed)
 				return;
 
 			queue.emit();
 	//		emitInmediates();
 
-			netSocket.infraGetCloseEvent(/*queue*/);
+			netSocket.infraGetCloseEvent<Node>(/*queue*/);
 			netSocket.infraProcessSockAcceptedEvents();
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
-				netServer.infraGetCloseEvents(/*queue*/);
+				netServer.infraGetCloseEvents<Node>(/*queue*/);
 			}
 			queue.emit();
 
@@ -262,17 +264,17 @@ public:
 
 #ifdef USING_T_SOCKETS
 inline
-size_t registerWithInfraAndAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t/*, int typeId*/)
+size_t registerWithInfraAndAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAcquireSocket(node, t/*, typeId*/);
+	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
 }
 
 inline
-size_t registerWithInfraAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t/*, int typeId*/, OpaqueSocketData& sdata)
+size_t registerWithInfraAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAssignSocket(node, t/*, typeId*/, sdata);
+	return netSocketManagerBase->appAssignSocket(node, t, typeId, sdata);
 }
 
 inline
@@ -282,9 +284,9 @@ void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 }
 
 inline
-void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t/*, int typeId*/)
+void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId)
 {
-	return netServerManagerBase->appAddServer(node, t/*, typeId*/);
+	return netServerManagerBase->appAddServer(node, t, typeId);
 }
 
 
@@ -309,7 +311,7 @@ class Runnable : public RunnableBase
 			}
 			node = make_owning<Node>();
 			node->main();
-			infra.runInfraLoop2();
+			infra.runInfraLoop2<Node>();
 		}
 		interceptNewDeleteOperators(false);
 	}

@@ -314,25 +314,25 @@ namespace nodecpp {
 			static void emitConnection( const OpaqueEmitter& emitter, soft_ptr<SocketBase> sock ) {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
-				callOnConnection<Ptr, args...>(getThreadNode(), &emitter_ptr, emitter.type, sock); 
+				callOnConnection<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, sock); 
 			}
 			template<class Node>
 			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
-				callOnCloseServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, hadError);
+				callOnCloseServer<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, hadError);
 			}
 			template<class Node>
 			static void emitListening( const OpaqueEmitter& emitter, size_t id, Address addr ) { 
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
-				callOnListening<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, id, addr);
+				callOnListening<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, id, addr);
 			}
 			template<class Node>
 			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { 
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
-				callOnErrorServer<Ptr, args...>(emitter.nodePtr, &emitter_ptr, emitter.type, e);
+				callOnErrorServer<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, e);
 			}
 
 			static soft_ptr<SocketBase> makeSocket(const OpaqueEmitter& emitter, OpaqueSocketData& sdata) { 
