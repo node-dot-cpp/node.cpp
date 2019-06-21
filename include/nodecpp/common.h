@@ -81,6 +81,9 @@ public:
 
 	using EmitterType = void;
 	using EmitterTypeForServer = void;
+
+	using SocketEmmitterType = void;
+	using ServerEmmitterType = void;
 };
 
 #ifdef USING_T_SOCKETS
