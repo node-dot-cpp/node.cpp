@@ -40,13 +40,6 @@ namespace nodecpp {
 
 		// "iteration" over a list of handling functions for an event
 
-		template<class ObjectT, auto memberFunc>
-		struct HandlerData
-		{
-			using ObjT = ObjectT;
-			static constexpr auto memberFn = memberFunc;
-		};
-
 		template<class Node, class Server, class HandlerDataT, class ... args>
 		void callOnConnectionHandlers( Node* nodePtr, Server* serverPtr, soft_ptr<SocketBase> sock )
 		{
@@ -62,7 +55,7 @@ namespace nodecpp {
 		}
 
 		template<class Node, class Server>
-		void callOnConnectionHandlers( Node* nodePtr, Server* ptr, soft_ptr<SocketBase> sock )
+		void callOnConnectionHandlers( Node* nodePtr, Server* serverPtr, soft_ptr<SocketBase> sock )
 		{
 			return;
 		}
@@ -131,7 +124,15 @@ namespace nodecpp {
 		}
 
 
-		template<class Server, class ... args>
+
+		template<class ObjectT, auto memberFunc>
+		struct HandlerData
+		{
+			using ObjT = ObjectT;
+			static constexpr auto memberFn = memberFunc;
+		};
+
+		template<class Server, class ... args> // 'args' are HandlerData<...>
 		struct HandlerDataList
 		{
 			using ServerT = Server;
@@ -155,6 +156,60 @@ namespace nodecpp {
 		};
 
 
+		template<class T>
+		struct OnCloseST {};
+
+		template<class T>
+		struct OnConnectionST {};
+
+		template<class T>
+		struct OnListeningST {};
+
+		template<class T>
+		struct OnErrorST {};
+
+		template<typename ... args>
+		struct ServerHandlerDescriptorBase;
+
+		//partial template specializations:
+		template<class T, typename ... args>
+		struct ServerHandlerDescriptorBase<OnCloseST<T>, args...>
+			: public ServerHandlerDescriptorBase<args...> {
+			using onCloseT = T;
+		};
+
+		template<class T, typename ... args>
+		struct ServerHandlerDescriptorBase<OnConnectionST<T>, args...>
+			: public ServerHandlerDescriptorBase<args...> {
+			using onConnectionT = T;
+		};
+
+		template<class T, typename ... args>
+		struct ServerHandlerDescriptorBase<OnListeningST<T>, args...>
+			: public ServerHandlerDescriptorBase<args...> {
+			using onListeningT = T;
+		};
+
+		template<class T, typename ... args>
+		struct ServerHandlerDescriptorBase<OnErrorST<T>, args...>
+			: public ServerHandlerDescriptorBase<args...> {
+			using onErrorT = T;
+		};
+
+		template<> // forming template param list as onXxxST<HandlerDataList<...>>, ...
+		struct ServerHandlerDescriptorBase<> {
+			using onConnectionT = void;
+			using onCloseT = void;
+			using onListeningT = void;
+			using onErrorT = void;
+		};
+
+		template<class ServerT, class HandlerDesciptorT>
+		struct ServerHandlerDescriptor {
+			using ServerType = ServerT;
+			using HandlerDesciptorType = HandlerDesciptorT;
+		};
+
 		// type selection
 
 		template<class Node, class T, class T1, class ... args>
@@ -163,8 +218,8 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 //				soft_ptr<typename T1::ServerT> s = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerT>(ptr->getPtr());
-				typename T1::ServerT* serverTypedPtr = static_cast<typename T1::ServerT*>(ptr->getPtr());
-				T1::emitConnection( nodePtr, serverTypedPtr, sock );
+				typename T1::ServerType* serverTypedPtr = static_cast<typename T1::ServerT*>(ptr->getPtr());
+				T1::HandlerDesciptorType::onConnectionT::emitConnection( nodePtr, serverTypedPtr, sock );
 			}
 			else
 				callOnConnection<T, args...>(nodePtr, ptr, type-1, sock);
@@ -183,7 +238,7 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				typename T1::ServerT* serverTypedPtr = static_cast<typename T1::ServerT*>(ptr->getPtr());
-				T1::emitCloseServer( nodePtr, serverTypedPtr, hadError );
+				T1::HandlerDesciptorType::onConnectionT::emitCloseServer( nodePtr, serverTypedPtr, hadError );
 			}
 			else
 				callOnCloseServer<T, args...>(nodePtr, ptr, type-1, hadError);
@@ -202,7 +257,7 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				typename T1::ServerT* serverTypedPtr = static_cast<typename T1::ServerT*>(ptr->getPtr());
-				T1::emitListening( nodePtr, serverTypedPtr, id, addr );
+				T1::HandlerDesciptorType::onConnectionT::emitListening( nodePtr, serverTypedPtr, id, addr );
 			}
 			else
 				callOnListening<T, args...>(nodePtr, ptr, type-1, id, addr);
@@ -221,7 +276,7 @@ namespace nodecpp {
 			if ( type == 0 )
 			{
 				typename T1::ServerT* serverTypedPtr = static_cast<typename T1::ServerT*>(ptr->getPtr());
-				T1::emitErrorServer( nodePtr, serverTypedPtr, e );
+				T1::HandlerDesciptorType::onConnectionT::emitErrorServer( nodePtr, serverTypedPtr, e );
 			}
 			else
 				callOnErrorServer<T, args...>(nodePtr, ptr, type-1, e);
@@ -234,7 +289,7 @@ namespace nodecpp {
 		}
 
 
-		template< class ... args >
+		template< class ... args > // are a list of ServerHandlerDescriptor<...>
 		class ServerTEmitter
 		{
 		public:
