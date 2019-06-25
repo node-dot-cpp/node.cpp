@@ -868,10 +868,10 @@ public:
 
 	// ctrl server
 	using ctrlServerListening_1 = nodecpp::net::HandlerData<MyServerSocketTwo, &MyServerSocketTwo::onListening>;
-	using ctrlServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListening>;
+	using ctrlServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListeningCtrl>;
 
 	using ctrlServerConnection_1 = nodecpp::net::HandlerData<MyServerSocketTwo, &MyServerSocketTwo::onConnection>;
-	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnection>;
+	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnectionCtrl>;
 
 	using ctrlServerListening = nodecpp::net::HandlerDataList<MyServerSocketTwo, ctrlServerListening_1, ctrlServerListening_2>;
 	using ctrlServerConnection = nodecpp::net::HandlerDataList<MyServerSocketTwo, ctrlServerConnection_1, ctrlServerConnection_2>;

@@ -62,63 +62,63 @@ namespace nodecpp {
 
 
 		template<class Node, class Server, class HandlerDataT, class ... args>
-		void callOnCloseServerHandlers( Node* nodePtr, Server* serverPtr, bool hadError )
+		void callOnCloseServerHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, bool hadError )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
 				(nodePtr->*HandlerDataT::memberFn)( hadError );
 			else
 			{
 				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
-				(serverPtr->*HandlerDataT::memberFn)( hadError );
+				((&(*serverPtr))->*HandlerDataT::memberFn)( hadError );
 			}
 
 			callOnCloseServerHandlers<Node, Server, args...>(nodePtr, serverPtr, hadError);
 		}
 
 		template<class Node, class Server>
-		void callOnCloseServerHandlers( Node* nodePtr, Server* ptr, bool hadError )
+		void callOnCloseServerHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> ptr, bool hadError )
 		{
 			return;
 		}
 
 
 		template<class Node, class Server, class HandlerDataT, class ... args>
-		void callOnListeningHandlers( Node* nodePtr, Server* serverPtr, size_t id, Address addr )
+		void callOnListeningHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, size_t id, Address addr )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
 				(nodePtr->*HandlerDataT::memberFn)( id, addr );
 			else
 			{
 				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
-				(serverPtr->*HandlerDataT::memberFn)( id, addr );
+				((&(*serverPtr))->*HandlerDataT::memberFn)( id, addr );
 			}
 
 			callOnListeningHandlers<Node, Server, args...>(nodePtr, serverPtr, id, addr);
 		}
 
 		template<class Node, class Server>
-		void callOnListeningHandlers( Node* nodePtr, Server* ptr, size_t id, Address addr )
+		void callOnListeningHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> ptr, size_t id, Address addr )
 		{
 			return;
 		}
 
 
 		template<class Node, class Server, class HandlerDataT, class ... args>
-		void callOnErrorServerHandlers( Node* nodePtr, Server* serverPtr, nodecpp::Error& e )
+		void callOnErrorServerHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, nodecpp::Error& e )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
 				(nodePtr->*HandlerDataT::memberFn)( e );
 			else
 			{
 				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
-				(serverPtr->*HandlerDataT::memberFn)( e );
+				((&(*serverPtr))->*HandlerDataT::memberFn)( e );
 			}
 
 			callOnErrorServerHandlers<Node, Server, args...>(nodePtr, serverPtr, e);
 		}
 
 		template<class Node, class Server>
-		void callOnErrorServerHandlers( Node* nodePtr, Server* ptr, nodecpp::Error& e )
+		void callOnErrorServerHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> ptr, nodecpp::Error& e )
 		{
 			return;
 		}
@@ -142,16 +142,16 @@ namespace nodecpp {
 				callOnConnectionHandlers<Node, Server, args...>(node, server, sock); 
 			}
 			template<class Node>
-			static void emitClose( Node* node, Server* server, bool hadError ) {
-				callOnCloseServerHandlers<Node, Server, args...>(Node* node, Server* server, hadError);
+			static void emitClose( Node* node, nodecpp::safememory::soft_ptr<Server> server, bool hadError ) {
+				callOnCloseServerHandlers<Node, Server, args...>(node, server, hadError);
 			}
 			template<class Node>
-			static void emitListening( Node* node, Server* server, size_t id, Address addr ) { 
-				callOnListeningHandlers<Node, Server, args...>(Node* node, Server* server, id, addr);
+			static void emitListening( Node* node, nodecpp::safememory::soft_ptr<Server> server, size_t id, Address addr ) { 
+				callOnListeningHandlers<Node, Server, args...>(node, server, id, addr);
 			}
 			template<class Node>
-			static void emitError( Node* node, Server* server, nodecpp::Error& e ) { 
-				callOnErrorServerHandlers<Node, Server, args...>(Node* node, Server* server, e);
+			static void emitError( Node* node, nodecpp::safememory::soft_ptr<Server> server, nodecpp::Error& e ) { 
+				callOnErrorServerHandlers<Node, Server, args...>(node, server, e);
 			}
 		};
 
@@ -212,21 +212,17 @@ namespace nodecpp {
 
 		// type selection
 
-		template<class Node, class Z, class T1, class ... args>
-		void callOnConnection( Node* nodePtr, Z* ptr, int type, soft_ptr<SocketBase> sock )
-//		void callOnConnection( Node* nodePtr, Z* ptr, int type )
+		template<class Node, class T, class T1, class ... args>
+		void callOnConnection( Node* nodePtr, T* ptr, int type, soft_ptr<SocketBase> sock )
 		{
 			assert(type!= -1);
 			if ( type == 0 )
 			{
 				soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
-//				typename T1::ServerType* serverTypedPtr = static_cast<typename T1::ServerType*>(ptr->getPtr());
 				T1::HandlerDesciptorType::onConnectionT::emitConnection( nodePtr, serverTypedPtr, sock );
-//				T1::HandlerDesciptorType::onConnectionT::emitConnection( nodePtr, serverTypedPtr );
 			}
 			else
-				callOnConnection<Node, Z, args...>(nodePtr, ptr, type-1, sock);
-//				callOnConnection<Node, Z, args...>(ptr, nodePtr, type-1);
+				callOnConnection<Node, T, args...>(nodePtr, ptr, type-1, sock);
 		}
 
 		template<class Node, class T>
@@ -237,57 +233,57 @@ namespace nodecpp {
 
 
 		template<class Node, class T, class T1, class ... args>
-		void callOnCloseServer( void* nodePtr, T* ptr, int type, bool hadError )
+		void callOnCloseServer( Node* nodePtr, T* ptr, int type, bool hadError )
 		{
 			if ( type == 0 )
 			{
-				typename T1::ServerType* serverTypedPtr = static_cast<typename T1::ServerType*>(ptr->getPtr());
-				T1::HandlerDesciptorType::onConnectionT::emitCloseServer( nodePtr, serverTypedPtr, hadError );
+				soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
+				T1::HandlerDesciptorType::onCloseT::emitCloseServer( nodePtr, serverTypedPtr, hadError );
 			}
 			else
 				callOnCloseServer<T, args...>(nodePtr, ptr, type-1, hadError);
 		}
 
 		template<class Node, class T>
-		void callOnCloseServer( void* nodePtr, T* ptr, int type, bool hadError )
+		void callOnCloseServer( Node* nodePtr, T* ptr, int type, bool hadError )
 		{
 			assert( false );
 		}
 
 
 		template<class Node, class T, class T1, class ... args>
-		void callOnListening( void* nodePtr, T* ptr, int type, size_t id, Address addr )
+		void callOnListening( Node* nodePtr, T* ptr, int type, size_t id, Address addr )
 		{
 			if ( type == 0 )
 			{
-				typename T1::ServerType* serverTypedPtr = static_cast<typename T1::ServerType*>(ptr->getPtr());
-				T1::HandlerDesciptorType::onConnectionT::emitListening( nodePtr, serverTypedPtr, id, addr );
+				soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
+				T1::HandlerDesciptorType::onListeningT::emitListening( nodePtr, serverTypedPtr, id, addr );
 			}
 			else
 				callOnListening<T, args...>(nodePtr, ptr, type-1, id, addr);
 		}
 
 		template<class Node, class T>
-		void callOnListening( void* nodePtr, T* ptr, int type, size_t id, Address addr )
+		void callOnListening( Node* nodePtr, T* ptr, int type, size_t id, Address addr )
 		{
 			assert( false );
 		}
 
 
 		template<class Node, class T, class T1, class ... args>
-		void callOnErrorServer( void* nodePtr, T* ptr, int type, nodecpp::Error& e )
+		void callOnErrorServer( Node* nodePtr, T* ptr, int type, nodecpp::Error& e )
 		{
 			if ( type == 0 )
 			{
-				typename T1::ServerType* serverTypedPtr = static_cast<typename T1::ServerType*>(ptr->getPtr());
-				T1::HandlerDesciptorType::onConnectionT::emitErrorServer( nodePtr, serverTypedPtr, e );
+				soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
+				T1::HandlerDesciptorType::onErrorT::emitErrorServer( nodePtr, serverTypedPtr, e );
 			}
 			else
 				callOnErrorServer<T, args...>(nodePtr, ptr, type-1, e);
 		}
 
 		template<class Node, class T>
-		void callOnErrorServer( void* nodePtr, T* ptr, int type, nodecpp::Error& e )
+		void callOnErrorServer( Node* nodePtr, T* ptr, int type, nodecpp::Error& e )
 		{
 			assert( false );
 		}
@@ -316,6 +312,8 @@ namespace nodecpp {
 
 			template<class Node>
 			static void emitConnection( const OpaqueEmitter& emitter, soft_ptr<SocketBase> sock ) {
+//			static void emitConnection( const OpaqueEmitter& emitter ) {
+//				using Node = NodeBase;
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
 				Node* node = getThreadNode<Node>();
