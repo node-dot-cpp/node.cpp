@@ -316,8 +316,8 @@ namespace nodecpp {
 			}
 
 		private:
-			void registerMeAndAcquireSocket();
-			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
+			void registerMeAndAcquireSocket(int typeID);
+			void registerMeAndAssignSocket(int typeID, OpaqueSocketData& sdata);
 
 		public:
 			Address _local;
@@ -330,8 +330,10 @@ namespace nodecpp {
 
 			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
 
-			SocketBase(NodeBase* node_) {node = node_; registerMeAndAcquireSocket();}
+			SocketBase(NodeBase* node_) {node = node_; registerMeAndAcquireSocket(-1);}
+			SocketBase(int typeID, NodeBase* node_) {node = node_; registerMeAndAcquireSocket( typeID );}
 			SocketBase(NodeBase* node_, OpaqueSocketData& sdata);
+			SocketBase(int typeID, NodeBase* node_, OpaqueSocketData& sdata);
 
 			SocketBase(const SocketBase&) = delete;
 			SocketBase& operator=(const SocketBase&) = delete;
