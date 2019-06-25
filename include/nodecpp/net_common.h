@@ -534,6 +534,13 @@ namespace nodecpp {
 			std::exception exception; // TODO: consider possibility of switching to nodecpp::error
 		};
 
+		template<class ObjectT, auto memberFunc>
+		struct HandlerData
+		{
+			using ObjT = ObjectT;
+			static constexpr auto memberFn = memberFunc;
+		};
+
 		template<class FnT>
 		struct UserDefHandlersBase
 		{

@@ -125,15 +125,8 @@ namespace nodecpp {
 
 
 
-		template<class ObjectT, auto memberFunc>
-		struct HandlerData
-		{
-			using ObjT = ObjectT;
-			static constexpr auto memberFn = memberFunc;
-		};
-
 		template<class Server, class ... args> // 'args' are HandlerData<...>
-		struct HandlerDataList
+		struct ServerHandlerDataList
 		{
 			using ServerT = Server;
 
@@ -312,13 +305,9 @@ namespace nodecpp {
 
 			template<class Node>
 			static void emitConnection( const OpaqueEmitter& emitter, soft_ptr<SocketBase> sock ) {
-//			static void emitConnection( const OpaqueEmitter& emitter ) {
-//				using Node = NodeBase;
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
-				Node* node = getThreadNode<Node>();
-				callOnConnection<Node, Ptr, args...>(node, &emitter_ptr, emitter.type, sock); 
-//				callOnConnection<Node, Ptr, args...>(&emitter_ptr, node, emitter.type); 
+				callOnConnection<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, sock); 
 			}
 			template<class Node>
 			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) {

@@ -861,8 +861,8 @@ public:
 	using workingServerConnection_1 = nodecpp::net::HandlerData<MyServerSocketOne, &MyServerSocketOne::onConnection>;
 	using workingServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnection>;
 
-	using workingServerListening = nodecpp::net::HandlerDataList<MyServerSocketOne, workingServerListening_1, workingServerListening_2, workingServerListening_3>;
-	using workingServerConnection = nodecpp::net::HandlerDataList<MyServerSocketOne, workingServerConnection_1, workingServerConnection_2>;
+	using workingServerListening = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerListening_1, workingServerListening_2, workingServerListening_3>;
+	using workingServerConnection = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerConnection_1, workingServerConnection_2>;
 
 	using workingServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketOne, nodecpp::net::ServerHandlerDescriptorBase<nodecpp::net::OnConnectionST<workingServerConnection>, nodecpp::net::OnListeningST<workingServerListening> > >;
 
@@ -873,8 +873,8 @@ public:
 	using ctrlServerConnection_1 = nodecpp::net::HandlerData<MyServerSocketTwo, &MyServerSocketTwo::onConnection>;
 	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnectionCtrl>;
 
-	using ctrlServerListening = nodecpp::net::HandlerDataList<MyServerSocketTwo, ctrlServerListening_1, ctrlServerListening_2>;
-	using ctrlServerConnection = nodecpp::net::HandlerDataList<MyServerSocketTwo, ctrlServerConnection_1, ctrlServerConnection_2>;
+	using ctrlServerListening = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerListening_1, ctrlServerListening_2>;
+	using ctrlServerConnection = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerConnection_1, ctrlServerConnection_2>;
 
 	using ctrlServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketTwo, nodecpp::net::ServerHandlerDescriptorBase< nodecpp::net::OnConnectionST<ctrlServerConnection>, nodecpp::net::OnListeningST<ctrlServerListening> > >;
 
