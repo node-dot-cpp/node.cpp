@@ -683,8 +683,14 @@ public:
 	class MyServerSocketOne : public MyServerSocketBase
 	{
 	public:
-		MyServerSocketOne() {}
-		MyServerSocketOne(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {};
+		MyServerSocketOne() {
+			nodecpp::safememory::soft_ptr<MyServerSocketOne> p = myThis.getSoftPtr<MyServerSocketOne>(this);
+			registerServer<MySampleTNode, MyServerSocketOne>( p );
+		}
+		MyServerSocketOne(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {
+			nodecpp::safememory::soft_ptr<MyServerSocketOne> p = myThis.getSoftPtr<MyServerSocketOne>(this);
+			registerServer<MySampleTNode, MyServerSocketOne>( p );
+		};
 		virtual ~MyServerSocketOne() {}
 
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
@@ -701,8 +707,14 @@ public:
 	class MyServerSocketTwo : public MyServerSocketBase
 	{
 	public:
-		MyServerSocketTwo() {}
-		MyServerSocketTwo(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {};
+		MyServerSocketTwo() {
+			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
+			registerServer<MySampleTNode, MyServerSocketTwo>( p );
+		}
+		MyServerSocketTwo(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {
+			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
+			registerServer<MySampleTNode, MyServerSocketTwo>( p );
+		};
 		virtual ~MyServerSocketTwo() {}
 
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
@@ -719,8 +731,8 @@ public:
 	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv, srv_1;
 	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl, srvCtrl_1;
 
-	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
-	using EmitterTypeForServer = nodecpp::net::ServerTEmitter</*net::ServerO, net::Server*/>;
+//	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
+//	using EmitterTypeForServer = nodecpp::net::ServerTEmitter</*net::ServerO, net::Server*/>;
 
 	nodecpp::awaitable<void> serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
@@ -841,33 +853,33 @@ public:
 		co_return;
 	}
 
-	// ctrl server
-	using ctrlServerListening_1 = nodecpp::net::HandlerData<MyServerSocketOne, &MyServerSocketOne::onListening>;
-	using ctrlServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListening>;
-	using ctrlServerListening_3 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListening2>;
-
-	using ctrlServerConnection_1 = nodecpp::net::HandlerData<MyServerSocketOne, &MyServerSocketOne::onConnection>;
-	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnection>;
-
-	using ctrlServerListening = nodecpp::net::HandlerDataList<MyServerSocketOne, ctrlServerListening_1, ctrlServerListening_2, ctrlServerListening_3>;
-	using ctrlServerConnection = nodecpp::net::HandlerDataList<MyServerSocketOne, ctrlServerConnection_1, ctrlServerConnection_2>;
-
-	using ctrlServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketOne, nodecpp::net::ServerHandlerDescriptorBase< nodecpp::net::OnConnectionST<ctrlServerConnection>, nodecpp::net::OnListeningST<ctrlServerListening> > >;
-
 	// working server
-	using workingServerListening_1 = nodecpp::net::HandlerData<MyServerSocketTwo, &MyServerSocketTwo::onListening>;
+	using workingServerListening_1 = nodecpp::net::HandlerData<MyServerSocketOne, &MyServerSocketOne::onListening>;
 	using workingServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListening>;
+	using workingServerListening_3 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListening2>;
 
-	using workingServerConnection_1 = nodecpp::net::HandlerData<MyServerSocketTwo, &MyServerSocketTwo::onConnection>;
+	using workingServerConnection_1 = nodecpp::net::HandlerData<MyServerSocketOne, &MyServerSocketOne::onConnection>;
 	using workingServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnection>;
 
-	using workingServerListening = nodecpp::net::HandlerDataList<MyServerSocketTwo, workingServerListening_1, workingServerListening_2>;
-	using workingServerConnection = nodecpp::net::HandlerDataList<MyServerSocketTwo, workingServerConnection_1, workingServerConnection_2>;
+	using workingServerListening = nodecpp::net::HandlerDataList<MyServerSocketOne, workingServerListening_1, workingServerListening_2, workingServerListening_3>;
+	using workingServerConnection = nodecpp::net::HandlerDataList<MyServerSocketOne, workingServerConnection_1, workingServerConnection_2>;
 
-	using workingServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketTwo, nodecpp::net::ServerHandlerDescriptorBase<nodecpp::net::OnConnectionST<workingServerConnection>, nodecpp::net::OnListeningST<workingServerListening> > >;
+	using workingServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketOne, nodecpp::net::ServerHandlerDescriptorBase<nodecpp::net::OnConnectionST<workingServerConnection>, nodecpp::net::OnListeningST<workingServerListening> > >;
+
+	// ctrl server
+	using ctrlServerListening_1 = nodecpp::net::HandlerData<MyServerSocketTwo, &MyServerSocketTwo::onListening>;
+	using ctrlServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListening>;
+
+	using ctrlServerConnection_1 = nodecpp::net::HandlerData<MyServerSocketTwo, &MyServerSocketTwo::onConnection>;
+	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnection>;
+
+	using ctrlServerListening = nodecpp::net::HandlerDataList<MyServerSocketTwo, ctrlServerListening_1, ctrlServerListening_2>;
+	using ctrlServerConnection = nodecpp::net::HandlerDataList<MyServerSocketTwo, ctrlServerConnection_1, ctrlServerConnection_2>;
+
+	using ctrlServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketTwo, nodecpp::net::ServerHandlerDescriptorBase< nodecpp::net::OnConnectionST<ctrlServerConnection>, nodecpp::net::OnListeningST<ctrlServerListening> > >;
 
 	// all servers
-	using ServerEmmitterType = nodecpp::net::ServerTEmitter<ctrlServerHD, workingServerHD>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ctrlServerHD, workingServerHD>;
 
 #else
 #error

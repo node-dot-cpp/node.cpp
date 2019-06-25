@@ -216,6 +216,13 @@ namespace nodecpp {
 		protected:
 			void registerServerByID(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId);
 			void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t) {registerServerByID(node, t, -1);}
+			template<class Node, class DerivedServer>
+			void registerServer(soft_ptr<DerivedServer> t) {
+				int id = -1;
+				if constexpr ( !std::is_same< typename Node::EmitterTypeForServer, void>::value )
+					id = Node::EmitterTypeForServer::template getTypeIndex<DerivedServer>( &(*t));
+				registerServerByID(nullptr, t, id);
+			}
 
 		public:
 			NodeBase* node = nullptr;
