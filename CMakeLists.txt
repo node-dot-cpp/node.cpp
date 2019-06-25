@@ -4,7 +4,7 @@ project(node_cpp)
 find_package(Threads)
 
 set(CLIENT_NAME client.bin)
-set(CTRL_CLIENT_NAME client.bin)
+set(CTRL_CLIENT_NAME ctrl_client.bin)
 set(SERVER_NAME server.bin)
 set(LIB_NAME gcc_lto_workaround)
 
