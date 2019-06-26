@@ -370,6 +370,7 @@ public:
 //					EmitterType::emitClose(entry.getEmitter(), err);
 					if (entry.getClientSocketData()->isCloseEventHandler())
 						entry.getClientSocketData()->handleCloseEvent(err);
+					EmitterType::template emitClose<Node>(entry.getEmitter(), err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 //					if (err && entry.isValid()) //if error closing, then first error event
@@ -378,6 +379,7 @@ public:
 //						EmitterType::emitError(entry.getEmitter(), current.second.second);
 						if (entry.getClientSocketData()->isErrorEventHandler())
 							entry.getClientSocketData()->handleErrorEvent(current.second.second);
+						EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
 					}
 #endif // 0
 				}
@@ -386,6 +388,8 @@ public:
 		}
 		pendingCloseEvents.clear();
 	}
+
+	template<class Node>
 	void infraProcessSockAcceptedEvents()
 	{
 		for ( auto idx:pendingAcceptedEvents )
@@ -407,6 +411,7 @@ public:
 //						EmitterType::emitAccepted(entry.getEmitter());
 						if (entry.getClientSocketData()->isAcceptedEventHandler())
 							entry.getClientSocketData()->handleAcceptedEvent();
+						EmitterType::template emitConnect<Node>(entry.getEmitter());
 					}
 					//entry.setAssociated();
 					//ioSockets.setAssociated( idx );
@@ -416,6 +421,7 @@ public:
 		}
 	}
 
+	template<class Node>
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
@@ -441,19 +447,19 @@ public:
 				if (!current.getClientSocketData()->paused)
 				{
 					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", begin[i].fd);
-					infraProcessReadEvent(current/*, evs*/);
+					infraProcessReadEvent<Node>(current/*, evs*/);
 				}
 			}
 			else if ((revents & POLLHUP) != 0)
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLHUP event at {}", current.getClientSocketData()->osSocket);
-				infraProcessRemoteEnded(current/*, evs*/);
+				infraProcessRemoteEnded<Node>(current/*, evs*/);
 			}
 				
 			if ((revents & POLLOUT) != 0)
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLOUT event at {}", current.getClientSocketData()->osSocket);
-				infraProcessWriteEvent(current/*, evs*/);
+				infraProcessWriteEvent<Node>(current/*, evs*/);
 			}
 		}
 		//else if (revents != 0)
@@ -465,6 +471,7 @@ public:
 	}
 
 private:
+	template<class Node>
 	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
 		auto hr = entry.getClientSocketData()->ahd_read.h;
@@ -502,7 +509,7 @@ private:
 				}
 				else //if (!entry.remoteEnded)
 				{
-					infraProcessRemoteEnded(entry);
+					infraProcessRemoteEnded<Node>(entry);
 				}
 			}
 			else
@@ -515,6 +522,7 @@ private:
 		}
 	}
 
+	template<class Node>
 	void infraProcessRemoteEnded(NetSocketEntry& entry)
 	{
 		if (!entry.getClientSocketData()->remoteEnded)
@@ -525,6 +533,7 @@ private:
 //			EmitterType::emitEnd(entry.getEmitter());
 			if (entry.getClientSocketData()->isEndEventHandler())
 				entry.getClientSocketData()->handleEndEvent();
+			EmitterType::template emitEnd<Node>(entry.getEmitter());
 			if (entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 			{
 				//pendingCloseEvents.emplace_back(entry.index, false);
@@ -552,6 +561,7 @@ private:
 
 	}
 
+	template<class Node>
 	void infraProcessWriteEvent(NetSocketEntry& current)
 	{
 		NetSocketManagerBase::ShouldEmit status = this->_infraProcessWriteEvent(*current.getClientSocketData());
@@ -570,6 +580,7 @@ private:
 //					EmitterType::emitConnect(current.getEmitter());
 					if (current.getClientSocketData()->isConnectEventHandler())
 						current.getClientSocketData()->handleConnectEvent();
+					EmitterType::template emitConnect<Node>(current.getEmitter());
 				}
 				break;
 			}
@@ -586,6 +597,7 @@ private:
 //					EmitterType::emitDrain(current.getEmitter());
 					if (current.getClientSocketData()->isDrainEventHandler())
 						current.getClientSocketData()->handleDrainEvent();
+					EmitterType::template emitDrain<Node>(current.getEmitter());
 				}
 				break;
 			}

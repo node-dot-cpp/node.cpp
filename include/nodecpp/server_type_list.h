@@ -234,7 +234,7 @@ namespace nodecpp {
 				T1::HandlerDesciptorType::onCloseT::emitCloseServer( nodePtr, serverTypedPtr, hadError );
 			}
 			else
-				callOnCloseServer<T, args...>(nodePtr, ptr, type-1, hadError);
+				callOnCloseServer<Node, T, args...>(nodePtr, ptr, type-1, hadError);
 		}
 
 		template<class Node, class T>
@@ -253,7 +253,7 @@ namespace nodecpp {
 				T1::HandlerDesciptorType::onListeningT::emitListening( nodePtr, serverTypedPtr, id, addr );
 			}
 			else
-				callOnListening<T, args...>(nodePtr, ptr, type-1, id, addr);
+				callOnListening<Node, T, args...>(nodePtr, ptr, type-1, id, addr);
 		}
 
 		template<class Node, class T>
@@ -272,7 +272,7 @@ namespace nodecpp {
 				T1::HandlerDesciptorType::onErrorT::emitErrorServer( nodePtr, serverTypedPtr, e );
 			}
 			else
-				callOnErrorServer<T, args...>(nodePtr, ptr, type-1, e);
+				callOnErrorServer<Node, T, args...>(nodePtr, ptr, type-1, e);
 		}
 
 		template<class Node, class T>
