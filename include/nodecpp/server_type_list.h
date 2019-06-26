@@ -211,8 +211,11 @@ namespace nodecpp {
 			assert(type!= -1);
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onConnectionT::emitConnection( nodePtr, serverTypedPtr, sock );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onConnectionT, void >::value )
+				{
+					soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onConnectionT::emitConnection( nodePtr, serverTypedPtr, sock );
+				}
 			}
 			else
 				callOnConnection<Node, T, args...>(nodePtr, ptr, type-1, sock);
@@ -230,8 +233,11 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onCloseT::emitCloseServer( nodePtr, serverTypedPtr, hadError );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onCloseT, void >::value )
+				{
+					soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onCloseT::emitCloseServer( nodePtr, serverTypedPtr, hadError );
+				}
 			}
 			else
 				callOnCloseServer<Node, T, args...>(nodePtr, ptr, type-1, hadError);
@@ -249,8 +255,11 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onListeningT::emitListening( nodePtr, serverTypedPtr, id, addr );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onListeningT, void >::value )
+				{
+					soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onListeningT::emitListening( nodePtr, serverTypedPtr, id, addr );
+				}
 			}
 			else
 				callOnListening<Node, T, args...>(nodePtr, ptr, type-1, id, addr);
@@ -268,8 +277,11 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onErrorT::emitErrorServer( nodePtr, serverTypedPtr, e );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onErrorT, void >::value )
+				{
+					soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onErrorT::emitErrorServer( nodePtr, serverTypedPtr, e );
+				}
 			}
 			else
 				callOnErrorServer<Node, T, args...>(nodePtr, ptr, type-1, e);

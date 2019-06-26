@@ -862,6 +862,7 @@ public:
 	using ctrlServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketTwo, nodecpp::net::ServerHandlerDescriptorBase< nodecpp::net::OnConnectionST<ctrlServerConnection>, nodecpp::net::OnListeningST<ctrlServerListening> > >;
 
 	// all servers
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ctrlServerHD, workingServerHD>;
 
 #else

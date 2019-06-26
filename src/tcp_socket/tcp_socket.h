@@ -368,18 +368,18 @@ public:
 						}
 					}
 //					EmitterType::emitClose(entry.getEmitter(), err);
+					EmitterType::template emitClose<Node>(entry.getEmitter(), err);
 					if (entry.getClientSocketData()->isCloseEventHandler())
 						entry.getClientSocketData()->handleCloseEvent(err);
-					EmitterType::template emitClose<Node>(entry.getEmitter(), err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 //					if (err && entry.isValid()) //if error closing, then first error event
 					if (err && entry.isUsed()) //if error closing, then first error event
 					{
 //						EmitterType::emitError(entry.getEmitter(), current.second.second);
+						EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
 						if (entry.getClientSocketData()->isErrorEventHandler())
 							entry.getClientSocketData()->handleErrorEvent(current.second.second);
-						EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
 					}
 #endif // 0
 				}
@@ -409,9 +409,9 @@ public:
 					else // TODO: make sure we never have both cases in the same time
 					{
 //						EmitterType::emitAccepted(entry.getEmitter());
+						EmitterType::template emitAccepted<Node>(entry.getEmitter());
 						if (entry.getClientSocketData()->isAcceptedEventHandler())
 							entry.getClientSocketData()->handleAcceptedEvent();
-						EmitterType::template emitConnect<Node>(entry.getEmitter());
 					}
 					//entry.setAssociated();
 					//ioSockets.setAssociated( idx );
@@ -504,6 +504,7 @@ private:
 		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
 	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
 //					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+					EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
 					if (entry.getClientSocketData()->isDataEventHandler())
 						entry.getClientSocketData()->handleDataEvent(std::ref(infraStoreBuffer(std::move(res.second))));
 				}
@@ -531,9 +532,9 @@ private:
 			ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
 	//		evs.add(&net::Socket::emitEnd, entry.getPtr());
 //			EmitterType::emitEnd(entry.getEmitter());
+			EmitterType::template emitEnd<Node>(entry.getEmitter());
 			if (entry.getClientSocketData()->isEndEventHandler())
 				entry.getClientSocketData()->handleEndEvent();
-			EmitterType::template emitEnd<Node>(entry.getEmitter());
 			if (entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 			{
 				//pendingCloseEvents.emplace_back(entry.index, false);
@@ -578,9 +579,9 @@ private:
 				else
 				{
 //					EmitterType::emitConnect(current.getEmitter());
+					EmitterType::template emitConnect<Node>(current.getEmitter());
 					if (current.getClientSocketData()->isConnectEventHandler())
 						current.getClientSocketData()->handleConnectEvent();
-					EmitterType::template emitConnect<Node>(current.getEmitter());
 				}
 				break;
 			}
@@ -595,9 +596,9 @@ private:
 				else // TODO: make sure we never have both cases in the same time
 				{
 //					EmitterType::emitDrain(current.getEmitter());
+					EmitterType::template emitDrain<Node>(current.getEmitter());
 					if (current.getClientSocketData()->isDrainEventHandler())
 						current.getClientSocketData()->handleDrainEvent();
-					EmitterType::template emitDrain<Node>(current.getEmitter());
 				}
 				break;
 			}
@@ -736,9 +737,10 @@ public:
 						internal_usage_only::internal_close(entry.getServerSocketData()->osSocket);
 					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
 					{
+						//EmitterType::emitClose( entry.getEmitter(), current.second);
+						EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
 						if (entry.getServerSocketData()->isCloseEventHandler())
 							entry.getServerSocketData()->handleCloseEvent(current.second);
-						//EmitterType::emitClose( entry.getEmitter(), current.second);
 						// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 					}
 				}
@@ -769,9 +771,10 @@ public:
 						}
 						else
 						{
+							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+							EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
 							if (entry.getServerSocketData()->isListenEventHandler() )
 								entry.getServerSocketData()->handleListenEvent(current, entry.getServerSocketData()->localAddress);
-							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
 							// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 						}
 					}
@@ -787,7 +790,7 @@ public:
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose(current/*, evs*/);
+			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
 		}
 		else if ((revents & POLLIN) != 0)
 		{
@@ -798,7 +801,7 @@ public:
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose(current/*, evs*/);
+			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
 		}
 	}
 private:
@@ -822,21 +825,23 @@ private:
 		}
 		else
 		{
-			if (entry.getServerSocketData()->isConnectionEventHandler())
-				entry.getServerSocketData()->handleConnectionEvent(ptr);
 			//EmitterType::emitConnection(entry.getEmitter(), ptr); 
 			EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
+			if (entry.getServerSocketData()->isConnectionEventHandler())
+				entry.getServerSocketData()->handleConnectionEvent(ptr);
 			// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 		}
 
 		return;
 	}
 
+	template<class Node>
 	void infraMakeErrorEventAndClose(NetSocketEntry& entry)
 	{
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 		Error e;
 		//EmitterType::emitError( entry.getEmitter(), e );
+		EmitterType::template emitError<Node>( entry.getEmitter(), e );
 		if (entry.getServerSocketData()->isErrorEventHandler())
 			entry.getServerSocketData()->handleErrorEvent(e);
 		// TODO: what should we do with this event, if, at present, nobody is willing to process it?
