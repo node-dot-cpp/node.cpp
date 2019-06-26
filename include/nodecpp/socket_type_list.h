@@ -457,9 +457,9 @@ namespace nodecpp {
 
 		public:
 			template<class Sock>
-			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,args...>( s ); }
+			static int getTypeIndex(Sock* s) { return ::getTypeIndex<Sock,typename args::SocketType...>( s ); }
 			template<class Sock>
-			static int softGetTypeIndexIfTypeExists() { return ::softGetTypeIndexIfTypeExists<Sock,args...>(); }
+			static int softGetTypeIndexIfTypeExists() { return ::softGetTypeIndexIfTypeExists<Sock,typename args::SocketType...>(); }
 
 			template<class Node>
 			static Node* getThreadNode() { return static_cast<Node*>(thisThreadNode); }
