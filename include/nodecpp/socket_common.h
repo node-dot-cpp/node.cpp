@@ -47,7 +47,7 @@ namespace nodecpp {
 
 		public:
 //			UserDefID userDefID;
-			NodeBase* node = nullptr;
+//			NodeBase* node = nullptr;
 
 			public:
 			class DataForCommandProcessing {
@@ -317,15 +317,23 @@ namespace nodecpp {
 
 		private:
 			void registerMeAndAcquireSocket(int typeID);
-			void registerMeAndAssignSocket(int typeID, OpaqueSocketData& sdata);
-
+			void registerMeByIDAndAssignSocket(OpaqueSocketData& sdata, int typeID);
 		public:
+			template<class Node, class DerivedSocket>
+			void registerMeAndAssignSocket(OpaqueSocketData& sdata)
+			{
+				int id = -1;
+				if constexpr ( !std::is_same< typename Node::EmitterType, void>::value )
+					id = Node::EmitterType::template softGetTypeIndexIfTypeExists<DerivedSocket>();
+				registerMeByIDAndAssignSocket( sdata, id );
+			}
+
 			template<class Node, class DerivedSocket>
 			void registerMeAndAcquireSocket(nodecpp::safememory::soft_ptr<DerivedSocket> s)
 			{
 				int id = -1;
 				if constexpr ( !std::is_same< typename Node::EmitterType, void>::value )
-					id = Node::EmitterType::template getTypeIndex<DerivedSocket>( &(*s));
+					id = Node::EmitterType::template softGetTypeIndexIfTypeExists<DerivedSocket>();
 				registerMeAndAcquireSocket( id );
 			}
 
@@ -340,10 +348,11 @@ namespace nodecpp {
 
 			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
 
-			SocketBase(NodeBase* node_) {node = node_; /*registerMeAndAcquireSocket(-1);*/}
-			SocketBase(int typeID, NodeBase* node_) {node = node_; registerMeAndAcquireSocket( typeID );}
-			SocketBase(NodeBase* node_, OpaqueSocketData& sdata);
-			SocketBase(int typeID, NodeBase* node_, OpaqueSocketData& sdata);
+//			SocketBase(NodeBase* node_) {node = node_; /*registerMeAndAcquireSocket(-1);*/}
+			SocketBase() {}
+//			SocketBase(int typeID, NodeBase* node_) {node = node_; registerMeAndAcquireSocket( typeID );}
+//			SocketBase(NodeBase* node_, OpaqueSocketData& sdata);
+//			SocketBase(int typeID, NodeBase* node_, OpaqueSocketData& sdata);
 
 			SocketBase(const SocketBase&) = delete;
 			SocketBase& operator=(const SocketBase&) = delete;
@@ -752,12 +761,22 @@ namespace nodecpp {
 
 		};
 
-		template<class T, class ... Types>
+		/*template<class T, class ... Types>
 		static
 			nodecpp::safememory::owning_ptr<T> createSocket(Types&& ... args) {
 			static_assert( std::is_base_of< SocketBase, T >::value );
 			nodecpp::safememory::owning_ptr<T> ret = nodecpp::safememory::make_owning<T>(::std::forward<Types>(args)...);
 			ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<T>(), &(*ret));
+			return ret;
+		}*/
+
+		template<class Node, class SocketT, class ... Types>
+		static
+			nodecpp::safememory::owning_ptr<SocketT> createSocket(Types&& ... args) {
+			static_assert( std::is_base_of< SocketBase, SocketT >::value );
+			nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>(::std::forward<Types>(args)...);
+			ret->registerMeAndAcquireSocket<Node, SocketT>(ret);
+			ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
 			return ret;
 		}
 

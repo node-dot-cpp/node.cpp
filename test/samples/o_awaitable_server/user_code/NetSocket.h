@@ -590,14 +590,19 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		srv = nodecpp::safememory::make_owning<MyServerSocketOne>(
+		/*srv = nodecpp::safememory::make_owning<MyServerSocketOne>(
 			[this](OpaqueSocketData& sdata) {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket as in node::main()\n");
 				return nodecpp::net::createSocket<nodecpp::net::SocketBase>(nullptr, sdata);
 			});
 		srv_1 = nodecpp::net::createServer<MyServerSocketOne>();
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
-		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>();
+		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>();*/
+
+		srv = nodecpp::net::createServer<MySampleTNode, MyServerSocketOne, nodecpp::net::SocketBase>();
+		srv_1 = nodecpp::net::createServer<MySampleTNode, MyServerSocketOne, nodecpp::net::SocketBase>();
+		srvCtrl = nodecpp::net::createServer<MySampleTNode, MyServerSocketTwo, nodecpp::net::SocketBase>();
+		srvCtrl_1 = nodecpp::net::createServer<MySampleTNode, MyServerSocketTwo>(1);
 
 		srv->listen(2000, "127.0.0.1", 5);
 		srvCtrl->listen(2001, "127.0.0.1", 5);
@@ -647,14 +652,6 @@ public:
 		co_return;
 	}
 
-/*	//	using SockTypeServerSocket = nodecpp::net::SocketN<MySampleTNode, SocketIdType>;
-	//	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode, SocketIdType>;
-	using SockTypeServerSocket = nodecpp::net::SocketBase;
-	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
-
-	//	using ServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerSocket, ServerIdType>;
-	using ServerType = nodecpp::net::ServerBase;
-	//	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode, SockTypeServerCtrlSocket, ServerIdType>;*/
 	using ServerType = nodecpp::net::ServerBase;
 
 
@@ -662,7 +659,6 @@ public:
 	{
 	public:
 		MyServerSocketBase() {}
-		MyServerSocketBase(acceptedSocketCreationRoutineType socketCreationCB) : ServerBase(socketCreationCB) {};
 		virtual ~MyServerSocketBase() {}
 	};
 
@@ -670,13 +666,9 @@ public:
 	{
 	public:
 		MyServerSocketOne() {
-			nodecpp::safememory::soft_ptr<MyServerSocketOne> p = myThis.getSoftPtr<MyServerSocketOne>(this);
-			registerServer<MySampleTNode, MyServerSocketOne>( p );
+//			nodecpp::safememory::soft_ptr<MyServerSocketOne> p = myThis.getSoftPtr<MyServerSocketOne>(this);
+//			registerServer<MySampleTNode, MyServerSocketOne>( p );
 		}
-		MyServerSocketOne(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {
-			nodecpp::safememory::soft_ptr<MyServerSocketOne> p = myThis.getSoftPtr<MyServerSocketOne>(this);
-			registerServer<MySampleTNode, MyServerSocketOne>( p );
-		};
 		virtual ~MyServerSocketOne() {}
 
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {
@@ -694,13 +686,14 @@ public:
 	{
 	public:
 		MyServerSocketTwo() {
-			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
-			registerServer<MySampleTNode, MyServerSocketTwo>( p );
+//			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
+//			registerServer<MySampleTNode, MyServerSocketTwo>( p );
 		}
-		MyServerSocketTwo(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {
-			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
-			registerServer<MySampleTNode, MyServerSocketTwo>( p );
-		};
+		MyServerSocketTwo(int k) {
+			printf( "k=%d\n", k );
+//			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
+//			registerServer<MySampleTNode, MyServerSocketTwo>( p );
+		}
 		virtual ~MyServerSocketTwo() {}
 
 		nodecpp::awaitable<void> onListening(size_t id, nodecpp::net::Address addr) {

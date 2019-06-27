@@ -266,10 +266,7 @@ public:
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		/*nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &MySampleTNode::onWhateverConnect>(this);
-		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &ClientSockType::onWhateverConnect>();*/
-
-		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
+		clientSock = nodecpp::net::createSocket<MySampleTNode, ClientSockType>();
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
 		co_return;
@@ -281,7 +278,6 @@ public:
 		co_return;
 	}
 
-	//	using ClientSockBaseType = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
 	using ClientSockBaseType = nodecpp::net::SocketBase;
 
 	class MySocketOne : public ClientSockBaseType
@@ -292,9 +288,9 @@ public:
 		int extraData;
 
 	public:
-		MySocketOne(MySampleTNode* node) : ClientSockBaseType(node) {
-			nodecpp::safememory::soft_ptr<MySocketOne> p = myThis.getSoftPtr<MySocketOne>(this);
-			registerMeAndAcquireSocket<MySampleTNode, MySocketOne>( p );
+		MySocketOne() {
+//			nodecpp::safememory::soft_ptr<MySocketOne> p = myThis.getSoftPtr<MySocketOne>(this);
+///			registerMeAndAcquireSocket<MySampleTNode, MySocketOne>( p );
 		}
 		virtual ~MySocketOne() {}
 

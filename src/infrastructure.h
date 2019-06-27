@@ -264,17 +264,17 @@ public:
 
 #ifdef USING_T_SOCKETS
 inline
-size_t registerWithInfraAndAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
+size_t registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
+	return netSocketManagerBase->appAcquireSocket(/*node, */t, typeId);
 }
 
 inline
-size_t registerWithInfraAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
+size_t registerWithInfraAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAssignSocket(node, t, typeId, sdata);
+	return netSocketManagerBase->appAssignSocket(/*node, */t, typeId, sdata);
 }
 
 inline
@@ -284,9 +284,9 @@ void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 }
 
 inline
-void registerServer(NodeBase* node, soft_ptr<net::ServerBase> t, int typeId)
+void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 {
-	return netServerManagerBase->appAddServer(node, t, typeId);
+	return netServerManagerBase->appAddServer(/*node, */t, typeId);
 }
 
 
