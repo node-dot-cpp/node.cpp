@@ -60,7 +60,7 @@ namespace nodecpp {
 
 
 		template<class Node, class Socket, class HandlerDataT, class ... args>
-		void callOnAcceptedSocketHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr )
+		void callOnAcceptedHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
 				(nodePtr->*HandlerDataT::memberFn)();
@@ -70,11 +70,11 @@ namespace nodecpp {
 				((&(*socketPtr))->*HandlerDataT::memberFn)();
 			}
 
-			callOnAcceptedSocketHandlers<Node, Socket, args...>(nodePtr, socketPtr);
+			callOnAcceptedHandlers<Node, Socket, args...>(nodePtr, socketPtr);
 		}
 
 		template<class Node, class Socket>
-		void callOnAcceptedSocketHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> ptr, bool hadError )
+		void callOnAcceptedHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> ptr, bool hadError )
 		{
 			return;
 		}
@@ -102,7 +102,7 @@ namespace nodecpp {
 
 
 		template<class Node, class Socket, class HandlerDataT, class ... args>
-		void callOnDrainSocketHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr )
+		void callOnDrainHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
 				(nodePtr->*HandlerDataT::memberFn)();
@@ -112,11 +112,11 @@ namespace nodecpp {
 				((&(*socketPtr))->*HandlerDataT::memberFn)();
 			}
 
-			callOnDrainSocketHandlers<Node, Socket, args...>(nodePtr, socketPtr);
+			callOnDrainHandlers<Node, Socket, args...>(nodePtr, socketPtr);
 		}
 
 		template<class Node, class Socket>
-		void callOnDrainSocketHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> ptr )
+		void callOnDrainHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> ptr )
 		{
 			return;
 		}
@@ -197,7 +197,7 @@ namespace nodecpp {
 			}
 			template<class Node>
 			static void emitAccepted( Node* node, nodecpp::safememory::soft_ptr<Socket> socket ) {
-				callOnAcceptedSocketHandlers<Node, Socket, args...>(node, socket);
+				//callOnAcceptedHandlers<Node, Socket, args...>(node, socket); 
 			}
 			template<class Node>
 			static void emitData( Node* node, nodecpp::safememory::soft_ptr<Socket> socket, nodecpp::Buffer& b ) { 
@@ -205,7 +205,7 @@ namespace nodecpp {
 			}
 			template<class Node>
 			static void emitDrain( Node* node, nodecpp::safememory::soft_ptr<Socket> socket ) { 
-				callOnDrainSocketHandlers<Node, Socket, args...>(node, socket);
+				callOnDrainHandlers<Node, Socket, args...>(node, socket);
 			}
 			template<class Node>
 			static void emitClose( Node* node, nodecpp::safememory::soft_ptr<Socket> socket, bool hadError ) {
@@ -314,8 +314,11 @@ namespace nodecpp {
 			assert(type!= -1);
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onConnectionT::emitConnection( nodePtr, socketTypedPtr );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onConnectT, void >::value )
+				{
+					soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onConnectT::emitConnect( nodePtr, socketTypedPtr );
+				}
 			}
 			else
 				callOnConnect<Node, T, args...>(nodePtr, ptr, type-1);
@@ -329,19 +332,22 @@ namespace nodecpp {
 
 
 		template<class Node, class T, class T1, class ... args>
-		void callOnAcceptedSocket( Node* nodePtr, T* ptr, int type )
+		void callOnAccepted( Node* nodePtr, T* ptr, int type )
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onCloseT::emitCloseSocket( nodePtr, socketTypedPtr );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onAcceptedT, void >::value )
+				{
+					soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onAcceptedT::emitAccepted( nodePtr, socketTypedPtr );
+				}
 			}
 			else
-				callOnAcceptedSocket<T, args...>(nodePtr, ptr, type-1);
+				callOnAccepted<Node, T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class Node, class T>
-		void callOnAcceptedSocket( Node* nodePtr, T* ptr, int type )
+		void callOnAccepted( Node* nodePtr, T* ptr, int type )
 		{
 			assert( false );
 		}
@@ -352,11 +358,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onListeningT::emitListening( nodePtr, socketTypedPtr, b );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onDataT, void >::value )
+				{
+					soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onDataT::emitData( nodePtr, socketTypedPtr, b );
+				}
 			}
 			else
-				callOnData<T, args...>(nodePtr, ptr, type-1, b);
+				callOnData<Node, T, args...>(nodePtr, ptr, type-1, b);
 		}
 
 		template<class Node, class T>
@@ -371,11 +380,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onErrorT::emitErrorSocket( nodePtr, socketTypedPtr );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onDrainT, void >::value )
+				{
+					soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onDrainT::emitDrain( nodePtr, socketTypedPtr );
+				}
 			}
 			else
-				callOnDrainSocket<T, args...>(nodePtr, ptr, type-1);
+				callOnDrainSocket<Node, T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class Node, class T>
@@ -390,11 +402,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onCloseT::emitCloseSocket( nodePtr, socketTypedPtr, hadError );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onCloseT, void >::value )
+				{
+					soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onCloseT::emitClose( nodePtr, socketTypedPtr, hadError );
+				}
 			}
 			else
-				callOnCloseSocket<T, args...>(nodePtr, ptr, type-1, hadError);
+				callOnCloseSocket<Node, T, args...>(nodePtr, ptr, type-1, hadError);
 		}
 
 		template<class Node, class T>
@@ -409,11 +424,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onListeningT::emitEnd( nodePtr, socketTypedPtr );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onEndT, void >::value )
+				{
+					soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onEndT::emitEnd( nodePtr, socketTypedPtr );
+				}
 			}
 			else
-				callOnEnd<T, args...>(nodePtr, ptr, type-1);
+				callOnEnd<Node, T, args...>(nodePtr, ptr, type-1);
 		}
 
 		template<class Node, class T>
@@ -428,11 +446,14 @@ namespace nodecpp {
 		{
 			if ( type == 0 )
 			{
-				soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
-				T1::HandlerDesciptorType::onErrorT::emitErrorSocket( nodePtr, socketTypedPtr, e );
+				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onErrorT, void >::value )
+				{
+					soft_ptr<typename T1::SocketType> socketTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::SocketType>(ptr->getPtr());
+					T1::HandlerDesciptorType::onErrorT::emitError( nodePtr, socketTypedPtr, e );
+				}
 			}
 			else
-				callOnErrorSocket<T, args...>(nodePtr, ptr, type-1, e);
+				callOnErrorSocket<Node, T, args...>(nodePtr, ptr, type-1, e);
 		}
 
 		template<class Node, class T>
@@ -474,7 +495,7 @@ namespace nodecpp {
 			static void emitAccepted( const OpaqueEmitter& emitter ) {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<SocketBase>(emitter.getClientSocketPtr()) ); 
-				callOnAcceptedSocket<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type);
+				callOnAccepted<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type); 
 			}
 			template<class Node>
 			static void emitData( const OpaqueEmitter& emitter, nodecpp::Buffer& b ) { 

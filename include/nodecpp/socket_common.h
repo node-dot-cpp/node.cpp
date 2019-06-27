@@ -320,6 +320,16 @@ namespace nodecpp {
 			void registerMeAndAssignSocket(int typeID, OpaqueSocketData& sdata);
 
 		public:
+			template<class Node, class DerivedSocket>
+			void registerMeAndAcquireSocket(nodecpp::safememory::soft_ptr<DerivedSocket> s)
+			{
+				int id = -1;
+				if constexpr ( !std::is_same< typename Node::EmitterType, void>::value )
+					id = Node::EmitterType::template getTypeIndex<DerivedSocket>( &(*s));
+				registerMeAndAcquireSocket( id );
+			}
+
+		public:
 			Address _local;
 			Address _remote;
 			//std::string _remoteAddress;
@@ -330,7 +340,7 @@ namespace nodecpp {
 
 			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
 
-			SocketBase(NodeBase* node_) {node = node_; registerMeAndAcquireSocket(-1);}
+			SocketBase(NodeBase* node_) {node = node_; /*registerMeAndAcquireSocket(-1);*/}
 			SocketBase(int typeID, NodeBase* node_) {node = node_; registerMeAndAcquireSocket( typeID );}
 			SocketBase(NodeBase* node_, OpaqueSocketData& sdata);
 			SocketBase(int typeID, NodeBase* node_, OpaqueSocketData& sdata);
