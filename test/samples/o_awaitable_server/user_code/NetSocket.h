@@ -599,10 +599,10 @@ public:
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
 		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>();*/
 
-		srv = nodecpp::net::createServer<MySampleTNode, MyServerSocketOne, nodecpp::net::SocketBase>();
-		srv_1 = nodecpp::net::createServer<MySampleTNode, MyServerSocketOne, nodecpp::net::SocketBase>();
-		srvCtrl = nodecpp::net::createServer<MySampleTNode, MyServerSocketTwo, nodecpp::net::SocketBase>();
-		srvCtrl_1 = nodecpp::net::createServer<MySampleTNode, MyServerSocketTwo>(1);
+		srv = nodecpp::net::createServer<MyServerSocketOne, nodecpp::net::SocketBase>();
+		srv_1 = nodecpp::net::createServer<MyServerSocketOne, nodecpp::net::SocketBase>();
+		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
+		srvCtrl_1 = nodecpp::net::createServer<MyServerSocketTwo>(1);
 
 		srv->listen(2000, "127.0.0.1", 5);
 		srvCtrl->listen(2001, "127.0.0.1", 5);

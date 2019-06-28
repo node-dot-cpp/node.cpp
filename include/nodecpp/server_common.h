@@ -510,6 +510,7 @@ namespace nodecpp {
 			}
 		};
 
+
 		template<class ServerT, class ... Types>
 		static
 		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
@@ -519,40 +520,35 @@ namespace nodecpp {
 			return ret;
 		}
 
-		template<class Node, class ServerT, class ... Types>
+		template<class ServerT, class SocketT, class ... Types>
 		static
-			nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
+		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
 			static_assert( std::is_base_of< ServerBase, ServerT >::value );
-			int id = -1;
-			if constexpr ( !std::is_same<typename Node::EmitterType, void>::value )
-				id = Node::EmitterTypeForServer::template softGetTypeIndexIfTypeExists<ServerT>();
 			nodecpp::safememory::owning_ptr<ServerT> ret = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
-			ret->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
-//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket as described at createServer()\n");
-					nodecpp::safememory::owning_ptr<SocketBase> ret = nodecpp::safememory::make_owning<SocketBase>();
-					ret->registerMeAndAssignSocket<Node, SocketBase>(sdata);
-					return ret;
-				} );
-			ret->registerServer<Node, ServerT>(ret);
-			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*ret));
-			return ret;
-		}/**/
-
-		template<class Node, class ServerT, class SocketT, class ... Types>
-		static
-			nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
-			static_assert( std::is_base_of< ServerBase, ServerT >::value );
-			int id = -1;
-			if constexpr ( !std::is_same<typename Node::EmitterType, void>::value )
-				id = Node::EmitterTypeForServer::template softGetTypeIndexIfTypeExists<ServerT>();
-			nodecpp::safememory::owning_ptr<ServerT> ret = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
+			if constexpr ( !std::is_same<typename ServerT::NodeType, void>::value )
+			{
+				static_assert( std::is_base_of< NodeBase, typename ServerT::NodeType >::value );
+				ret->registerServer<typename ServerT::NodeType, ServerT>(ret);
+			}
+			else
+			{
+				ret->registerServer(ret);
+			}
 			ret->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
 //					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket as described at createServer()\n");
 					nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
-					ret->registerMeAndAssignSocket<Node, SocketT>(sdata);
+//					ret->registerMeAndAssignSocket<Node, SocketT>(sdata);
+					if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
+					{
+						static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
+						ret->registerMeAndAcquireSocket<typename SocketT::NodeType, SocketT>(ret);
+					}
+					else
+					{
+						ret->registerMeByIDAndAssignSocket(sdata, -1);
+					}
 					return ret;
 				} );
-			ret->registerServer<Node, ServerT>(ret);
 			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*ret));
 			return ret;
 		}
