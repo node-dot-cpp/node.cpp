@@ -665,6 +665,9 @@ public:
 	class MyServerSocketOne : public MyServerSocketBase
 	{
 	public:
+		using NodeType = MySampleTNode;
+
+	public:
 		MyServerSocketOne() {
 //			nodecpp::safememory::soft_ptr<MyServerSocketOne> p = myThis.getSoftPtr<MyServerSocketOne>(this);
 //			registerServer<MySampleTNode, MyServerSocketOne>( p );
@@ -684,6 +687,9 @@ public:
 
 	class MyServerSocketTwo : public MyServerSocketBase
 	{
+	public:
+		using NodeType = MySampleTNode;
+
 	public:
 		MyServerSocketTwo() {
 //			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);

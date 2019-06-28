@@ -282,6 +282,10 @@ public:
 
 	class MySocketOne : public ClientSockBaseType
 	{
+	public:
+		using NodeType = MySampleTNode;
+
+	private:
 		size_t recvSize = 0;
 		size_t recvReplies = 0;
 		Buffer buf;

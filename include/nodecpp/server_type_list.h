@@ -308,7 +308,10 @@ namespace nodecpp {
 
 		public:
 			template<class Server>
-			static int getTypeIndex(Server* s) { return ::getTypeIndex<Server, typename args::ServerType...>( s ); }
+			static int getTypeIndex(Server* s) { 
+				static_assert( !std::is_same<typename Server::NodeType, void>::value );
+				return ::getTypeIndex<Server, typename args::ServerType...>( s ); 
+			}
 			template<class Server>
 			static int softGetTypeIndexIfTypeExists() { return ::softGetTypeIndexIfTypeExists<Server, typename args::ServerType...>(); }
 
