@@ -41,6 +41,18 @@ namespace nodecpp {
 		// "iteration" over a list of handling functions for an event
 
 		template<class Node, class Server, class HandlerDataT, class ... args>
+		void checkIsOnConnectionHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, soft_ptr<SocketBase> sock )
+		{
+			return true;
+		}
+
+		template<class Node, class Server>
+		void checkIsOnConnectionHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, soft_ptr<SocketBase> sock )
+		{
+			return false;
+		}
+
+		template<class Node, class Server, class HandlerDataT, class ... args>
 		void callOnConnectionHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, soft_ptr<SocketBase> sock )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
@@ -131,6 +143,11 @@ namespace nodecpp {
 			using ServerT = Server;
 
 			template<class Node>
+			static bool isConnectionEmitter( Node* node, nodecpp::safememory::soft_ptr<Server> server, soft_ptr<SocketBase> sock ) {
+				checkIsOnConnectionHandlers<Node, Server, args...>(node, server, sock); 
+			}
+
+			template<class Node>
 			static void emitConnection( Node* node, nodecpp::safememory::soft_ptr<Server> server, soft_ptr<SocketBase> sock ) {
 				callOnConnectionHandlers<Node, Server, args...>(node, server, sock); 
 			}
@@ -203,7 +220,33 @@ namespace nodecpp {
 			using HandlerDesciptorType = HandlerDesciptorT;
 		};
 
-		// type selection
+
+		// type selection (for checkIsXXX() )
+
+		template<class Node, class T, class T1, class ... args>
+		bool checkIsOnConnection( Node* nodePtr, T* ptr, int type, soft_ptr<SocketBase> sock )
+		{
+			if ( type == 0 )
+			{
+				if constexpr ( std::is_same< typename T1::HandlerDesciptorType::onConnectionT, void >::value )
+					return false;
+				else
+				{
+					soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
+					return T1::HandlerDesciptorType::onConnectionT::isConnectionEmitters( nodePtr, serverTypedPtr, sock );
+				}
+			}
+			return checkIsOnConnection<Node, T, args...>(nodePtr, ptr, type-1, sock);
+		}
+		template<class Node, class T>
+		bool checkIsOnConnection( Node* nodePtr, T* ptr, int type, soft_ptr<SocketBase> sock )
+		{
+			return false;
+		}
+
+
+
+		// type selection (for callXXX() )
 
 		template<class Node, class T, class T1, class ... args>
 		void callOnConnection( Node* nodePtr, T* ptr, int type, soft_ptr<SocketBase> sock )
@@ -317,6 +360,39 @@ namespace nodecpp {
 
 			template<class Node>
 			static Node* getThreadNode() { return static_cast<Node*>(thisThreadNode); }
+
+			// checking presense of an emitter
+
+			template<class Node>
+			static bool isConnectionEmitter( const OpaqueEmitter& emitter, soft_ptr<SocketBase> sock ) {
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				if ( emitter.type == -1 ) return false;
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
+				return checkIsOnConnection<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, sock); 
+			}
+			/*template<class Node>
+			static bool isCloseEmitter( const OpaqueEmitter& emitter, bool hadError ) {
+				if ( emitter.type == -1 ) return false;
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
+				checkIsOnCloseServer<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, hadError);
+			}
+			template<class Node>
+			static bool isListeningEmitter( const OpaqueEmitter& emitter, size_t id, Address addr ) { 
+				if ( emitter.type == -1 ) return false;
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
+				checkIsOnListening<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, id, addr);
+			}
+			template<class Node>
+			static bool isErrorEmitter( const OpaqueEmitter& emitter, nodecpp::Error& e ) { 
+				if ( emitter.type == -1 ) return false;
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
+				checkIsOnErrorServer<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, e);
+			}*/
+
+			// emiitting
 
 			template<class Node>
 			static void emitConnection( const OpaqueEmitter& emitter, soft_ptr<SocketBase> sock ) {
