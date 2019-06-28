@@ -266,7 +266,9 @@ public:
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		clientSock = nodecpp::net::createSocket<MySampleTNode, ClientSockType>();
+//		clientSock = nodecpp::net::createSocket<MySampleTNode, ClientSockType>();
+		clientSock = nodecpp::net::createSocket<ClientSockType>();
+//	nodecpp::safememory::owning_ptr<nodecpp::net::SocketBase> clientSock2 = nodecpp::net::createSocket<>();
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
 		co_return;

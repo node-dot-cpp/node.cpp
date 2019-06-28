@@ -773,12 +773,30 @@ namespace nodecpp {
 			return ret;
 		}*/
 
-		template<class Node, class SocketT, class ... Types>
+		/*template<class Node, class SocketT, class ... Types>
 		static
 			nodecpp::safememory::owning_ptr<SocketT> createSocket(Types&& ... args) {
 			static_assert( std::is_base_of< SocketBase, SocketT >::value );
 			nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>(::std::forward<Types>(args)...);
 			ret->registerMeAndAcquireSocket<Node, SocketT>(ret);
+			ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
+			return ret;
+		}*/
+
+		template<class SocketT = SocketBase, class ... Types>
+		static
+			nodecpp::safememory::owning_ptr<SocketT> createSocket(Types&& ... args) {
+			static_assert( std::is_base_of< SocketBase, SocketT >::value );
+			nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>(::std::forward<Types>(args)...);
+			if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
+			{
+				static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
+				ret->registerMeAndAcquireSocket<typename SocketT::NodeType, SocketT>(ret);
+			}
+			else
+			{
+				ret->registerMeAndAcquireSocket(-1);
+			}
 			ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
 			return ret;
 		}
