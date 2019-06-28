@@ -40,6 +40,9 @@ namespace nodecpp {
 		class [[nodecpp::owning_only]] SocketBase
 		{
 		public:
+			using NodeType = void;
+
+		public:
 			nodecpp::safememory::soft_this_ptr<SocketBase> myThis;
 		public:
 			SocketBase* prev_;
@@ -315,10 +318,10 @@ namespace nodecpp {
 				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
 			}
 
-		private:
+//		private:
+		public:
 			void registerMeAndAcquireSocket(int typeID);
 			void registerMeByIDAndAssignSocket(OpaqueSocketData& sdata, int typeID);
-		public:
 			template<class Node, class DerivedSocket>
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata)
 			{

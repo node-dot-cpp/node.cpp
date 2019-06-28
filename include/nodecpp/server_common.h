@@ -36,9 +36,12 @@ namespace nodecpp {
 
 		class ServerBase
 		{
-			public:
-				nodecpp::safememory::soft_this_ptr<ServerBase> myThis;
-			public:
+		public:
+			using NodeType = void;
+
+		public:
+			nodecpp::safememory::soft_this_ptr<ServerBase> myThis;
+		public:
 			class DataForCommandProcessing {
 			public:
 				size_t index;
