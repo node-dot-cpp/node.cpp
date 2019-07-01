@@ -396,24 +396,28 @@ namespace nodecpp {
 
 			template<class Node>
 			static void emitConnection( const OpaqueEmitter& emitter, soft_ptr<SocketBase> sock ) {
+				if ( emitter.type == -1 ) return; // replace by assert(); should be checked externally before making this call
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
 				callOnConnection<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, sock); 
 			}
 			template<class Node>
 			static void emitClose( const OpaqueEmitter& emitter, bool hadError ) {
+				if ( emitter.type == -1 ) return; // replace by assert(); should be checked externally before making this call
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
 				callOnCloseServer<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, hadError);
 			}
 			template<class Node>
 			static void emitListening( const OpaqueEmitter& emitter, size_t id, Address addr ) { 
+				if ( emitter.type == -1 ) return; // replace by assert(); should be checked externally before making this call
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
 				callOnListening<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, id, addr);
 			}
 			template<class Node>
 			static void emitError( const OpaqueEmitter& emitter, nodecpp::Error& e ) { 
+				if ( emitter.type == -1 ) return; // replace by assert(); should be checked externally before making this call
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
 				callOnErrorServer<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, e);
