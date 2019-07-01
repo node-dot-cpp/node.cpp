@@ -2,16 +2,12 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
-#include "../../../../include/nodecpp/common.h"
 
-
-#include <fmt/format.h>
-#include "../../../../include/nodecpp/socket_type_list.h"
-#include "../../../../include/nodecpp/socket_t_base.h"
-#include "../../../../include/nodecpp/server_t.h"
-#include "../../../../include/nodecpp/server_type_list.h"
-
-#include <functional>
+#include <nodecpp/common.h>
+#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_t_base.h>
+#include <nodecpp/server_t.h>
+#include <nodecpp/server_type_list.h>
 
 
 using namespace std;
@@ -165,7 +161,7 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		srv = nodecpp::safememory::make_owning<net::Server>();
 		srvCtrl = nodecpp::safememory::make_owning<net::Server>();
@@ -180,6 +176,8 @@ public:
 
 		srv->listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
 		srvCtrl->listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
+		
+		co_return;
 	}
 
 	nodecpp::safememory::owning_ptr<net::Server> srv;

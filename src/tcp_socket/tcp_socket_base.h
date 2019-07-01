@@ -31,7 +31,7 @@
 
 #include "../../include/nodecpp/common.h"
 #include "../../include/nodecpp/socket_t_base.h"
-#include "../../include/nodecpp/server_t_base.h"
+#include "../../include/nodecpp/server_common.h"
 #include "../ev_queue.h"
 
 #ifdef _MSC_VER
@@ -218,6 +218,7 @@ public:
 	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
 	static std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
+	static bool infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz);
 
 	//enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
 	//static ShouldEmit infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);

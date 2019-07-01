@@ -42,21 +42,23 @@
 #define NODECPP_UNUSED_VAR 
 #endif
 
-#include <foundation.h>
+/*#include <foundation.h>
 #include <nodecpp_assert.h>
-#include <iibmalloc.h>
+#include <iibmalloc.h>*/
 #include <safe_ptr.h>
+#include "awaitable.h"
 
 #include <utility>
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <list>
 #include <array>
 #include <algorithm>
 
 //#include <cassert>
-#include <fmt/format.h>
+//#include <fmt/format.h>
 //#include "trace.h"
 //#include "assert.h"
 #include "mallocator.h"
@@ -74,10 +76,14 @@ class NodeBase
 {
 public:
 	NodeBase() {}
-	virtual void main() = 0;
+	virtual ~NodeBase() {}
+	virtual nodecpp::awaitable<void> main() = 0;
 
 	using EmitterType = void;
 	using EmitterTypeForServer = void;
+
+//	using SocketEmmitterType = void;
+//	using ServerEmmitterType = void;
 };
 
 #ifdef USING_T_SOCKETS

@@ -2,16 +2,10 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
-#include "../../../../include/nodecpp/common.h"
 
-
-#include "../../../../include/nodecpp/socket_type_list.h"
-#include "../../../../include/nodecpp/socket_t.h"
-/*#include "../../../../include/nodecpp/socket_t_base.h"
-#include "../../../../include/nodecpp/server_t.h"
-#include "../../../../include/nodecpp/server_type_list.h"
-
-#include <functional>*/
+#include <nodecpp/common.h>
+#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_t_base.h>
 
 
 using namespace std;
@@ -47,13 +41,15 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		*( clientSock.getExtra() ) = 17;
 		clientSock.connect(2001, "127.0.0.1");
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
+
+		co_return;
 	}
 	
 	void onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket) 

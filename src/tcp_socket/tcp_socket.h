@@ -43,9 +43,9 @@ public:
 	bool refed = false;
 	OpaqueEmitter emitter;
 
-	NetSocketEntry(size_t index) : index(index), state(State::Unused) {}
-	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ClientSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
-	NetSocketEntry(size_t index, NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int type) : index(index), state(State::SockIssued), emitter(OpaqueEmitter::ObjectType::ServerSocket, node, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index) : state(State::Unused), index(index) {}
+	NetSocketEntry(size_t index/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ClientSocket/*, node*/, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket/*, node*/, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -61,7 +61,7 @@ public:
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
 	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
-	net::ServerTBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
+	net::ServerBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
 };
 
 class NetSockets
@@ -81,14 +81,14 @@ public:
 	bool isValidId( size_t idx ) { return idx && idx < ourSide.size(); };
 
 	template<class SocketType>
-	size_t addEntry(NodeBase* node, nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
+	size_t addEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
 		{
 			if (!ourSide[i].isUsed())
 			{
-				NetSocketEntry entry(i, node, ptr, typeId);
+				NetSocketEntry entry(i/*, node*/, ptr, typeId);
 				ourSide[i] = std::move(entry);
 				osSide[i].fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 				osSide[i].events = 0;
@@ -98,7 +98,7 @@ public:
 		}
 
 		size_t ix = ourSide.size();
-		ourSide.emplace_back(ix, node, ptr, typeId);
+		ourSide.emplace_back(ix/*, node*/, ptr, typeId);
 		pollfd p;
 		p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 		p.events = 0;
@@ -110,8 +110,8 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() );
 		ourSide[idx].setAssociated();
 		osSide[idx].fd = (SOCKET)(-((int64_t)(osSide[idx].fd)));
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].events == 0 );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].revents == 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].events == 0, "indeed: {}", osSide[idx].events );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].revents == 0, "indeed: {}", osSide[idx].revents );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].fd > 0 );
 		++associatedCount;
 	}
@@ -157,8 +157,8 @@ class NetSocketManagerBase : protected OSLayer
 	std::vector<Buffer> bufferStore; // TODO: improve
 
 public:
-	int typeIndexOfSocketO = -1;
-	int typeIndexOfSocketL = -1;
+//	int typeIndexOfSocketO = -1;
+//	int typeIndexOfSocketL = -1;
 
 protected:
 	NetSockets& ioSockets; // TODO: improve
@@ -187,7 +187,7 @@ public:
 		size_t id = ptr->dataForCommandProcessing.index;
 		pendingAcceptedEvents.push_back(id);
 		ptr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connected;
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.writeBuffer.size() == 0 );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.writeBuffer.used_size() == 0 );
 		ioSockets.unsetPollout(id);
 		ptr->dataForCommandProcessing.refed = true;
 		auto& entry = appGetEntry(id);
@@ -201,24 +201,24 @@ public:
 	}
 
 #ifdef USING_T_SOCKETS
-	size_t appAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId)
+	size_t appAcquireSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId)
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
-		return registerAndAssignSocket(node, ptr, typeId, s);
+		return registerAndAssignSocket(/*node, */ptr, typeId, s);
 	}
 
-	size_t appAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, OpaqueSocketData& sdata)
+	size_t appAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, OpaqueSocketData& sdata)
 	{
 		SocketRiia s( sdata.s.release() );
-		return registerAndAssignSocket(node, ptr, typeId, s);
+		return registerAndAssignSocket(/*node, */ptr, typeId, s);
 	}
 
 private:
-	size_t registerAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, SocketRiia& s)
+	size_t registerAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, SocketRiia& s)
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		size_t id = ioSockets.addEntry<net::SocketBase>(node, ptr, typeId);
+		size_t id = ioSockets.addEntry<net::SocketBase>(/*node, */ptr, typeId);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
 		return id;
 	}
@@ -239,6 +239,7 @@ public:
 		ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
 	}
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
+	bool appWrite2(net::SocketBase::DataForCommandProcessing& sockData, Buffer& b );
 	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
 	{
 		Ip4 remoteIp;
@@ -317,6 +318,7 @@ public:
 	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets) {}
 
 	// to help with 'poll'
+	template<class Node>
 	void infraGetCloseEvent(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to appClose it,
@@ -356,12 +358,29 @@ public:
 					EmitterType::emitClose(entry.getEmitter(), err);
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 #else // new version
-					EmitterType::emitClose(entry.getEmitter(), err);
+					if (entry.isUsed())
+					{
+						if ( entry.getClientSocketData()->ahd_read.h != nullptr )
+						{
+						}
+						if ( entry.getClientSocketData()->ahd_write.h != nullptr )
+						{
+						}
+					}
+//					EmitterType::emitClose(entry.getEmitter(), err);
+					EmitterType::template emitClose<Node>(entry.getEmitter(), err);
+					if (entry.getClientSocketData()->isCloseEventHandler())
+						entry.getClientSocketData()->handleCloseEvent(err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 //					if (err && entry.isValid()) //if error closing, then first error event
 					if (err && entry.isUsed()) //if error closing, then first error event
-						EmitterType::emitError(entry.getEmitter(), current.second.second);
+					{
+//						EmitterType::emitError(entry.getEmitter(), current.second.second);
+						EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
+						if (entry.getClientSocketData()->isErrorEventHandler())
+							entry.getClientSocketData()->handleErrorEvent(current.second.second);
+					}
 #endif // 0
 				}
 				entry = NetSocketEntry(current.first); 
@@ -369,6 +388,8 @@ public:
 		}
 		pendingCloseEvents.clear();
 	}
+
+	template<class Node>
 	void infraProcessSockAcceptedEvents()
 	{
 		for ( auto idx:pendingAcceptedEvents )
@@ -379,7 +400,19 @@ public:
 //				if (entry.isValid())
 				if (entry.isUsed())
 				{
-					EmitterType::emitAccepted(entry.getEmitter());
+					auto hr = entry.getClientSocketData()->ahd_accepted.h;
+					if ( hr )
+					{
+						entry.getClientSocketData()->ahd_accepted.h = nullptr;
+						hr();
+					}
+					else // TODO: make sure we never have both cases in the same time
+					{
+//						EmitterType::emitAccepted(entry.getEmitter());
+						EmitterType::template emitAccepted<Node>(entry.getEmitter());
+						if (entry.getClientSocketData()->isAcceptedEventHandler())
+							entry.getClientSocketData()->handleAcceptedEvent();
+					}
 					//entry.setAssociated();
 					//ioSockets.setAssociated( idx );
 				}
@@ -388,6 +421,7 @@ public:
 		}
 	}
 
+	template<class Node>
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
@@ -413,19 +447,19 @@ public:
 				if (!current.getClientSocketData()->paused)
 				{
 					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", begin[i].fd);
-					infraProcessReadEvent(current/*, evs*/);
+					infraProcessReadEvent<Node>(current/*, evs*/);
 				}
 			}
 			else if ((revents & POLLHUP) != 0)
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLHUP event at {}", current.getClientSocketData()->osSocket);
-				infraProcessRemoteEnded(current/*, evs*/);
+				infraProcessRemoteEnded<Node>(current/*, evs*/);
 			}
 				
 			if ((revents & POLLOUT) != 0)
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLOUT event at {}", current.getClientSocketData()->osSocket);
-				infraProcessWriteEvent(current/*, evs*/);
+				infraProcessWriteEvent<Node>(current/*, evs*/);
 			}
 		}
 		//else if (revents != 0)
@@ -437,33 +471,59 @@ public:
 	}
 
 private:
+	template<class Node>
 	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
-		auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
-		if (res.first)
+		auto hr = entry.getClientSocketData()->ahd_read.h;
+		if ( hr )
 		{
-			if (res.second.size() != 0)
+			size_t target_sz = entry.getClientSocketData()->ahd_read.min_bytes;
+			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, target_sz);
+			entry.getClientSocketData()->ahd_read.is_exception = !read_ok;
+			if ( !read_ok )
 			{
-	//			entry.ptr->emitData(std::move(res.second));
-
-	//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
-//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
-				EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+				entry.getClientSocketData()->ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+				entry.getClientSocketData()->ahd_read.h = nullptr;
+				hr();
 			}
-			else //if (!entry.remoteEnded)
+			else if ( entry.getClientSocketData()->readBuffer.used_size() >= entry.getClientSocketData()->ahd_read.min_bytes )
 			{
-				infraProcessRemoteEnded(entry/*, evs*/);
+				entry.getClientSocketData()->ahd_read.h = nullptr;
+				hr();
 			}
 		}
 		else
 		{
-			internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
-	//		return errorCloseSocket(entry, storeError(Error()));
-			Error e;
-			errorCloseSocket(entry, e);
+			auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
+			if (res.first)
+			{
+				if (res.second.size() != 0)
+				{
+		//			entry.ptr->emitData(std::move(res.second));
+
+		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
+	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
+//					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+					EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+					if (entry.getClientSocketData()->isDataEventHandler())
+						entry.getClientSocketData()->handleDataEvent(std::ref(infraStoreBuffer(std::move(res.second))));
+				}
+				else //if (!entry.remoteEnded)
+				{
+					infraProcessRemoteEnded<Node>(entry);
+				}
+			}
+			else
+			{
+				internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
+		//		return errorCloseSocket(entry, storeError(Error()));
+				Error e;
+				errorCloseSocket(entry, e);
+			}
 		}
 	}
 
+	template<class Node>
 	void infraProcessRemoteEnded(NetSocketEntry& entry)
 	{
 		if (!entry.getClientSocketData()->remoteEnded)
@@ -471,7 +531,10 @@ private:
 			entry.getClientSocketData()->remoteEnded = true;
 			ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
 	//		evs.add(&net::Socket::emitEnd, entry.getPtr());
-			EmitterType::emitEnd(entry.getEmitter());
+//			EmitterType::emitEnd(entry.getEmitter());
+			EmitterType::template emitEnd<Node>(entry.getEmitter());
+			if (entry.getClientSocketData()->isEndEventHandler())
+				entry.getClientSocketData()->handleEndEvent();
 			if (entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 			{
 				//pendingCloseEvents.emplace_back(entry.index, false);
@@ -499,17 +562,46 @@ private:
 
 	}
 
+	template<class Node>
 	void infraProcessWriteEvent(NetSocketEntry& current)
 	{
 		NetSocketManagerBase::ShouldEmit status = this->_infraProcessWriteEvent(*current.getClientSocketData());
 		switch ( status )
 		{
 			case NetSocketManagerBase::ShouldEmit::EmitConnect:
-				EmitterType::emitConnect(current.getEmitter());
+			{
+				auto hr = current.getClientSocketData()->ahd_connect.h;
+				if ( hr )
+				{
+					current.getClientSocketData()->ahd_connect.h = nullptr;
+					hr();
+				}
+				else
+				{
+//					EmitterType::emitConnect(current.getEmitter());
+					EmitterType::template emitConnect<Node>(current.getEmitter());
+					if (current.getClientSocketData()->isConnectEventHandler())
+						current.getClientSocketData()->handleConnectEvent();
+				}
 				break;
+			}
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:
-				EmitterType::emitDrain(current.getEmitter());
+			{
+				auto hr = current.getClientSocketData()->ahd_drain.h;
+				if ( hr )
+				{
+					current.getClientSocketData()->ahd_drain.h = nullptr;
+					hr();
+				}
+				else // TODO: make sure we never have both cases in the same time
+				{
+//					EmitterType::emitDrain(current.getEmitter());
+					EmitterType::template emitDrain<Node>(current.getEmitter());
+					if (current.getClientSocketData()->isDrainEventHandler())
+						current.getClientSocketData()->handleDrainEvent();
+				}
 				break;
+			}
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,status == NetSocketManagerBase::ShouldEmit::EmitNone, "unexpected value {}", (size_t)status);
 		}
@@ -540,17 +632,17 @@ public:
 	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
 	void appClose(size_t id);
-	void appAddServer(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int typeId) {
+	void appAddServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		size_t id = addServerEntry(node, ptr, typeId);
+		size_t id = addServerEntry(/*node, */ptr, typeId);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
 	}
-	void appListen(soft_ptr<net::ServerTBase> ptr, const char* ip, uint16_t port, int backlog) {
+	void appListen(soft_ptr<net::ServerBase> ptr, const char* ip, uint16_t port, int backlog) {
 		Ip4 myIp = Ip4::parse(ip);
 		Port myPort = Port::fromHost(port);
 		if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort)) {
@@ -560,6 +652,9 @@ public:
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.refed = true;
+		ptr->dataForCommandProcessing.localAddress.address = ip;
+		ptr->dataForCommandProcessing.localAddress.port = port;
+		ptr->dataForCommandProcessing.localAddress.family = family;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.index != 0 );
 		/*pollfd p;
 		p.fd = ptr->dataForCommandProcessing.osSocket;
@@ -596,7 +691,7 @@ public:
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 
 protected:
-	size_t addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int typeId);
+	size_t addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };
@@ -622,6 +717,7 @@ public:
 		errorStore.clear();
 	}
 
+	template<class Node>
 	void infraGetCloseEvents(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to close it,
@@ -639,9 +735,14 @@ public:
 				{
 					if (entry.getServerSocketData()->osSocket != INVALID_SOCKET)
 						internal_usage_only::internal_close(entry.getServerSocketData()->osSocket);
-					//			entry.getPtr()->emitClose(entry.second);
 					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
-					EmitterType::emitClose( entry.getEmitter(), current.second);
+					{
+						//EmitterType::emitClose( entry.getEmitter(), current.second);
+						EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
+						if (entry.getServerSocketData()->isCloseEventHandler())
+							entry.getServerSocketData()->handleCloseEvent(current.second);
+						// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+					}
 				}
 				entry = NetSocketEntry(current.first);
 			}
@@ -649,27 +750,62 @@ public:
 		pendingCloseEvents.clear();
 	}
 
+	template<class Node>
+	void infraEmitListeningEvents()
+	{
+		while ( pendingListenEvents.size() )
+		{
+			std::vector<size_t> currentPendingListenEvents = std::move( pendingListenEvents );
+			for (auto& current : currentPendingListenEvents)
+			{
+				if (ioSockets.isValidId(current))
+				{
+					auto& entry = ioSockets.at(current);
+					if (entry.isUsed())
+					{
+						auto hr = entry.getServerSocketData()->ahd_listen.h;
+						if ( hr != nullptr )
+						{
+							entry.getServerSocketData()->ahd_listen.h = nullptr;
+							hr();
+						}
+						else
+						{
+							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+							EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+							if (entry.getServerSocketData()->isListenEventHandler() )
+								entry.getServerSocketData()->handleListenEvent(current, entry.getServerSocketData()->localAddress);
+							// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+						}
+					}
+				}
+			}
+		}
+	}
+
+	template<class Node>
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose(current/*, evs*/);
+			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
 		}
 		else if ((revents & POLLIN) != 0)
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", current.getServerSocketData()->osSocket);
-			infraProcessAcceptEvent(current/*, evs*/);
+			infraProcessAcceptEvent<Node>(current/*, evs*/);
 		}
 		else if (revents != 0)
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose(current/*, evs*/);
+			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
 		}
 	}
 private:
+	template<class Node>
 	void infraProcessAcceptEvent(NetSocketEntry& entry)
 	{
 		OpaqueSocketData osd( false );
@@ -679,16 +815,36 @@ private:
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
-		EmitterType::emitConnection( entry.getEmitter(), ptr );
+
+		auto hr = entry.getServerSocketData()->ahd_connection.h;
+		if ( hr )
+		{
+			entry.getServerSocketData()->ahd_connection.sock = ptr;
+			entry.getServerSocketData()->ahd_connection.h = nullptr;
+			hr();
+		}
+		else
+		{
+			//EmitterType::emitConnection(entry.getEmitter(), ptr); 
+			EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
+			if (entry.getServerSocketData()->isConnectionEventHandler())
+				entry.getServerSocketData()->handleConnectionEvent(ptr);
+			// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+		}
 
 		return;
 	}
 
+	template<class Node>
 	void infraMakeErrorEventAndClose(NetSocketEntry& entry)
 	{
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 		Error e;
-		EmitterType::emitError( entry.getEmitter(), e );
+		//EmitterType::emitError( entry.getEmitter(), e );
+		EmitterType::template emitError<Node>( entry.getEmitter(), e );
+		if (entry.getServerSocketData()->isErrorEventHandler())
+			entry.getServerSocketData()->handleErrorEvent(e);
+		// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 		pendingCloseEvents.emplace_back(entry.index, true);
 	}
 };

@@ -2,12 +2,10 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
-#include "../../../../include/nodecpp/common.h"
 
-
-#include <fmt/format.h>
-#include "../../../../include/nodecpp/socket_type_list.h"
-#include "../../../../include/nodecpp/socket_t_base.h"
+#include <nodecpp/common.h>
+#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_t_base.h>
 
 //#define DO_INTEGRITY_CHECKING // TODO: consider making project-level definition
 
@@ -50,7 +48,7 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
@@ -148,6 +146,8 @@ public:
 #endif
 
 		clientSock.connect(2000, "127.0.0.1");
+		
+		co_return;
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;

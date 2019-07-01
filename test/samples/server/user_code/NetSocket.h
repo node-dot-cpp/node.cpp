@@ -3,12 +3,11 @@
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
 
-#include "../../../../include/nodecpp/common.h"
-
-#include "../../../../include/nodecpp/socket_type_list.h"
-#include "../../../../include/nodecpp/socket_t_base.h"
-#include "../../../../include/nodecpp/server_t.h"
-#include "../../../../include/nodecpp/server_type_list.h"
+#include <nodecpp/common.h>
+#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_t_base.h>
+#include <nodecpp/server_t.h>
+#include <nodecpp/server_type_list.h>
 
 
 using namespace std;
@@ -42,15 +41,15 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-#ifndef NET_CLIENT_ONLY
 		srv.listen(2000, "127.0.0.1", 5);
 		srvCtrl.listen(2001, "127.0.0.1", 5);
-#endif // NO_SERVER_STAFF
+
+		co_return;
 	}
 
 	// server socket
@@ -174,7 +173,7 @@ public:
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
+	void onListeningServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
 	void onErrorServer(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerSocket,ServerIdType>>, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServer!");}
 
 	using ServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerSocket,ServerIdType,
@@ -196,7 +195,7 @@ public:
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
+	void onListeningCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
 	void onErrorServerCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerTUserBase<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>>, Error& err) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onErrorServerCtrl!");}
 
 	using CtrlServerType = nodecpp::net::ServerT<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType,

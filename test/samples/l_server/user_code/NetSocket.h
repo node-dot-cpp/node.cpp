@@ -30,10 +30,8 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
+
 #include <nodecpp/common.h>
-
-
-#include <fmt/format.h>
 #include <nodecpp/socket_type_list.h>
 #include <nodecpp/socket_t_base.h>
 #include <nodecpp/server_t.h>
@@ -86,7 +84,7 @@ public:
 		printf( "MySampleTNode::MySampleTNode()\n" );
 	}
 
-	virtual void main()
+	virtual nodecpp::awaitable<void> main()
 	{
 		printf( "MySampleLambdaOneNode::main()\n" );
 
@@ -219,6 +217,8 @@ public:
 
 		srv.listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
 		srvCtrl.listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
+		
+		co_return;
 	}
 
 public:
