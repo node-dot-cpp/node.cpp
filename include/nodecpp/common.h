@@ -72,12 +72,21 @@ using namespace ::nodecpp::safememory;
 template<class T>
 using GlobalObjectAllocator = Mallocator<T>;
 
+namespace nodecpp
+{
+#ifndef NODECPP_NO_COROUTINES
+	using handler_ret_type = ::nodecpp::awaitable<void>;
+#else
+	using handler_ret_type = void;
+#endif // NODECPP_NO_COROUTINES
+}
+
 class NodeBase
 {
 public:
 	NodeBase() {}
 	virtual ~NodeBase() {}
-	virtual nodecpp::awaitable<void> main() = 0;
+	virtual nodecpp::handler_ret_type main() = 0;
 
 	using EmitterType = void;
 	using EmitterTypeForServer = void;

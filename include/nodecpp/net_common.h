@@ -529,7 +529,12 @@ namespace nodecpp {
 
 		struct awaitable_handle_data
 		{
+#ifndef NODECPP_NO_COROUTINES
 			std::experimental::coroutine_handle<> h = nullptr;
+#else
+			using handler_fn_type = void (*)();
+			handler_fn_type h = nullptr;
+#endif
 			bool is_exception = false;
 			std::exception exception; // TODO: consider possibility of switching to nodecpp::error
 		};
@@ -579,8 +584,10 @@ namespace nodecpp {
 
 
 			bool willHandle() { 
-				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type != Type::uninitialized);
-				return type != Type::zero; 
+if ( type == Type::uninitialized )
+type = Type::uninitialized;
+//				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type != Type::uninitialized);
+				return type != Type::uninitialized && type != Type::zero; 
 			}
 			void from(const UserDefHandlersBase<FnT>& patternUH, void* defaultObjPtr)
 			{

@@ -69,42 +69,42 @@ namespace nodecpp {
 				struct UserHandlersCommon
 				{
 				public:
-					using userDefListenHandlerFnT = nodecpp::awaitable<void> (*)(void*, size_t, nodecpp::net::Address);
-					using userDefConnectionHandlerFnT = nodecpp::awaitable<void> (*)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>);
-					using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
-					using userDefErrorHandlerFnT = nodecpp::awaitable<void> (*)(void*, Error&);
+					using userDefListenHandlerFnT = nodecpp::handler_ret_type (*)(void*, size_t, nodecpp::net::Address);
+					using userDefConnectionHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<net::SocketBase>);
+					using userDefCloseHandlerFnT = nodecpp::handler_ret_type (*)(void*, bool);
+					using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, Error&);
 
-					template<class T> using userListenMemberHandler = nodecpp::awaitable<void> (T::*)(size_t, nodecpp::net::Address);
-					template<class T> using userConnectionMemberHandler = nodecpp::awaitable<void> (T::*)(nodecpp::safememory::soft_ptr<net::SocketBase>);
-					template<class T> using userCloseMemberHandler = nodecpp::awaitable<void> (T::*)(bool);
-					template<class T> using userErrorMemberHandler = nodecpp::awaitable<void> (T::*)(Error&);
+					template<class T> using userListenMemberHandler = nodecpp::handler_ret_type (T::*)(size_t, nodecpp::net::Address);
+					template<class T> using userConnectionMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<net::SocketBase>);
+					template<class T> using userCloseMemberHandler = nodecpp::handler_ret_type (T::*)(bool);
+					template<class T> using userErrorMemberHandler = nodecpp::handler_ret_type (T::*)(Error&);
 
 					template<class ObjectT, userListenMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> listenHandler( void* objPtr, size_t id, nodecpp::net::Address addr )
+					static nodecpp::handler_ret_type listenHandler( void* objPtr, size_t id, nodecpp::net::Address addr )
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(id, addr);
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userConnectionMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> connectionHandler( void* objPtr, nodecpp::safememory::soft_ptr<net::SocketBase> socket )
+					static nodecpp::handler_ret_type connectionHandler( void* objPtr, nodecpp::safememory::soft_ptr<net::SocketBase> socket )
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(socket);
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> closeHandler( void* objPtr, bool hadError )
+					static nodecpp::handler_ret_type closeHandler( void* objPtr, bool hadError )
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> errorHandler( void* objPtr, Error& e )
+					static nodecpp::handler_ret_type errorHandler( void* objPtr, Error& e )
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
-						co_return;
+						CO_RETURN;
 					}
 
 					enum class Handler { Listen, Connection, Close, Error };
@@ -256,6 +256,8 @@ namespace nodecpp {
 
 			void listen(uint16_t port, const char* ip, int backlog);
 
+#ifndef NODECPP_NO_COROUTINES
+
 			auto a_listen(uint16_t port, const char* ip, int backlog) { 
 
 				struct listen_awaiter {
@@ -298,6 +300,7 @@ namespace nodecpp {
 					ServerBase& server;
 					nodecpp::safememory::soft_ptr<SocketT>& socket;
 
+
 					std::experimental::coroutine_handle<> who_is_awaiting;
 
 					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_) : server( server_ ), socket( socket_ ) {}
@@ -330,6 +333,8 @@ namespace nodecpp {
 				};
 				return connection_awaiter(*this, socket);
 			}
+
+#endif // NODECPP_NO_COROUTINES
 
 			protected:
 				MultiOwner<SocketBase> socketList;
@@ -541,7 +546,12 @@ namespace nodecpp {
 					if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
 					{
 						static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-						ret->template registerMeAndAcquireSocket<typename SocketT::NodeType, SocketT>(ret);
+//						ret->template registerMeByIDAndAssignSocket<typename SocketT::NodeType, SocketT>(ret);
+//						ret->template registerMeByIDAndAssignSocket<typename SocketT::NodeType, SocketT>(sdata);
+						int id = -1;
+						if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
+							id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
+						ret->registerMeByIDAndAssignSocket(sdata, id);
 					}
 					else
 					{

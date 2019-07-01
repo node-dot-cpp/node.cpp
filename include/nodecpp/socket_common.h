@@ -107,69 +107,69 @@ namespace nodecpp {
 				struct UserHandlersCommon
 				{
 				public:
-					using userDefAcceptedHandlerFnT = nodecpp::awaitable<void> (*)(void*);
-					using userDefConnectHandlerFnT = nodecpp::awaitable<void> (*)(void*);
-					using userDefDataHandlerFnT = nodecpp::awaitable<void> (*)(void*, Buffer& buffer);
-					using userDefDrainHandlerFnT = nodecpp::awaitable<void> (*)(void*);
-					using userDefEndHandlerFnT = nodecpp::awaitable<void> (*)(void*);
-					using userDefCloseHandlerFnT = nodecpp::awaitable<void> (*)(void*, bool);
-					using userDefErrorHandlerFnT = nodecpp::awaitable<void> (*)(void*, Error&);
+					using userDefAcceptedHandlerFnT = nodecpp::handler_ret_type (*)(void*);
+					using userDefConnectHandlerFnT = nodecpp::handler_ret_type (*)(void*);
+					using userDefDataHandlerFnT = nodecpp::handler_ret_type (*)(void*, Buffer& buffer);
+					using userDefDrainHandlerFnT = nodecpp::handler_ret_type (*)(void*);
+					using userDefEndHandlerFnT = nodecpp::handler_ret_type (*)(void*);
+					using userDefCloseHandlerFnT = nodecpp::handler_ret_type (*)(void*, bool);
+					using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, Error&);
 
-					template<class T> using userAcceptedMemberHandler = nodecpp::awaitable<void> (T::*)();
-					template<class T> using userConnectMemberHandler = nodecpp::awaitable<void> (T::*)();
-					template<class T> using userDataMemberHandler = nodecpp::awaitable<void> (T::*)(Buffer&);
-					template<class T> using userDrainMemberHandler = nodecpp::awaitable<void> (T::*)();
-					template<class T> using userEndMemberHandler = nodecpp::awaitable<void> (T::*)();
-					template<class T> using userCloseMemberHandler = nodecpp::awaitable<void> (T::*)(bool);
-					template<class T> using userErrorMemberHandler = nodecpp::awaitable<void> (T::*)(Error&);
+					template<class T> using userAcceptedMemberHandler = nodecpp::handler_ret_type (T::*)();
+					template<class T> using userConnectMemberHandler = nodecpp::handler_ret_type (T::*)();
+					template<class T> using userDataMemberHandler = nodecpp::handler_ret_type (T::*)(Buffer&);
+					template<class T> using userDrainMemberHandler = nodecpp::handler_ret_type (T::*)();
+					template<class T> using userEndMemberHandler = nodecpp::handler_ret_type (T::*)();
+					template<class T> using userCloseMemberHandler = nodecpp::handler_ret_type (T::*)(bool);
+					template<class T> using userErrorMemberHandler = nodecpp::handler_ret_type (T::*)(Error&);
 
 					template<class ObjectT, userAcceptedMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> acceptedHandler(void* objPtr)
+					static nodecpp::handler_ret_type acceptedHandler(void* objPtr)
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userConnectMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> connectHandler(void* objPtr)
+					static nodecpp::handler_ret_type connectHandler(void* objPtr)
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userDataMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> dataHandler(void* objPtr, Buffer& buffer)
+					static nodecpp::handler_ret_type dataHandler(void* objPtr, Buffer& buffer)
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(buffer);
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userDrainMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> drainHandler(void* objPtr)
+					static nodecpp::handler_ret_type drainHandler(void* objPtr)
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userEndMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> endHandler(void* objPtr)
+					static nodecpp::handler_ret_type endHandler(void* objPtr)
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> closeHandler(void* objPtr, bool hadError)
+					static nodecpp::handler_ret_type closeHandler(void* objPtr, bool hadError)
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
-						co_return;
+						CO_RETURN;
 					}
 
 					template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::awaitable<void> errorHandler(void* objPtr, Error& e)
+					static nodecpp::handler_ret_type errorHandler(void* objPtr, Error& e)
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
-						co_return;
+						CO_RETURN;
 					}
 
 					enum class Handler { Accepted, Connect, Data, Drain, End, Close, Error };
@@ -405,6 +405,8 @@ namespace nodecpp {
 			SocketBase& setKeepAlive(bool enable = false);
 
 
+#ifndef NODECPP_NO_COROUTINES
+
 			auto a_connect(uint16_t port, const char* ip) { 
 
 				struct connect_awaiter {
@@ -549,6 +551,9 @@ namespace nodecpp {
 				};
 				return drain_awaiter(*this);
 			}
+
+#endif // NODECPP_NO_COROUTINES
+
 
 			///////////////////////////////////////////////////////////////////
 		private:

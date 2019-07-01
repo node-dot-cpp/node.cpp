@@ -28,7 +28,17 @@
 #ifndef NODECPP_AWAITABLE_H
 #define NODECPP_AWAITABLE_H
 
+#if !((defined NODECPP_CLANG) || (defined NODECPP_MSVC))
+#define NODECPP_NO_COROUTINES
+#endif
+
+#include <foundation.h>
+
+#ifndef NODECPP_NO_COROUTINES
+
 #include <experimental/coroutine>
+
+#define CO_RETURN co_return;
 
 namespace nodecpp {
 
@@ -195,6 +205,21 @@ auto wait_for_all( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std:
 }
 
 } // namespace nodecpp
+
+#else // main "candidate" for this #if/#else branch is GCC who is not supporting coroutines yet
+
+#define CO_RETURN return;
+
+namespace nodecpp {
+
+template<class T>
+struct awaitable
+{
+};
+
+} // namespace nodecpp
+
+#endif
 
 
 #endif // NODECPP_AWAITABLE_H
