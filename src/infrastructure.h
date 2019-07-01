@@ -193,12 +193,12 @@ public:
 					switch ( current.emitter.objectType )
 					{
 						case OpaqueEmitter::ObjectType::ClientSocket:
-							netSocket.infraCheckPollFdSet<Node>(current, revents);
+							netSocket.template infraCheckPollFdSet<Node>(current, revents);
 							break;
 						case OpaqueEmitter::ObjectType::ServerSocket:
 							if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 							{
-								netServer.infraCheckPollFdSet<Node>(current, revents);
+								netServer.template infraCheckPollFdSet<Node>(current, revents);
 								break;
 							}
 							else
@@ -229,7 +229,7 @@ public:
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
 				netServer.infraGetPendingEvents(queue);
-				netServer.infraEmitListeningEvents<Node>();
+				netServer.template infraEmitListeningEvents<Node>();
 				queue.emit();
 			}
 
@@ -245,11 +245,11 @@ public:
 			queue.emit();
 	//		emitInmediates();
 
-			netSocket.infraGetCloseEvent<Node>(/*queue*/);
-			netSocket.infraProcessSockAcceptedEvents<Node>();
+			netSocket.template infraGetCloseEvent<Node>(/*queue*/);
+			netSocket.template infraProcessSockAcceptedEvents<Node>();
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
-				netServer.infraGetCloseEvents<Node>(/*queue*/);
+				netServer.template infraGetCloseEvents<Node>(/*queue*/);
 			}
 			queue.emit();
 
@@ -313,7 +313,7 @@ class Runnable : public RunnableBase
 			node = make_owning<Node>();
 			thisThreadNode = &(*node);
 			node->main();
-			infra.runInfraLoop2<Node>();
+			infra.template runInfraLoop2<Node>();
 		}
 		interceptNewDeleteOperators(false);
 	}

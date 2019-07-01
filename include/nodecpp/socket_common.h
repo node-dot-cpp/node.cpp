@@ -310,12 +310,12 @@ namespace nodecpp {
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn, class ObjectT>			
 			static void addHandler(ObjectT* object)
 			{
-				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, ObjectT>(object);
+				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandler<handler, memmberFn, ObjectT>(object);
 			}
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>			
 			static void addHandler()
 			{
-				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().addHandler<handler, memmberFn, UserClass>(nullptr);
+				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandler<handler, memmberFn, UserClass>(nullptr);
 			}
 
 //		private:
@@ -791,7 +791,7 @@ namespace nodecpp {
 			if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
 			{
 				static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-				ret->registerMeAndAcquireSocket<typename SocketT::NodeType, SocketT>(ret);
+				ret->template registerMeAndAcquireSocket<typename SocketT::NodeType, SocketT>(ret);
 			}
 			else
 			{

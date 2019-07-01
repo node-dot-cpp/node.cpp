@@ -41,13 +41,13 @@ namespace nodecpp {
 		// "iteration" over a list of handling functions for an event
 
 		template<class Node, class Server, class HandlerDataT, class ... args>
-		void checkIsOnConnectionHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, soft_ptr<SocketBase> sock )
+		bool checkIsOnConnectionHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, soft_ptr<SocketBase> sock )
 		{
 			return true;
 		}
 
 		template<class Node, class Server>
-		void checkIsOnConnectionHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, soft_ptr<SocketBase> sock )
+		bool checkIsOnConnectionHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, soft_ptr<SocketBase> sock )
 		{
 			return false;
 		}
