@@ -300,15 +300,14 @@ class Runnable : public RunnableBase
 	{
 		interceptNewDeleteOperators(true);
 		{
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.init();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.init();
+
 			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
 			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
-			//netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
-			//netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
 			if constexpr (!std::is_same< ServerSocketEmitter, void >::value)
 			{
 				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
-				//netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
-				//netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
 			}
 			node = make_owning<Node>();
 			thisThreadNode = &(*node);

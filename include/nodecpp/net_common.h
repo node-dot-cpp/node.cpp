@@ -721,6 +721,10 @@ type = Type::uninitialized;
 				}
 			}
 		public:
+			void init()
+			{
+				new(&patterns)std::map<std::type_index, std::pair<UserHandlerType, bool>>();
+			}
 			template<class UserClass>
 			UserHandlerType& getPatternForUpdate()
 			{
