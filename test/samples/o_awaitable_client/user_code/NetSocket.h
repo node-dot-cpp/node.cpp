@@ -14,7 +14,8 @@ using namespace fmt;
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 4 // registering handlers (per class)
-#define IMPL_VERSION 5 // registering handlers (per class, template-based)
+//#define IMPL_VERSION 5 // registering handlers (per class, template-based)
+#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 
 class MySampleTNode : public NodeBase
 {
@@ -32,7 +33,7 @@ public:
 
 #if IMPL_VERSION == 2
 
-	virtual nodecpp::awaitable<void> main()
+	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
@@ -52,7 +53,7 @@ public:
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("processing on socket with extra = {} failed. Exiting...", *(clientSock->getExtra()));
 		}
-		co_return;
+		CO_RETURN;
 	}
 
 	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType
@@ -89,23 +90,23 @@ public:
 			}
 			// TODO: address failure
 		}
-		co_return;
+		CO_RETURN;
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
 
 #elif IMPL_VERSION == 3
-	virtual nodecpp::awaitable<void> main()
+	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
-		co_return;
+		CO_RETURN;
 	}
 	
-	nodecpp::awaitable<void> onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
+	nodecpp::handler_ret_type onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
 	{
 		printf( "onWhateverConnect()\n" );
 		Buffer buf(2);
@@ -122,7 +123,7 @@ public:
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
 			// TODO: address failure
 		}
-		co_return;
+		CO_RETURN;
 	}
 
 	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
@@ -160,13 +161,13 @@ public:
 			}
 			// TODO: address failure
 		}
-		co_return;
+		CO_RETURN;
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
 
 #elif IMPL_VERSION == 4
-	virtual nodecpp::awaitable<void> main()
+	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
@@ -176,13 +177,13 @@ public:
 		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
-		co_return;
+		CO_RETURN;
 	}
 
-	nodecpp::awaitable<void> onWhateverConnect() 
+	nodecpp::handler_ret_type onWhateverConnect() 
 	{
 		printf( "MySampleTNode::onWhateverConnect()\n" );
-		co_return;
+		CO_RETURN;
 	}
 
 //	using ClientSockBaseType = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
@@ -201,7 +202,7 @@ public:
 
 		int* getExtra() { return &extraData; }
 
-		nodecpp::awaitable<void> onWhateverConnect() 
+		nodecpp::handler_ret_type onWhateverConnect() 
 		{
 			printf( "onWhateverConnect()\n" );
 			Buffer buf(2);
@@ -218,7 +219,7 @@ public:
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(getExtra()));
 				// TODO: address failure
 			}
-			co_return;
+			CO_RETURN;
 		}
 
 		awaitable<void> processIncomingData()
@@ -252,7 +253,7 @@ public:
 				}
 				// TODO: address failure
 			}
-			co_return;
+			CO_RETURN;
 		}
 	};
 
@@ -262,7 +263,7 @@ public:
 
 
 #elif IMPL_VERSION == 5
-	virtual nodecpp::awaitable<void> main()
+	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
@@ -271,13 +272,13 @@ public:
 //	nodecpp::safememory::owning_ptr<nodecpp::net::SocketBase> clientSock2 = nodecpp::net::createSocket<>();
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
-		co_return;
+		CO_RETURN;
 	}
 
-	nodecpp::awaitable<void> onWhateverConnect() 
+	nodecpp::handler_ret_type onWhateverConnect() 
 	{
 		printf( "MySampleTNode::onWhateverConnect()\n" );
-		co_return;
+		CO_RETURN;
 	}
 
 	using ClientSockBaseType = nodecpp::net::SocketBase;
@@ -302,7 +303,7 @@ public:
 
 		int* getExtra() { return &extraData; }
 
-		nodecpp::awaitable<void> onWhateverConnect() 
+		nodecpp::handler_ret_type onWhateverConnect() 
 		{
 			printf( "onWhateverConnect()\n" );
 			Buffer buf(2);
@@ -319,7 +320,7 @@ public:
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(getExtra()));
 				// TODO: address failure
 			}
-			co_return;
+			CO_RETURN;
 		}
 
 		awaitable<void> processIncomingData()
@@ -353,7 +354,7 @@ public:
 				}
 				// TODO: address failure
 			}
-			co_return;
+			CO_RETURN;
 		}
 	};
 
@@ -365,6 +366,74 @@ public:
 	using clientConnect_2 = nodecpp::net::HandlerData<ClientSockType, &ClientSockType::onWhateverConnect>;
 	using clientConnect = nodecpp::net::SocketHandlerDataList<ClientSockType, clientConnect_1, clientConnect_2>;
 	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< ClientSockType, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect> > >;
+
+	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
+
+
+
+#elif IMPL_VERSION == 6
+	virtual nodecpp::handler_ret_type main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+//		clientSock = nodecpp::net::createSocket<MySampleTNode, ClientSockType>();
+		clientSock = nodecpp::net::createSocket<ClientSockType>();
+//	nodecpp::safememory::owning_ptr<nodecpp::net::SocketBase> clientSock2 = nodecpp::net::createSocket<>();
+		*( clientSock->getExtra() ) = 17;
+		clientSock->connect(2000, "127.0.0.1");
+		CO_RETURN;
+	}
+
+	using ClientSockBaseType = nodecpp::net::SocketBase;
+
+	class MySocketOne : public ClientSockBaseType
+	{
+	public:
+		using NodeType = MySampleTNode;
+
+	private:
+		size_t recvSize = 0;
+		size_t recvReplies = 0;
+		Buffer buf;
+		int extraData;
+
+	public:
+		MySocketOne() {
+//			nodecpp::safememory::soft_ptr<MySocketOne> p = myThis.getSoftPtr<MySocketOne>(this);
+///			registerMeAndAcquireSocket<MySampleTNode, MySocketOne>( p );
+		}
+		virtual ~MySocketOne() {}
+
+		int* getExtra() { return &extraData; }
+
+		void onWhateverConnect() 
+		{
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( 1, 1 );
+			write(buf);
+		}
+		void onWhateverData(nodecpp::Buffer& buffer)
+		{
+			++recvReplies;
+			if ( ( recvReplies & 0xFFF ) == 0 )
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}", recvReplies, *(socket->getExtra()), buffer.size() );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}", recvReplies, buffer.size() );
+			recvSize += buffer.size();
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+			write(buf);
+		}
+	};
+
+	using ClientSockType = MySocketOne;
+
+	using clientConnect_1 = nodecpp::net::HandlerData<MySocketOne, &MySocketOne::onWhateverConnect>;
+	using clientConnect = nodecpp::net::SocketHandlerDataList<MySocketOne, clientConnect_1>;
+	using clientData_1 = nodecpp::net::HandlerData<MySocketOne, &MySocketOne::onWhateverData>;
+	using clientData = nodecpp::net::SocketHandlerDataList<MySocketOne, clientData_1>;
+	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect>, nodecpp::net::OnDataT<clientData> > >;
+//	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect> > >;
+//	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<clientData> > >;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
 
