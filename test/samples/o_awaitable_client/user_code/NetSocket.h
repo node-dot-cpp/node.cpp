@@ -262,8 +262,6 @@ public:
 
 	using ClientSockType = MySocketOne;
 
-	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
-
 
 #elif IMPL_VERSION == 5
 	virtual nodecpp::handler_ret_type main()

@@ -368,7 +368,8 @@ public:
 						}
 					}
 //					EmitterType::emitClose(entry.getEmitter(), err);
-					EmitterType::template emitClose<Node>(entry.getEmitter(), err);
+					if constexpr ( !std::is_same<EmitterType, void>::value )
+						EmitterType::template emitClose<Node>(entry.getEmitter(), err);
 					if (entry.getClientSocketData()->isCloseEventHandler())
 						entry.getClientSocketData()->handleCloseEvent(err);
 					if (entry.isUsed())
@@ -377,7 +378,8 @@ public:
 					if (err && entry.isUsed()) //if error closing, then first error event
 					{
 //						EmitterType::emitError(entry.getEmitter(), current.second.second);
-						EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
+						if constexpr ( !std::is_same<EmitterType, void>::value )
+							EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
 						if (entry.getClientSocketData()->isErrorEventHandler())
 							entry.getClientSocketData()->handleErrorEvent(current.second.second);
 					}
@@ -409,7 +411,8 @@ public:
 					else // TODO: make sure we never have both cases in the same time
 					{
 //						EmitterType::emitAccepted(entry.getEmitter());
-						EmitterType::template emitAccepted<Node>(entry.getEmitter());
+						if constexpr ( !std::is_same<EmitterType, void>::value )
+							EmitterType::template emitAccepted<Node>(entry.getEmitter());
 						if (entry.getClientSocketData()->isAcceptedEventHandler())
 							entry.getClientSocketData()->handleAcceptedEvent();
 					}
@@ -504,7 +507,8 @@ private:
 		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
 	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
 //					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
-					EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+					if constexpr ( !std::is_same<EmitterType, void>::value )
+						EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
 					if (entry.getClientSocketData()->isDataEventHandler())
 						entry.getClientSocketData()->handleDataEvent(std::ref(infraStoreBuffer(std::move(res.second))));
 				}
@@ -532,7 +536,8 @@ private:
 			ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
 	//		evs.add(&net::Socket::emitEnd, entry.getPtr());
 //			EmitterType::emitEnd(entry.getEmitter());
-			EmitterType::template emitEnd<Node>(entry.getEmitter());
+			if constexpr ( !std::is_same<EmitterType, void>::value )
+				EmitterType::template emitEnd<Node>(entry.getEmitter());
 			if (entry.getClientSocketData()->isEndEventHandler())
 				entry.getClientSocketData()->handleEndEvent();
 			if (entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
@@ -579,7 +584,8 @@ private:
 				else
 				{
 //					EmitterType::emitConnect(current.getEmitter());
-					EmitterType::template emitConnect<Node>(current.getEmitter());
+					if constexpr ( !std::is_same<EmitterType, void>::value )
+						EmitterType::template emitConnect<Node>(current.getEmitter());
 					if (current.getClientSocketData()->isConnectEventHandler())
 						current.getClientSocketData()->handleConnectEvent();
 				}
@@ -596,7 +602,8 @@ private:
 				else // TODO: make sure we never have both cases in the same time
 				{
 //					EmitterType::emitDrain(current.getEmitter());
-					EmitterType::template emitDrain<Node>(current.getEmitter());
+					if constexpr ( !std::is_same<EmitterType, void>::value )
+						EmitterType::template emitDrain<Node>(current.getEmitter());
 					if (current.getClientSocketData()->isDrainEventHandler())
 						current.getClientSocketData()->handleDrainEvent();
 				}
@@ -738,7 +745,8 @@ public:
 					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
 					{
 						//EmitterType::emitClose( entry.getEmitter(), current.second);
-						EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
+						if constexpr ( !std::is_same<EmitterType, void>::value )
+							EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
 						if (entry.getServerSocketData()->isCloseEventHandler())
 							entry.getServerSocketData()->handleCloseEvent(current.second);
 						// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -772,7 +780,8 @@ public:
 						else
 						{
 							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
-							EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+							if constexpr ( !std::is_same<EmitterType, void>::value )
+								EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
 							if (entry.getServerSocketData()->isListenEventHandler() )
 								entry.getServerSocketData()->handleListenEvent(current, entry.getServerSocketData()->localAddress);
 							// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -826,7 +835,8 @@ private:
 		else
 		{
 			//EmitterType::emitConnection(entry.getEmitter(), ptr); 
-			EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
+			if constexpr ( !std::is_same<EmitterType, void>::value )
+				EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
 			if (entry.getServerSocketData()->isConnectionEventHandler())
 				entry.getServerSocketData()->handleConnectionEvent(ptr);
 			// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -841,7 +851,8 @@ private:
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 		Error e;
 		//EmitterType::emitError( entry.getEmitter(), e );
-		EmitterType::template emitError<Node>( entry.getEmitter(), e );
+		if constexpr ( !std::is_same<EmitterType, void>::value )
+			EmitterType::template emitError<Node>( entry.getEmitter(), e );
 		if (entry.getServerSocketData()->isErrorEventHandler())
 			entry.getServerSocketData()->handleErrorEvent(e);
 		// TODO: what should we do with this event, if, at present, nobody is willing to process it?
