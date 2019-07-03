@@ -38,7 +38,7 @@
 
 #include <experimental/coroutine>
 
-#define CO_RETURN co_return;
+#define CO_RETURN co_return
 
 namespace nodecpp {
 
@@ -208,7 +208,7 @@ auto wait_for_all( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std:
 
 #else // main "candidate" for this #if/#else branch is GCC who is not supporting coroutines yet
 
-#define CO_RETURN return;
+#define CO_RETURN return
 
 namespace nodecpp {
 
