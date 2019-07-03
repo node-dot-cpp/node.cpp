@@ -11,11 +11,15 @@
 using namespace nodecpp;
 using namespace fmt;
 
+#ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 4 // registering handlers (per class)
-//#define IMPL_VERSION 5 // registering handlers (per class, template-based)
+#define IMPL_VERSION 5 // registering handlers (per class, template-based)
+//#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
+#else
 #define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
+#endif // NODECPP_NO_COROUTINES
 
 class MySampleTNode : public NodeBase
 {
@@ -409,7 +413,7 @@ public:
 		{
 			++recvReplies;
 			if ( ( recvReplies & 0xFFF ) == 0 )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}", recvReplies, *(getExtra()), buffer.size() );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}, total received size = {}", recvReplies, *(getExtra()), buffer.size(), recvSize );
 			recvSize += buffer.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
