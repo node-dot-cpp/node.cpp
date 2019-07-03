@@ -584,9 +584,6 @@ namespace nodecpp {
 
 
 			bool willHandle() { 
-if ( type == Type::uninitialized )
-type = Type::uninitialized;
-//				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type != Type::uninitialized);
 				return type != Type::uninitialized && type != Type::zero; 
 			}
 			void from(const UserDefHandlersBase<FnT>& patternUH, void* defaultObjPtr)

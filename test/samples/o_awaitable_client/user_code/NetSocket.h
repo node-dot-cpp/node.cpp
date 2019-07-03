@@ -269,7 +269,6 @@ public:
 
 //		clientSock = nodecpp::net::createSocket<MySampleTNode, ClientSockType>();
 		clientSock = nodecpp::net::createSocket<ClientSockType>();
-//	nodecpp::safememory::owning_ptr<nodecpp::net::SocketBase> clientSock2 = nodecpp::net::createSocket<>();
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
 		CO_RETURN;
@@ -360,8 +359,6 @@ public:
 
 	using ClientSockType = MySocketOne;
 
-	/*nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &MySampleTNode::onWhateverConnect>(this);
-	nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &ClientSockType::onWhateverConnect>();*/
 	using clientConnect_1 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onWhateverConnect>;
 	using clientConnect_2 = nodecpp::net::HandlerData<ClientSockType, &ClientSockType::onWhateverConnect>;
 	using clientConnect = nodecpp::net::SocketHandlerDataList<ClientSockType, clientConnect_1, clientConnect_2>;
@@ -378,7 +375,6 @@ public:
 
 //		clientSock = nodecpp::net::createSocket<MySampleTNode, ClientSockType>();
 		clientSock = nodecpp::net::createSocket<ClientSockType>();
-//	nodecpp::safememory::owning_ptr<nodecpp::net::SocketBase> clientSock2 = nodecpp::net::createSocket<>();
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
 		CO_RETURN;
@@ -398,10 +394,7 @@ public:
 		int extraData;
 
 	public:
-		MySocketOne() {
-//			nodecpp::safememory::soft_ptr<MySocketOne> p = myThis.getSoftPtr<MySocketOne>(this);
-///			registerMeAndAcquireSocket<MySampleTNode, MySocketOne>( p );
-		}
+		MySocketOne() {}
 		virtual ~MySocketOne() {}
 
 		int* getExtra() { return &extraData; }
@@ -416,8 +409,7 @@ public:
 		{
 			++recvReplies;
 			if ( ( recvReplies & 0xFFF ) == 0 )
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}", recvReplies, *(socket->getExtra()), buffer.size() );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}", recvReplies, buffer.size() );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}", recvReplies, *(getExtra()), buffer.size() );
 			recvSize += buffer.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -432,8 +424,6 @@ public:
 	using clientData_1 = nodecpp::net::HandlerData<MySocketOne, &MySocketOne::onWhateverData>;
 	using clientData = nodecpp::net::SocketHandlerDataList<MySocketOne, clientData_1>;
 	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect>, nodecpp::net::OnDataT<clientData> > >;
-//	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect> > >;
-//	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<clientData> > >;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
 
