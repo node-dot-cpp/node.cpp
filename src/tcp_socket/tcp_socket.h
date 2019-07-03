@@ -60,6 +60,8 @@ public:
 	void setUnused() {state = State::Unused; }
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
+	nodecpp::safememory::soft_ptr<net::SocketBase> getClientSocket() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr(); }
+	nodecpp::safememory::soft_ptr<net::ServerBase> getServerSocket() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr(); }
 	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
 	net::ServerBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
 };
@@ -371,7 +373,7 @@ public:
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitClose<Node>(entry.getEmitter(), err);
 					if (entry.getClientSocketData()->isCloseEventHandler())
-						entry.getClientSocketData()->handleCloseEvent(err);
+						entry.getClientSocketData()->handleCloseEvent(entry.getClientSocket(), err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 //					if (err && entry.isValid()) //if error closing, then first error event
@@ -381,7 +383,7 @@ public:
 						if constexpr ( !std::is_same<EmitterType, void>::value )
 							EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
 						if (entry.getClientSocketData()->isErrorEventHandler())
-							entry.getClientSocketData()->handleErrorEvent(current.second.second);
+							entry.getClientSocketData()->handleErrorEvent(entry.getClientSocket(), current.second.second);
 					}
 #endif // 0
 				}
@@ -414,7 +416,7 @@ public:
 						if constexpr ( !std::is_same<EmitterType, void>::value )
 							EmitterType::template emitAccepted<Node>(entry.getEmitter());
 						if (entry.getClientSocketData()->isAcceptedEventHandler())
-							entry.getClientSocketData()->handleAcceptedEvent();
+							entry.getClientSocketData()->handleAcceptedEvent(entry.getClientSocket());
 					}
 					//entry.setAssociated();
 					//ioSockets.setAssociated( idx );
@@ -510,7 +512,7 @@ private:
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
 					if (entry.getClientSocketData()->isDataEventHandler())
-						entry.getClientSocketData()->handleDataEvent(std::ref(infraStoreBuffer(std::move(res.second))));
+						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), std::ref(infraStoreBuffer(std::move(res.second))));
 				}
 				else //if (!entry.remoteEnded)
 				{
@@ -539,7 +541,7 @@ private:
 			if constexpr ( !std::is_same<EmitterType, void>::value )
 				EmitterType::template emitEnd<Node>(entry.getEmitter());
 			if (entry.getClientSocketData()->isEndEventHandler())
-				entry.getClientSocketData()->handleEndEvent();
+				entry.getClientSocketData()->handleEndEvent(entry.getClientSocket());
 			if (entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 			{
 				//pendingCloseEvents.emplace_back(entry.index, false);
@@ -587,7 +589,7 @@ private:
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitConnect<Node>(current.getEmitter());
 					if (current.getClientSocketData()->isConnectEventHandler())
-						current.getClientSocketData()->handleConnectEvent();
+						current.getClientSocketData()->handleConnectEvent(current.getClientSocket());
 				}
 				break;
 			}
@@ -605,7 +607,7 @@ private:
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitDrain<Node>(current.getEmitter());
 					if (current.getClientSocketData()->isDrainEventHandler())
-						current.getClientSocketData()->handleDrainEvent();
+						current.getClientSocketData()->handleDrainEvent(current.getClientSocket());
 				}
 				break;
 			}

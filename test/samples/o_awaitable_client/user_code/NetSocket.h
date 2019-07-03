@@ -184,9 +184,10 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onWhateverConnect() 
+	class MySocketOne; // just forward declaration
+	nodecpp::handler_ret_type onWhateverConnect(MySocketOne* socket) 
 	{
-		printf( "MySampleTNode::onWhateverConnect()\n" );
+		printf( "MySampleTNode::onWhateverConnect() with extra = %d\n", *(socket->getExtra()) );
 		CO_RETURN;
 	}
 
