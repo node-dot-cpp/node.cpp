@@ -108,13 +108,13 @@ namespace nodecpp {
 				{
 				public:
 					// originating from member functions of SocketBase-derived classes
-					using userDefAcceptedHandlerFnT = nodecpp::handler_ret_type (*)(void*);
+					/*using userDefAcceptedHandlerFnT = nodecpp::handler_ret_type (*)(void*);
 					using userDefConnectHandlerFnT = nodecpp::handler_ret_type (*)(void*);
 					using userDefDataHandlerFnT = nodecpp::handler_ret_type (*)(void*, Buffer& buffer);
 					using userDefDrainHandlerFnT = nodecpp::handler_ret_type (*)(void*);
 					using userDefEndHandlerFnT = nodecpp::handler_ret_type (*)(void*);
 					using userDefCloseHandlerFnT = nodecpp::handler_ret_type (*)(void*, bool);
-					using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, Error&);
+					using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, Error&);*/
 
 					template<class T> using userAcceptedMemberHandler = nodecpp::handler_ret_type (T::*)();
 					template<class T> using userConnectMemberHandler = nodecpp::handler_ret_type (T::*)();
@@ -143,7 +143,7 @@ namespace nodecpp {
 
 					// originating from member functions of SocketBase-derived classes
 
-					template<class ObjectT, userAcceptedMemberHandler<ObjectT> MemberFnT>
+					/*template<class ObjectT, userAcceptedMemberHandler<ObjectT> MemberFnT>
 					static nodecpp::handler_ret_type acceptedHandler(void* objPtr)
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
@@ -188,6 +188,63 @@ namespace nodecpp {
 					template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
 					static nodecpp::handler_ret_type errorHandler(void* objPtr, Error& e)
 					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
+						CO_RETURN;
+					}*/
+
+
+					template<class ObjectT, userAcceptedMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type acceptedHandler(void* objPtr, void* sockPtr)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(sockPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
+						CO_RETURN;
+					}
+
+					template<class ObjectT, userConnectMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type connectHandler(void* objPtr, void* sockPtr)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(sockPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
+						CO_RETURN;
+					}
+
+					template<class ObjectT, userDataMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type dataHandler(void* objPtr, void* sockPtr, Buffer& buffer)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(sockPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(buffer);
+						CO_RETURN;
+					}
+
+					template<class ObjectT, userDrainMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type drainHandler(void* objPtr, void* sockPtr)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(sockPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
+						CO_RETURN;
+					}
+
+					template<class ObjectT, userEndMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type endHandler(void* objPtr, void* sockPtr)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(sockPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)();
+						CO_RETURN;
+					}
+
+					template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type closeHandler(void* objPtr, void* sockPtr, bool hadError)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(sockPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
+						CO_RETURN;
+					}
+
+					template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type errorHandler(void* objPtr, void* sockPtr, Error& e)
+					{
+						NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(sockPtr) ); 
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
 						CO_RETURN;
 					}
@@ -251,13 +308,13 @@ namespace nodecpp {
 				struct UserHandlersForDataCollecting : public UserHandlersCommon
 				{
 					// originating from member functions of SocketBase-derived classes
-					UserDefHandlers<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
+					/*UserDefHandlers<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
 					UserDefHandlers<userDefConnectHandlerFnT> userDefConnectHandlers;
 					UserDefHandlers<userDefDataHandlerFnT> userDefDataHandlers;
 					UserDefHandlers<userDefDrainHandlerFnT> userDefDrainHandlers;
 					UserDefHandlers<userDefEndHandlerFnT> userDefEndHandlers;
 					UserDefHandlers<userDefCloseHandlerFnT> userDefCloseHandlers;
-					UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;
+					UserDefHandlers<userDefErrorHandlerFnT> userDefErrorHandlers;*/
 					// originating from member functions of NodeBase-derived classes
 					UserDefHandlers<userDefAtNodeAcceptedHandlerFnT> userDefAtNodeAcceptedHandlers;
 					UserDefHandlers<userDefAtNodeConnectHandlerFnT> userDefAtNodeConnectHandlers;
@@ -267,7 +324,7 @@ namespace nodecpp {
 					UserDefHandlers<userDefAtNodeCloseHandlerFnT> userDefAtNodeCloseHandlers;
 					UserDefHandlers<userDefAtNodeErrorHandlerFnT> userDefAtNodeErrorHandlers;
 
-					template<Handler handler, auto memmberFn, class ObjectT>
+					/*template<Handler handler, auto memmberFn, class ObjectT>
 					void addHandler(ObjectT* object)
 					{
 						if constexpr (handler == Handler::Accepted)
@@ -298,6 +355,39 @@ namespace nodecpp {
 						{
 							static_assert(handler == Handler::Error); // the only remaining option
 							userDefErrorHandlers.add(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
+						}
+					}*/
+					template<Handler handler, auto memmberFn, class ObjectT>
+					void addHandler()
+					{
+						if constexpr (handler == Handler::Accepted)
+						{
+							userDefAtNodeAcceptedHandlers.add(&DataForCommandProcessing::UserHandlers::acceptedHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Connect)
+						{
+							userDefAtNodeConnectHandlers.add(&DataForCommandProcessing::UserHandlers::connectHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Data)
+						{
+							userDefAtNodeDataHandlers.add(&DataForCommandProcessing::UserHandlers::dataHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Drain)
+						{
+							userDefAtNodeDrainHandlers.add(&DataForCommandProcessing::UserHandlers::drainHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::End)
+						{
+							userDefAtNodeEndHandlers.add(&DataForCommandProcessing::UserHandlers::endHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Close)
+						{
+							userDefAtNodeCloseHandlers.add(&DataForCommandProcessing::UserHandlers::closeHandler<ObjectT, memmberFn>);
+						}
+						else
+						{
+							static_assert(handler == Handler::Error); // the only remaining option
+							userDefAtNodeErrorHandlers.add(&DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
 						}
 					}
 					template<Handler handler, auto memmberFn, class ObjectT, class SocketT>
@@ -333,7 +423,7 @@ namespace nodecpp {
 							userDefAtNodeErrorHandlers.add(object, &DataForCommandProcessing::UserHandlers::errorHandlerFromNode<ObjectT, SocketT, memmberFn>);
 						}
 					}
-					template<Handler handler, auto memmberFn, class ObjectT>
+					/*template<Handler handler, auto memmberFn, class ObjectT>
 					void removeHandler(ObjectT* object)
 					{
 						if constexpr (handler == Handler::Accepted)
@@ -365,7 +455,7 @@ namespace nodecpp {
 							static_assert(handler == Handler::Error); // the only remaining option
 							userDefErrorHandlers.remove(object, &DataForCommandProcessing::UserHandlers::errorHandler<ObjectT, memmberFn>);
 						}
-					}
+					}*/
 				};
 				thread_local static UserHandlerClassPatterns<UserHandlersForDataCollecting> userHandlerClassPattern; // TODO: consider using thread-local allocator
 
@@ -374,13 +464,13 @@ namespace nodecpp {
 					bool initialized = false;
 
 					// originating from member functions of SocketBase-derived classes
-					UserDefHandlersWithOptimizedStorage<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
+					/*UserDefHandlersWithOptimizedStorage<userDefAcceptedHandlerFnT> userDefAcceptedHandlers;
 					UserDefHandlersWithOptimizedStorage<userDefConnectHandlerFnT> userDefConnectHandlers;
 					UserDefHandlersWithOptimizedStorage<userDefDataHandlerFnT> userDefDataHandlers;
 					UserDefHandlersWithOptimizedStorage<userDefDrainHandlerFnT> userDefDrainHandlers;
 					UserDefHandlersWithOptimizedStorage<userDefEndHandlerFnT> userDefEndHandlers;
 					UserDefHandlersWithOptimizedStorage<userDefCloseHandlerFnT> userDefCloseHandlers;
-					UserDefHandlersWithOptimizedStorage<userDefErrorHandlerFnT> userDefErrorHandlers;
+					UserDefHandlersWithOptimizedStorage<userDefErrorHandlerFnT> userDefErrorHandlers;*/
 					// originating from member functions of NodeBase-derived classes
 					UserDefHandlersWithOptimizedStorage<userDefAtNodeAcceptedHandlerFnT> userDefAtNodeAcceptedHandlers;
 					UserDefHandlersWithOptimizedStorage<userDefAtNodeConnectHandlerFnT> userDefAtNodeConnectHandlers;
@@ -397,13 +487,13 @@ namespace nodecpp {
 							return;
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
 						// originating from member functions of SocketBase-derived classes
-						userDefAcceptedHandlers.from(patternUH.userDefAcceptedHandlers, defaultObjPtr);
+						/*userDefAcceptedHandlers.from(patternUH.userDefAcceptedHandlers, defaultObjPtr);
 						userDefConnectHandlers.from(patternUH.userDefConnectHandlers, defaultObjPtr);
 						userDefDataHandlers.from(patternUH.userDefDataHandlers, defaultObjPtr);
 						userDefDrainHandlers.from(patternUH.userDefDrainHandlers, defaultObjPtr);
 						userDefEndHandlers.from(patternUH.userDefEndHandlers, defaultObjPtr);
 						userDefCloseHandlers.from(patternUH.userDefCloseHandlers, defaultObjPtr);
-						userDefErrorHandlers.from(patternUH.userDefErrorHandlers, defaultObjPtr);
+						userDefErrorHandlers.from(patternUH.userDefErrorHandlers, defaultObjPtr);*/
 						// originating from member functions of SocketBase-derived classes
 						userDefAtNodeAcceptedHandlers.from(patternUH.userDefAtNodeAcceptedHandlers, defaultObjPtr);
 						userDefAtNodeConnectHandlers.from(patternUH.userDefAtNodeConnectHandlers, defaultObjPtr);
@@ -417,7 +507,7 @@ namespace nodecpp {
 				};
 				UserHandlers userHandlers;
 
-				bool isAcceptedEventHandler() { return userHandlers.userDefAcceptedHandlers.willHandle() || userHandlers.userDefAtNodeAcceptedHandlers.willHandle(); }
+				/*bool isAcceptedEventHandler() { return userHandlers.userDefAcceptedHandlers.willHandle() || userHandlers.userDefAtNodeAcceptedHandlers.willHandle(); }
 				void handleAcceptedEvent(nodecpp::safememory::soft_ptr<SocketBase> socket) { userHandlers.userDefAcceptedHandlers.execute(); userHandlers.userDefAtNodeAcceptedHandlers.execute(&(*socket)); }
 
 				bool isConnectEventHandler() { return userHandlers.userDefConnectHandlers.willHandle() || userHandlers.userDefAtNodeConnectHandlers.willHandle(); }
@@ -436,7 +526,28 @@ namespace nodecpp {
 				void handleCloseEvent(nodecpp::safememory::soft_ptr<SocketBase> socket, bool hasError) { userHandlers.userDefCloseHandlers.execute(hasError); userHandlers.userDefAtNodeCloseHandlers.execute(&(*socket), hasError); }
 
 				bool isErrorEventHandler() { return userHandlers.userDefErrorHandlers.willHandle() || userHandlers.userDefAtNodeErrorHandlers.willHandle(); }
-				void handleErrorEvent(nodecpp::safememory::soft_ptr<SocketBase> socket, Error& e) { userHandlers.userDefErrorHandlers.execute(e); userHandlers.userDefAtNodeErrorHandlers.execute(&(*socket), e); }
+				void handleErrorEvent(nodecpp::safememory::soft_ptr<SocketBase> socket, Error& e) { userHandlers.userDefErrorHandlers.execute(e); userHandlers.userDefAtNodeErrorHandlers.execute(&(*socket), e); }*/
+
+				bool isAcceptedEventHandler() { return userHandlers.userDefAtNodeAcceptedHandlers.willHandle(); }
+				void handleAcceptedEvent(nodecpp::safememory::soft_ptr<SocketBase> socket) { userHandlers.userDefAtNodeAcceptedHandlers.execute(&(*socket)); }
+
+				bool isConnectEventHandler() { return userHandlers.userDefAtNodeConnectHandlers.willHandle(); }
+				void handleConnectEvent(nodecpp::safememory::soft_ptr<SocketBase> socket) { userHandlers.userDefAtNodeConnectHandlers.execute(&(*socket)); }
+
+				bool isDataEventHandler() { return userHandlers.userDefAtNodeDataHandlers.willHandle(); }
+				void handleDataEvent(nodecpp::safememory::soft_ptr<SocketBase> socket, Buffer& buffer) { userHandlers.userDefAtNodeDataHandlers.execute(&(*socket), buffer); }
+
+				bool isDrainEventHandler() { return userHandlers.userDefAtNodeDrainHandlers.willHandle(); }
+				void handleDrainEvent(nodecpp::safememory::soft_ptr<SocketBase> socket) { userHandlers.userDefAtNodeDrainHandlers.execute(&(*socket)); }
+
+				bool isEndEventHandler() { return userHandlers.userDefAtNodeEndHandlers.willHandle(); }
+				void handleEndEvent(nodecpp::safememory::soft_ptr<SocketBase> socket) { userHandlers.userDefAtNodeEndHandlers.execute(&(*socket)); }
+
+				bool isCloseEventHandler() { return userHandlers.userDefAtNodeCloseHandlers.willHandle(); }
+				void handleCloseEvent(nodecpp::safememory::soft_ptr<SocketBase> socket, bool hasError) { userHandlers.userDefAtNodeCloseHandlers.execute(&(*socket), hasError); }
+
+				bool isErrorEventHandler() { return userHandlers.userDefAtNodeErrorHandlers.willHandle(); }
+				void handleErrorEvent(nodecpp::safememory::soft_ptr<SocketBase> socket, Error& e) { userHandlers.userDefAtNodeErrorHandlers.execute(&(*socket), e); }
 			};
 			DataForCommandProcessing dataForCommandProcessing;
 
@@ -448,7 +559,7 @@ namespace nodecpp {
 			template<class UserClass, DataForCommandProcessing::UserHandlers::Handler handler, auto memmberFn>			
 			static void addHandler()
 			{
-				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandler<handler, memmberFn, UserClass>(nullptr);
+				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandler<handler, memmberFn, UserClass>();
 			}
 
 //		private:
