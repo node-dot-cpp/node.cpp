@@ -619,15 +619,16 @@ public:
 
 // server
 public:
-	nodecpp::handler_ret_type onListening(size_t id, nodecpp::net::Address addr) {
+	class MyServerSocketOne; // just forward declaration
+	nodecpp::handler_ret_type onListening(MyServerSocketOne* server, size_t id, nodecpp::net::Address addr) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onListening2(size_t id, nodecpp::net::Address addr) {
+	nodecpp::handler_ret_type onListening2(MyServerSocketOne* server, size_t id, nodecpp::net::Address addr) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening2()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+	nodecpp::handler_ret_type onConnection(MyServerSocketOne* server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 		nodecpp::Buffer r_buff(0x200);
@@ -641,11 +642,12 @@ public:
 
 	// ctrl server
 public:
-	nodecpp::handler_ret_type onListeningCtrl(size_t id, nodecpp::net::Address addr) {
+	class MyServerSocketTwo; // just forward declaration
+	nodecpp::handler_ret_type onListeningCtrl(MyServerSocketTwo* server, size_t id, nodecpp::net::Address addr) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+	nodecpp::handler_ret_type onConnectionCtrl(MyServerSocketTwo* server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 		nodecpp::Buffer r_buff(0x200);

@@ -56,7 +56,7 @@ namespace nodecpp {
 		void callOnConnectionHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, soft_ptr<SocketBase> sock )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)( sock );
+				(nodePtr->*HandlerDataT::memberFn)( &(*serverPtr), sock );
 			else
 			{
 				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
@@ -77,7 +77,7 @@ namespace nodecpp {
 		void callOnCloseServerHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, bool hadError )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)( hadError );
+				(nodePtr->*HandlerDataT::memberFn)( &(*serverPtr), hadError );
 			else
 			{
 				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
@@ -98,7 +98,7 @@ namespace nodecpp {
 		void callOnListeningHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, size_t id, Address addr )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)( id, addr );
+				(nodePtr->*HandlerDataT::memberFn)( &(*serverPtr), id, addr );
 			else
 			{
 				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
@@ -119,7 +119,7 @@ namespace nodecpp {
 		void callOnErrorServerHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Server> serverPtr, nodecpp::Error& e )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)( e );
+				(nodePtr->*HandlerDataT::memberFn)( &(*serverPtr), e );
 			else
 			{
 				static_assert (std::is_same< Server, typename HandlerDataT::ObjT >::value );
