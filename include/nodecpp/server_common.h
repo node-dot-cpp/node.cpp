@@ -122,28 +122,28 @@ namespace nodecpp {
 
 					// originating from member functions of NodeBase-derived classes
 
-					template<class ObjectT, class ServerT, userListenMemberHandler<ObjectT> MemberFnT>
+					template<class ObjectT, class ServerT, userListenNodeMemberHandler<ObjectT, ServerT> MemberFnT>
 					static nodecpp::handler_ret_type listenHandlerFromNode( void* objPtr, void* serverPtr, size_t id, nodecpp::net::Address addr )
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(reinterpret_cast<ServerT*>(serverPtr), id, addr);
 						CO_RETURN;
 					}
 
-					template<class ObjectT, class ServerT, userConnectionMemberHandler<ObjectT> MemberFnT>
+					template<class ObjectT, class ServerT, userConnectionNodeMemberHandler<ObjectT, ServerT> MemberFnT>
 					static nodecpp::handler_ret_type connectionHandlerFromNode( void* objPtr, void* serverPtr, nodecpp::safememory::soft_ptr<net::SocketBase> socket )
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(reinterpret_cast<ServerT*>(serverPtr), socket);
 						CO_RETURN;
 					}
 
-					template<class ObjectT, class ServerT, userCloseMemberHandler<ObjectT> MemberFnT>
+					template<class ObjectT, class ServerT, userCloseNodeMemberHandler<ObjectT, ServerT> MemberFnT>
 					static nodecpp::handler_ret_type closeHandlerFromNode( void* objPtr, void* serverPtr, bool hadError )
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(reinterpret_cast<ServerT*>(serverPtr), hadError);
 						CO_RETURN;
 					}
 
-					template<class ObjectT, class ServerT, userErrorMemberHandler<ObjectT> MemberFnT>
+					template<class ObjectT, class ServerT, userErrorNodeMemberHandler<ObjectT, ServerT> MemberFnT>
 					static nodecpp::handler_ret_type errorHandlerFromNode( void* objPtr, void* serverPtr, Error& e )
 					{
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(reinterpret_cast<ServerT*>(serverPtr), e);
