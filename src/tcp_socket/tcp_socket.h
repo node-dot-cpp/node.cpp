@@ -750,7 +750,7 @@ public:
 						if constexpr ( !std::is_same<EmitterType, void>::value )
 							EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
 						if (entry.getServerSocketData()->isCloseEventHandler())
-							entry.getServerSocketData()->handleCloseEvent(current.second);
+							entry.getServerSocketData()->handleCloseEvent(entry.getServerSocket(), current.second);
 						// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 					}
 				}
@@ -785,7 +785,7 @@ public:
 							if constexpr ( !std::is_same<EmitterType, void>::value )
 								EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
 							if (entry.getServerSocketData()->isListenEventHandler() )
-								entry.getServerSocketData()->handleListenEvent(current, entry.getServerSocketData()->localAddress);
+								entry.getServerSocketData()->handleListenEvent(entry.getServerSocket(), current, entry.getServerSocketData()->localAddress);
 							// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 						}
 					}
@@ -840,7 +840,7 @@ private:
 			if constexpr ( !std::is_same<EmitterType, void>::value )
 				EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
 			if (entry.getServerSocketData()->isConnectionEventHandler())
-				entry.getServerSocketData()->handleConnectionEvent(ptr);
+				entry.getServerSocketData()->handleConnectionEvent(entry.getServerSocket(), ptr);
 			// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 		}
 
@@ -856,7 +856,7 @@ private:
 		if constexpr ( !std::is_same<EmitterType, void>::value )
 			EmitterType::template emitError<Node>( entry.getEmitter(), e );
 		if (entry.getServerSocketData()->isErrorEventHandler())
-			entry.getServerSocketData()->handleErrorEvent(e);
+			entry.getServerSocketData()->handleErrorEvent(entry.getServerSocket(), e);
 		// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 		pendingCloseEvents.emplace_back(entry.index, true);
 	}
