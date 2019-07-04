@@ -42,7 +42,7 @@ namespace nodecpp {
 		void callOnConnectHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)();
+				(nodePtr->*HandlerDataT::memberFn)(&(*socketPtr));
 			else
 			{
 				static_assert (std::is_same< Socket, typename HandlerDataT::ObjT >::value );
@@ -63,7 +63,7 @@ namespace nodecpp {
 		void callOnAcceptedHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)();
+				(nodePtr->*HandlerDataT::memberFn)(&(*socketPtr));
 			else
 			{
 				static_assert (std::is_same< Socket, typename HandlerDataT::ObjT >::value );
@@ -84,7 +84,7 @@ namespace nodecpp {
 		void callOnDataHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr, nodecpp::Buffer& b )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)( b );
+				(nodePtr->*HandlerDataT::memberFn)( &(*socketPtr), b );
 			else
 			{
 				static_assert (std::is_same< Socket, typename HandlerDataT::ObjT >::value );
@@ -105,7 +105,7 @@ namespace nodecpp {
 		void callOnDrainHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)();
+				(nodePtr->*HandlerDataT::memberFn)(&(*socketPtr));
 			else
 			{
 				static_assert (std::is_same< Socket, typename HandlerDataT::ObjT >::value );
@@ -126,7 +126,7 @@ namespace nodecpp {
 		void callOnCloseSocketHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr, bool hadError )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)( hadError );
+				(nodePtr->*HandlerDataT::memberFn)( &(*socketPtr), hadError );
 			else
 			{
 				static_assert (std::is_same< Socket, typename HandlerDataT::ObjT >::value );
@@ -147,7 +147,7 @@ namespace nodecpp {
 		void callOnEndHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)();
+				(nodePtr->*HandlerDataT::memberFn)(&(*socketPtr));
 			else
 			{
 				static_assert (std::is_same< Socket, typename HandlerDataT::ObjT >::value );
@@ -168,7 +168,7 @@ namespace nodecpp {
 		void callOnErrorSocketHandlers( Node* nodePtr, nodecpp::safememory::soft_ptr<Socket> socketPtr, nodecpp::Error& e )
 		{
 			if constexpr (std::is_same< Node, typename HandlerDataT::ObjT >::value)
-				(nodePtr->*HandlerDataT::memberFn)( e );
+				(nodePtr->*HandlerDataT::memberFn)( &(*socketPtr), e );
 			else
 			{
 				static_assert (std::is_same< Socket, typename HandlerDataT::ObjT >::value );
