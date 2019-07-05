@@ -25,6 +25,10 @@ using namespace fmt;
 #define IMPL_VERSION 7 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
 
+#ifdef AUTOMATED_TESTING_ONLY
+#define AUTOMATED_TESTING_CYCLE_COUNT 30
+#endif
+
 class MySampleTNode : public NodeBase
 {
 	struct Stats
@@ -154,94 +158,8 @@ public:
 	}
 
 
-#if 0
-	nodecpp::handler_ret_type dummyL(size_t n, nodecpp::net::Address)
-	{
-		printf( "dummyL(%zd, ...)\n", n );
-		CO_RETURN;
-	}
-
-	nodecpp::handler_ret_type dummyConn(nodecpp::safememory::soft_ptr<net::SocketBase> socket)
-	{
-		printf( "dummyConn(...)\n" );
-		CO_RETURN;
-	}
-
-	nodecpp::handler_ret_type dummyCl(bool hadError)
-	{
-		printf( "dummyCl(%s, ...)\n", hadError ? "true" : "false" );
-		CO_RETURN;
-	}
-
-	nodecpp::handler_ret_type dummyCl_1(bool hadError)
-	{
-		printf("dummyCl_1(%s, ...)\n", hadError ? "true" : "false");
-		CO_RETURN;
-	}
-
-	nodecpp::handler_ret_type dummyE(Error& e)
-	{
-		printf( "dummyE(%s, ...)\n", e.what() );
-		CO_RETURN;
-	}
-#endif // 0
-
 	virtual nodecpp::handler_ret_type main()
 	{
-#if 0
-		Error e;
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Listen, &MySampleTNode::dummyL>( this );
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Connection, &MySampleTNode::dummyConn>( this );
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Close, &MySampleTNode::dummyCl>( this );
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Close, & MySampleTNode::dummyCl_1>(this);
-		srv.addHandler<nodecpp::net::ServerBase::Handler::Error, &MySampleTNode::dummyE>( this );
-
-		printf("checking presence of handlers after adding...\n");
-		if ( srv.dataForCommandProcessing.isListenEventHandler())
-			srv.dataForCommandProcessing.handleListenEvent(3, nodecpp::net::Address());
-		else
-			printf( "no L handler\n" );
-
-		if (srv.dataForCommandProcessing.isConnectionEventHandler())
-			srv.dataForCommandProcessing.handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase>() );
-		else
-			printf( "no CONN handler\n" );
-
-		if (srv.dataForCommandProcessing.isCloseEventHandler())
-			srv.dataForCommandProcessing.handleCloseEvent( true );
-		else
-			printf( "no CL handler\n" );
-
-		if (srv.dataForCommandProcessing.isErrorEventHandler())
-			srv.dataForCommandProcessing.handleErrorEvent( e );
-		else
-			printf( "no E handler\n" );
-
-		srv.removeHandler<nodecpp::net::ServerBase::Handler::Close, & MySampleTNode::dummyCl>(this);
-
-		printf("checking presence of handlers after removing...\n");
-		if (srv.dataForCommandProcessing.isListenEventHandler())
-			srv.dataForCommandProcessing.handleListenEvent(3, nodecpp::net::Address());
-		else
-			printf("no L handler\n");
-
-		if (srv.dataForCommandProcessing.isConnectionEventHandler())
-			srv.dataForCommandProcessing.handleConnectionEvent(nodecpp::safememory::soft_ptr<net::SocketBase>());
-		else
-			printf("no CONN handler\n");
-
-		if (srv.dataForCommandProcessing.isCloseEventHandler())
-			srv.dataForCommandProcessing.handleCloseEvent(true);
-		else
-			printf("no CL handler\n");
-
-		if (srv.dataForCommandProcessing.isErrorEventHandler())
-			srv.dataForCommandProcessing.handleErrorEvent(e);
-		else
-			printf("no E handler\n");
-
-		CO_RETURN;
-#endif // 0
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
@@ -371,6 +289,10 @@ public:
 		{
 			co_await socket->a_read(r_buff, 2);
 			co_await onDataServerSocket_(socket, r_buff);
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 		}
 		CO_RETURN;
 	}
@@ -759,6 +681,10 @@ public:
 			stats.recvSize += receivedSz;
 			stats.sentSize += requestedSz;
 			++(stats.rqCnt);
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 		}
 
 		CO_RETURN;
@@ -994,6 +920,10 @@ public:
 			myNode->stats.recvSize += receivedSz;
 			myNode->stats.sentSize += requestedSz;
 			++(myNode->stats.rqCnt);
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( myNode->stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 		}
 		void onEndServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
@@ -1107,6 +1037,10 @@ public:
 		stats.recvSize += receivedSz;
 		stats.sentSize += requestedSz;
 		++(stats.rqCnt);
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 		CO_RETURN;
 	}
 };

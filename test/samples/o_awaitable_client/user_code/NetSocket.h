@@ -15,11 +15,15 @@ using namespace fmt;
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 4 // registering handlers (per class)
-#define IMPL_VERSION 5 // registering handlers (per class, template-based)
-//#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
+//#define IMPL_VERSION 5 // registering handlers (per class, template-based)
+#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #else
 #define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
+
+#ifdef AUTOMATED_TESTING_ONLY
+#define AUTOMATED_TESTING_CYCLE_COUNT 30
+#endif
 
 class MySampleTNode : public NodeBase
 {
@@ -78,6 +82,10 @@ public:
 				break;
 			}
 			++recvReplies;
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 			recvSize += r_buff.size();
@@ -149,6 +157,10 @@ public:
 				break;
 			}
 			++recvReplies;
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 			recvSize += r_buff.size();
@@ -241,6 +253,10 @@ public:
 					break;
 				}
 				++recvReplies;
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 				recvSize += r_buff.size();
@@ -340,6 +356,10 @@ public:
 					break;
 				}
 				++recvReplies;
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 				recvSize += r_buff.size();
@@ -411,6 +431,10 @@ public:
 		void onWhateverData(nodecpp::Buffer& buffer)
 		{
 			++recvReplies;
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+				exit( 0 );
+#endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}, total received size = {}", recvReplies, *(getExtra()), buffer.size(), recvSize );
 			recvSize += buffer.size();
