@@ -560,15 +560,6 @@ namespace nodecpp {
 		};
 
 
-		template<class ServerT, class ... Types>
-		static
-		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
-			static_assert( std::is_base_of< ServerBase, ServerT >::value );
-			nodecpp::safememory::owning_ptr<ServerT> ret = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
-			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*ret));
-			return ret;
-		}
-
 		template<class ServerT, class SocketT, class ... Types>
 		static
 		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
@@ -584,14 +575,10 @@ namespace nodecpp {
 				ret->registerServer(ret);
 			}
 			ret->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
-//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket as described at createServer()\n");
 					nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
-//					ret->registerMeAndAssignSocket<Node, SocketT>(sdata);
 					if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
 					{
 						static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-//						ret->template registerMeByIDAndAssignSocket<typename SocketT::NodeType, SocketT>(ret);
-//						ret->template registerMeByIDAndAssignSocket<typename SocketT::NodeType, SocketT>(sdata);
 						int id = -1;
 						if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
 							id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
@@ -605,6 +592,12 @@ namespace nodecpp {
 				} );
 			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*ret));
 			return ret;
+		}
+
+		template<class ServerT, class ... Types>
+		static
+		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
+			return createServer<ServerT, SocketBase>(::std::forward<Types>(args)...);
 		}
 
 		//template<class T>

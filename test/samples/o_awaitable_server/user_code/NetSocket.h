@@ -18,8 +18,8 @@ using namespace fmt;
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
-//#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
-#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
+#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
+//#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
 //#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
 #else
 #define IMPL_VERSION 7 // registering handlers (per class, template-based) with no explicit awaitable staff
