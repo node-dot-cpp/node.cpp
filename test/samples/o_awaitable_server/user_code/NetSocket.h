@@ -17,10 +17,10 @@ using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
-//#define IMPL_VERSION 3 // onConnect is a coro
+#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
-#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
+//#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
 #else
 #define IMPL_VERSION 7 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -152,7 +152,21 @@ public:
 	}
 
 #elif IMPL_VERSION == 3
-	MySampleTNode() : srv( this ), srvCtrl( this )
+	class MyServerSocketOne : public nodecpp::net::ServerBase
+	{
+	public:
+		MyServerSocketOne() {}
+		virtual ~MyServerSocketOne() {}
+	};
+
+	class MyServerSocketTwo : public nodecpp::net::ServerBase
+	{
+	public:
+		MyServerSocketTwo() {}
+		virtual ~MyServerSocketTwo() {}
+	};
+
+	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
@@ -163,13 +177,19 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		srv.listen(2000, "127.0.0.1", 5);
-		srvCtrl.listen(2001, "127.0.0.1", 5);
+		nodecpp::net::ServerBase::addHandler<ServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionx>(this);
+		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+
+		srv = nodecpp::net::createServer<ServerType>();
+		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
+
+		srv->listen(2000, "127.0.0.1", 5);
+		srvCtrl->listen(2001, "127.0.0.1", 5);
 
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<nodecpp::net::ServerOUserBase<MySampleTNode,ServerIdType>>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyServerSocketOne>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
@@ -182,7 +202,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<nodecpp::net::ServerOUserBase<MySampleTNode,ServerIdType>>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
@@ -195,28 +215,24 @@ public:
 		CO_RETURN;
 	}
 
-	using SockTypeServerSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
-	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
+	using SockTypeServerSocket = nodecpp::net::SocketBase;
+	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
 
-	using ServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerSocket,ServerIdType,
-		nodecpp::net::OnConnectionSO<&MySampleTNode::onConnectionx>
-	>;
-	ServerType srv; 
+	using ServerType = MyServerSocketOne;
+	nodecpp::safememory::owning_ptr<ServerType> srv; 
 
-	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType,
-		nodecpp::net::OnConnectionSO<&MySampleTNode::onConnectionCtrl>
-	>;
-	CtrlServerType srvCtrl;
+	using CtrlServerType = MyServerSocketTwo;
+	nodecpp::safememory::owning_ptr<CtrlServerType>  srvCtrl;
 
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
-	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
 	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
 		{
 			Buffer reply(sizeof(stats));
-			stats.connCnt = srv.getSockCount();
+			stats.connCnt = srv->getSockCount();
 			uint32_t replySz = sizeof(Stats);
 			uint8_t* buff = ptr.get();
 			memcpy(buff, &stats, replySz); // naive marshalling will work for a limited number of cases
@@ -224,7 +240,7 @@ public:
 		}
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket, Buffer& buffer) {
+	/*nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -236,7 +252,7 @@ public:
 			co_await socket->a_write(reply);
 		}
 		CO_RETURN;
-	}
+	}*/
 
 #elif IMPL_VERSION == 5
 
