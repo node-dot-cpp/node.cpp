@@ -240,19 +240,6 @@ public:
 		}
 		CO_RETURN;
 	}
-	/*nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
-
-		size_t requestedSz = buffer.begin()[1];
-		if (requestedSz)
-		{
-			Buffer reply(sizeof(stats));
-			stats.connCnt = srv.getSockCount();
-			size_t replySz = sizeof(Stats);
-			reply.append(&stats, replySz); // naive marshalling will work for a limited number of cases
-			co_await socket->a_write(reply);
-		}
-		CO_RETURN;
-	}*/
 
 #elif IMPL_VERSION == 5
 

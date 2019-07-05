@@ -111,9 +111,6 @@ public:
 
 	class MySocketOne : public nodecpp::net::SocketBase
 	{
-		/*size_t recvSize = 0;
-		size_t recvReplies = 0;
-		Buffer buf;*/
 		int extraData;
 
 	public:
