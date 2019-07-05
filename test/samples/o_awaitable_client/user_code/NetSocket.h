@@ -13,9 +13,9 @@ using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
-//#define IMPL_VERSION 3 // onConnect is a coro
+#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 4 // registering handlers (per class)
-#define IMPL_VERSION 5 // registering handlers (per class, template-based)
+//#define IMPL_VERSION 5 // registering handlers (per class, template-based)
 //#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #else
 #define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
@@ -108,17 +108,34 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
 
 #elif IMPL_VERSION == 3
+
+	class MySocketOne : public nodecpp::net::SocketBase
+	{
+		/*size_t recvSize = 0;
+		size_t recvReplies = 0;
+		Buffer buf;*/
+		int extraData;
+
+	public:
+		MySocketOne() {}
+		virtual ~MySocketOne() {}
+
+		int* getExtra() { return &extraData; }
+	};
+
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
+		nodecpp::net::SocketBase::addHandler<MySocketOne, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &MySampleTNode::onWhateverConnect>(this);
+
+		clientSock = nodecpp::net::createSocket<MySocketOne>();
 		*( clientSock->getExtra() ) = 17;
 		clientSock->connect(2000, "127.0.0.1");
 		CO_RETURN;
 	}
 	
-	nodecpp::handler_ret_type onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketOUserBase<MySampleTNode,SocketIdType>> socket) 
+	nodecpp::handler_ret_type onWhateverConnect(nodecpp::safememory::soft_ptr<MySocketOne> socket) 
 	{
 		printf( "onWhateverConnect()\n" );
 		Buffer buf(2);
@@ -138,11 +155,9 @@ public:
 		CO_RETURN;
 	}
 
-	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType,
-		nodecpp::net::OnConnect<&MySampleTNode::onWhateverConnect>
-	>;
+	using ClientSockType = MySocketOne;
 
-	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<MySocketOne> socket)
 	{
 		for (;;)
 		{
@@ -180,7 +195,7 @@ public:
 		CO_RETURN;
 	}
 
-	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
 
 #elif IMPL_VERSION == 4
 	virtual nodecpp::handler_ret_type main()
