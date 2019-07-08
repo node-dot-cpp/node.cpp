@@ -4,7 +4,7 @@ project(node_cpp)
 find_package(Threads)
 
 set(CLIENT_NAME client.bin)
-set(CTRL_CLIENT_NAME ctrl_client.bin)
+#set(CTRL_CLIENT_NAME ctrl_client.bin)
 set(SERVER_NAME server.bin)
 set(LIB_NAME gcc_lto_workaround)
 
@@ -14,9 +14,9 @@ set(SOURCE_EXE ${PROJECT_SOURCE_DIR}/src/infra_main.cpp
 					${PROJECT_SOURCE_DIR}/src/infrastructure.cpp 
 					${PROJECT_SOURCE_DIR}/src/tcp_socket/tcp_socket.cpp )
 
-set(CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/client/user_code/NetSocket.cpp)
-set(CTRL_CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/ctrl_client/user_code/NetSocket.cpp)
-set(SERVER_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/server/user_code/NetSocket.cpp)
+set(CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/o_awaitable_client/user_code/NetSocket.cpp)
+#set(CTRL_CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/ctrl_client/user_code/NetSocket.cpp)
+set(SERVER_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/o_awaitable_server/user_code/NetSocket.cpp)
 
 set(SOURCE_LIB ${PROJECT_SOURCE_DIR}/safe_memory/library/gcc_lto_workaround/gcc_lto_workaround.cpp)
 
@@ -56,7 +56,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/bin)
 
 add_library( ${LIB_NAME} SHARED ${SOURCE_LIB})
 add_executable(${CLIENT_NAME} ${SOURCE_EXE} ${CLIENT_SOURCE_EXE})
-add_executable(${CTRL_CLIENT_NAME} ${SOURCE_EXE} ${CTRL_CLIENT_SOURCE_EXE})
+#add_executable(${CTRL_CLIENT_NAME} ${SOURCE_EXE} ${CTRL_CLIENT_SOURCE_EXE})
 add_executable(${SERVER_NAME} ${SOURCE_EXE} ${SERVER_SOURCE_EXE})
 
 target_link_libraries( ${CLIENT_NAME} iibmalloc ${LIB_NAME}  pthread)
