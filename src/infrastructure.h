@@ -37,8 +37,6 @@
 #include "../include/nodecpp/timers.h"
 #include <functional>
 
-#include "../include/nodecpp/loop.h"
-
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
 	If the user doesn't store it, timeout will fire normally, and after that all
