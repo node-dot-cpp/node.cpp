@@ -13,10 +13,10 @@ using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
-#define IMPL_VERSION 3 // onConnect is a coro
+//#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 4 // registering handlers (per class)
 //#define IMPL_VERSION 5 // registering handlers (per class, template-based)
-//#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
+#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #else
 #define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -84,7 +84,10 @@ public:
 			++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				exit( 0 );
+			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
@@ -171,7 +174,12 @@ public:
 			++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
-				exit( 0 );
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				//exit( 0 );
+				socket->end();
+				socket->unref();
+			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
@@ -267,7 +275,10 @@ public:
 				++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				exit( 0 );
+			}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
@@ -370,7 +381,10 @@ public:
 				++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				exit( 0 );
+			}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
@@ -445,7 +459,10 @@ public:
 			++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				exit( 0 );
+			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}, total received size = {}", recvReplies, *(getExtra()), buffer.size(), recvSize );

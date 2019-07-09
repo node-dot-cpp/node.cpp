@@ -295,6 +295,7 @@ class Runnable : public RunnableBase
 	template<class ClientSocketEmitter, class ServerSocketEmitter>
 	void internalRun()
 	{
+		nodecpp::log::touch_log();
 		interceptNewDeleteOperators(true);
 		{
 			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.init();

@@ -87,7 +87,8 @@ public:
 				printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
 		
 #ifdef AUTOMATED_TESTING_ONLY
-			exit( 0 ); // test just obce
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+			exit( 0 ); // test just once
 #endif
 
 			getchar();
