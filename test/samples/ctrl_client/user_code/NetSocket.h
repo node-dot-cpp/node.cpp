@@ -86,6 +86,10 @@ public:
 			else
 				printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
 		
+#ifdef AUTOMATED_TESTING_ONLY
+			exit( 0 ); // test just obce
+#endif
+
 			getchar();
 
 			++recvReplies;
