@@ -705,22 +705,29 @@ namespace nodecpp {
 		template<class UserHandlerType>
 		class UserHandlerClassPatterns
 		{
-			std::map<std::type_index, std::pair<UserHandlerType, bool>> patterns;
+			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>>;
+			uint8_t mapbytes[sizeof(MapType)];
+//			MapType patterns;
+			MapType& patterns() { return *reinterpret_cast<MapType*>(mapbytes); }
 			std::pair<UserHandlerType, bool>& getPattern( std::type_index idx )
 			{
-				auto pattern = patterns.find( idx );
-				if ( pattern != patterns.end() )
+				auto pattern = patterns().find( idx );
+				if ( pattern != patterns().end() )
 					return pattern->second;
 				else
 				{
-					auto ins = patterns.insert( make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
+					auto ins = patterns().insert( make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
 					return ins.first->second;
 				}
 			}
 		public:
 			void init()
 			{
-				new(&patterns)std::map<std::type_index, std::pair<UserHandlerType, bool>>();
+				new(&(patterns()))MapType();
+			}
+			void destroy()
+			{
+				patterns().~MapType();
 			}
 			template<class UserClass>
 			UserHandlerType& getPatternForUpdate()

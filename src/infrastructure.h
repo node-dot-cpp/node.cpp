@@ -205,7 +205,7 @@ public:
 								break;
 							}
 						default:
-							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
 							break;
 					}
 				}
@@ -310,7 +310,12 @@ class Runnable : public RunnableBase
 			thisThreadNode = &(*node);
 			node->main();
 			infra.template runInfraLoop2<Node>();
+			node = nullptr;
+
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 		}
+		killAllZombies();
 		interceptNewDeleteOperators(false);
 	}
 public:
