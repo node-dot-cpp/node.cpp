@@ -262,7 +262,6 @@ public:
 	}
 };
 
-#ifdef USING_T_SOCKETS
 inline
 size_t registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
@@ -324,11 +323,5 @@ public:
 		return internalRun<typename Node::EmitterType, typename Node::EmitterTypeForServer>();
 	}
 };
-
-#else
-extern thread_local Infrastructure<net::SocketEmitter> infra;
-inline
-NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
-#endif // USING_T_SOCKETS
 
 #endif //INFRASTRUCTURE_H

@@ -202,7 +202,6 @@ public:
 		ioSockets.setPollin(id);
 	}
 
-#ifdef USING_T_SOCKETS
 	size_t appAcquireSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId)
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
@@ -253,7 +252,6 @@ public:
 		osd.s = std::move(newSock);
 		return true;
 	}
-#endif // USING_T_SOCKETS
 
 protected:
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
