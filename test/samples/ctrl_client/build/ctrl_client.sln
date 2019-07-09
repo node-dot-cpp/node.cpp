@@ -6,12 +6,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ctrl_client", "ctrl_client.
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		automated_testing_debug|x64 = automated_testing_debug|x64
+		automated_testing_debug|x86 = automated_testing_debug|x86
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x64.ActiveCfg = automated_testing_debug|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x64.Build.0 = automated_testing_debug|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x86.ActiveCfg = automated_testing_debug|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x86.Build.0 = automated_testing_debug|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.ActiveCfg = Debug|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.Build.0 = Debug|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x86.ActiveCfg = Debug|Win32
