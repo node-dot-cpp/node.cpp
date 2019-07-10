@@ -881,18 +881,18 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
 }
 
-
-#ifndef NET_CLIENT_ONLY
-
-void NetServerManagerBase::appClose(size_t id)
+void NetServerManagerBase::appClose(net::ServerBase::DataForCommandProcessing& serverData)
 {
+	size_t id = serverData.index;
 	auto& entry = appGetEntry(id);
-//	if (!entry.isValid())
 	if (!entry.isUsed())
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
 		return;
 	}
+
+	internal_usage_only::internal_close(serverData.osSocket);
+	ioSockets.setSocketClosed( entry.index );
 
 	pendingCloseEvents.emplace_back(entry.index, false);
 }
@@ -901,5 +901,3 @@ size_t NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safemem
 {
 	return ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
 }
-
-#endif // NO_SERVER_STAFF

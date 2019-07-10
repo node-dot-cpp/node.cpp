@@ -638,7 +638,7 @@ public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
-	void appClose(size_t id);
+	void appClose(net::ServerBase::DataForCommandProcessing& serverData);
 	void appAddServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
