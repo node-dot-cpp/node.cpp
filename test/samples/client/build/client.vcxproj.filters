@@ -21,9 +21,6 @@
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\loop.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\src\net.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -31,6 +28,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\infra_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc_windows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\page_allocator_windows.cpp">
@@ -54,15 +54,9 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc_windows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\user_code\NetSocket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\assert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h">
@@ -74,9 +68,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\loop.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -84,21 +75,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\server_l.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\server_o.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_l.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_o.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_t.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h">
@@ -128,13 +104,13 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_t_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\server_t.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\server_t_base.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\server_type_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\awaitable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
