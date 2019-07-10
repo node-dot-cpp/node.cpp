@@ -86,7 +86,8 @@ public:
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				exit( 0 );
+				end();
+				unref();
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
@@ -176,7 +177,6 @@ public:
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				//exit( 0 );
 				socket->end();
 				socket->unref();
 			}
@@ -274,11 +274,12 @@ public:
 				}
 				++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
-			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				exit( 0 );
-			}
+				if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+				{
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+					end();
+					unref();
+				}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
@@ -380,11 +381,12 @@ public:
 				}
 				++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
-			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				exit( 0 );
-			}
+				if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+				{
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+					end();
+					unref();
+				}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
@@ -461,7 +463,8 @@ public:
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				exit( 0 );
+				end();
+				unref();
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )

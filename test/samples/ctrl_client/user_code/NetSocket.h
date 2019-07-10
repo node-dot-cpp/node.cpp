@@ -88,7 +88,9 @@ public:
 		
 #ifdef AUTOMATED_TESTING_ONLY
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-			exit( 0 ); // test just once
+			// test just once
+			end();
+			unref();
 #endif
 
 			getchar();
