@@ -2,121 +2,119 @@
 
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
-#include "../../../../include/nodecpp/common.h"
+
+#include <nodecpp/common.h>
+#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_t_base.h>
 
 
-#include "../../../../include/nodecpp/socket_type_list.h"
-#include "../../../../include/nodecpp/socket_t.h"
-/*#include "../../../../include/nodecpp/socket_t_base.h"
-#include "../../../../include/nodecpp/server_t.h"
-#include "../../../../include/nodecpp/server_type_list.h"
-
-#include <functional>*/
-
-
-using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
 class MySampleTNode : public NodeBase
 {
-	struct Stats
-	{
-		uint64_t recvSize = 0;
-		uint64_t sentSize = 0;
-		uint64_t rqCnt;
-		uint64_t connCnt = 0;
-	};
-	void printStats(const Stats& stats)
-	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, {}, {}, {}, {}", infraGetCurrentTime(), stats.connCnt, stats.recvSize, stats.sentSize, stats.rqCnt );
-	}
-
-	size_t recvSize = 0;
-	size_t recvReplies = 0;
-	size_t sentSize = 0;
-	std::unique_ptr<uint8_t> ptr;
-	size_t size = 64;// * 1024;
-	bool letOnDrain = false;
-
 	using SocketIdType = int;
 
 public:
-	MySampleTNode() : clientSock(this)
+	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-	virtual void main()
+	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		*( clientSock.getExtra() ) = 17;
-		clientSock.connect(2001, "127.0.0.1");
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
-	}
-	
-	void onWhateverConnect(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket) 
-	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverConnect(), extra = {}", *(clientSock.getExtra()) );
+		clientSock = nodecpp::net::createSocket<ClientSockType>();
+		*( clientSock->getExtra() ) = 17;
+		clientSock->connect(2001, "127.0.0.1");
 
-		uint8_t* buff = ptr.get();
-		buff[0] = 2;
-		buff[1] = 1;
-		clientSock.write(buff, 2);
+		CO_RETURN;
 	}
-	void onWhateverClose(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, bool)
+
+	using ClientSockBaseType = nodecpp::net::SocketBase;
+
+	class MySocketOne : public ClientSockBaseType
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverClose(), extra = {}", *(clientSock.getExtra()) );
-	}
-	void onWhateverData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, nodecpp::Buffer& buffer)
-	{
-		if ( buffer.size() < sizeof( Stats ) )
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
-		else
-			printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
+		struct Stats
+		{
+			uint64_t recvSize = 0;
+			uint64_t sentSize = 0;
+			uint64_t rqCnt;
+			uint64_t connCnt = 0;
+		};
+		void printStats(const Stats& stats)
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, {}, {}, {}, {}", infraGetCurrentTime(), stats.connCnt, stats.recvSize, stats.sentSize, stats.rqCnt );
+		}
+
+		size_t recvSize = 0;
+		size_t recvReplies = 0;
+		size_t sentSize = 0;
+		std::unique_ptr<uint8_t> ptr;
+		size_t size = 64;// * 1024;
+		bool letOnDrain = false;
+
+	public:
+		using NodeType = MySampleTNode;
+
+	private:
+//		Buffer buf;
+		int extraData;
+
+	public:
+		MySocketOne() {
+			ptr.reset(static_cast<uint8_t*>(malloc(size)));
+		}
+		virtual ~MySocketOne() {}
+
+		int* getExtra() { return &extraData; }
+
+		void onWhateverConnect() 
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverConnect(), extra = {}", *(getExtra()) );
+
+			uint8_t* buff = ptr.get();
+			buff[0] = 2;
+			buff[1] = 1;
+			write(buff, 2);
+		}
+		void onWhateverData(nodecpp::Buffer& buffer)
+		{
+			if ( buffer.size() < sizeof( Stats ) )
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
+			else
+				printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
 		
-		getchar();
+#ifdef AUTOMATED_TESTING_ONLY
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+			// test just once
+			end();
+			unref();
+#endif
 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
-		++recvReplies;
-		recvSize += buffer.size();
-		uint8_t* buff = ptr.get();
-		buff[0] = 2;
-		buff[1] = (uint8_t)recvReplies | 1;
-		clientSock.write(buff, 2);
-	}
-	void onWhateverDrain(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket)
-	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
-		if ( letOnDrain )
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverDrain(), extra = {}", *(clientSock.getExtra()) );
-	}
-	void onWhateverError(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket, nodecpp::Error&)
-	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverError(), extra = {}", *(clientSock.getExtra()) );
-	}
-	void onWhateverEnd(nodecpp::safememory::soft_ptr<nodecpp::net::SocketTUserBase<MySampleTNode,SocketIdType>> socket)
-	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket );
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverEnd(), extra = {}", *(clientSock.getExtra()) );
-	}
+			getchar();
 
-	using ClientSockType = nodecpp::net::SocketT<MySampleTNode,SocketIdType,
-		nodecpp::net::OnConnectT<&MySampleTNode::onWhateverConnect>,
-		nodecpp::net::OnCloseT<&MySampleTNode::onWhateverClose>,
-		nodecpp::net::OnDataT<&MySampleTNode::onWhateverData>,
-		nodecpp::net::OnDrainT<&MySampleTNode::onWhateverDrain>,
-		nodecpp::net::OnErrorT<&MySampleTNode::onWhateverError>,
-		nodecpp::net::OnEndT<&MySampleTNode::onWhateverEnd>
-	>;
-	//nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
-	ClientSockType clientSock;
+			++recvReplies;
+			recvSize += buffer.size();
+			uint8_t* buff = ptr.get();
+			buff[0] = 2;
+			buff[1] = (uint8_t)recvReplies | 1;
+			write(buff, 2);
+		}
+	};
 
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket, ClientSockType>;
+	using ClientSockType = MySocketOne;
+
+	using clientConnect_1 = nodecpp::net::HandlerData<MySocketOne, &MySocketOne::onWhateverConnect>;
+	using clientConnect = nodecpp::net::SocketHandlerDataList<MySocketOne, clientConnect_1>;
+	using clientData_1 = nodecpp::net::HandlerData<MySocketOne, &MySocketOne::onWhateverData>;
+	using clientData = nodecpp::net::SocketHandlerDataList<MySocketOne, clientData_1>;
+	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect>, nodecpp::net::OnDataT<clientData> > >;
+
+	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
+
+	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
 };
 
 #endif // NET_SOCKET_H

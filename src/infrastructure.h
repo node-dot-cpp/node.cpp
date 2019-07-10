@@ -29,17 +29,13 @@
 #ifndef INFRASTRUCTURE_H
 #define INFRASTRUCTURE_H
 
+#include "../include/nodecpp/common.h"
+
 #include "ev_queue.h"
 #include "tcp_socket/tcp_socket.h"
 
 #include "../include/nodecpp/timers.h"
 #include <functional>
-
-#include "../include/nodecpp/loop.h"
-#include "../include/nodecpp/socket_o.h"
-#include "../include/nodecpp/socket_l.h"
-#include "../include/nodecpp/server_o.h"
-#include "../include/nodecpp/server_l.h"
 
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
@@ -136,6 +132,7 @@ public:
 		return timeout.infraNextTimeout();
 	}
 
+	template<class Node>
 	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
 	{
 /*		size_t fds_sz;
@@ -194,12 +191,12 @@ public:
 					switch ( current.emitter.objectType )
 					{
 						case OpaqueEmitter::ObjectType::ClientSocket:
-							netSocket.infraCheckPollFdSet(current, revents);
+							netSocket.template infraCheckPollFdSet<Node>(current, revents);
 							break;
 						case OpaqueEmitter::ObjectType::ServerSocket:
 							if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 							{
-								netServer.infraCheckPollFdSet(current, revents);
+								netServer.template infraCheckPollFdSet<Node>(current, revents);
 								break;
 							}
 							else
@@ -208,7 +205,7 @@ public:
 								break;
 							}
 						default:
-							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
 							break;
 					}
 				}
@@ -217,6 +214,7 @@ public:
 		}
 	}
 
+	template<class Node>
 	void runInfraLoop2()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
@@ -229,6 +227,7 @@ public:
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
 				netServer.infraGetPendingEvents(queue);
+				netServer.template infraEmitListeningEvents<Node>();
 				queue.emit();
 			}
 
@@ -237,18 +236,18 @@ public:
 			queue.emit();
 
 			now = infraGetCurrentTime();
-			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now/*, queue*/);
+			bool refed = pollPhase2<Node>(refedTimeout(), nextTimeout(), now/*, queue*/);
 			if(!refed)
 				return;
 
 			queue.emit();
 	//		emitInmediates();
 
-			netSocket.infraGetCloseEvent(/*queue*/);
-			netSocket.infraProcessSockAcceptedEvents();
+			netSocket.template infraGetCloseEvent<Node>(/*queue*/);
+			netSocket.template infraProcessSockAcceptedEvents<Node>();
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
-				netServer.infraGetCloseEvents(/*queue*/);
+				netServer.template infraGetCloseEvents<Node>(/*queue*/);
 			}
 			queue.emit();
 
@@ -261,19 +260,18 @@ public:
 	}
 };
 
-#ifdef USING_T_SOCKETS
 inline
-size_t registerWithInfraAndAcquireSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
+size_t registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAcquireSocket(node, t, typeId);
+	return netSocketManagerBase->appAcquireSocket(/*node, */t, typeId);
 }
 
 inline
-size_t registerWithInfraAndAssignSocket(NodeBase* node, nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
+size_t registerWithInfraAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAssignSocket(node, t, typeId, sdata);
+	return netSocketManagerBase->appAssignSocket(/*node, */t, typeId, sdata);
 }
 
 inline
@@ -283,11 +281,13 @@ void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 }
 
 inline
-void registerServer(NodeBase* node, soft_ptr<net::ServerTBase> t, int typeId)
+void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 {
-	return netServerManagerBase->appAddServer(node, t, typeId);
+	return netServerManagerBase->appAddServer(/*node, */t, typeId);
 }
 
+
+extern thread_local NodeBase* thisThreadNode;
 template<class Node>
 class Runnable : public RunnableBase
 {
@@ -295,19 +295,29 @@ class Runnable : public RunnableBase
 	template<class ClientSocketEmitter, class ServerSocketEmitter>
 	void internalRun()
 	{
-		Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
-		netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
-		netSocketManagerBase->typeIndexOfSocketO = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::SocketO>();
-		netSocketManagerBase->typeIndexOfSocketL = ClientSocketEmitter::template softGetTypeIndexIfTypeExists<net::Socket>();
-		if constexpr( !std::is_same< ServerSocketEmitter, void >::value )
+		nodecpp::log::touch_log();
+		interceptNewDeleteOperators(true);
 		{
-			netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
-			netServerManagerBase->typeIndexOfServerO = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::ServerO>();
-			netServerManagerBase->typeIndexOfServerL = ServerSocketEmitter::template softGetTypeIndexIfTypeExists<net::Server>();
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.init();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.init();
+
+			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
+			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
+			if constexpr (!std::is_same< ServerSocketEmitter, void >::value)
+			{
+				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
+			}
+			node = make_owning<Node>();
+			thisThreadNode = &(*node);
+			node->main();
+			infra.template runInfraLoop2<Node>();
+			node = nullptr;
+
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 		}
-		node = make_owning<Node>();
-		node->main();
-		infra.runInfraLoop2();
+		killAllZombies();
+		interceptNewDeleteOperators(false);
 	}
 public:
 	using NodeType = Node;
@@ -317,11 +327,5 @@ public:
 		return internalRun<typename Node::EmitterType, typename Node::EmitterTypeForServer>();
 	}
 };
-
-#else
-extern thread_local Infrastructure<net::SocketEmitter> infra;
-inline
-NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
-#endif // USING_T_SOCKETS
 
 #endif //INFRASTRUCTURE_H

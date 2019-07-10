@@ -42,21 +42,23 @@
 #define NODECPP_UNUSED_VAR 
 #endif
 
-#include <foundation.h>
+/*#include <foundation.h>
 #include <nodecpp_assert.h>
-#include <iibmalloc.h>
+#include <iibmalloc.h>*/
 #include <safe_ptr.h>
+#include "awaitable.h"
 
 #include <utility>
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <list>
 #include <array>
 #include <algorithm>
 
 //#include <cassert>
-#include <fmt/format.h>
+//#include <fmt/format.h>
 //#include "trace.h"
 //#include "assert.h"
 #include "mallocator.h"
@@ -70,17 +72,28 @@ using namespace ::nodecpp::safememory;
 template<class T>
 using GlobalObjectAllocator = Mallocator<T>;
 
+namespace nodecpp
+{
+#ifndef NODECPP_NO_COROUTINES
+	using handler_ret_type = ::nodecpp::awaitable<void>;
+#else
+	using handler_ret_type = void;
+#endif // NODECPP_NO_COROUTINES
+}
+
 class NodeBase
 {
 public:
 	NodeBase() {}
-	virtual void main() = 0;
+	virtual ~NodeBase() {}
+	virtual nodecpp::handler_ret_type main() = 0;
 
 	using EmitterType = void;
 	using EmitterTypeForServer = void;
-};
 
-#ifdef USING_T_SOCKETS
+//	using SocketEmmitterType = void;
+//	using ServerEmmitterType = void;
+};
 
 class RunnableBase
 {
@@ -98,18 +111,13 @@ public:
 
 void registerFactory( const char* name, RunnableFactoryBase* factory );
 
-//template<class RunnableT>
 template<class RunnableT>
 class NodeRegistrator
 {
 public:
-//	thread_local Infrastructure<typename RunnableT::NodeType::EmitterType>* infraPtr;
-//	static thread_local Infra* infraPtr;
-
 public:
 	NodeRegistrator( const char* name )
 	{
-		//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>(( "NodeRegistrator(\"{}\");", name );
 		class NodeFactory : public RunnableFactoryBase
 		{
 		public:
@@ -128,38 +136,5 @@ public:
 thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;*/
 
 
-#else
-
-class NodeFactoryBase
-{
-public:
-	NodeFactoryBase() {}
-	virtual NodeBase* create() = 0;
-};
-
-void registerFactory( const char* name, NodeFactoryBase* factory );
-
-template<class NodeT>
-class NodeRegistrator
-{
-public:
-	NodeRegistrator( const char* name )
-	{
-		//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>(( "NodeRegistrator(\"{}\");", name );
-		class NodeFactory : public NodeFactoryBase
-		{
-		public:
-			NodeFactory() {}
-			virtual NodeBase* create() override
-			{
-				return new NodeT;
-			}
-		};
-		NodeFactory* factory = new NodeFactory;
-		registerFactory( name, reinterpret_cast<NodeFactory*>(factory) );
-	}
-};
-
-#endif // USING_T_SOCKETS
 
 #endif //COMMON_H

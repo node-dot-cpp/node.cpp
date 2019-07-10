@@ -28,13 +28,47 @@
 #ifndef NODECPP_AWAITABLE_H
 #define NODECPP_AWAITABLE_H
 
+#if !((defined NODECPP_CLANG) || (defined NODECPP_MSVC))
+#define NODECPP_NO_COROUTINES
+#endif
+
+#include <foundation.h>
+
+#ifndef NODECPP_NO_COROUTINES
+
 #include <experimental/coroutine>
 
+#define CO_RETURN co_return
+
 namespace nodecpp {
+
+class placeholder_for_void_ret_type
+{
+	bool dummy = false;
+public:
+	placeholder_for_void_ret_type() {}
+	placeholder_for_void_ret_type(const placeholder_for_void_ret_type&) {}
+	placeholder_for_void_ret_type(placeholder_for_void_ret_type&&) {}
+	placeholder_for_void_ret_type operator = (const placeholder_for_void_ret_type&) {return *this;}
+	placeholder_for_void_ret_type operator = (placeholder_for_void_ret_type&&) {return *this;}
+};
+
+template<class T>
+struct void_type_converter
+{
+	using type = T;
+};
+
+template<>
+struct void_type_converter<void>
+{
+	using type = placeholder_for_void_ret_type;
+};
 
 struct promise_type_struct_base {
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
+	bool is_value = false;
 
 	promise_type_struct_base() {}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
@@ -75,6 +109,7 @@ struct promise_type_struct : public promise_type_struct_base {
     auto get_return_object();
     auto return_value(T v) {
         value = v;
+		is_value = true;
         return std::experimental::suspend_never{};
     }
 };
@@ -89,6 +124,7 @@ struct promise_type_struct<void> : public promise_type_struct_base {
 
     auto get_return_object();
 	auto return_void(void) {
+		is_value = true;
         return std::experimental::suspend_never{};
     }
 };
@@ -100,8 +136,6 @@ struct awaitable  {
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
 	handle_type coro = nullptr;
 	using value_type = T;
-
-	int myID;
 
 	awaitable()  {}
 	awaitable(handle_type h) : coro(h) {}
@@ -120,29 +154,37 @@ struct awaitable  {
 	
 	~awaitable() {}
 
-    T get() {
-        return coro.promise().value;
+    typename void_type_converter<T>::type get() {
+		if constexpr ( std::is_same<void, T>::value )
+			return placeholder_for_void_ret_type();
+		else
+			return coro.promise().value;
     }
 
 	bool await_ready() noexcept { 
-		return false;
+        return coro.promise().is_value;
+//		return false;
 	}
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
 		if ( coro )
 			coro.promise().hr = h_;
 	}
-	T await_resume() { 
+	typename void_type_converter<T>::type await_resume() { 
 		if ( coro.promise().e_pending != nullptr )
 		{
 			std::exception_ptr ex = coro.promise().e_pending;
 			coro.promise().e_pending = nullptr;
 			std::rethrow_exception(ex);
 		}
-		return coro.promise().value; 
+		if constexpr ( std::is_same<void, T>::value )
+			return placeholder_for_void_ret_type();
+		else
+			return coro.promise().value;
 	}
 
 };
 
+inline
 auto promise_type_struct<void>::get_return_object() {
 		auto h = handle_type::from_promise(*this);
 		return awaitable<void>{h};
@@ -154,7 +196,30 @@ auto promise_type_struct<T>::get_return_object() {
 		return awaitable<T>{h};
 }
 
-} // namespace nodecpp::awaitable
+template<class ... T>
+auto wait_for_all( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std::tuple<typename nodecpp::void_type_converter<T>::type...>>
+{
+	using ret_tuple_type = std::tuple<typename nodecpp::void_type_converter<T>::type...>;
+	ret_tuple_type ret_t(std::move(co_await calls) ...);
+	co_return ret_t;
+}
+
+} // namespace nodecpp
+
+#else // main "candidate" for this #if/#else branch is GCC who is not supporting coroutines yet
+
+#define CO_RETURN return
+
+namespace nodecpp {
+
+template<class T>
+struct awaitable
+{
+};
+
+} // namespace nodecpp
+
+#endif
 
 
 #endif // NODECPP_AWAITABLE_H

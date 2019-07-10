@@ -424,6 +424,19 @@ namespace nodecpp
 			}
 		}
 
+		class internal_send_packet_object
+		{
+			SOCKET sock;
+			uint8_t ret;
+		public:
+			internal_send_packet_object( SOCKET sock_ ) : sock( sock_ ) {};
+			bool write( const uint8_t* data, size_t size, size_t& sentSize_ ) {
+				ret =  internal_send_packet( data, size, sock, sentSize_ );
+				return ret == COMMLAYER_RET_OK && size == sentSize_;
+			}
+			uint8_t get_ret_value() const { return ret; }
+		};
+
 		static
 		uint8_t internal_get_packet_bytes2(SOCKET sock, uint8_t* buff, size_t buffSz, size_t& retSz, struct ::sockaddr_in& sa_other, socklen_t& fromlen)
 		{
@@ -452,6 +465,21 @@ namespace nodecpp
 			//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_get_packet_bytes2() on sock {} size {} OK", sock, retSz);
 			return COMMLAYER_RET_OK;
 		}
+
+		class internal_read_packet_object
+		{
+			SOCKET sock;
+			uint8_t ret;
+		public:
+			internal_read_packet_object( SOCKET sock_ ) : sock( sock_ ) {};
+			bool read( uint8_t* data, size_t size, size_t& sentSize_ ) {
+				socklen_t fromlen = sizeof(struct ::sockaddr_in);
+				struct ::sockaddr_in sa_other;
+				ret =  internal_get_packet_bytes2( sock, data, size, sentSize_, sa_other, fromlen );
+				return ret == COMMLAYER_RET_OK && size == sentSize_;
+			}
+			uint8_t get_ret_value() const { return ret; }
+		};
 
 	} // internal_usage_only
 } // nodecpp
@@ -487,8 +515,8 @@ Port Port::fromNetwork(uint16_t port)
 
 //thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 thread_local NetSocketManagerBase* netSocketManagerBase;
-thread_local int typeIndexOfSocketO = -1;
-thread_local int typeIndexOfSocketL = -1;
+//thread_local int typeIndexOfSocketO = -1;
+//thread_local int typeIndexOfSocketL = -1;
 #ifndef NET_CLIENT_ONLY
 thread_local NetServerManagerBase* netServerManagerBase;
 #endif
@@ -614,7 +642,7 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 		return false;
 	}
 
-	if (sockData.writeBuffer.size() == 0)
+	if (sockData.writeBuffer.used_size() == 0)
 	{
 		size_t sentSize = 0;
 		uint8_t res = internal_usage_only::internal_send_packet(data, size, sockData.osSocket, sentSize);
@@ -644,11 +672,73 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 	}
 }
 
+bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& sockData, Buffer& buff )
+{
+	if (!sockData.isValid())
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected StreamSocket {} on sendStreamSegment", sockData.index);
+		throw Error();
+	}
+
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !sockData.ahd_write.is_exception ); // should not be set yet
+
+	if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding || sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnded)
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("StreamSocket {} already ended", sockData.index);
+		sockData.ahd_write.is_exception = true;
+		sockData.ahd_write.exception = std::exception(); // TODO: switch to nodecpp exceptions ASAP!
+//		errorCloseSocket(sockData, storeError(Error()));
+		Error e;
+		OSLayer::errorCloseSocket(sockData, e);
+		return false;
+	}
+
+	if (sockData.writeBuffer.used_size() == 0)
+	{
+		size_t sentSize = 0;
+		uint8_t res = internal_usage_only::internal_send_packet(buff.begin(), buff.size(), sockData.osSocket, sentSize);
+		if (res == COMMLAYER_RET_FAILED)
+		{
+			sockData.ahd_write.is_exception = true;
+			sockData.ahd_write.exception = std::exception(); // TODO: switch to nodecpp exceptions ASAP!
+//			errorCloseSocket(sockData, storeError(Error()));
+			Error e;
+			OSLayer::errorCloseSocket(sockData, e);
+			return false;
+		}
+		else if (sentSize == buff.size())
+		{
+			return true;
+		}
+		else 
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < buff.size());
+			sockData.writeBuffer.append(buff.begin() + sentSize, buff.size() - sentSize);
+			ioSockets.setPollout( sockData.index );
+			return false;
+		}
+	}
+	else
+	{
+		if ( sockData.writeBuffer.remaining_capacity() >= buff.size() )
+		{
+			sockData.writeBuffer.append(buff.begin(), buff.size());
+			return true;
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sockData.ahd_write.b.size() == 0 );
+			sockData.ahd_write.b = std::move( buff );
+			return false;
+		}
+	}
+}
+
 std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
+	size_t sz = 0;
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;
-	size_t sz = 0;
 	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
 
 	if (ret != COMMLAYER_RET_OK)
@@ -661,10 +751,21 @@ std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 	return make_pair(true, std::move(res));
 }
 
+bool OSLayer::infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz)
+{
+	size_t sz = 0;
+	internal_usage_only::internal_read_packet_object reader( sock );
+	buff.read( reader, sz, target_sz );
+
+	if ( !(reader.get_ret_value() == COMMLAYER_RET_OK || reader.get_ret_value() == COMMLAYER_RET_PENDING ) )
+		return false;
+
+	return true;
+}
+
 NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData)
 {
-	NetSocketManagerBase::ShouldEmit ret = EmitNone;
-//	if (current.connecting)
+	NetSocketManagerBase::ShouldEmit ret = EmitNone; // as a base assumption
 	if(sockData.state == net::SocketBase::DataForCommandProcessing::Connecting)
 	{
 //		current.connecting = false;
@@ -694,48 +795,70 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 	}
 	else if (!sockData.writeBuffer.empty())
 	{
-//		assert(entry.writeBuffer.size() != 0);
 		size_t sentSize = 0;
-		uint8_t res = internal_usage_only::internal_send_packet(sockData.writeBuffer.begin(), sockData.writeBuffer.size(), sockData.osSocket, sentSize);
-		if (res == COMMLAYER_RET_FAILED)
+		//uint8_t res = internal_usage_only::internal_send_packet(sockData.writeBuffer.begin(), sockData.writeBuffer.used_size(), sockData.osSocket, sentSize);
+		internal_usage_only::internal_send_packet_object writer(sockData.osSocket);
+		sockData.writeBuffer.write(writer, sentSize);
+		if ( writer.get_ret_value() == COMMLAYER_RET_FAILED )
 		{
 			//			pendingCloseEvents.push_back(entry.id);
 //			errorCloseSocket(current, storeError(Error()));
 			Error e;
 			OSLayer::errorCloseSocket(sockData, e);
 		}
-		else if (sentSize == sockData.writeBuffer.size())
+//		else if (sentSize == sockData.writeBuffer.size())
+		else if ( sockData.writeBuffer.empty() )
 		{
 //			entry.writeEvents = false;
-			sockData.writeBuffer.clear();
-			//updateEventMaskOnWriteBufferStatusChanged( sockData.index, true );
-			if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
-			{
-				internal_usage_only::internal_shutdown_send(sockData.osSocket);
-				//current.pendingLocalEnd = false;
-				//current.localEnded = true;
+//			sockData.writeBuffer.clear();
 
-				if (sockData.remoteEnded)
+			bool all_done = true;
+
+			if ( sockData.ahd_write.b.size() )
+			{
+				uint8_t res = internal_usage_only::internal_send_packet(sockData.ahd_write.b.begin(), sockData.ahd_write.b.size(), sockData.osSocket, sentSize);
+				if (res == COMMLAYER_RET_FAILED)
 				{
-					//current.state = net::SocketBase::DataForCommandProcessing::Closing;
-					//pendingCloseEvents.emplace_back(current.index, false);
-					OSLayer::closeSocket(sockData);
+					Error e;
+					OSLayer::errorCloseSocket(sockData, e);
 				}
+				else if (sentSize == sockData.ahd_write.b.size())
+					sockData.ahd_write.b.clear();
 				else
-					sockData.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
+					all_done = false;
 			}
-			ioSockets.unsetPollout( sockData.index );
+
+			if ( all_done )
+			{
+				//updateEventMaskOnWriteBufferStatusChanged( sockData.index, true );
+				if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
+				{
+					internal_usage_only::internal_shutdown_send(sockData.osSocket);
+					//current.pendingLocalEnd = false;
+					//current.localEnded = true;
+
+					if (sockData.remoteEnded)
+					{
+						//current.state = net::SocketBase::DataForCommandProcessing::Closing;
+						//pendingCloseEvents.emplace_back(current.index, false);
+						OSLayer::closeSocket(sockData);
+					}
+					else
+						sockData.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
+				}
+				ioSockets.unsetPollout( sockData.index );
 				
-//			entry.ptr->emitDrain();
-//			evs.add(&net::Socket::emitDrain, current.getPtr());
-//			current.getEmitter().emitDrain();
-			ret = EmitDrain;
+	//			entry.ptr->emitDrain();
+	//			evs.add(&net::Socket::emitDrain, current.getPtr());
+	//			current.getEmitter().emitDrain();
+
+				ret = EmitDrain;
+			}
 		}
 		else
 		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < sockData.writeBuffer.size());
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sentSize < sockData.writeBuffer.used_size());
 //			entry.writeEvents = true;
-			sockData.writeBuffer.popFront(sentSize);
 		}
 	}
 	else //ignore?
@@ -758,25 +881,23 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
 }
 
-
-#ifndef NET_CLIENT_ONLY
-
-void NetServerManagerBase::appClose(size_t id)
+void NetServerManagerBase::appClose(net::ServerBase::DataForCommandProcessing& serverData)
 {
+	size_t id = serverData.index;
 	auto& entry = appGetEntry(id);
-//	if (!entry.isValid())
 	if (!entry.isUsed())
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
 		return;
 	}
 
+	internal_usage_only::internal_close(serverData.osSocket);
+	ioSockets.setSocketClosed( entry.index );
+
 	pendingCloseEvents.emplace_back(entry.index, false);
 }
 
-size_t NetServerManagerBase::addServerEntry(NodeBase* node, nodecpp::safememory::soft_ptr<net::ServerTBase> ptr, int typeId)
+size_t NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
 {
-	return ioSockets.addEntry<net::ServerTBase>( node, ptr, typeId );
+	return ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
 }
-
-#endif // NO_SERVER_STAFF

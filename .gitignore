@@ -5,3 +5,5 @@ Release
 Debug
 *.vcproj.user
 *.vcxproj.user
+test/samples/client/build/automated_test_release/
+test/experimental/test_co_await/HISTORY/

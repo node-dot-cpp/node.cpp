@@ -1,1 +1,0 @@
-clang++-7 test_co_await.cpp co_await_hierarchy.cpp -I../../../include/nodecpp -std=gnu++17 -g -Wall -Wextra  -Wno-c++17-extensions -fcoroutines-ts -stdlib=libc++ -lc++experimental -Wno-unused-variable -Wno-unused-parameter -Wno-empty-body  -DNDEBUG -O3 -flto -lpthread -o test.bin
