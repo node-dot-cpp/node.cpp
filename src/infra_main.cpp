@@ -26,7 +26,6 @@
 * -------------------------------------------------------------------------------*/
 
 #include "../include/nodecpp/common.h"
-#include "../include/nodecpp/loop.h"
 
 #ifdef NODECPP_ENABLE_ONSTACK_SOFTPTR_COUNTING
 thread_local size_t nodecpp::safememory::onStackSafePtrCreationCount; 

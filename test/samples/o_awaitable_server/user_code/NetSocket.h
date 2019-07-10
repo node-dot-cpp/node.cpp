@@ -17,10 +17,10 @@ using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
-#define IMPL_VERSION 3 // onConnect is a coro
+//#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
-//#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
+#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
 #else
 #define IMPL_VERSION 7 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -59,10 +59,14 @@ public:
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 		co_await srv.a_listen(2000, "127.0.0.1", 5);
+#ifndef AUTOMATED_TESTING_ONLY
 		co_await srvCtrl.a_listen(2001, "127.0.0.1", 5);
+#endif
 
 		acceptServerLoop();
+#ifndef AUTOMATED_TESTING_ONLY
 		acceptCtrlServerLoop();
+#endif
 
 		CO_RETURN;
 	}
@@ -71,8 +75,14 @@ public:
 	{
 		for (;;)
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket;
-			co_await srv.a_connection<nodecpp::net::SocketO>( socket );
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+#ifdef AUTOMATED_TESTING_ONLY
+			// accept just once
+			server->close();
+			server->unref();
+			break;
+#endif
+			co_await srv.a_connection<nodecpp::net::SocketBase>( socket );
 			socketLoop(socket);
 		}
 		CO_RETURN;
@@ -184,15 +194,22 @@ public:
 		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
 		srv->listen(2000, "127.0.0.1", 5);
+#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
+#endif
 
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyServerSocketOne>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
+#ifdef AUTOMATED_TESTING_ONLY
+		// accept just once
+		server->close();
+		server->unref();
+#endif
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
@@ -211,6 +228,11 @@ public:
 		{
 			co_await socket->a_read( r_buff, 2 );
 			co_await onDataCtrlServerSocket_(socket, r_buff);
+#ifdef AUTOMATED_TESTING_ONLY
+			socket->close();
+			socket->unref();
+			break;
+#endif
 		}
 		CO_RETURN;
 	}
@@ -240,19 +262,6 @@ public:
 		}
 		CO_RETURN;
 	}
-	/*nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
-
-		size_t requestedSz = buffer.begin()[1];
-		if (requestedSz)
-		{
-			Buffer reply(sizeof(stats));
-			stats.connCnt = srv.getSockCount();
-			size_t replySz = sizeof(Stats);
-			reply.append(&stats, replySz); // naive marshalling will work for a limited number of cases
-			co_await socket->a_write(reply);
-		}
-		CO_RETURN;
-	}*/
 
 #elif IMPL_VERSION == 5
 
@@ -281,7 +290,9 @@ public:
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
 
 		srv->listen(2000, "127.0.0.1", 5);
+#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
+#endif
 
 		CO_RETURN;
 	}
@@ -300,6 +311,11 @@ public:
 	nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
+#ifdef AUTOMATED_TESTING_ONLY
+		// accept just once
+		server->close();
+		server->unref();
+#endif
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
@@ -307,7 +323,12 @@ public:
 			co_await onDataServerSocket_(socket, r_buff);
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-				exit( 0 );
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				socket->end();
+				socket->unref();
+				break;
+			}
 #endif
 		}
 		CO_RETURN;
@@ -323,11 +344,20 @@ public:
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
+#ifdef AUTOMATED_TESTING_ONLY
+		// accept just once
+		server->close();
+		server->unref();
+#endif
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
 			co_await socket->a_read(r_buff, 2);
 			co_await onDataCtrlServerSocket_(socket, r_buff);
+#ifdef AUTOMATED_TESTING_ONLY
+			socket->end();
+			socket->unref();
+#endif
 		}
 		CO_RETURN;
 	}
@@ -361,6 +391,11 @@ public:
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
+#ifdef AUTOMATED_TESTING_ONLY
+			// accept just once
+			close();
+			unref();
+#endif
 			CO_RETURN;
 		}
 	};
@@ -379,6 +414,11 @@ public:
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
+#ifdef AUTOMATED_TESTING_ONLY
+		// accept just once
+			close();
+			unref();
+#endif
 			CO_RETURN;
 		}
 	};
@@ -438,6 +478,14 @@ public:
 			stats.recvSize += receivedSz;
 			stats.sentSize += requestedSz;
 			++(stats.rqCnt);
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				socket->end();
+				socket->unref();
+			}
+#endif
 		}
 
 		CO_RETURN;
@@ -535,9 +583,11 @@ public:
 		srvCtrl_1 = nodecpp::net::createServer<MyServerSocketTwo>(1);
 
 		srv->listen(2000, "127.0.0.1", 5);
+#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
 		srv_1->listen(2010, "127.0.0.1", 5);
 		srvCtrl_1->listen(2011, "127.0.0.1", 5);
+#endif
 
 		CO_RETURN;
 	}
@@ -613,6 +663,11 @@ public:
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
+#ifdef AUTOMATED_TESTING_ONLY
+			// accept just once
+			close();
+			unref();
+#endif
 			CO_RETURN;
 		}
 	};
@@ -641,6 +696,11 @@ public:
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
+#ifdef AUTOMATED_TESTING_ONLY
+		// accept just once
+			close();
+			unref();
+#endif
 			CO_RETURN;
 		}
 	};
@@ -699,7 +759,11 @@ public:
 			++(stats.rqCnt);
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-				exit( 0 );
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				socket->end();
+				socket->unref();
+			}
 #endif
 		}
 
@@ -817,7 +881,9 @@ public:
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, MySocketSocketTwo>();
 
 		srv->listen(2000, "127.0.0.1", 5);
+#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
+#endif
 
 		CO_RETURN;
 	}
@@ -834,6 +900,11 @@ public:
 		soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
+#ifdef AUTOMATED_TESTING_ONLY
+		// accept just once
+		server->close();
+		server->unref();
+#endif
 	}
 	void onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
 
@@ -844,6 +915,10 @@ public:
 		soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
+#ifdef AUTOMATED_TESTING_ONLY
+		server->close();
+		server->unref();
+#endif
 	}
 	void onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
 
@@ -939,7 +1014,11 @@ public:
 			++(myNode->stats.rqCnt);
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( myNode->stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-				exit( 0 );
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				end();
+				unref();
+			}
 #endif
 		}
 		void onEndServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) {
@@ -1055,8 +1134,12 @@ public:
 		stats.sentSize += requestedSz;
 		++(stats.rqCnt);
 #ifdef AUTOMATED_TESTING_ONLY
-			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-				exit( 0 );
+		if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+			socket->end();
+			socket->unref();
+		}
 #endif
 		CO_RETURN;
 	}

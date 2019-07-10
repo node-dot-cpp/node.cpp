@@ -37,8 +37,6 @@
 #include "../include/nodecpp/timers.h"
 #include <functional>
 
-#include "../include/nodecpp/loop.h"
-
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
 	If the user doesn't store it, timeout will fire normally, and after that all
@@ -207,7 +205,7 @@ public:
 								break;
 							}
 						default:
-							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
 							break;
 					}
 				}
@@ -262,7 +260,6 @@ public:
 	}
 };
 
-#ifdef USING_T_SOCKETS
 inline
 size_t registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
@@ -298,6 +295,7 @@ class Runnable : public RunnableBase
 	template<class ClientSocketEmitter, class ServerSocketEmitter>
 	void internalRun()
 	{
+		nodecpp::log::touch_log();
 		interceptNewDeleteOperators(true);
 		{
 			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.init();
@@ -313,7 +311,12 @@ class Runnable : public RunnableBase
 			thisThreadNode = &(*node);
 			node->main();
 			infra.template runInfraLoop2<Node>();
+			node = nullptr;
+
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 		}
+		killAllZombies();
 		interceptNewDeleteOperators(false);
 	}
 public:
@@ -324,11 +327,5 @@ public:
 		return internalRun<typename Node::EmitterType, typename Node::EmitterTypeForServer>();
 	}
 };
-
-#else
-extern thread_local Infrastructure<net::SocketEmitter> infra;
-inline
-NetSocketManagerBase& getNetSocket() { return infra.getNetSocket(); }
-#endif // USING_T_SOCKETS
 
 #endif //INFRASTRUCTURE_H

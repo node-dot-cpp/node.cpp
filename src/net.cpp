@@ -119,7 +119,7 @@ void ServerBase::reportBeingDestructed() { netServerManagerBase->appReportBeingD
 
 void ServerBase::close()
 {
-	netServerManagerBase->appClose(dataForCommandProcessing.index);
+	netServerManagerBase->appClose(dataForCommandProcessing);
 }
 
 void ServerBase::listen(uint16_t port, const char* ip, int backlog)

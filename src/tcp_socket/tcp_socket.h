@@ -202,7 +202,6 @@ public:
 		ioSockets.setPollin(id);
 	}
 
-#ifdef USING_T_SOCKETS
 	size_t appAcquireSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId)
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
@@ -253,7 +252,6 @@ public:
 		osd.s = std::move(newSock);
 		return true;
 	}
-#endif // USING_T_SOCKETS
 
 protected:
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
@@ -640,7 +638,7 @@ public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
-	void appClose(size_t id);
+	void appClose(net::ServerBase::DataForCommandProcessing& serverData);
 	void appAddServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)

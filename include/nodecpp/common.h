@@ -95,8 +95,6 @@ public:
 //	using ServerEmmitterType = void;
 };
 
-#ifdef USING_T_SOCKETS
-
 class RunnableBase
 {
 public:
@@ -113,18 +111,13 @@ public:
 
 void registerFactory( const char* name, RunnableFactoryBase* factory );
 
-//template<class RunnableT>
 template<class RunnableT>
 class NodeRegistrator
 {
 public:
-//	thread_local Infrastructure<typename RunnableT::NodeType::EmitterType>* infraPtr;
-//	static thread_local Infra* infraPtr;
-
 public:
 	NodeRegistrator( const char* name )
 	{
-		//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>(( "NodeRegistrator(\"{}\");", name );
 		class NodeFactory : public RunnableFactoryBase
 		{
 		public:
@@ -143,38 +136,5 @@ public:
 thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;*/
 
 
-#else
-
-class NodeFactoryBase
-{
-public:
-	NodeFactoryBase() {}
-	virtual NodeBase* create() = 0;
-};
-
-void registerFactory( const char* name, NodeFactoryBase* factory );
-
-template<class NodeT>
-class NodeRegistrator
-{
-public:
-	NodeRegistrator( const char* name )
-	{
-		//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>(( "NodeRegistrator(\"{}\");", name );
-		class NodeFactory : public NodeFactoryBase
-		{
-		public:
-			NodeFactory() {}
-			virtual NodeBase* create() override
-			{
-				return new NodeT;
-			}
-		};
-		NodeFactory* factory = new NodeFactory;
-		registerFactory( name, reinterpret_cast<NodeFactory*>(factory) );
-	}
-};
-
-#endif // USING_T_SOCKETS
 
 #endif //COMMON_H
