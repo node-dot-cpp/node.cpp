@@ -890,40 +890,19 @@ public:
 		CO_RETURN;
 	}
 
-	// handler implementations
-
-	// server socket
-
-
+	// handler implementations at node itself
 
 	class MyServerSocketOne; // just forward declaration
-	void onConnectionServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
-		soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
-//		socketPtr->myNode = this;
-		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-#ifdef AUTOMATED_TESTING_ONLY
-		// accept just once
-		server->close();
-		server->unref();
-#endif
+	nodecpp::handler_ret_type onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");
+		CO_RETURN;
 	}
-	void onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
-
 
 	class MyServerSocketTwo; // just forward declaration
-	void onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
-		soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
-//		socketPtr->myNode = this;
-		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-#ifdef AUTOMATED_TESTING_ONLY
-		server->close();
-		server->unref();
-#endif
+	nodecpp::handler_ret_type onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");
+		CO_RETURN;
 	}
-	void onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
-
 
 
 	// servers
@@ -939,6 +918,17 @@ public:
 		MyServerSocketOne() {}
 		MyServerSocketOne(MySampleTNode* node) : ServerType(node) {}
 		virtual ~MyServerSocketOne() {}
+		nodecpp::handler_ret_type onConnectionServer(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+			soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
+			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
+#ifdef AUTOMATED_TESTING_ONLY
+			// accept just once
+			close();
+			unref();
+#endif
+			CO_RETURN;
+		}
 	};
 
 	class MyServerSocketTwo : public ServerType
@@ -950,6 +940,16 @@ public:
 		MyServerSocketTwo() {}
 		MyServerSocketTwo(MySampleTNode* node) : ServerType(node) {}
 		virtual ~MyServerSocketTwo() {}
+		nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+			soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
+			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
+#ifdef AUTOMATED_TESTING_ONLY
+			close();
+			unref();
+#endif
+			CO_RETURN;
+		}
 	};
 
 	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv;
@@ -1057,7 +1057,7 @@ public:
 
 	// working server
 	using workingServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListeningServer>;
-	using workingServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnectionServer>;
+	using workingServerConnection_2 = nodecpp::net::HandlerData<MyServerSocketOne, &MyServerSocketOne::onConnectionServer>;
 
 	using workingServerListening = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerListening_2>;
 	using workingServerConnection = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerConnection_2>;
@@ -1066,7 +1066,7 @@ public:
 
 	// ctrl server
 	using ctrlServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListeningCtrl>;
-	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnectionCtrl>;
+	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MyServerSocketTwo, &MyServerSocketTwo::onConnectionCtrl>;
 
 	using ctrlServerListening = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerListening_2>;
 	using ctrlServerConnection = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerConnection_2>;
