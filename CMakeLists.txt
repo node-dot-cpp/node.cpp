@@ -9,14 +9,13 @@ set(SERVER_NAME server.bin)
 set(LIB_NAME gcc_lto_workaround)
 
 set(SOURCE_EXE ${PROJECT_SOURCE_DIR}/src/infra_main.cpp 					
-					${PROJECT_SOURCE_DIR}/src/loop.cpp 
 					${PROJECT_SOURCE_DIR}/src/net.cpp 
 					${PROJECT_SOURCE_DIR}/src/infrastructure.cpp 
 					${PROJECT_SOURCE_DIR}/src/tcp_socket/tcp_socket.cpp )
 
-set(CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/o_awaitable_client/user_code/NetSocket.cpp)
+set(CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/client/user_code/NetSocket.cpp)
 #set(CTRL_CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/ctrl_client/user_code/NetSocket.cpp)
-set(SERVER_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/o_awaitable_server/user_code/NetSocket.cpp)
+set(SERVER_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/server/user_code/NetSocket.cpp)
 
 set(SOURCE_LIB ${PROJECT_SOURCE_DIR}/safe_memory/library/gcc_lto_workaround/gcc_lto_workaround.cpp)
 
