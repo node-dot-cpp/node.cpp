@@ -20,9 +20,10 @@ using namespace fmt;
 //#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
-#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
+#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based with use of DataParent concept)
+//#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
 #else
-#define IMPL_VERSION 7 // registering handlers (per class, template-based) with no explicit awaitable staff
+#define IMPL_VERSION 8 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
 
 #ifdef AUTOMATED_TESTING_ONLY
@@ -866,6 +867,231 @@ public:
 
 
 #elif IMPL_VERSION == 7
+
+
+	MySampleTNode()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleTNode::MySampleTNode()");
+	}
+
+	virtual nodecpp::handler_ret_type main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
+		ptr.reset(static_cast<uint8_t*>(malloc(size)));
+
+		srv = nodecpp::net::createServer<MyServerSocketOne, MySocketSocketOne>(this);
+		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, MySocketSocketTwo>(this);
+
+		srv->listen(2000, "127.0.0.1", 5);
+#ifndef AUTOMATED_TESTING_ONLY
+		srvCtrl->listen(2001, "127.0.0.1", 5);
+#endif
+
+		CO_RETURN;
+	}
+
+	// handler implementations
+
+	// server socket
+
+
+
+	class MyServerSocketOne; // just forward declaration
+	void onConnectionServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+		soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
+//		socketPtr->myNode = this;
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
+#ifdef AUTOMATED_TESTING_ONLY
+		// accept just once
+		server->close();
+		server->unref();
+#endif
+	}
+	void onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
+
+
+	class MyServerSocketTwo; // just forward declaration
+	void onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+		soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
+//		socketPtr->myNode = this;
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
+#ifdef AUTOMATED_TESTING_ONLY
+		server->close();
+		server->unref();
+#endif
+	}
+	void onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
+
+
+
+	// servers
+
+	using ServerType = nodecpp::net::ServerSocket<MySampleTNode>;
+
+	class MyServerSocketOne : public ServerType
+	{
+	public:
+		using NodeType = MySampleTNode;
+
+	public:
+		MyServerSocketOne() {}
+		MyServerSocketOne(MySampleTNode* node) : ServerType(node) {}
+		virtual ~MyServerSocketOne() {}
+	};
+
+	class MyServerSocketTwo : public ServerType
+	{
+	public:
+		using NodeType = MySampleTNode;
+
+	public:
+		MyServerSocketTwo() {}
+		MyServerSocketTwo(MySampleTNode* node) : ServerType(node) {}
+		virtual ~MyServerSocketTwo() {}
+	};
+
+	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv;
+	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl;
+	
+	// sockets
+	
+	using SocketType = nodecpp::net::SocketBase;
+
+	class MySocketSocketOne : public SocketType, public ::nodecpp::DataParent<MySampleTNode>
+	{
+	public:
+		using NodeType = MySampleTNode;
+		friend class MySampleTNode;
+
+	public:
+		MySocketSocketOne() {}
+		MySocketSocketOne(MySampleTNode* node) : SocketType(), ::nodecpp::DataParent<MySampleTNode>(node) {}
+		virtual ~MySocketSocketOne() {}
+
+		void onCloseServerSocket(bool hadError)
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
+			//srv.removeSocket( socket );
+		}
+		void onDataServerSocket(Buffer& buffer) {
+			if ( buffer.size() < 2 )
+			{
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket" );
+				//socket->unref();
+				return;
+			}
+			//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *(socket->getExtra()) );
+
+			size_t receivedSz = buffer.begin()[0];
+			if ( receivedSz != buffer.size() )
+			{
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size() );
+				//socket->unref();
+				return;
+			}
+
+			size_t requestedSz = buffer.begin()[1];
+			if ( requestedSz )
+			{
+				Buffer reply(requestedSz);
+				//buffer.begin()[0] = (uint8_t)requestedSz;
+				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
+				write(reply.begin(), requestedSz);
+			}
+
+			getDataParent()->stats.recvSize += receivedSz;
+			getDataParent()->stats.sentSize += requestedSz;
+			++(getDataParent()->stats.rqCnt);
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( getDataParent()->stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				end();
+				unref();
+			}
+#endif
+		}
+		void onEndServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) {
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
+			const char buff[] = "goodbye!";
+			socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			socket->end();
+		}
+	};
+
+	class MySocketSocketTwo : public SocketType, public ::nodecpp::DataParent<MySampleTNode>
+	{
+	public:
+		using NodeType = MySampleTNode;
+		friend class MySampleTNode;
+
+	public:
+		MySocketSocketTwo() {}
+		MySocketSocketTwo(MySampleTNode* node) : SocketType(), ::nodecpp::DataParent<MySampleTNode>(node) {}
+		virtual ~MySocketSocketTwo() {}
+		void onCloseCtrlServerSocket(bool hadError)
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
+			//srvCtrl.removeSocket( socket );
+		}
+		void onDataCtrlServerSocket(Buffer& buffer) {
+
+			size_t requestedSz = buffer.begin()[1];
+			if ( requestedSz )
+			{
+				Buffer reply(sizeof(stats));
+				getDataParent()->stats.connCnt = getDataParent()->srv->getSockCount();
+				size_t replySz = sizeof(Stats);
+				uint8_t* buff = getDataParent()->ptr.get();
+				memcpy( buff, &(getDataParent()->stats), replySz ); // naive marshalling will work for a limited number of cases
+				write(buff, replySz);
+			}
+		}
+	};
+
+	// declarative part
+
+	// working server
+	using workingServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListeningServer>;
+	using workingServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnectionServer>;
+
+	using workingServerListening = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerListening_2>;
+	using workingServerConnection = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerConnection_2>;
+
+	using workingServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketOne, nodecpp::net::ServerHandlerDescriptorBase<nodecpp::net::OnConnectionST<workingServerConnection>, nodecpp::net::OnListeningST<workingServerListening> > >;
+
+	// ctrl server
+	using ctrlServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListeningCtrl>;
+	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnectionCtrl>;
+
+	using ctrlServerListening = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerListening_2>;
+	using ctrlServerConnection = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerConnection_2>;
+
+	using ctrlServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketTwo, nodecpp::net::ServerHandlerDescriptorBase< nodecpp::net::OnConnectionST<ctrlServerConnection>, nodecpp::net::OnListeningST<ctrlServerListening> > >;
+
+	// all servers
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ctrlServerHD, workingServerHD>;
+
+
+	// working socket
+	using workingSocketData_1 = nodecpp::net::HandlerData<MySocketSocketOne, &MySocketSocketOne::onDataServerSocket>;
+	using workingSocketData = nodecpp::net::SocketHandlerDataList<MySocketSocketOne, workingSocketData_1>;
+
+	using workingSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketSocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<workingSocketData> > >;
+
+	using ctrlSocketData_1 = nodecpp::net::HandlerData<MySocketSocketTwo, &MySocketSocketTwo::onDataCtrlServerSocket>;
+	using ctrlSocketData = nodecpp::net::SocketHandlerDataList<MySocketSocketTwo, ctrlSocketData_1>;
+
+	using ctrlSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketSocketTwo, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<ctrlSocketData> > >;
+
+	using EmitterType = nodecpp::net::SocketTEmitter<workingSocketHD, ctrlSocketHD>;
+
+
+#elif IMPL_VERSION == 8
 
 	MySampleTNode()
 	{

@@ -38,6 +38,7 @@ namespace nodecpp {
 		{
 		public:
 			using NodeType = void;
+			using DataParentType = void;
 
 		public:
 			nodecpp::safememory::soft_this_ptr<ServerBase> myThis;
@@ -559,39 +560,88 @@ namespace nodecpp {
 			}
 		};
 
+		template<class DataParentT>
+		class ServerSocket : public ServerBase, public ::nodecpp::DataParent<DataParentT>
+		{
+		public:
+			using DataParentType = DataParentT;
+			ServerSocket<DataParentT>() {};
+			ServerSocket<DataParentT>(DataParentT* dataParent ) : ServerBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~ServerSocket<DataParentT>() {}
+		};
+
+		template<>
+		class ServerSocket<void> : public ServerBase
+		{
+		public:
+			using DataParentType = void;
+			ServerSocket() {};
+			virtual ~ServerSocket() {}
+		};
 
 		template<class ServerT, class SocketT, class ... Types>
 		static
 		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
 			static_assert( std::is_base_of< ServerBase, ServerT >::value );
-			nodecpp::safememory::owning_ptr<ServerT> ret = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
+			nodecpp::safememory::owning_ptr<ServerT> retServer = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
 			if constexpr ( !std::is_same<typename ServerT::NodeType, void>::value )
 			{
 				static_assert( std::is_base_of< NodeBase, typename ServerT::NodeType >::value );
-				ret->template registerServer<typename ServerT::NodeType, ServerT>(ret);
+				retServer->template registerServer<typename ServerT::NodeType, ServerT>(retServer);
 			}
 			else
 			{
-				ret->registerServer(ret);
+				retServer->registerServer(retServer);
 			}
-			ret->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
-					nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
-					if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
-					{
-						static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-						int id = -1;
-						if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
-							id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
-						ret->registerMeByIDAndAssignSocket(sdata, id);
-					}
-					else
-					{
-						ret->registerMeByIDAndAssignSocket(sdata, -1);
-					}
-					return ret;
-				} );
-			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*ret));
-			return ret;
+			if constexpr ( std::is_same< typename ServerT::DataParentType, void >::value )
+			{
+				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
+						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
+						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
+						{
+							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
+							int id = -1;
+							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
+								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
+							ret->registerMeByIDAndAssignSocket(sdata, id);
+						}
+						else
+						{
+							ret->registerMeByIDAndAssignSocket(sdata, -1);
+						}
+						return ret;
+					} );
+			}
+			else
+			{
+				auto myDataParent = retServer->getDataParent();
+				retServer->setAcceptedSocketCreationRoutine( [myDataParent](OpaqueSocketData& sdata) {
+						nodecpp::safememory::owning_ptr<SocketT> retSock;
+						if constexpr ( std::is_base_of< NodeBase, typename ServerT::DataParentType >::value )
+						{
+							retSock = nodecpp::safememory::make_owning<SocketT>(myDataParent);
+						}
+						else
+						{
+							retSock = nodecpp::safememory::make_owning<SocketT>();
+						}
+						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
+						{
+							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
+							int id = -1;
+							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
+								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
+							retSock->registerMeByIDAndAssignSocket(sdata, id);
+						}
+						else
+						{
+							retSock->registerMeByIDAndAssignSocket(sdata, -1);
+						}
+						return retSock;
+					} );
+			}
+			retServer->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*retServer));
+			return retServer;
 		}
 
 		template<class ServerT, class ... Types>

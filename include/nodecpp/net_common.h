@@ -752,6 +752,16 @@ namespace nodecpp {
 		};
 	} //namespace net
 
+	template<class DataParentT>
+	class DataParent
+	{
+		DataParentT* parent = nullptr;
+	public:
+		DataParent() {}
+		DataParent(DataParentT* parent_) { parent = parent_; }
+		DataParentT* getDataParent() { return parent; }
+	};
+
 } //namespace nodecpp
 
 #endif //NET_COMMON_H
