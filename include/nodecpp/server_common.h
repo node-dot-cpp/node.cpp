@@ -385,12 +385,13 @@ namespace nodecpp {
 				MultiOwner<SocketBase> socketList;
 		public:
 			soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) { 
-//				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(sdata);
 				owning_ptr<SocketBase> sock_;
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, acceptedSocketCreationRoutine != nullptr);
 				sock_ = acceptedSocketCreationRoutine( sdata );
+				nodecpp::safememory::soft_ptr<ServerBase> myPtr = myThis.getSoftPtr<ServerBase>(this);
+				sock_->myServerSocket = myPtr;
 				soft_ptr<SocketBase> retSock( sock_ );
-				this->socketList.add( std::move(sock_) );
+				socketList.add( std::move(sock_) );
 				return retSock;
 			}		
 			void removeSocket( soft_ptr<SocketBase> sock ) {
@@ -559,6 +560,16 @@ namespace nodecpp {
 				else assert(false);
 			}
 		};
+
+		inline
+		void SocketBase::onPostClose()
+		{ 
+			if ( myServerSocket != nullptr ) 
+			{
+				nodecpp::safememory::soft_ptr<SocketBase> myPtr = myThis.getSoftPtr<SocketBase>(this);
+				myServerSocket->removeSocket(myPtr);
+			}
+		}
 
 		template<class DataParentT>
 		class ServerSocket : public ServerBase, public ::nodecpp::DataParent<DataParentT>

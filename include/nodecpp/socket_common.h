@@ -37,6 +37,7 @@ namespace nodecpp {
 
 	namespace net {
 
+		class ServerBase; // forward declaration
 		class [[nodecpp::owning_only]] SocketBase
 		{
 		public:
@@ -44,9 +45,14 @@ namespace nodecpp {
 
 		public:
 			nodecpp::safememory::soft_this_ptr<SocketBase> myThis;
-		public:
+		private:
+			friend class MultiOwner<SocketBase>;
 			SocketBase* prev_;
 			SocketBase* next_;
+			friend class ServerBase;
+			nodecpp::safememory::soft_ptr<ServerBase> myServerSocket = nullptr;
+		public:
+			void onPostClose();
 
 		public:
 //			UserDefID userDefID;

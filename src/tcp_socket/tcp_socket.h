@@ -367,13 +367,6 @@ public:
 						{
 						}
 					}
-//					EmitterType::emitClose(entry.getEmitter(), err);
-					if constexpr ( !std::is_same<EmitterType, void>::value )
-						EmitterType::template emitClose<Node>(entry.getEmitter(), err);
-					if (entry.getClientSocketData()->isCloseEventHandler())
-						entry.getClientSocketData()->handleCloseEvent(entry.getClientSocket(), err);
-					if (entry.isUsed())
-						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 //					if (err && entry.isValid()) //if error closing, then first error event
 					if (err && entry.isUsed()) //if error closing, then first error event
 					{
@@ -383,6 +376,14 @@ public:
 						if (entry.getClientSocketData()->isErrorEventHandler())
 							entry.getClientSocketData()->handleErrorEvent(entry.getClientSocket(), current.second.second);
 					}
+//					EmitterType::emitClose(entry.getEmitter(), err);
+					if constexpr ( !std::is_same<EmitterType, void>::value )
+						EmitterType::template emitClose<Node>(entry.getEmitter(), err);
+					if (entry.getClientSocketData()->isCloseEventHandler())
+						entry.getClientSocketData()->handleCloseEvent(entry.getClientSocket(), err);
+					if (entry.isUsed())
+						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
+					entry.getClientSocket()->onPostClose();
 #endif // 0
 				}
 				entry = NetSocketEntry(current.first); 
