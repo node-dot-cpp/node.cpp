@@ -290,6 +290,10 @@ namespace nodecpp {
 				reportBeingDestructed();
 			}
 			void setAcceptedSocketCreationRoutine(acceptedSocketCreationRoutineType socketCreationCB) { 	acceptedSocketCreationRoutine = std::move( socketCreationCB ); }
+			void onFinalCleanup()
+			{
+				forceReleasingAllCoroHandles();
+			}
 
 			const Address& address() const { return dataForCommandProcessing.localAddress; }
 			void close();
@@ -302,6 +306,24 @@ namespace nodecpp {
 			void listen(uint16_t port, const char* ip, int backlog);
 
 #ifndef NODECPP_NO_COROUTINES
+			void forceReleasingAllCoroHandles()
+			{
+				if ( dataForCommandProcessing.ahd_listen.h != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_listen.h;
+					dataForCommandProcessing.ahd_listen.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_listen.h = nullptr;
+					hr();
+				}
+				if ( dataForCommandProcessing.ahd_connection.h != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_connection.h;
+					dataForCommandProcessing.ahd_connection.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_connection.h = nullptr;
+					hr();
+				}
+			}
+
 
 			auto a_listen(uint16_t port, const char* ip, int backlog) { 
 
@@ -379,6 +401,8 @@ namespace nodecpp {
 				return connection_awaiter(*this, socket);
 			}
 
+#else
+			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
 
 			protected:

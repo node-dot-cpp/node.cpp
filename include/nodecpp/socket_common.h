@@ -670,6 +670,8 @@ namespace nodecpp {
 				return drain_awaiter(*this);
 			}
 
+#else
+			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
 
 
