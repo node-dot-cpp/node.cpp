@@ -86,7 +86,7 @@ namespace nodecpp {
 				//bool localEnded = false;
 				//bool pendingLocalEnd = false;
 				bool paused = false;
-				bool allowHalfOpen = true;
+				bool allowHalfOpen = false; // nodejs-inspired reasonable default
 
 				bool refed = false;
 

@@ -1015,11 +1015,11 @@ public:
 			}
 #endif
 		}
-		void onEndServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) {
+		void onEndServerSocket() {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
 			const char buff[] = "goodbye!";
-			socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
-			socket->end();
+			write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+//			end(); // so far (yet to be changable) default is allowHalfOpen == false, so this call is not mandatory
 		}
 	};
 
@@ -1080,8 +1080,10 @@ public:
 	// working socket
 	using workingSocketData_1 = nodecpp::net::HandlerData<MySocketSocketOne, &MySocketSocketOne::onDataServerSocket>;
 	using workingSocketData = nodecpp::net::SocketHandlerDataList<MySocketSocketOne, workingSocketData_1>;
+	using workingSocketEnd_1 = nodecpp::net::HandlerData<MySocketSocketOne, &MySocketSocketOne::onEndServerSocket>;
+	using workingSocketEnd = nodecpp::net::SocketHandlerDataList<MySocketSocketOne, workingSocketEnd_1>;
 
-	using workingSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketSocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<workingSocketData> > >;
+	using workingSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketSocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<workingSocketData>, nodecpp::net::OnEndT<workingSocketEnd> > >;
 
 	using ctrlSocketData_1 = nodecpp::net::HandlerData<MySocketSocketTwo, &MySocketSocketTwo::onDataCtrlServerSocket>;
 	using ctrlSocketData = nodecpp::net::SocketHandlerDataList<MySocketSocketTwo, ctrlSocketData_1>;
