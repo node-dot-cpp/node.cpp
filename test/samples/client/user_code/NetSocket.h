@@ -12,11 +12,11 @@ using namespace nodecpp;
 using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
-//#define IMPL_VERSION 2 // main() is a single coro
+#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 4 // registering handlers (per class)
 //#define IMPL_VERSION 5 // registering handlers (per class, template-based)
-#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
+//#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #else
 #define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -45,8 +45,7 @@ public:
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
-		*( clientSock->getExtra() ) = 17;
+		clientSock = nodecpp::net::createSocket();
 
 		try
 		{
@@ -59,13 +58,12 @@ public:
 		}
 		catch (...)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("processing on socket with extra = {} failed. Exiting...", *(clientSock->getExtra()));
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("processing on socket failed. Exiting...");
 		}
 		CO_RETURN;
 	}
 
-	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType
-	>;
+	using ClientSockType = nodecpp::net::SocketBase;
 
 	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
@@ -78,7 +76,7 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting...");
 				break;
 			}
 			++recvReplies;
@@ -101,7 +99,7 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed). Exiting...");
 				break;
 			}
 			// TODO: address failure
@@ -109,7 +107,7 @@ public:
 		CO_RETURN;
 	}
 
-	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
 
 #elif IMPL_VERSION == 3
 
