@@ -562,8 +562,9 @@ namespace nodecpp {
 		};
 
 		inline
-		void SocketBase::onPostClose()
+		void SocketBase::onFinalCleanup()
 		{ 
+			forceReleasingAllCoroHandles();
 			if ( myServerSocket != nullptr ) 
 			{
 				nodecpp::safememory::soft_ptr<SocketBase> myPtr = myThis.getSoftPtr<SocketBase>(this);

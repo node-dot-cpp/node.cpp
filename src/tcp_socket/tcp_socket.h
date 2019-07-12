@@ -358,15 +358,6 @@ public:
 					EmitterType::emitClose(entry.getEmitter(), err);
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 #else // new version
-					if (entry.isUsed())
-					{
-						if ( entry.getClientSocketData()->ahd_read.h != nullptr )
-						{
-						}
-						if ( entry.getClientSocketData()->ahd_write.h != nullptr )
-						{
-						}
-					}
 //					if (err && entry.isValid()) //if error closing, then first error event
 					if (err && entry.isUsed()) //if error closing, then first error event
 					{
@@ -383,7 +374,7 @@ public:
 						entry.getClientSocketData()->handleCloseEvent(entry.getClientSocket(), err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
-					entry.getClientSocket()->onPostClose();
+					entry.getClientSocket()->onFinalCleanup();
 #endif // 0
 				}
 				entry = NetSocketEntry(current.first); 

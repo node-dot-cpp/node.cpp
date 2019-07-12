@@ -52,7 +52,7 @@ namespace nodecpp {
 			friend class ServerBase;
 			nodecpp::safememory::soft_ptr<ServerBase> myServerSocket = nullptr;
 		public:
-			void onPostClose();
+			void onFinalCleanup();
 
 		public:
 //			UserDefID userDefID;
@@ -485,6 +485,45 @@ namespace nodecpp {
 
 
 #ifndef NODECPP_NO_COROUTINES
+
+			void forceReleasingAllCoroHandles()
+			{
+				if ( dataForCommandProcessing.ahd_accepted.h != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_accepted.h;
+					dataForCommandProcessing.ahd_accepted.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_accepted.h = nullptr;
+					hr();
+				}
+				if ( dataForCommandProcessing.ahd_connect.h != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_connect.h;
+					dataForCommandProcessing.ahd_connect.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_connect.h = nullptr;
+					hr();
+				}
+				if ( dataForCommandProcessing.ahd_read.h != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_read.h;
+					dataForCommandProcessing.ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_read.h = nullptr;
+					hr();
+				}
+				if ( dataForCommandProcessing.ahd_write.h != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_write.h;
+					dataForCommandProcessing.ahd_write.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_write.h = nullptr;
+					hr();
+				}
+				if ( dataForCommandProcessing.ahd_drain.h != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_drain.h;
+					dataForCommandProcessing.ahd_drain.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_drain.h = nullptr;
+					hr();
+				}
+			}
 
 			auto a_connect(uint16_t port, const char* ip) { 
 
