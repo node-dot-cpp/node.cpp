@@ -361,12 +361,15 @@ public:
 //					if (err && entry.isValid()) //if error closing, then first error event
 					if (err && entry.isUsed()) //if error closing, then first error event
 					{
+						entry.getClientSocket()->emitError(current.second.second);
 //						EmitterType::emitError(entry.getEmitter(), current.second.second);
 						if constexpr ( !std::is_same<EmitterType, void>::value )
 							EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
 						if (entry.getClientSocketData()->isErrorEventHandler())
 							entry.getClientSocketData()->handleErrorEvent(entry.getClientSocket(), current.second.second);
 					}
+					if (entry.isUsed())
+						entry.getClientSocket()->emitClose(err);
 //					EmitterType::emitClose(entry.getEmitter(), err);
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitClose<Node>(entry.getEmitter(), err);
@@ -402,6 +405,7 @@ public:
 					}
 					else // TODO: make sure we never have both cases in the same time
 					{
+						entry.getClientSocket()->emitAccepted();
 //						EmitterType::emitAccepted(entry.getEmitter());
 						if constexpr ( !std::is_same<EmitterType, void>::value )
 							EmitterType::template emitAccepted<Node>(entry.getEmitter());
@@ -499,6 +503,7 @@ private:
 		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
 	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
 //					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+					entry.getClientSocket()->emitData( std::ref(infraStoreBuffer(std::move(res.second))));
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
 					if (entry.getClientSocketData()->isDataEventHandler())
@@ -528,6 +533,7 @@ private:
 			ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
 	//		evs.add(&net::Socket::emitEnd, entry.getPtr());
 //			EmitterType::emitEnd(entry.getEmitter());
+			entry.getClientSocket()->emitEnd();
 			if constexpr ( !std::is_same<EmitterType, void>::value )
 				EmitterType::template emitEnd<Node>(entry.getEmitter());
 			if (entry.getClientSocketData()->isEndEventHandler())
@@ -575,6 +581,7 @@ private:
 				}
 				else
 				{
+					current.getClientSocket()->emitConnect();
 //					EmitterType::emitConnect(current.getEmitter());
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitConnect<Node>(current.getEmitter());
@@ -593,6 +600,7 @@ private:
 				}
 				else // TODO: make sure we never have both cases in the same time
 				{
+					current.getClientSocket()->emitDrain();
 //					EmitterType::emitDrain(current.getEmitter());
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitDrain<Node>(current.getEmitter());
