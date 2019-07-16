@@ -584,7 +584,7 @@ public:
 			clientSock->write(buf);
 		});
 
-		clientSock->on(event::data, [this](Buffer& buffer) { 
+		clientSock->on(event::data, [this](const Buffer& buffer) { 
 			++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )

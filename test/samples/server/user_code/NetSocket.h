@@ -1210,7 +1210,7 @@ public:
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
 			//srv.removeSocket( socket );
 		}
-		void onDataServerSocket(Buffer& buffer) {
+		void onDataServerSocket(const Buffer& buffer) {
 			if ( buffer.size() < 2 )
 			{
 //				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
@@ -1250,11 +1250,11 @@ public:
 			}
 #endif
 		}
-		void onEndServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) {
+		void onEndServerSocket() {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
 			const char buff[] = "goodbye!";
-			socket->write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
-			socket->end();
+			write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			end();
 		}
 	};
 
@@ -1275,7 +1275,7 @@ public:
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
 			//srvCtrl.removeSocket( socket );
 		}
-		void onDataCtrlServerSocket(Buffer& buffer) {
+		void onDataCtrlServerSocket(const Buffer& buffer) {
 
 			size_t requestedSz = buffer.begin()[1];
 			if ( requestedSz )

@@ -707,9 +707,9 @@ namespace nodecpp {
 				eConnect.emit();
 			}
 
-			void emitData(Buffer& buffer) {
+			void emitData(const Buffer& buffer) {
 				_bytesRead += buffer.size();
-				eData.emit(std::ref(buffer));
+				eData.emit<const Buffer&>(buffer);
 			}
 
 			void emitDrain() {
