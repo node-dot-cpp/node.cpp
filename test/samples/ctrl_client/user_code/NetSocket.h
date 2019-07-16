@@ -91,6 +91,7 @@ public:
 			// test just once
 			end();
 			unref();
+			return;
 #endif
 
 			getchar();

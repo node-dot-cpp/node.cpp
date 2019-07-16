@@ -561,6 +561,7 @@ private:
 					internal_usage_only::internal_shutdown_send(entry.getClientSocketData()->osSocket);
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::LocalEnded;
 	//				entry.localEnded = true;
+					closeSocket(entry);
 				}
 			}
 		}

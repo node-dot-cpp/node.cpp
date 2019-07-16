@@ -1208,7 +1208,6 @@ public:
 		void onCloseServerSocket(bool hadError)
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
-			//srv.removeSocket( socket );
 		}
 		void onDataServerSocket(const Buffer& buffer) {
 			if ( buffer.size() < 2 )
@@ -1254,7 +1253,7 @@ public:
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
 			const char buff[] = "goodbye!";
 			write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
-			end();
+//			end();
 		}
 	};
 
@@ -1273,7 +1272,6 @@ public:
 		void onCloseCtrlServerSocket(bool hadError)
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
-			//srvCtrl.removeSocket( socket );
 		}
 		void onDataCtrlServerSocket(const Buffer& buffer) {
 
@@ -1287,6 +1285,12 @@ public:
 				memcpy( buff, &(myNode->stats), replySz ); // naive marshalling will work for a limited number of cases
 				write(buff, replySz);
 			}
+		}
+		void onEndCtrlServerSocket() {
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("ctrl server socket: onEnd!");
+			const char buff[] = "goodbye!";
+			write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+//			end();
 		}
 	};
 
@@ -1317,13 +1321,17 @@ public:
 	// working socket
 	using workingSocketData_1 = nodecpp::net::HandlerData<MySocketSocketOne, &MySocketSocketOne::onDataServerSocket>;
 	using workingSocketData = nodecpp::net::SocketHandlerDataList<MySocketSocketOne, workingSocketData_1>;
+	using workingSocketEnd_1 = nodecpp::net::HandlerData<MySocketSocketOne, &MySocketSocketOne::onEndServerSocket>;
+	using workingSocketEnd = nodecpp::net::SocketHandlerDataList<MySocketSocketOne, workingSocketEnd_1>;
 
-	using workingSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketSocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<workingSocketData> > >;
+	using workingSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketSocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<workingSocketData>, nodecpp::net::OnEndT<workingSocketEnd> > >;
 
 	using ctrlSocketData_1 = nodecpp::net::HandlerData<MySocketSocketTwo, &MySocketSocketTwo::onDataCtrlServerSocket>;
 	using ctrlSocketData = nodecpp::net::SocketHandlerDataList<MySocketSocketTwo, ctrlSocketData_1>;
+	using ctrlSocketEnd_1 = nodecpp::net::HandlerData<MySocketSocketTwo, &MySocketSocketTwo::onEndCtrlServerSocket>;
+	using ctrlSocketEnd = nodecpp::net::SocketHandlerDataList<MySocketSocketTwo, ctrlSocketEnd_1>;
 
-	using ctrlSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketSocketTwo, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<ctrlSocketData> > >;
+	using ctrlSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketSocketTwo, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnDataT<ctrlSocketData>, nodecpp::net::OnEndT<ctrlSocketEnd> > >;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<workingSocketHD, ctrlSocketHD>;
 
