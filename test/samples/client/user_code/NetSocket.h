@@ -590,8 +590,8 @@ public:
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				end();
-				unref();
+				clientSock->end();
+				clientSock->unref();
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )

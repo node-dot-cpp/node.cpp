@@ -21,8 +21,8 @@ using namespace fmt;
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
 //#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based with use of DataParent concept)
-//#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
-#define IMPL_VERSION 9 // lambda-based
+#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
+//#define IMPL_VERSION 9 // lambda-based
 #else
 #define IMPL_VERSION 8 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -1334,30 +1334,30 @@ public:
 		srvCtrl = nodecpp::net::createServer<net::ServerBase>();
 
 		srv->on( event::close, [this](bool hadError) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!");
 		});
 		srv->on( event::connection, [this](soft_ptr<net::SocketBase> socket) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 			//srv->unref();
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!\n");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
 				socket->unref();
 			});
 
 			socket->on( event::data, [this, socket](Buffer& buffer) {
 				if ( buffer.size() < 2 )
 				{
-					//printf( "Insufficient data on socket idx = %d\n", *extra );
-					socket->unref();
+					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = %d", *extra );
+					socket->end();
 					return;
 				}
 	
 				size_t receivedSz = buffer.readUInt8(0);
 				if ( receivedSz != buffer.size() )
 				{
-//					printf( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes\n", *extra, receivedSz, buffer.size() );
-					printf( "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes\n", receivedSz, buffer.size() );
+//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes", *extra, receivedSz, buffer.size() );
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes", receivedSz, buffer.size() );
 					socket->unref();
 					return;
 				}
@@ -1376,7 +1376,7 @@ public:
 				++(stats.rqCnt);
 			});
 			socket->on( event::end, [this, socket]() {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!\n");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 				socket->write( b );
@@ -1386,13 +1386,13 @@ public:
 		});
 
 		srvCtrl->on( event::close, [this](bool hadError) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!");
 		});
 		srvCtrl->on( event::connection, [this](soft_ptr<net::SocketBase> socket) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!\n");
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!\n");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
 			});
 			socket->on( event::data, [this, socket](Buffer& buffer) {
 				size_t requestedSz = buffer.readUInt8(1);
@@ -1406,11 +1406,10 @@ public:
 				}
 			});
 			socket->on( event::end, [this, socket]() {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!\n");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 				socket->write( b );
-				socket->end();
 			});
 		});
 

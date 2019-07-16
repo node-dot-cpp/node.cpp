@@ -156,7 +156,7 @@ public:
 class NetSocketManagerBase : protected OSLayer
 {
 	friend class OSLayer;
-	std::vector<Buffer> bufferStore; // TODO: improve
+//	std::vector<Buffer> bufferStore; // TODO: improve
 
 public:
 //	int typeIndexOfSocketO = -1;
@@ -174,14 +174,14 @@ public:
 	NetSocketManagerBase(NetSockets& ioSockets_) : ioSockets( ioSockets_) {}
 
 	//TODO quick workaround until definitive life managment is in place
-	Buffer& infraStoreBuffer(Buffer buff) {
+	/*Buffer& infraStoreBuffer(Buffer buff) {
 		bufferStore.push_back(std::move(buff));
 		return bufferStore.back();
 	}
 
 	void infraClearStores() {
 		bufferStore.clear();
-	}
+	}*/
 
 public:
 	void infraAddAccepted(soft_ptr<net::SocketBase> ptr)
@@ -503,11 +503,17 @@ private:
 		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
 	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
 //					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
-					entry.getClientSocket()->emitData( std::ref(infraStoreBuffer(std::move(res.second))));
+					Buffer b = std::move(res.second);
+					/*entry.getClientSocket()->emitData( std::ref(b));
 					if constexpr ( !std::is_same<EmitterType, void>::value )
-						EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
+						EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(b));
 					if (entry.getClientSocketData()->isDataEventHandler())
-						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), std::ref(infraStoreBuffer(std::move(res.second))));
+						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), std::ref(b));*/
+					entry.getClientSocket()->emitData( b);
+					if constexpr ( !std::is_same<EmitterType, void>::value )
+						EmitterType::template emitData<Node>(entry.getEmitter(), b);
+					if (entry.getClientSocketData()->isDataEventHandler())
+						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), b);
 				}
 				else //if (!entry.remoteEnded)
 				{

@@ -417,10 +417,13 @@ namespace nodecpp {
 				soft_ptr<SocketBase> retSock( sock_ );
 				socketList.add( std::move(sock_) );
 				return retSock;
-			}		
+			}	
+		private:
+			friend class SocketBase;
 			void removeSocket( soft_ptr<SocketBase> sock ) {
 				this->socketList.removeAndDelete( sock );
 			}
+		public:
 			size_t getSockCount() {return this->socketList.getCount();}
 
 			/////////////////////////////////////////////////////////////////

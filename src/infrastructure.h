@@ -251,7 +251,7 @@ public:
 			}
 			queue.emit();
 
-			netSocket.infraClearStores();
+//			netSocket.infraClearStores();
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
 				netServer.infraClearStores();
