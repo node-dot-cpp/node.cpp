@@ -745,6 +745,7 @@ public:
 					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
 					{
 						//EmitterType::emitClose( entry.getEmitter(), current.second);
+						entry.getServerSocket()->emitClose( current.second );
 						if constexpr ( !std::is_same<EmitterType, void>::value )
 							EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
 						if (entry.getServerSocketData()->isCloseEventHandler())
@@ -781,6 +782,7 @@ public:
 						else
 						{
 							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+							entry.getServerSocket()->emitListening(current, entry.getServerSocketData()->localAddress);
 							if constexpr ( !std::is_same<EmitterType, void>::value )
 								EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
 							if (entry.getServerSocketData()->isListenEventHandler() )
@@ -836,6 +838,7 @@ private:
 		else
 		{
 			//EmitterType::emitConnection(entry.getEmitter(), ptr); 
+			entry.getServerSocket()->emitConnection(ptr);
 			if constexpr ( !std::is_same<EmitterType, void>::value )
 				EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
 			if (entry.getServerSocketData()->isConnectionEventHandler())
@@ -851,7 +854,7 @@ private:
 	{
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 		Error e;
-		//EmitterType::emitError( entry.getEmitter(), e );
+		entry.getServerSocket()->emitError( e );
 		if constexpr ( !std::is_same<EmitterType, void>::value )
 			EmitterType::template emitError<Node>( entry.getEmitter(), e );
 		if (entry.getServerSocketData()->isErrorEventHandler())
