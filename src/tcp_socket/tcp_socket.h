@@ -537,13 +537,13 @@ private:
 		{
 			entry.getClientSocketData()->remoteEnded = true;
 			ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
-	//		evs.add(&net::Socket::emitEnd, entry.getPtr());
-//			EmitterType::emitEnd(entry.getEmitter());
+
 			entry.getClientSocket()->emitEnd();
 			if constexpr ( !std::is_same<EmitterType, void>::value )
 				EmitterType::template emitEnd<Node>(entry.getEmitter());
 			if (entry.getClientSocketData()->isEndEventHandler())
 				entry.getClientSocketData()->handleEndEvent(entry.getClientSocket());
+
 			if (entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 			{
 				//pendingCloseEvents.emplace_back(entry.index, false);
@@ -553,14 +553,12 @@ private:
 			{
 				if (!entry.getClientSocketData()->writeBuffer.empty())
 				{
-	//				entry.pendingLocalEnd = true;
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::LocalEnding;
 				}
 				else
 				{
 					internal_usage_only::internal_shutdown_send(entry.getClientSocketData()->osSocket);
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::LocalEnded;
-	//				entry.localEnded = true;
 					closeSocket(entry);
 				}
 			}
@@ -589,7 +587,6 @@ private:
 				else
 				{
 					current.getClientSocket()->emitConnect();
-//					EmitterType::emitConnect(current.getEmitter());
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitConnect<Node>(current.getEmitter());
 					if (current.getClientSocketData()->isConnectEventHandler())
@@ -608,7 +605,6 @@ private:
 				else // TODO: make sure we never have both cases in the same time
 				{
 					current.getClientSocket()->emitDrain();
-//					EmitterType::emitDrain(current.getEmitter());
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitDrain<Node>(current.getEmitter());
 					if (current.getClientSocketData()->isDrainEventHandler())
