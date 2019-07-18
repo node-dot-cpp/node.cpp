@@ -473,22 +473,22 @@ namespace nodecpp {
 			}
 			template<class Node>
 			static bool isCloseEmitter( const OpaqueEmitter& emitter, bool hadError ) {
-				if ( emitter.type == -1 ) return false;
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				if ( emitter.type == -1 ) return false;
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
 				checkIsOnCloseServer<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, hadError);
 			}
 			template<class Node>
 			static bool isListeningEmitter( const OpaqueEmitter& emitter, size_t id, Address addr ) { 
-				if ( emitter.type == -1 ) return false;
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				if ( emitter.type == -1 ) return false;
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
 				checkIsOnListening<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, id, addr);
 			}
 			template<class Node>
 			static bool isErrorEmitter( const OpaqueEmitter& emitter, nodecpp::Error& e ) { 
-				if ( emitter.type == -1 ) return false;
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); 
+				if ( emitter.type == -1 ) return false;
 				Ptr emitter_ptr( nodecpp::safememory::soft_ptr_static_cast<ServerBase>(emitter.getServerSocketPtr()) ); 
 				checkIsOnErrorServer<Node, Ptr, args...>(getThreadNode<Node>(), &emitter_ptr, emitter.type, e);
 			}

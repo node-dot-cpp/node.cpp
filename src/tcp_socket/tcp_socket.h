@@ -364,7 +364,10 @@ public:
 						entry.getClientSocket()->emitError(current.second.second);
 //						EmitterType::emitError(entry.getEmitter(), current.second.second);
 						if constexpr ( !std::is_same<EmitterType, void>::value )
-							EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
+						{
+							if ( EmitterType::template isErrorEmitter<Node>(entry.getEmitter(), current.second.second) )
+								EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
+						}
 						if (entry.getClientSocketData()->isErrorEventHandler())
 							entry.getClientSocketData()->handleErrorEvent(entry.getClientSocket(), current.second.second);
 					}
@@ -372,7 +375,10 @@ public:
 						entry.getClientSocket()->emitClose(err);
 //					EmitterType::emitClose(entry.getEmitter(), err);
 					if constexpr ( !std::is_same<EmitterType, void>::value )
-						EmitterType::template emitClose<Node>(entry.getEmitter(), err);
+					{
+						if ( EmitterType::template isCloseEmitter<Node>(entry.getEmitter(), err) )
+							EmitterType::template emitClose<Node>(entry.getEmitter(), err);
+					}
 					if (entry.getClientSocketData()->isCloseEventHandler())
 						entry.getClientSocketData()->handleCloseEvent(entry.getClientSocket(), err);
 					if (entry.isUsed())
@@ -408,7 +414,10 @@ public:
 						entry.getClientSocket()->emitAccepted();
 //						EmitterType::emitAccepted(entry.getEmitter());
 						if constexpr ( !std::is_same<EmitterType, void>::value )
-							EmitterType::template emitAccepted<Node>(entry.getEmitter());
+						{
+							if ( EmitterType::template isAcceptedEmitter<Node>(entry.getEmitter()) )
+								EmitterType::template emitAccepted<Node>(entry.getEmitter());
+						}
 						if (entry.getClientSocketData()->isAcceptedEventHandler())
 							entry.getClientSocketData()->handleAcceptedEvent(entry.getClientSocket());
 					}
@@ -511,7 +520,10 @@ private:
 						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), std::ref(b));*/
 					entry.getClientSocket()->emitData( b);
 					if constexpr ( !std::is_same<EmitterType, void>::value )
-						EmitterType::template emitData<Node>(entry.getEmitter(), b);
+					{
+						if ( EmitterType::template isDataEmitter<Node>(entry.getEmitter(), b) )
+							EmitterType::template emitData<Node>(entry.getEmitter(), b);
+					}
 					if (entry.getClientSocketData()->isDataEventHandler())
 						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), b);
 				}
@@ -540,7 +552,10 @@ private:
 
 			entry.getClientSocket()->emitEnd();
 			if constexpr ( !std::is_same<EmitterType, void>::value )
-				EmitterType::template emitEnd<Node>(entry.getEmitter());
+			{
+				if ( EmitterType::template isEndEmitter<Node>(entry.getEmitter()) )
+					EmitterType::template emitEnd<Node>(entry.getEmitter());
+			}
 			if (entry.getClientSocketData()->isEndEventHandler())
 				entry.getClientSocketData()->handleEndEvent(entry.getClientSocket());
 
@@ -588,7 +603,10 @@ private:
 				{
 					current.getClientSocket()->emitConnect();
 					if constexpr ( !std::is_same<EmitterType, void>::value )
-						EmitterType::template emitConnect<Node>(current.getEmitter());
+					{
+						if ( EmitterType::template isConnectEmitter<Node>(current.getEmitter()) )
+							EmitterType::template emitConnect<Node>(current.getEmitter());
+					}
 					if (current.getClientSocketData()->isConnectEventHandler())
 						current.getClientSocketData()->handleConnectEvent(current.getClientSocket());
 				}
@@ -606,7 +624,10 @@ private:
 				{
 					current.getClientSocket()->emitDrain();
 					if constexpr ( !std::is_same<EmitterType, void>::value )
-						EmitterType::template emitDrain<Node>(current.getEmitter());
+					{
+						if ( EmitterType::template isDrainEmitter<Node>(current.getEmitter()) )
+							EmitterType::template emitDrain<Node>(current.getEmitter());
+					}
 					if (current.getClientSocketData()->isDrainEventHandler())
 						current.getClientSocketData()->handleDrainEvent(current.getClientSocket());
 				}
@@ -750,7 +771,10 @@ public:
 						//EmitterType::emitClose( entry.getEmitter(), current.second);
 						entry.getServerSocket()->emitClose( current.second );
 						if constexpr ( !std::is_same<EmitterType, void>::value )
-							EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
+						{
+							if ( EmitterType::template isCloseEmitter<Node>(entry.getEmitter(), current.second) )
+								EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
+						}
 						if (entry.getServerSocketData()->isCloseEventHandler())
 							entry.getServerSocketData()->handleCloseEvent(entry.getServerSocket(), current.second);
 						// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -787,7 +811,10 @@ public:
 							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
 							entry.getServerSocket()->emitListening(current, entry.getServerSocketData()->localAddress);
 							if constexpr ( !std::is_same<EmitterType, void>::value )
-								EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+							{
+								if ( EmitterType::template isListeningEmitter<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress) )
+									EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+							}
 							if (entry.getServerSocketData()->isListenEventHandler() )
 								entry.getServerSocketData()->handleListenEvent(entry.getServerSocket(), current, entry.getServerSocketData()->localAddress);
 							// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -843,7 +870,10 @@ private:
 			//EmitterType::emitConnection(entry.getEmitter(), ptr); 
 			entry.getServerSocket()->emitConnection(ptr);
 			if constexpr ( !std::is_same<EmitterType, void>::value )
-				EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
+			{
+				if ( EmitterType::template isConnectionEmitter<Node>(entry.getEmitter(), ptr) )
+					EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
+			}
 			if (entry.getServerSocketData()->isConnectionEventHandler())
 				entry.getServerSocketData()->handleConnectionEvent(entry.getServerSocket(), ptr);
 			// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -859,7 +889,10 @@ private:
 		Error e;
 		entry.getServerSocket()->emitError( e );
 		if constexpr ( !std::is_same<EmitterType, void>::value )
-			EmitterType::template emitError<Node>( entry.getEmitter(), e );
+		{
+			if ( EmitterType::template isErrorEmitter<Node>(entry.getEmitter(), e) )
+				EmitterType::template emitError<Node>( entry.getEmitter(), e );
+		}
 		if (entry.getServerSocketData()->isErrorEventHandler())
 			entry.getServerSocketData()->handleErrorEvent(entry.getServerSocket(), e);
 		// TODO: what should we do with this event, if, at present, nobody is willing to process it?
