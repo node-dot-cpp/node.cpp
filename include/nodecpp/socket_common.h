@@ -887,6 +887,10 @@ namespace nodecpp {
 				else assert(false);
 			}
 
+			///////////////////////////////////////////////////////////
+
+			nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms);
+
 		};
 
 		/*template<class T, class ... Types>

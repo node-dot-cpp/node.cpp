@@ -286,6 +286,14 @@ void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 	return netServerManagerBase->appAddServer(/*node, */t, typeId);
 }
 
+extern thread_local TimeoutManager* timeoutManager;
+
+inline
+nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
+{
+	return timeoutManager->appSetTimeout(cb, ms);
+}
+
 
 extern thread_local NodeBase* thisThreadNode;
 template<class Node>
@@ -303,6 +311,7 @@ class Runnable : public RunnableBase
 
 			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
 			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
+			timeoutManager = &infra.getTimeout();
 			if constexpr (!std::is_same< ServerSocketEmitter, void >::value)
 			{
 				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
