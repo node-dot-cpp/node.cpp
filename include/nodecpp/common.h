@@ -79,6 +79,19 @@ namespace nodecpp
 #else
 	using handler_ret_type = void;
 #endif // NODECPP_NO_COROUTINES
+
+	struct awaitable_handle_data
+	{
+#ifndef NODECPP_NO_COROUTINES
+		std::experimental::coroutine_handle<> h = nullptr;
+#else
+		using handler_fn_type = void (*)();
+		handler_fn_type h = nullptr;
+#endif
+		bool is_exception = false;
+		std::exception exception; // TODO: consider possibility of switching to nodecpp::error
+	};
+
 }
 
 class NodeBase

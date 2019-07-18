@@ -528,18 +528,6 @@ namespace nodecpp {
 
 //		enum Mode { callable, awaitable };
 
-		struct awaitable_handle_data
-		{
-#ifndef NODECPP_NO_COROUTINES
-			std::experimental::coroutine_handle<> h = nullptr;
-#else
-			using handler_fn_type = void (*)();
-			handler_fn_type h = nullptr;
-#endif
-			bool is_exception = false;
-			std::exception exception; // TODO: consider possibility of switching to nodecpp::error
-		};
-
 		template<class ObjectT, auto memberFunc>
 		struct HandlerData
 		{
