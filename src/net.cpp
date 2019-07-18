@@ -135,6 +135,12 @@ nodecpp::Timeout SocketBase::setTimeout(std::function<void()> cb, int32_t ms)
 	return ::setTimeout(cb, ms);
 }
 
+void SocketBase::refreshTimeout(Timeout& to)
+{
+	::refreshTimeout(to);
+}
+
+
 nodecpp::Timeout ServerBase::setTimeout(std::function<void()> cb, int32_t ms)
 {
 	return ::setTimeout(cb, ms);

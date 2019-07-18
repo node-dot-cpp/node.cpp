@@ -890,6 +890,7 @@ namespace nodecpp {
 			///////////////////////////////////////////////////////////
 
 			nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms);
+			void refreshTimeout(Timeout& to);
 
 		};
 

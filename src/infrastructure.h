@@ -54,6 +54,7 @@ struct TimeoutEntry
 {
 	uint64_t id;
 	std::function<void()> cb;
+	awaitable_handle_data ahd;
 	uint64_t lastSchedule;
 	uint64_t delay;
 	uint64_t nextTimeout;
@@ -73,6 +74,9 @@ public:
 	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms);
 	void appClearTimeout(const nodecpp::Timeout& to);
 	void appRefresh(uint64_t id);
+#ifndef NODECPP_NO_COROUTINES
+	void appRefresh(uint64_t id, std::experimental::coroutine_handle<> h);
+#endif
 	void appTimeoutDestructor(uint64_t id);
 
 	void infraTimeoutEvents(uint64_t now, EvQueue& evs);
@@ -292,6 +296,12 @@ inline
 nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
 {
 	return timeoutManager->appSetTimeout(cb, ms);
+}
+
+inline
+void refreshTimeout(Timeout& to)
+{
+	return timeoutManager->appRefresh(to.getId());
 }
 
 

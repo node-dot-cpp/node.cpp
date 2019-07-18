@@ -571,12 +571,18 @@ public:
 #elif IMPL_VERSION == 7
 
 	using ClientSockType = nodecpp::net::SocketBase;
+	nodecpp::Timeout to;
 
 	virtual nodecpp::awaitable<void> main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		clientSock = nodecpp::net::createSocket();
+
+		to = std::move( clientSock->setTimeout( [this]() { 
+			printf( "   !!!TIMER!!!\n" );
+			clientSock->refreshTimeout(to);
+		}, 1000) );
 
 		clientSock->on(event::connect, [this]() { 
 			buf.writeInt8( 2, 0 );

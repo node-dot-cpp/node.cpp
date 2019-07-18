@@ -132,6 +132,20 @@ void TimeoutManager::appRefresh(uint64_t id)
 	}
 }
 
+#ifndef NODECPP_NO_COROUTINES
+void TimeoutManager::appRefresh(uint64_t id, std::experimental::coroutine_handle<> h)
+{
+	auto it = timers.find(id);
+	if (it != timers.end())
+	{
+		appClearTimeout(it->second);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, it->second.ahd.h == nullptr ); 
+		it->second.ahd.h = h;
+		appSetTimeout(it->second);
+	}
+}
+#endif // NODECPP_NO_COROUTINES
+
 
 void TimeoutManager::appTimeoutDestructor(uint64_t id)
 {
