@@ -12,13 +12,13 @@ using namespace nodecpp;
 using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
-//#define IMPL_VERSION 2 // main() is a single coro
+#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 21 // main() is a single coro with non-default socket class
 //#define IMPL_VERSION 3 // onConnect is a coro (onConnect is added via addHandler<...>(...))
 //#define IMPL_VERSION 4 // registering handlers (per class)
 //#define IMPL_VERSION 5 // registering handlers (per class, template-based)
 //#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
-#define IMPL_VERSION 7 // lambda-based
+//#define IMPL_VERSION 7 // lambda-based
 #else
 #define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -52,6 +52,10 @@ public:
 		try
 		{
 			co_await clientSock->a_connect(2000, "127.0.0.1");
+co_await nodecpp::a_timeout(1000);
+nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   ...after timeout" );
+co_await nodecpp::a_timeout(1000);
+nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   ...after timeout" );
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
 			co_await clientSock->a_write(buf);
@@ -127,6 +131,8 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		nodecpp::a_timeout(1000);
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   ...after timeout" );
 
 		clientSock = nodecpp::net::createSocket<ClientSockType>();
 		*( clientSock->getExtra() ) = 17;

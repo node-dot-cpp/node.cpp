@@ -147,5 +147,11 @@ nodecpp::Timeout ServerBase::setTimeout(std::function<void()> cb, int32_t ms)
 }
 
 
-
+#ifndef NODECPP_NO_COROUTINES
+nodecpp::handler_ret_type nodecpp::a_timeout(uint32_t ms)
+{
+	co_await ::a_timeout_impl( ms );
+	co_return;
+}
+#endif
 

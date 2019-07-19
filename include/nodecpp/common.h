@@ -83,7 +83,8 @@ namespace nodecpp
 	struct awaitable_handle_data
 	{
 #ifndef NODECPP_NO_COROUTINES
-		std::experimental::coroutine_handle<> h = nullptr;
+		using handler_fn_type = std::experimental::coroutine_handle<>;
+		handler_fn_type h = nullptr;
 #else
 		using handler_fn_type = void (*)();
 		handler_fn_type h = nullptr;
@@ -91,6 +92,10 @@ namespace nodecpp
 		bool is_exception = false;
 		std::exception exception; // TODO: consider possibility of switching to nodecpp::error
 	};
+
+#ifndef NODECPP_NO_COROUTINES
+	handler_ret_type a_timeout(uint32_t ms);
+#endif
 
 }
 

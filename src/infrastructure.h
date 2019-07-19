@@ -49,12 +49,15 @@
 
 static constexpr uint64_t TimeOutNever = std::numeric_limits<uint64_t>::max();
 
+struct TimeoutEntryHandlerData
+{
+	std::function<void()> cb = nullptr;
+	nodecpp::awaitable_handle_data::handler_fn_type h;
+};
 
-struct TimeoutEntry
+struct TimeoutEntry : public TimeoutEntryHandlerData
 {
 	uint64_t id;
-	std::function<void()> cb;
-	awaitable_handle_data ahd;
 	uint64_t lastSchedule;
 	uint64_t delay;
 	uint64_t nextTimeout;
@@ -67,15 +70,54 @@ class TimeoutManager
 	uint64_t lastId = 0;
 	std::unordered_map<uint64_t, TimeoutEntry> timers;
 	std::multimap<uint64_t, uint64_t> nextTimeouts;
+	template<class H>
+	nodecpp::Timeout appSetTimeoutImpl(H h, int32_t ms)
+	{
+		if (ms == 0) ms = 1;
+		else if (ms < 0) ms = std::numeric_limits<int32_t>::max();
+
+		uint64_t id = ++lastId;
+
+		TimeoutEntry entry;
+		entry.id = id;
+		static_assert( !std::is_same<std::function<void()>, awaitable_handle_data::handler_fn_type>::value ); // we're in trouble anyway and not only here :)
+		if constexpr ( std::is_same<H, awaitable_handle_data::handler_fn_type>::value )
+		{
+			entry.h = h;
+			entry.cb = nullptr;
+		}
+		else if constexpr ( std::is_same<H, std::function<void()>>::value )
+		{
+			entry.cb = h;
+			entry.h = nullptr;
+		}
+		else
+			static_assert( false, "unexpected type" );
+		entry.delay = ms * 1000;
+
+		auto res = timers.insert(std::make_pair(id, std::move(entry)));
+		if (res.second)
+		{
+			appSetTimeout(res.first->second);
+
+			return Timeout(id);
+		}
+		else
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Failed to insert Timeout {}", id);
+			return Timeout(0);
+		}
+	}
+
 public:
 	void appSetTimeout(TimeoutEntry& entry);
 	void appClearTimeout(TimeoutEntry& entry);
 
-	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms);
+	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms) { return appSetTimeoutImpl( cb, ms ); }
 	void appClearTimeout(const nodecpp::Timeout& to);
 	void appRefresh(uint64_t id);
 #ifndef NODECPP_NO_COROUTINES
-	void appRefresh(uint64_t id, std::experimental::coroutine_handle<> h);
+	nodecpp::Timeout appSetTimeout(std::experimental::coroutine_handle<> h, int32_t ms) { return appSetTimeoutImpl( h, ms ); }
 #endif
 	void appTimeoutDestructor(uint64_t id);
 
@@ -302,6 +344,36 @@ inline
 void refreshTimeout(Timeout& to)
 {
 	return timeoutManager->appRefresh(to.getId());
+}
+
+inline
+auto a_timeout_impl(uint32_t ms) { 
+
+    struct timeout_awaiter {
+
+        std::experimental::coroutine_handle<> who_is_awaiting;
+		uint32_t duration = 0;
+		nodecpp::Timeout to;
+
+        timeout_awaiter(uint32_t ms) {duration = ms;}
+
+        timeout_awaiter(const timeout_awaiter &) = delete;
+        timeout_awaiter &operator = (const timeout_awaiter &) = delete;
+
+        ~timeout_awaiter() {}
+
+        bool await_ready() {
+            return false;
+        }
+
+        void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+            who_is_awaiting = awaiting;
+			to = std::move( timeoutManager->appSetTimeout(awaiting, duration) );
+        }
+
+		auto await_resume() {}
+    };
+    return timeout_awaiter(ms);
 }
 
 

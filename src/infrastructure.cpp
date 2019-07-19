@@ -82,35 +82,6 @@ void TimeoutManager::appClearTimeout(TimeoutEntry& entry)
 }
 
 
-nodecpp::Timeout TimeoutManager::appSetTimeout(std::function<void()> cb, int32_t ms)
-{
-	if (ms == 0)
-		ms = 1;
-	else if (ms < 0)
-		ms = std::numeric_limits<int32_t>::max();
-
-	uint64_t id = ++lastId;
-
-	TimeoutEntry entry;
-	entry.id = id;
-	entry.cb = std::move(cb);
-	entry.delay = ms * 1000;
-
-	auto res = timers.insert(std::make_pair(id, std::move(entry)));
-	if (res.second)
-	{
-		appSetTimeout(res.first->second);
-
-		return Timeout(id);
-	}
-	else
-	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Failed to insert Timeout {}", id);
-		return Timeout(0);
-	}
-
-}
-
 void TimeoutManager::appClearTimeout(const nodecpp::Timeout& to)
 {
 	uint64_t id = to.getId();
@@ -132,20 +103,6 @@ void TimeoutManager::appRefresh(uint64_t id)
 	}
 }
 
-#ifndef NODECPP_NO_COROUTINES
-void TimeoutManager::appRefresh(uint64_t id, std::experimental::coroutine_handle<> h)
-{
-	auto it = timers.find(id);
-	if (it != timers.end())
-	{
-		appClearTimeout(it->second);
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, it->second.ahd.h == nullptr ); 
-		it->second.ahd.h = h;
-		appSetTimeout(it->second);
-	}
-}
-#endif // NODECPP_NO_COROUTINES
-
 
 void TimeoutManager::appTimeoutDestructor(uint64_t id)
 {
@@ -166,6 +123,7 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	auto itBegin = nextTimeouts.begin();
 	auto itEnd = nextTimeouts.upper_bound(now);
 	auto it = itBegin;
+	std::vector<TimeoutEntryHandlerData> handlers; // TODO: this approach could potentially be generalized
 	while (it != itEnd)
 	{
 		auto it2 = timers.find(it->second);
@@ -175,7 +133,8 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 		
 		it2->second.active = false;
 			
-		evs.add(it2->second.cb);
+//		evs.add(it2->second.cb);
+		handlers.push_back( it2->second );
 
 		if (it2->second.handleDestroyed)
 			timers.erase(it2);
@@ -184,6 +143,14 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	}
 
 	nextTimeouts.erase(itBegin, itEnd);
+
+	for ( auto h : handlers )
+	{
+		if ( h.cb != nullptr )
+			h.cb();
+		else if ( h.h )
+			h.h();
+	}
 }
 
 
@@ -199,3 +166,4 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 	 	else
 	         return INT_MAX;
 }
+
