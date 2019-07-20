@@ -70,7 +70,7 @@ public:
 
 		int* getExtra() { return &extraData; }
 
-		void onWhateverConnect() 
+		nodecpp::handler_ret_type onWhateverConnect() 
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverConnect(), extra = {}", *(getExtra()) );
 
@@ -78,30 +78,39 @@ public:
 			buff[0] = 2;
 			buff[1] = 1;
 			write(buff, 2);
+
+			CO_RETURN;
 		}
-		void onWhateverData(nodecpp::Buffer& buffer)
+		nodecpp::handler_ret_type onWhateverData(nodecpp::Buffer& buffer)
 		{
 			if ( buffer.size() < sizeof( Stats ) )
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
 			else
 				printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
 		
+			++recvReplies;
+
 #ifdef AUTOMATED_TESTING_ONLY
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-			// test just once
-			end();
-			unref();
-			return;
+			if ( recvReplies > 3 )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				// test just once
+				end();
+				unref();
+				return;
+			}
+			co_await nodecpp::a_timeout(1000);
+#else
+			getchar();
 #endif
 
-			getchar();
-
-			++recvReplies;
 			recvSize += buffer.size();
 			uint8_t* buff = ptr.get();
 			buff[0] = 2;
 			buff[1] = (uint8_t)recvReplies | 1;
 			write(buff, 2);
+
+			CO_RETURN;
 		}
 	};
 
