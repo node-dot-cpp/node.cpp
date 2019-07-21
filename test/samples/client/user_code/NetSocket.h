@@ -52,10 +52,6 @@ public:
 		try
 		{
 			co_await clientSock->a_connect(2000, "127.0.0.1");
-co_await nodecpp::a_timeout(1000);
-nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   ...after timeout" );
-co_await nodecpp::a_timeout(1000);
-nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   ...after timeout" );
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
 			co_await clientSock->a_write(buf);

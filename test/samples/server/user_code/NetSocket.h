@@ -196,8 +196,14 @@ public:
 		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
 		srv->listen(2000, "127.0.0.1", 5);
-#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
+#ifdef AUTOMATED_TESTING_ONLY
+		srv->setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+		}, 3000 );
 #endif
 
 		CO_RETURN;
@@ -221,9 +227,13 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo>, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
-		//srv.unref();
+#ifdef AUTOMATED_TESTING_ONLY
+		// accept just once
+		server->close();
+		server->unref();
+#endif
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
@@ -231,7 +241,7 @@ public:
 			co_await socket->a_read( r_buff, 2 );
 			co_await onDataCtrlServerSocket_(socket, r_buff);
 #ifdef AUTOMATED_TESTING_ONLY
-			socket->close();
+			socket->end();
 			socket->unref();
 			break;
 #endif
