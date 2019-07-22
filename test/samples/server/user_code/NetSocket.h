@@ -198,7 +198,7 @@ public:
 		srv->listen(2000, "127.0.0.1", 5);
 		srvCtrl->listen(2001, "127.0.0.1", 5);
 #ifdef AUTOMATED_TESTING_ONLY
-		srv->setTimeout(  [this]() { 
+		nodecpp::setTimeout(  [this]() { 
 			srv->close();
 			srv->unref();
 			srvCtrl->close();

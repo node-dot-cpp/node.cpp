@@ -167,3 +167,19 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 	         return INT_MAX;
 }
 
+namespace nodecpp {
+	nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
+	{
+		return timeoutManager->appSetTimeout(cb, ms);
+	}
+
+	void refreshTimeout(Timeout& to)
+	{
+		return timeoutManager->appRefresh(to.getId());
+	}
+
+	void clearTimeout(Timeout& to)
+	{
+		return timeoutManager->appClearTimeout(to.getId());
+	}
+} // namespace nodecpp

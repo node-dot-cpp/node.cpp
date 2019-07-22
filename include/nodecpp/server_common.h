@@ -586,10 +586,6 @@ namespace nodecpp {
 				else if constexpr (std::is_same< EV, event::Error >::value) { eError.once(std::move(cb)); }
 				else assert(false);
 			}
-
-			///////////////////////////////////////////////////////////
-
-			nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms);
 		};
 
 		inline

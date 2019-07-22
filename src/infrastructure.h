@@ -335,18 +335,6 @@ void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 extern thread_local TimeoutManager* timeoutManager;
 
 inline
-nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
-{
-	return timeoutManager->appSetTimeout(cb, ms);
-}
-
-inline
-void refreshTimeout(Timeout& to)
-{
-	return timeoutManager->appRefresh(to.getId());
-}
-
-inline
 auto a_timeout_impl(uint32_t ms) { 
 
     struct timeout_awaiter {

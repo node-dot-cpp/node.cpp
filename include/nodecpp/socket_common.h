@@ -593,7 +593,7 @@ namespace nodecpp {
 							throw socket.dataForCommandProcessing.ahd_read.exception;
 						}
 						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes);
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
 					}
 				};
 				return read_data_awaiter(*this, buff, min_bytes);
@@ -886,11 +886,6 @@ namespace nodecpp {
 				else if constexpr ( std::is_same< EV, event::Accepted >::value ) { eAccepted.once(std::move(cb)); }
 				else assert(false);
 			}
-
-			///////////////////////////////////////////////////////////
-
-			nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms);
-			void refreshTimeout(Timeout& to);
 
 		};
 

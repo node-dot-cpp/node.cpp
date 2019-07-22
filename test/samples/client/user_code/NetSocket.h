@@ -581,7 +581,7 @@ public:
 
 		clientSock = nodecpp::net::createSocket();
 
-		to = std::move( clientSock->setTimeout( [this]() { 
+		to = std::move( nodecpp::setTimeout( [this]() { 
 			printf( "   !!!TIMER!!!\n" );
 			clientSock->refreshTimeout(to);
 		}, 1000) );

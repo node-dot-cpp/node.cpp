@@ -56,6 +56,7 @@ namespace nodecpp
 
 	Timeout setTimeout(std::function<void()> cb, int32_t ms);
 	void clearTimeout(const Timeout& to);
+	void refreshTimeout(Timeout& to);
 
 	void setInmediate(std::function<void()> cb);
 }

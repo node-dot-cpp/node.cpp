@@ -130,23 +130,6 @@ void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 }
 
 
-nodecpp::Timeout SocketBase::setTimeout(std::function<void()> cb, int32_t ms)
-{
-	return ::setTimeout(cb, ms);
-}
-
-void SocketBase::refreshTimeout(Timeout& to)
-{
-	::refreshTimeout(to);
-}
-
-
-nodecpp::Timeout ServerBase::setTimeout(std::function<void()> cb, int32_t ms)
-{
-	return ::setTimeout(cb, ms);
-}
-
-
 #ifndef NODECPP_NO_COROUTINES
 nodecpp::handler_ret_type nodecpp::a_timeout(uint32_t ms)
 {
