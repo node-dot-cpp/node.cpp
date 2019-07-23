@@ -50,20 +50,19 @@ public:
 		size_t recvSize = 0;
 		size_t recvReplies = 0;
 		size_t sentSize = 0;
-		std::unique_ptr<uint8_t> ptr;
-		size_t size = 64;// * 1024;
 		bool letOnDrain = false;
 
 	public:
 		using NodeType = MySampleTNode;
 
 	private:
-//		Buffer buf;
+		Buffer sendBuff;
 		int extraData;
 
 	public:
 		MySocketOne() {
-			ptr.reset(static_cast<uint8_t*>(malloc(size)));
+			sendBuff.reserve( 2 );
+			sendBuff.set_size( 2 );
 		}
 		virtual ~MySocketOne() {}
 
@@ -73,10 +72,9 @@ public:
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverConnect(), extra = {}", *(getExtra()) );
 
-			uint8_t* buff = ptr.get();
-			buff[0] = 2;
-			buff[1] = 1;
-			write(buff, 2);
+			sendBuff.begin()[0] = 2;
+			sendBuff.begin()[1] = 1;
+			write(sendBuff);
 
 			CO_RETURN;
 		}
@@ -104,10 +102,9 @@ public:
 #endif
 
 			recvSize += buffer.size();
-			uint8_t* buff = ptr.get();
-			buff[0] = 2;
-			buff[1] = (uint8_t)recvReplies | 1;
-			write(buff, 2);
+			sendBuff.begin()[0] = 2;
+			sendBuff.begin()[1] = (uint8_t)recvReplies | 1;
+			write(sendBuff);
 
 			CO_RETURN;
 		}

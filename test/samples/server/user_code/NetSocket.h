@@ -42,14 +42,14 @@ class MySampleTNode : public NodeBase
 
 	Buffer replyBuff;
 
-public:
-#if IMPL_VERSION == 2
 #ifdef AUTOMATED_TESTING_ONLY
 	bool stopAccepting = false;
 	bool stopResponding = false;
 	nodecpp::Timeout to;
 #endif
 
+public:
+#if IMPL_VERSION == 2
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
@@ -77,9 +77,7 @@ public:
 #endif
 
 		acceptServerLoop();
-#ifndef AUTOMATED_TESTING_ONLY
 		acceptCtrlServerLoop();
-#endif
 
 		CO_RETURN;
 	}
@@ -88,10 +86,10 @@ public:
 	{
 		for (;;)
 		{
-#ifdef AUTOMATED_TESTING_ONLY
+/*#ifdef AUTOMATED_TESTING_ONLY
 			if ( stopAccepting )
 				break;
-#endif
+#endif*/
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
 			co_await srv->a_connection<nodecpp::net::SocketBase>( socket );
 			socketLoop(socket);
@@ -208,13 +206,16 @@ public:
 
 		srv->listen(2000, "127.0.0.1", 5);
 		srvCtrl->listen(2001, "127.0.0.1", 5);
+
 #ifdef AUTOMATED_TESTING_ONLY
-		nodecpp::setTimeout(  [this]() { 
+		to = std::move( nodecpp::setTimeout(  [this]() { 
 			srv->close();
 			srv->unref();
 			srvCtrl->close();
 			srvCtrl->unref();
-		}, 3000 );
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
 #endif
 
 		CO_RETURN;
@@ -224,14 +225,19 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
-#ifdef AUTOMATED_TESTING_ONLY
-		// accept just once
-		server->close();
-		server->unref();
-#endif
+
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			co_await socket->a_read( r_buff, 2 );
 			co_await onDataServerSocket_(socket, r_buff);
 		}
@@ -240,22 +246,22 @@ public:
 
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
-#ifdef AUTOMATED_TESTING_ONLY
-		// accept just once
-		server->close();
-		server->unref();
-#endif
+
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			co_await socket->a_read( r_buff, 2 );
 			co_await onDataCtrlServerSocket_(socket, r_buff);
-#ifdef AUTOMATED_TESTING_ONLY
-			socket->end();
-			socket->unref();
-			break;
-#endif
 		}
 		CO_RETURN;
 	}
@@ -313,8 +319,17 @@ public:
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
 
 		srv->listen(2000, "127.0.0.1", 5);
-#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+		to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
 #endif
 
 		CO_RETURN;
@@ -334,17 +349,20 @@ public:
 	nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-#ifdef AUTOMATED_TESTING_ONLY
-		// accept just once
-		server->close();
-		server->unref();
-#endif
+
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
 			co_await socket->a_read(r_buff, 2);
 			co_await onDataServerSocket_(socket, r_buff);
 #ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
 			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
@@ -367,20 +385,21 @@ public:
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-#ifdef AUTOMATED_TESTING_ONLY
-		// accept just once
-		server->close();
-		server->unref();
-#endif
+
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			co_await socket->a_read(r_buff, 2);
 			co_await onDataCtrlServerSocket_(socket, r_buff);
-#ifdef AUTOMATED_TESTING_ONLY
-			socket->end();
-			socket->unref();
-#endif
 		}
 		CO_RETURN;
 	}
@@ -414,11 +433,6 @@ public:
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-#ifdef AUTOMATED_TESTING_ONLY
-			// accept just once
-			close();
-			unref();
-#endif
 			CO_RETURN;
 		}
 	};
@@ -437,11 +451,6 @@ public:
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-#ifdef AUTOMATED_TESTING_ONLY
-		// accept just once
-			close();
-			unref();
-#endif
 			CO_RETURN;
 		}
 	};
@@ -458,6 +467,15 @@ public:
 
 		for (;; )
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			buffer.clear();
 			try
 			{
@@ -501,14 +519,6 @@ public:
 			stats.recvSize += receivedSz;
 			stats.sentSize += requestedSz;
 			++(stats.rqCnt);
-#ifdef AUTOMATED_TESTING_ONLY
-			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				socket->end();
-				socket->unref();
-			}
-#endif
 		}
 
 		CO_RETURN;
@@ -520,6 +530,15 @@ public:
 
 		for (;; )
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			buffer.clear();
 			try
 			{
@@ -591,25 +610,23 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
 		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		/*srv = nodecpp::safememory::make_owning<MyServerSocketOne>(
-			[this](OpaqueSocketData& sdata) {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: creating accepted socket as in node::main()\n");
-				return nodecpp::net::createSocket<nodecpp::net::SocketBase>(nullptr, sdata);
-			});
-		srv_1 = nodecpp::net::createServer<MyServerSocketOne>();
-		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
-		srvCtrl_1 = nodecpp::safememory::make_owning<MyServerSocketTwo>();*/
-
 		srv = nodecpp::net::createServer<MyServerSocketOne, nodecpp::net::SocketBase>();
 		srv_1 = nodecpp::net::createServer<MyServerSocketOne, nodecpp::net::SocketBase>();
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
 		srvCtrl_1 = nodecpp::net::createServer<MyServerSocketTwo>(1);
 
 		srv->listen(2000, "127.0.0.1", 5);
-#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
-		srv_1->listen(2010, "127.0.0.1", 5);
-		srvCtrl_1->listen(2011, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+		to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
 #endif
 
 		CO_RETURN;
@@ -632,6 +649,15 @@ public:
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			co_await socket->a_read(r_buff, 2);
 			co_await onDataServerSocket_(socket, r_buff);
 		}
@@ -651,6 +677,15 @@ public:
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			co_await socket->a_read(r_buff, 2);
 			co_await onDataCtrlServerSocket_(socket, r_buff);
 		}
@@ -686,11 +721,6 @@ public:
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-#ifdef AUTOMATED_TESTING_ONLY
-			// accept just once
-			close();
-			unref();
-#endif
 			CO_RETURN;
 		}
 	};
@@ -719,11 +749,6 @@ public:
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-#ifdef AUTOMATED_TESTING_ONLY
-		// accept just once
-			close();
-			unref();
-#endif
 			CO_RETURN;
 		}
 	};
@@ -780,14 +805,6 @@ public:
 			stats.recvSize += receivedSz;
 			stats.sentSize += requestedSz;
 			++(stats.rqCnt);
-#ifdef AUTOMATED_TESTING_ONLY
-			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				socket->end();
-				socket->unref();
-			}
-#endif
 		}
 
 		CO_RETURN;
@@ -905,8 +922,17 @@ public:
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, MySocketSocketTwo>(this);
 
 		srv->listen(2000, "127.0.0.1", 5);
-#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+		to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
 #endif
 
 		CO_RETURN;
@@ -944,11 +970,6 @@ public:
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 			soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-#ifdef AUTOMATED_TESTING_ONLY
-			// accept just once
-			close();
-			unref();
-#endif
 			CO_RETURN;
 		}
 	};
@@ -966,10 +987,6 @@ public:
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 			soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-#ifdef AUTOMATED_TESTING_ONLY
-			close();
-			unref();
-#endif
 			CO_RETURN;
 		}
 	};
@@ -1131,8 +1148,17 @@ public:
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, MySocketSocketTwo>();
 
 		srv->listen(2000, "127.0.0.1", 5);
-#ifndef AUTOMATED_TESTING_ONLY
 		srvCtrl->listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+		to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
 #endif
 
 		CO_RETURN;
@@ -1150,11 +1176,6 @@ public:
 		soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-#ifdef AUTOMATED_TESTING_ONLY
-		// accept just once
-		server->close();
-		server->unref();
-#endif
 	}
 	void onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
 
@@ -1165,10 +1186,6 @@ public:
 		soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-#ifdef AUTOMATED_TESTING_ONLY
-		server->close();
-		server->unref();
-#endif
 	}
 	void onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
 
@@ -1444,6 +1461,17 @@ public:
 
 		srv->listen(2000, "127.0.0.1", 5, [](size_t, net::Address){});
 		srvCtrl->listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
+
+#ifdef AUTOMATED_TESTING_ONLY
+		to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
+#endif
 
 		CO_RETURN;
 	}
