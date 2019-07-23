@@ -311,6 +311,7 @@ namespace nodecpp {
 				if ( dataForCommandProcessing.ahd_listen.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_listen.h;
+					dataForCommandProcessing.ahd_listen.is_exception = true;
 					dataForCommandProcessing.ahd_listen.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_listen.h = nullptr;
 					hr();
@@ -318,6 +319,7 @@ namespace nodecpp {
 				if ( dataForCommandProcessing.ahd_connection.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_connection.h;
+					dataForCommandProcessing.ahd_connection.is_exception = true;
 					dataForCommandProcessing.ahd_connection.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_connection.h = nullptr;
 					hr();
