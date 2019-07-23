@@ -30,7 +30,7 @@
 #define TCP_SOCKET_BASE_H
 
 #include "../../include/nodecpp/common.h"
-#include "../../include/nodecpp/socket_t_base.h"
+#include "../../include/nodecpp/socket_common.h"
 #include "../../include/nodecpp/server_common.h"
 #include "../ev_queue.h"
 
@@ -47,15 +47,6 @@ struct pollfd;
 
 
 namespace nodecpp {
-
-	namespace net {
-
-		//class SocketBase; // forward declaration
-
-		class ServerBase; // forward declaration
-
-	} // namespace net
-
 
 	class OpaqueEmitter
 	{

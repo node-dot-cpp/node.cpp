@@ -54,9 +54,6 @@ namespace nodecpp {
 		public:
 			void onFinalCleanup();
 
-		public:
-//			UserDefID userDefID;
-//			NodeBase* node = nullptr;
 
 			public:
 			class DataForCommandProcessing {
@@ -474,11 +471,13 @@ namespace nodecpp {
 			void resume();
 			void reportBeingDestructed();
 
+		private:
 			bool write(const uint8_t* data, uint32_t size);
-			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
-
 			bool write2(Buffer& b);
+
+		public:
 			void connect(uint16_t port, const char* ip);
+			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 
 			SocketBase& setNoDelay(bool noDelay = true);
 			SocketBase& setKeepAlive(bool enable = false);
@@ -736,8 +735,8 @@ namespace nodecpp {
 				connect(port, ip);
 			}
 
-			bool write(const uint8_t* data, uint32_t size, std::function<void()> cb) {
-				bool b = write(data, size);
+			bool write(Buffer& buff, std::function<void()> cb) {
+				bool b = write(buff);
 				if(!b)
 					once(event::drain, std::move(cb));
 

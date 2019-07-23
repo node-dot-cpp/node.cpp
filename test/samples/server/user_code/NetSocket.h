@@ -14,8 +14,8 @@ using namespace nodecpp;
 using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
-//#define IMPL_VERSION 2 // main() is a single coro
-#define IMPL_VERSION 3 // onConnect is a coro
+#define IMPL_VERSION 2 // main() is a single coro
+//#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
 //#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based with use of DataParent concept)
@@ -40,15 +40,17 @@ class MySampleTNode : public NodeBase
 	};
 	Stats stats;
 
-	std::unique_ptr<uint8_t> ptr;
-	size_t size = 64 * 1024;
-
-	using SocketIdType = int;
-	using ServerIdType = int;
+	Buffer replyBuff;
 
 public:
 #if IMPL_VERSION == 2
-	MySampleTNode() : srv( this ), srvCtrl( this )
+#ifdef AUTOMATED_TESTING_ONLY
+	bool stopAccepting = false;
+	bool stopResponding = false;
+	nodecpp::Timeout to;
+#endif
+
+	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
@@ -56,11 +58,22 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
-		co_await srv.a_listen(2000, "127.0.0.1", 5);
-#ifndef AUTOMATED_TESTING_ONLY
-		co_await srvCtrl.a_listen(2001, "127.0.0.1", 5);
+		srv = nodecpp::net::createServer<nodecpp::net::ServerBase>();
+		srvCtrl = nodecpp::net::createServer<nodecpp::net::ServerBase, nodecpp::net::SocketBase>();
+
+		co_await srv->a_listen(2000, "127.0.0.1", 5);
+		co_await srvCtrl->a_listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+		to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
 #endif
 
 		acceptServerLoop();
@@ -75,24 +88,31 @@ public:
 	{
 		for (;;)
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
 #ifdef AUTOMATED_TESTING_ONLY
-			// accept just once
-			server->close();
-			server->unref();
-			break;
+			if ( stopAccepting )
+				break;
 #endif
-			co_await srv.a_connection<nodecpp::net::SocketBase>( socket );
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			co_await srv->a_connection<nodecpp::net::SocketBase>( socket );
 			socketLoop(socket);
 		}
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type socketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket)
+	nodecpp::handler_ret_type socketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			co_await socket->a_read( r_buff, 2 );
 			co_await onDataServerSocket_(socket, r_buff);
 		}
@@ -103,35 +123,39 @@ public:
 	{
 		for (;;)
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket;
-			co_await srvCtrl.a_connection<nodecpp::net::SocketO>( socket );
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopAccepting )
+				break;
+#endif
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket );
 			socketCtrlLoop(socket);
 		}
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type socketCtrlLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket)
+	nodecpp::handler_ret_type socketCtrlLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
 		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
 			co_await socket->a_read( r_buff, 2 );
 			co_await onDataCtrlServerSocket_(socket, r_buff);
 		}
 		CO_RETURN;
 	}
 
-	using SockTypeServerSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
-	using SockTypeServerCtrlSocket = nodecpp::net::SocketN<MySampleTNode,SocketIdType>;
-
-	using ServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerSocket,ServerIdType>;
-	ServerType srv; 
-
-	using CtrlServerType = nodecpp::net::ServerN<MySampleTNode,SockTypeServerCtrlSocket,ServerIdType>;
-	CtrlServerType srvCtrl;
-
-	using EmitterType = nodecpp::net::SocketTEmitter<net::SocketO, net::Socket>;
-	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<net::ServerO, net::Server>;
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
 
 	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
@@ -139,27 +163,17 @@ public:
 		if (requestedSz)
 		{
 			Buffer reply(sizeof(stats));
-			stats.connCnt = srv.getSockCount();
+			stats.connCnt = srv->getSockCount();
 			uint32_t replySz = sizeof(Stats);
-			uint8_t* buff = ptr.get();
-			memcpy(buff, &stats, replySz); // naive marshalling will work for a limited number of cases
-			socket->write(buff, replySz);
+			replyBuff.clear();
+			replyBuff.append(&stats, replySz); // naive marshalling will work for a limited number of cases
+			socket->write(replyBuff);
 		}
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketO> socket, Buffer& buffer) {
 
-		size_t requestedSz = buffer.begin()[1];
-		if (requestedSz)
-		{
-			Buffer reply(sizeof(stats));
-			stats.connCnt = srv.getSockCount();
-			size_t replySz = sizeof(Stats);
-			reply.append(&stats, replySz); // naive marshalling will work for a limited number of cases
-			co_await socket->a_write(reply);
-		}
-		CO_RETURN;
-	}
+	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srv; 
+	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase>  srvCtrl;
 
 #elif IMPL_VERSION == 3
 	class MyServerSocketOne : public nodecpp::net::ServerBase
@@ -185,7 +199,6 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 		nodecpp::net::ServerBase::addHandler<ServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionx>(this);
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
@@ -266,9 +279,9 @@ public:
 			Buffer reply(sizeof(stats));
 			stats.connCnt = srv->getSockCount();
 			uint32_t replySz = sizeof(Stats);
-			uint8_t* buff = ptr.get();
-			memcpy(buff, &stats, replySz); // naive marshalling will work for a limited number of cases
-			socket->write(buff, replySz);
+			replyBuff.clear();
+			replyBuff.append( &stats, replySz); // naive marshalling will work for a limited number of cases
+			socket->write(replyBuff);
 		}
 		CO_RETURN;
 	}
@@ -1470,7 +1483,8 @@ public:
 			Buffer reply(requestedSz);
 			//buffer.begin()[0] = (uint8_t)requestedSz;
 			memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-			socket->write(reply.begin(), requestedSz);
+			reply.set_size(requestedSz);
+			socket->write(reply);
 		}
 
 		stats.recvSize += receivedSz;
@@ -1479,7 +1493,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 		if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by count)" );
 			socket->end();
 			socket->unref();
 		}
