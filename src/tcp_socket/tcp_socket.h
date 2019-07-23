@@ -490,6 +490,7 @@ private:
 			entry.getClientSocketData()->ahd_read.is_exception = !read_ok;
 			if ( !read_ok )
 			{
+				entry.getClientSocketData()->ahd_read.is_exception = true;
 				entry.getClientSocketData()->ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 				entry.getClientSocketData()->ahd_read.h = nullptr;
 				hr();

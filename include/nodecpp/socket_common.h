@@ -491,6 +491,7 @@ namespace nodecpp {
 				if ( dataForCommandProcessing.ahd_accepted.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_accepted.h;
+					dataForCommandProcessing.ahd_accepted.is_exception = true;
 					dataForCommandProcessing.ahd_accepted.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_accepted.h = nullptr;
 					hr();
@@ -498,6 +499,7 @@ namespace nodecpp {
 				if ( dataForCommandProcessing.ahd_connect.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_connect.h;
+					dataForCommandProcessing.ahd_connect.is_exception = true;
 					dataForCommandProcessing.ahd_connect.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_connect.h = nullptr;
 					hr();
@@ -505,6 +507,7 @@ namespace nodecpp {
 				if ( dataForCommandProcessing.ahd_read.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_read.h;
+					dataForCommandProcessing.ahd_read.is_exception = true;
 					dataForCommandProcessing.ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_read.h = nullptr;
 					hr();
@@ -512,6 +515,7 @@ namespace nodecpp {
 				if ( dataForCommandProcessing.ahd_write.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_write.h;
+					dataForCommandProcessing.ahd_write.is_exception = true;
 					dataForCommandProcessing.ahd_write.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_write.h = nullptr;
 					hr();
@@ -519,6 +523,7 @@ namespace nodecpp {
 				if ( dataForCommandProcessing.ahd_drain.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_drain.h;
+					dataForCommandProcessing.ahd_drain.is_exception = true;
 					dataForCommandProcessing.ahd_drain.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_drain.h = nullptr;
 					hr();
