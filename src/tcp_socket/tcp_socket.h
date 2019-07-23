@@ -134,9 +134,11 @@ public:
 	}
 	void setSocketClosed( size_t idx ) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
+		if ( ourSide[idx].isAssociated() )
+			--associatedCount;
 		osSide[idx].fd = INVALID_SOCKET; 
 		ourSide[idx].setSocketClosed();
-		--associatedCount;
 	}
 	std::pair<pollfd*, size_t> getPollfd() { 
 		return osSide.size() > 1 ? ( associatedCount > 0 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ) ) : std::make_pair( nullptr, 0 ); 
