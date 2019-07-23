@@ -46,6 +46,34 @@ struct pollfd;
 
 
 
+namespace nodecpp {
+
+	namespace net {
+
+		//class SocketBase; // forward declaration
+
+		class ServerBase; // forward declaration
+
+	} // namespace net
+
+
+	class OpaqueEmitter
+	{
+		using UnderlyingType = void;
+		nodecpp::safememory::soft_ptr<UnderlyingType> ptr;
+	public:
+		enum ObjectType { Undefined, ClientSocket, ServerSocket };
+		ObjectType objectType;
+		int type = -1;
+//		NodeBase* nodePtr = nullptr;
+		OpaqueEmitter() : objectType(ObjectType::Undefined), type(-1) {}
+		OpaqueEmitter( ObjectType ot/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::SocketBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_)/*, nodePtr( node )*/ {}
+		OpaqueEmitter( ObjectType ot/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::ServerBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_)/*, nodePtr( node )*/ {}
+		bool isValid() const { return (bool)ptr; }
+		nodecpp::safememory::soft_ptr<net::SocketBase> getClientSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ClientSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::SocketBase>(ptr); }
+		nodecpp::safememory::soft_ptr<net::ServerBase> getServerSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ServerSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::ServerBase>(ptr); }
+	};
+} // namespace nodecpp
 
 using namespace nodecpp;
 

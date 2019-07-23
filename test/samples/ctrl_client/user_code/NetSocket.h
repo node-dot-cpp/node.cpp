@@ -5,7 +5,6 @@
 
 #include <nodecpp/common.h>
 #include <nodecpp/socket_type_list.h>
-#include <nodecpp/socket_t_base.h>
 
 
 using namespace nodecpp;

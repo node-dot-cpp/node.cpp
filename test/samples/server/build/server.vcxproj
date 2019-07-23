@@ -333,7 +333,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\server_type_list.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_type_list.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_t_base.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\trace.h" />
