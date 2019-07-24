@@ -58,8 +58,13 @@ namespace nodecpp
 	void clearTimeout(const Timeout& to);
 	void refreshTimeout(Timeout& to);
 
+	namespace time
+	{
+		size_t now();
+	} // namespace time
+
 	void setInmediate(std::function<void()> cb);
-}
+} // namespace nodecpp
 
 
 

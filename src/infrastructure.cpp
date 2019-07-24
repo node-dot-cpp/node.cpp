@@ -182,4 +182,25 @@ namespace nodecpp {
 	{
 		return timeoutManager->appClearTimeout(to.getId());
 	}
+
+	namespace time
+	{
+		size_t now()
+		{
+#if defined NODECPP_MSVC
+#ifdef NODECPP_X64
+			return GetTickCount64();
+#else
+			return GetTickCount();
+#endif // NODECPP_X86 or NODECPP_X64
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (size_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
+}#else
+#error not implemented for this compiler
+#endif
+		}
+	} // namespace time
+
 } // namespace nodecpp
