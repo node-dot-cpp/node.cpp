@@ -178,7 +178,7 @@ namespace nodecpp {
 		return timeoutManager->appRefresh(to.getId());
 	}
 
-	void clearTimeout(Timeout& to)
+	void clearTimeout(const Timeout& to)
 	{
 		return timeoutManager->appClearTimeout(to.getId());
 	}
