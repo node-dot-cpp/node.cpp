@@ -125,7 +125,7 @@ namespace nodecpp {
 
 		void trim(size_t sz) { // NOTE: keeps pointers
 			assert(sz <= _size);
-			assert(_data != nullptr);
+			assert(_data != nullptr || (_size == 0 && sz == 0) );
 			_size -= sz;
 		}
 
