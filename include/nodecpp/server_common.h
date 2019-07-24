@@ -403,6 +403,54 @@ namespace nodecpp {
 				return connection_awaiter(*this, socket);
 			}
 
+			template<class SocketT>
+			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket, uint32_t period) { 
+
+				struct connection_awaiter {
+					ServerBase& server;
+					nodecpp::safememory::soft_ptr<SocketT>& socket;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					std::experimental::coroutine_handle<> who_is_awaiting;
+
+					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_, uint32_t period_) : server( server_ ), socket( socket_ ),  period( period_ ) {}
+
+					connection_awaiter(const connection_awaiter &) = delete;
+					connection_awaiter &operator = (const connection_awaiter &) = delete;
+
+					~connection_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						who_is_awaiting = awaiting;
+						server.dataForCommandProcessing.ahd_connection.h = who_is_awaiting;
+						to = std::move( nodecpp::setTimeout( [this](){
+								server.dataForCommandProcessing.ahd_connection.h = nullptr;
+								throw std::exception(); // TODO: switch to our exceptions ASAP!
+							}, 
+							period ) );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						if ( server.dataForCommandProcessing.ahd_connection.is_exception )
+						{
+							server.dataForCommandProcessing.ahd_connection.is_exception = false; // now we will throw it and that's it
+							throw server.dataForCommandProcessing.ahd_connection.exception;
+						}
+						if constexpr ( std::is_same<SocketT, SocketBase>::value )
+							socket = server.dataForCommandProcessing.ahd_connection.sock;
+						else
+							socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+					}
+				};
+				return connection_awaiter(*this, socket, period);
+			}
+
 #else
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
