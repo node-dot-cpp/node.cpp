@@ -603,6 +603,56 @@ namespace nodecpp {
 				return read_data_awaiter(*this, buff, min_bytes);
 			}
 
+			auto a_read( Buffer& buff, size_t min_bytes, uint32_t period ) { 
+
+				buff.clear();
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.capacity() >= min_bytes, "indeed: {} vs. {} bytes", buff.capacity(), min_bytes );
+
+				struct read_data_awaiter {
+					SocketBase& socket;
+					Buffer& buff;
+					size_t min_bytes;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					read_data_awaiter(SocketBase& socket_, Buffer& buff_, size_t min_bytes_, uint32_t period_) : socket( socket_ ), buff( buff_ ), min_bytes( min_bytes_ ), period( period_ ) {}
+
+					read_data_awaiter(const read_data_awaiter &) = delete;
+					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+	
+					~read_data_awaiter() {}
+
+					bool await_ready() {
+						return socket.dataForCommandProcessing.readBuffer.used_size() >= min_bytes;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
+						socket.dataForCommandProcessing.ahd_read.h = awaiting;
+						to = std::move( nodecpp::setTimeout( [this](){
+								auto h = socket.dataForCommandProcessing.ahd_read.h;
+								socket.dataForCommandProcessing.ahd_read.h = nullptr;
+								socket.dataForCommandProcessing.ahd_read.is_exception = true;
+								socket.dataForCommandProcessing.ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+								h();
+							}, 
+							period ) );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						if ( socket.dataForCommandProcessing.ahd_read.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_read.exception;
+						}
+						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
+					}
+				};
+				return read_data_awaiter(*this, buff, min_bytes, period);
+			}
+
 			auto a_write(Buffer& buff) { 
 
 				struct write_data_awaiter {
