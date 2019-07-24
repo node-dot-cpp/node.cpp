@@ -14,7 +14,8 @@ using namespace nodecpp;
 using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
-#define IMPL_VERSION 2 // main() is a single coro
+//#define IMPL_VERSION 2 // main() is a single coro
+#define IMPL_VERSION 21 // main() is a single coro (using awaitable API with time restrictions)
 //#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
@@ -86,10 +87,6 @@ public:
 	{
 		for (;;)
 		{
-/*#ifdef AUTOMATED_TESTING_ONLY
-			if ( stopAccepting )
-				break;
-#endif*/
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
 			co_await srv->a_connection<nodecpp::net::SocketBase>( socket );
 			socketLoop(socket);
@@ -121,14 +118,162 @@ public:
 	{
 		for (;;)
 		{
-#ifdef AUTOMATED_TESTING_ONLY
-			if ( stopAccepting )
-				break;
-#endif
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
 			co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket );
 			socketCtrlLoop(socket);
 		}
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type socketCtrlLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	{
+		nodecpp::Buffer r_buff(0x200);
+		for (;;)
+		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
+			co_await socket->a_read( r_buff, 2 );
+			co_await onDataCtrlServerSocket_(socket, r_buff);
+		}
+		CO_RETURN;
+	}
+
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
+
+	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+
+		size_t requestedSz = buffer.begin()[1];
+		if (requestedSz)
+		{
+			Buffer reply(sizeof(stats));
+			stats.connCnt = srv->getSockCount();
+			uint32_t replySz = sizeof(Stats);
+			replyBuff.clear();
+			replyBuff.append(&stats, replySz); // naive marshalling will work for a limited number of cases
+			socket->write(replyBuff);
+		}
+		CO_RETURN;
+	}
+
+	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srv; 
+	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase>  srvCtrl;
+
+#elif IMPL_VERSION == 21
+
+#ifdef AUTOMATED_TESTING_ONLY
+	size_t startTime;
+	static constexpr size_t maxAcceptanceTime = 3000;
+	static constexpr size_t maxInteractionTime = 3000;
+#endif
+
+	MySampleTNode()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+	}
+
+	virtual nodecpp::handler_ret_type main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+		srv = nodecpp::net::createServer<nodecpp::net::ServerBase>();
+		srvCtrl = nodecpp::net::createServer<nodecpp::net::ServerBase, nodecpp::net::SocketBase>();
+
+		co_await srv->a_listen(2000, "127.0.0.1", 5);
+		co_await srvCtrl->a_listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+		startTime = nodecpp::time::now();
+		/*to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );*/
+#endif
+
+		acceptServerLoop();
+		acceptCtrlServerLoop();
+
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type acceptServerLoop()
+	{
+#ifndef AUTOMATED_TESTING_ONLY
+		for (;;)
+		{
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			co_await srv->a_connection<nodecpp::net::SocketBase>( socket );
+			socketLoop(socket);
+		}
+#else
+//	static constexpr size_t maxAcceptanceTime = 3000;
+//	static constexpr size_t maxInteractionTime = 3000;
+		size_t timeRemainingForAcceptance = nodecpp::time::now() - startTime;
+		while ( timeRemainingForAcceptance < maxAcceptanceTime )
+		{
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			try { co_await srv->a_connection<nodecpp::net::SocketBase>( socket, maxAcceptanceTime - timeRemainingForAcceptance ); } catch ( ... ) { break; }
+			socketLoop(socket);
+			timeRemainingForAcceptance = nodecpp::time::now() - startTime;
+		}
+		srv->close();
+		srv->unref();
+#endif
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type socketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	{
+		nodecpp::Buffer r_buff(0x200);
+		for (;;)
+		{
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( stopResponding )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
+			co_await socket->a_read( r_buff, 2 );
+			co_await onDataServerSocket_(socket, r_buff);
+		}
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type acceptCtrlServerLoop()
+	{
+#ifndef AUTOMATED_TESTING_ONLY
+		for (;;)
+		{
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket );
+			socketCtrlLoop(socket);
+		}
+#else
+		size_t timeRemainingForAcceptance = nodecpp::time::now() - startTime;
+		while ( timeRemainingForAcceptance < maxAcceptanceTime )
+		{
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			try { co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket, maxAcceptanceTime - timeRemainingForAcceptance ); } catch ( ... ) { break; }
+			socketLoop(socket);
+			timeRemainingForAcceptance = nodecpp::time::now() - startTime;
+		}
+		srvCtrl->close();
+		srvCtrl->unref();
+#endif
 		CO_RETURN;
 	}
 
