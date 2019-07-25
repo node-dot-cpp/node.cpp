@@ -219,13 +219,13 @@ public:
 #else
 //	static constexpr size_t maxAcceptanceTime = 3000;
 //	static constexpr size_t maxInteractionTime = 3000;
-		size_t timeRemainingForAcceptance = nodecpp::time::now() - startTime;
-		while ( timeRemainingForAcceptance < maxAcceptanceTime )
+		size_t acceptanceTime = nodecpp::time::now() - startTime;
+		while ( acceptanceTime < maxAcceptanceTime )
 		{
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
-			try { co_await srv->a_connection<nodecpp::net::SocketBase>( socket, maxAcceptanceTime - timeRemainingForAcceptance ); } catch ( ... ) { break; }
+			try { co_await srv->a_connection<nodecpp::net::SocketBase>( socket, maxAcceptanceTime - acceptanceTime ); } catch ( ... ) { break; }
 			socketLoop(socket);
-			timeRemainingForAcceptance = nodecpp::time::now() - startTime;
+			acceptanceTime = nodecpp::time::now() - startTime;
 		}
 		srv->close();
 		srv->unref();
@@ -236,20 +236,25 @@ public:
 	nodecpp::handler_ret_type socketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer r_buff(0x200);
+#ifndef AUTOMATED_TESTING_ONLY
 		for (;;)
 		{
-#ifdef AUTOMATED_TESTING_ONLY
-			if ( stopResponding )
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
-				socket->end();
-				socket->unref();
-				break;
-			}
-#endif
 			co_await socket->a_read( r_buff, 2 );
 			co_await onDataServerSocket_(socket, r_buff);
 		}
+#else
+		size_t respondingStartTime = nodecpp::time::now();
+		size_t respondingTime = 0;
+		while ( respondingTime < maxInteractionTime )
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "iteration: waiting for {} at max", maxInteractionTime - respondingTime );
+			try { co_await socket->a_read( r_buff, 2, maxInteractionTime - respondingTime ); } catch ( ... ) { break; }
+			co_await onDataServerSocket_(socket, r_buff);
+			respondingTime = nodecpp::time::now() - respondingStartTime;
+		}
+		socket->end();
+		socket->unref();
+#endif
 		CO_RETURN;
 	}
 
@@ -263,13 +268,13 @@ public:
 			socketCtrlLoop(socket);
 		}
 #else
-		size_t timeRemainingForAcceptance = nodecpp::time::now() - startTime;
-		while ( timeRemainingForAcceptance < maxAcceptanceTime )
+		size_t acceptanceTime = nodecpp::time::now() - startTime;
+		while ( acceptanceTime < maxAcceptanceTime )
 		{
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
-			try { co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket, maxAcceptanceTime - timeRemainingForAcceptance ); } catch ( ... ) { break; }
+			try { co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket, maxAcceptanceTime - acceptanceTime ); } catch ( ... ) { break; }
 			socketLoop(socket);
-			timeRemainingForAcceptance = nodecpp::time::now() - startTime;
+			acceptanceTime = nodecpp::time::now() - startTime;
 		}
 		srvCtrl->close();
 		srvCtrl->unref();
@@ -280,20 +285,24 @@ public:
 	nodecpp::handler_ret_type socketCtrlLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer r_buff(0x200);
+#ifndef AUTOMATED_TESTING_ONLY
 		for (;;)
 		{
-#ifdef AUTOMATED_TESTING_ONLY
-			if ( stopResponding )
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
-				socket->end();
-				socket->unref();
-				break;
-			}
-#endif
 			co_await socket->a_read( r_buff, 2 );
 			co_await onDataCtrlServerSocket_(socket, r_buff);
 		}
+#else
+		size_t respondingStartTime = nodecpp::time::now();
+		size_t respondingTime = 0;
+		while ( respondingTime < maxInteractionTime )
+		{
+			try { co_await socket->a_read( r_buff, 2, maxInteractionTime - respondingTime ); } catch ( ... ) { break; }
+			co_await onDataCtrlServerSocket_(socket, r_buff);
+			respondingTime = nodecpp::time::now() - respondingStartTime;
+		}
+		socket->end();
+		socket->unref();
+#endif
 		CO_RETURN;
 	}
 
@@ -1664,12 +1673,12 @@ public:
 		stats.sentSize += requestedSz;
 		++(stats.rqCnt);
 #ifdef AUTOMATED_TESTING_ONLY
-		if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+		/*if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by count)" );
 			socket->end();
 			socket->unref();
-		}
+		}*/
 #endif
 		CO_RETURN;
 	}
