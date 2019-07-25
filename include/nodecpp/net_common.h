@@ -198,17 +198,17 @@ namespace nodecpp {
 			if ( _size < offset + 4 )
 				_size = offset + 4;
 		}
-		uint32_t readUInt8(size_t offset) {
+		uint32_t readUInt8(size_t offset) const {
 			assert( offset + 1 <= _size );
 			return *(begin() + offset);
 		}
-		uint32_t readUInt32BE(size_t offset) {
+		uint32_t readUInt32BE(size_t offset) const {
 			assert( false ); // TODO: implement
 			return 0;
 		}
-		uint8_t readUInt32LE(size_t offset) {
+		uint8_t readUInt32LE(size_t offset) const {
 			assert( offset + 4 <= _size );
-			return *reinterpret_cast<uint32_t*>(begin() + offset);
+			return *reinterpret_cast<const uint32_t*>(begin() + offset);
 		}
 	};
 
