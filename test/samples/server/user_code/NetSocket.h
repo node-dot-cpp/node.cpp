@@ -16,11 +16,11 @@ using namespace fmt;
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 21 // main() is a single coro (using awaitable API with time restrictions)
-#define IMPL_VERSION 3 // onConnect is a coro
+//#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
 //#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based with use of DataParent concept)
-//#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
+#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
 //#define IMPL_VERSION 9 // lambda-based
 #else
 #define IMPL_VERSION 8 // registering handlers (per class, template-based) with no explicit awaitable staff
@@ -443,6 +443,12 @@ public:
 
 #elif IMPL_VERSION == 5
 
+#ifdef AUTOMATED_TESTING_ONLY
+	bool stopAccepting = false;
+	bool stopResponding = false;
+	nodecpp::Timeout to;
+#endif
+
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleTNode::MySampleTNode()");
@@ -451,7 +457,6 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketOne::onListening>();
 		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListening>(this);
@@ -508,13 +513,6 @@ public:
 			if ( stopResponding )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
-				socket->end();
-				socket->unref();
-				break;
-			}
-			if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				socket->end();
 				socket->unref();
 				break;
@@ -650,9 +648,8 @@ public:
 			if (requestedSz)
 			{
 				Buffer reply(requestedSz);
-				//buffer.begin()[0] = (uint8_t)requestedSz;
+				reply.set_size(requestedSz);
 				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-				socket->write(reply.begin(), requestedSz);
 				try
 				{
 					co_await socket->a_write(reply);
@@ -719,7 +716,7 @@ public:
 			}
 		}
 	}
-	nodecpp::handler_ret_type onDataCtrlServerSocket_1(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	/*nodecpp::handler_ret_type onDataCtrlServerSocket_1(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -732,7 +729,7 @@ public:
 			socket->write(buff, replySz);
 		}
 		CO_RETURN;
-	}
+	}*/
 	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
@@ -749,6 +746,12 @@ public:
 
 #elif IMPL_VERSION == 6
 
+#ifdef AUTOMATED_TESTING_ONLY
+	bool stopAccepting = false;
+	bool stopResponding = false;
+	nodecpp::Timeout to;
+#endif
+
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleTNode::MySampleTNode()");
@@ -757,7 +760,6 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 		srv = nodecpp::net::createServer<MyServerSocketOne, nodecpp::net::SocketBase>();
 		srv_1 = nodecpp::net::createServer<MyServerSocketOne, nodecpp::net::SocketBase>();
@@ -936,9 +938,8 @@ public:
 			if (requestedSz)
 			{
 				Buffer reply(requestedSz);
-				//buffer.begin()[0] = (uint8_t)requestedSz;
+				reply.set_size(requestedSz);
 				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-				socket->write(reply.begin(), requestedSz);
 				try
 				{
 					co_await socket->a_write(reply);
@@ -996,20 +997,6 @@ public:
 			}
 		}
 	}
-	nodecpp::handler_ret_type onDataCtrlServerSocket_1(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
-
-		size_t requestedSz = buffer.begin()[1];
-		if (requestedSz)
-		{
-			Buffer reply(sizeof(stats));
-			stats.connCnt = srv->getSockCount();
-			uint32_t replySz = sizeof(Stats);
-			uint8_t* buff = ptr.get();
-			memcpy(buff, &stats, replySz); // naive marshalling will work for a limited number of cases
-			socket->write(buff, replySz);
-		}
-		CO_RETURN;
-	}
 	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
@@ -1056,6 +1043,11 @@ public:
 
 #elif IMPL_VERSION == 7
 
+#ifdef AUTOMATED_TESTING_ONLY
+	bool stopAccepting = false;
+	bool stopResponding = false;
+	nodecpp::Timeout to;
+#endif
 
 	MySampleTNode()
 	{
@@ -1065,7 +1057,6 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 		srv = nodecpp::net::createServer<MyServerSocketOne, MySocketSocketOne>(this);
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, MySocketSocketTwo>(this);
@@ -1186,9 +1177,9 @@ public:
 			if ( requestedSz )
 			{
 				Buffer reply(requestedSz);
-				//buffer.begin()[0] = (uint8_t)requestedSz;
+				reply.set_size(requestedSz);
 				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-				write(reply.begin(), requestedSz);
+				write(reply);
 			}
 
 			getDataParent()->stats.recvSize += receivedSz;
@@ -1205,8 +1196,9 @@ public:
 		}
 		void onEndServerSocket() {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
-			const char buff[] = "goodbye!";
-			write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			Buffer b;
+			b.appendString( "goodbye!", sizeof( "goodbye!" ) );
+			write(b);
 //			end(); // so far (yet to be changable) default is allowHalfOpen == false, so this call is not mandatory
 		}
 	};
@@ -1234,9 +1226,8 @@ public:
 				Buffer reply(sizeof(stats));
 				getDataParent()->stats.connCnt = getDataParent()->srv->getSockCount();
 				size_t replySz = sizeof(Stats);
-				uint8_t* buff = getDataParent()->ptr.get();
-				memcpy( buff, &(getDataParent()->stats), replySz ); // naive marshalling will work for a limited number of cases
-				write(buff, replySz);
+				reply.append( &(getDataParent()->stats), replySz ); // naive marshalling will work for a limited number of cases
+				write(reply);
 			}
 		}
 	};
@@ -1283,6 +1274,12 @@ public:
 
 #elif IMPL_VERSION == 8
 
+#ifdef AUTOMATED_TESTING_ONLY
+	bool stopAccepting = false;
+	bool stopResponding = false;
+	nodecpp::Timeout to;
+#endif
+
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleTNode::MySampleTNode()");
@@ -1291,7 +1288,6 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
-		ptr.reset(static_cast<uint8_t*>(malloc(size)));
 
 		srv = nodecpp::net::createServer<MyServerSocketOne, MySocketSocketOne>();
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, MySocketSocketTwo>();
@@ -1419,9 +1415,9 @@ public:
 			if ( requestedSz )
 			{
 				Buffer reply(requestedSz);
-				//buffer.begin()[0] = (uint8_t)requestedSz;
+				reply.set_size(requestedSz);
 				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-				write(reply.begin(), requestedSz);
+				write(reply);
 			}
 
 			myNode->stats.recvSize += receivedSz;
@@ -1438,8 +1434,9 @@ public:
 		}
 		void onEndServerSocket() {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
-			const char buff[] = "goodbye!";
-			write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			Buffer b;
+			b.appendString( "goodbye!", sizeof( "goodbye!" ) );
+			write(b);
 //			end();
 		}
 	};
@@ -1468,15 +1465,15 @@ public:
 				Buffer reply(sizeof(stats));
 				myNode->stats.connCnt = myNode->srv->getSockCount();
 				size_t replySz = sizeof(Stats);
-				uint8_t* buff = myNode->ptr.get();
-				memcpy( buff, &(myNode->stats), replySz ); // naive marshalling will work for a limited number of cases
-				write(buff, replySz);
+				reply.append( &(myNode->stats), replySz ); // naive marshalling will work for a limited number of cases
+				write(reply);
 			}
 		}
 		void onEndCtrlServerSocket() {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("ctrl server socket: onEnd!");
-			const char buff[] = "goodbye!";
-			write(reinterpret_cast<const uint8_t*>(buff), sizeof(buff));
+			Buffer b;
+			b.appendString( "goodbye!", sizeof( "goodbye!" ) );
+			write(b);
 //			end();
 		}
 	};
