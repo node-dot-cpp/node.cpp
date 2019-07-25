@@ -20,8 +20,8 @@ using namespace fmt;
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
 //#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based with use of DataParent concept)
-#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
-//#define IMPL_VERSION 9 // lambda-based
+//#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
+#define IMPL_VERSION 9 // lambda-based
 #else
 #define IMPL_VERSION 8 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -1520,6 +1520,7 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<workingSocketHD, ctrlSocketHD>;
 
 #elif IMPL_VERSION == 9
+
 	virtual nodecpp::handler_ret_type main()
 	{
 		srv = nodecpp::net::createServer<net::ServerBase>();
@@ -1529,6 +1530,12 @@ public:
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!");
 		});
 		srv->on( event::connection, [this](soft_ptr<net::SocketBase> socket) {
+#ifdef AUTOMATED_TESTING_ONLY
+			nodecpp::setTimeout(  [this, socket]() { 
+				socket->end();
+				socket->unref();
+				}, 3000 );
+#endif
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 			//srv->unref();
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
@@ -1537,7 +1544,7 @@ public:
 				socket->unref();
 			});
 
-			socket->on( event::data, [this, socket](Buffer& buffer) {
+			socket->on( event::data, [this, socket](const Buffer& buffer) {
 				if ( buffer.size() < 2 )
 				{
 					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = %d", *extra );
@@ -1583,10 +1590,16 @@ public:
 		srvCtrl->on( event::connection, [this](soft_ptr<net::SocketBase> socket) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
+#ifdef AUTOMATED_TESTING_ONLY
+			nodecpp::setTimeout(  [this, socket]() { 
+				socket->end();
+				socket->unref();
+				}, 3000 );
+#endif
 			socket->on( event::close, [this, socket](bool hadError) {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
 			});
-			socket->on( event::data, [this, socket](Buffer& buffer) {
+			socket->on( event::data, [this, socket](const Buffer& buffer) {
 				size_t requestedSz = buffer.readUInt8(1);
 				if ( requestedSz )
 				{
@@ -1609,14 +1622,12 @@ public:
 		srvCtrl->listen(2001, "127.0.0.1", 5, [](size_t, net::Address){});
 
 #ifdef AUTOMATED_TESTING_ONLY
-		to = std::move( nodecpp::setTimeout(  [this]() { 
+		nodecpp::setTimeout(  [this]() { 
 			srv->close();
 			srv->unref();
 			srvCtrl->close();
 			srvCtrl->unref();
-			stopAccepting = true;
-			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
-		}, 3000 ) );
+		}, 3000 );
 #endif
 
 		CO_RETURN;
