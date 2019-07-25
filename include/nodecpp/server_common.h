@@ -332,8 +332,6 @@ namespace nodecpp {
 				struct listen_awaiter {
 					ServerBase& server;
 
-					std::experimental::coroutine_handle<> who_is_awaiting;
-
 					listen_awaiter(ServerBase& server_) : server( server_ ) {}
 
 					listen_awaiter(const listen_awaiter &) = delete;
@@ -346,8 +344,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						server.dataForCommandProcessing.ahd_listen.h = who_is_awaiting;
+						server.dataForCommandProcessing.ahd_listen.h = awaiting;
 					}
 
 					auto await_resume() {
@@ -369,9 +366,6 @@ namespace nodecpp {
 					ServerBase& server;
 					nodecpp::safememory::soft_ptr<SocketT>& socket;
 
-
-					std::experimental::coroutine_handle<> who_is_awaiting;
-
 					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_) : server( server_ ), socket( socket_ ) {}
 
 					connection_awaiter(const connection_awaiter &) = delete;
@@ -384,8 +378,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						server.dataForCommandProcessing.ahd_connection.h = who_is_awaiting;
+						server.dataForCommandProcessing.ahd_connection.h = awaiting;
 					}
 
 					auto await_resume() {
@@ -412,9 +405,7 @@ namespace nodecpp {
 					uint32_t period;
 					nodecpp::Timeout to;
 
-					std::experimental::coroutine_handle<> who_is_awaiting;
-
-					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_, uint32_t period_) : server( server_ ), socket( socket_ ),  period( period_ ) {}
+					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_, uint32_t period_) : server( server_ ), socket( socket_ ), period( period_ ) {}
 
 					connection_awaiter(const connection_awaiter &) = delete;
 					connection_awaiter &operator = (const connection_awaiter &) = delete;
