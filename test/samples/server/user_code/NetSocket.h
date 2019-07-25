@@ -15,8 +15,8 @@ using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
-#define IMPL_VERSION 21 // main() is a single coro (using awaitable API with time restrictions)
-//#define IMPL_VERSION 3 // onConnect is a coro
+//#define IMPL_VERSION 21 // main() is a single coro (using awaitable API with time restrictions)
+#define IMPL_VERSION 3 // onConnect is a coro
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
 //#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based with use of DataParent concept)
@@ -43,14 +43,15 @@ class MySampleTNode : public NodeBase
 
 	Buffer replyBuff;
 
+public:
+#if IMPL_VERSION == 2
+
 #ifdef AUTOMATED_TESTING_ONLY
 	bool stopAccepting = false;
 	bool stopResponding = false;
 	nodecpp::Timeout to;
 #endif
 
-public:
-#if IMPL_VERSION == 2
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
@@ -169,7 +170,6 @@ public:
 #elif IMPL_VERSION == 21
 
 #ifdef AUTOMATED_TESTING_ONLY
-	size_t startTime;
 	static constexpr size_t maxAcceptanceTime = 3000;
 	static constexpr size_t maxInteractionTime = 3000;
 #endif
@@ -189,18 +189,6 @@ public:
 		co_await srv->a_listen(2000, "127.0.0.1", 5);
 		co_await srvCtrl->a_listen(2001, "127.0.0.1", 5);
 
-#ifdef AUTOMATED_TESTING_ONLY
-		startTime = nodecpp::time::now();
-		/*to = std::move( nodecpp::setTimeout(  [this]() { 
-			srv->close();
-			srv->unref();
-			srvCtrl->close();
-			srvCtrl->unref();
-			stopAccepting = true;
-			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
-		}, 3000 ) );*/
-#endif
-
 		acceptServerLoop();
 		acceptCtrlServerLoop();
 
@@ -217,9 +205,8 @@ public:
 			socketLoop(socket);
 		}
 #else
-//	static constexpr size_t maxAcceptanceTime = 3000;
-//	static constexpr size_t maxInteractionTime = 3000;
-		size_t acceptanceTime = nodecpp::time::now() - startTime;
+		size_t startTime = nodecpp::time::now();
+		size_t acceptanceTime = 0;
 		while ( acceptanceTime < maxAcceptanceTime )
 		{
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
@@ -268,7 +255,8 @@ public:
 			socketCtrlLoop(socket);
 		}
 #else
-		size_t acceptanceTime = nodecpp::time::now() - startTime;
+		size_t startTime = nodecpp::time::now();
+		size_t acceptanceTime = 0;
 		while ( acceptanceTime < maxAcceptanceTime )
 		{
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
@@ -328,6 +316,13 @@ public:
 	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase>  srvCtrl;
 
 #elif IMPL_VERSION == 3
+
+#ifdef AUTOMATED_TESTING_ONLY
+	bool stopAccepting = false;
+	bool stopResponding = false;
+	nodecpp::Timeout to;
+#endif
+
 	class MyServerSocketOne : public nodecpp::net::ServerBase
 	{
 	public:
