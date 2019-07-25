@@ -426,11 +426,13 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						server.dataForCommandProcessing.ahd_connection.h = who_is_awaiting;
+						server.dataForCommandProcessing.ahd_connection.h = awaiting;
 						to = std::move( nodecpp::setTimeout( [this](){
+								auto h = server.dataForCommandProcessing.ahd_connection.h;
 								server.dataForCommandProcessing.ahd_connection.h = nullptr;
-								throw std::exception(); // TODO: switch to our exceptions ASAP!
+								server.dataForCommandProcessing.ahd_connection.is_exception = true;
+								server.dataForCommandProcessing.ahd_connection.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+								h();
 							}, 
 							period ) );
 					}
