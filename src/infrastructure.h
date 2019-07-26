@@ -52,7 +52,8 @@ static constexpr uint64_t TimeOutNever = std::numeric_limits<uint64_t>::max();
 struct TimeoutEntryHandlerData
 {
 	std::function<void()> cb = nullptr;
-	nodecpp::awaitable_handle_data::handler_fn_type h;
+	nodecpp::awaitable_handle_data::handler_fn_type h = nullptr;
+	awaitable_handle_data* ahd = nullptr;
 };
 
 struct TimeoutEntry : public TimeoutEntryHandlerData
@@ -85,11 +86,19 @@ class TimeoutManager
 		{
 			entry.h = h;
 			entry.cb = nullptr;
+			entry.ahd = nullptr;
 		}
 		else if constexpr ( std::is_same<H, std::function<void()>>::value )
 		{
 			entry.cb = h;
 			entry.h = nullptr;
+			entry.ahd = nullptr;
+		}
+		else if constexpr ( std::is_same<H, awaitable_handle_data*>::value )
+		{
+			entry.cb = nullptr;
+			entry.h = nullptr;
+			entry.ahd = h;
 		}
 		else
 			static_assert( false, "unexpected type" );
@@ -118,6 +127,7 @@ public:
 	void appRefresh(uint64_t id);
 #ifndef NODECPP_NO_COROUTINES
 	nodecpp::Timeout appSetTimeout(std::experimental::coroutine_handle<> h, int32_t ms) { return appSetTimeoutImpl( h, ms ); }
+	nodecpp::Timeout appSetTimeout(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, ms ); }
 #endif
 	void appTimeoutDestructor(uint64_t id);
 
@@ -343,10 +353,15 @@ auto a_timeout_impl(uint32_t ms) {
 		uint32_t duration = 0;
 		nodecpp::Timeout to;
 
+		awaitable_handle_data ahd;
+
         timeout_awaiter(uint32_t ms) {duration = ms;}
 
         timeout_awaiter(const timeout_awaiter &) = delete;
         timeout_awaiter &operator = (const timeout_awaiter &) = delete;
+
+        timeout_awaiter(timeout_awaiter &&) = delete;
+        timeout_awaiter &operator = (timeout_awaiter &&) = delete;
 
         ~timeout_awaiter() {}
 
@@ -356,10 +371,15 @@ auto a_timeout_impl(uint32_t ms) {
 
         void await_suspend(std::experimental::coroutine_handle<> awaiting) {
             who_is_awaiting = awaiting;
-			to = std::move( timeoutManager->appSetTimeout(awaiting, duration) );
+			ahd.h = awaiting;
+			ahd.is_exception = false;
+			to = std::move( timeoutManager->appSetTimeout(&ahd, duration) );
         }
 
-		auto await_resume() {}
+		auto await_resume() {
+			if ( ahd.is_exception )
+				throw ahd.exception;
+		}
     };
     return timeout_awaiter(ms);
 }
