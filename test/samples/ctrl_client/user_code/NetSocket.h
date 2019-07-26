@@ -81,7 +81,15 @@ public:
 		nodecpp::handler_ret_type onWhateverData(nodecpp::Buffer& buffer)
 		{
 			if ( buffer.size() < sizeof( Stats ) )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
+			{
+				if ( dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::LocalEnded && buffer.size() == 10 )
+				{
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   server finaly says: {}", (char*)(buffer.begin()) );
+					CO_RETURN;
+				}
+				else
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
+			}
 			else
 				printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
 		
@@ -94,7 +102,7 @@ public:
 				// test just once
 				end();
 				unref();
-				return;
+				CO_RETURN;
 			}
 			co_await nodecpp::a_timeout(1000);
 #else

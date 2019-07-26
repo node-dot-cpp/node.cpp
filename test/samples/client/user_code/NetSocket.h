@@ -87,6 +87,7 @@ public:
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				socket->end();
 				socket->unref();
+				break;
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
@@ -169,8 +170,9 @@ public:
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				end();
-				unref();
+				socket->end();
+				socket->unref();
+				break;
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
@@ -262,6 +264,7 @@ public:
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				socket->end();
 				socket->unref();
+				break;
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
@@ -362,6 +365,7 @@ public:
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 					end();
 					unref();
+					break;
 				}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
@@ -469,6 +473,7 @@ public:
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 					end();
 					unref();
+					break;
 				}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
@@ -582,7 +587,7 @@ public:
 
 		to = std::move( nodecpp::setTimeout( [this]() { 
 			printf( "   !!!TIMER!!!\n" );
-			clientSock->refreshTimeout(to);
+			nodecpp::refreshTimeout(to);
 		}, 1000) );
 
 		clientSock->on(event::connect, [this]() { 
