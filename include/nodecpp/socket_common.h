@@ -534,8 +534,6 @@ namespace nodecpp {
 				struct connect_awaiter {
 					SocketBase& socket;
 
-					std::experimental::coroutine_handle<> who_is_awaiting;
-
 					connect_awaiter(SocketBase& socket_) : socket( socket_ ) {}
 
 					connect_awaiter(const connect_awaiter &) = delete;
@@ -548,8 +546,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						socket.dataForCommandProcessing.ahd_connect.h = who_is_awaiting;
+						socket.dataForCommandProcessing.ahd_connect.h = awaiting;
 					}
 
 					auto await_resume() {
@@ -562,6 +559,42 @@ namespace nodecpp {
 				};
 				connect( port, ip );
 				return connect_awaiter(*this);
+			}
+
+			auto a_connect(uint16_t port, const char* ip, uint32_t period) { 
+
+				struct connect_awaiter {
+					SocketBase& socket;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					connect_awaiter(SocketBase& socket_, uint32_t period_) : socket( socket_ ), period( period_ ) {}
+
+					connect_awaiter(const connect_awaiter &) = delete;
+					connect_awaiter &operator = (const connect_awaiter &) = delete;
+	
+					~connect_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						socket.dataForCommandProcessing.ahd_connect.h = awaiting;
+						to = std::move( nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_connect), period ) );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						if ( socket.dataForCommandProcessing.ahd_connect.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_connect.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_connect.exception;
+						}
+					}
+				};
+				connect( port, ip );
+				return connect_awaiter(*this, period);
 			}
 
 			auto a_read( Buffer& buff, size_t min_bytes = 1 ) { 
@@ -661,8 +694,6 @@ namespace nodecpp {
 					Buffer& buff;
 					bool write_ok = false;
 
-					std::experimental::coroutine_handle<> who_is_awaiting;
-
 					write_data_awaiter(SocketBase& socket_, Buffer& buff_) : socket( socket_ ), buff( buff_ )  {}
 
 					write_data_awaiter(const write_data_awaiter &) = delete;
@@ -696,8 +727,6 @@ namespace nodecpp {
 				struct drain_awaiter {
 					SocketBase& socket;
 
-					std::experimental::coroutine_handle<> who_is_awaiting;
-
 					drain_awaiter(SocketBase& socket_) : socket( socket_ )  {}
 
 					drain_awaiter(const drain_awaiter &) = delete;
@@ -723,6 +752,42 @@ namespace nodecpp {
 					}
 				};
 				return drain_awaiter(*this);
+			}
+
+			auto a_drain(uint32_t period) { 
+
+				struct drain_awaiter {
+					SocketBase& socket;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					drain_awaiter(SocketBase& socket_, uint32_t period_) : socket( socket_ ), period( period_ )  {}
+
+					drain_awaiter(const drain_awaiter &) = delete;
+					drain_awaiter &operator = (const drain_awaiter &) = delete;
+	
+					~drain_awaiter() {}
+
+					bool await_ready() {
+						return socket.dataForCommandProcessing.writeBuffer.empty();
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
+						socket.dataForCommandProcessing.ahd_drain.h = awaiting;
+						to = std::move( nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_drain), period ) );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
+						{
+							socket.dataForCommandProcessing.ahd_drain.is_exception = false; // now we will throw it and that's it
+							throw socket.dataForCommandProcessing.ahd_drain.exception;
+						}
+					}
+				};
+				return drain_awaiter(*this, period);
 			}
 
 #else
