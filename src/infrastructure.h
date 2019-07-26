@@ -51,9 +51,10 @@ static constexpr uint64_t TimeOutNever = std::numeric_limits<uint64_t>::max();
 
 struct TimeoutEntryHandlerData
 {
-	std::function<void()> cb = nullptr;
-	nodecpp::awaitable_handle_data::handler_fn_type h = nullptr;
+	std::function<void()> cb = nullptr; // is assumed to be self-contained in terms of required action
+//	nodecpp::awaitable_handle_data::handler_fn_type h = nullptr;
 	awaitable_handle_data* ahd = nullptr;
+	bool setExceptionWhenDone = false; // is used to indicate that a handle is released because of timeout and not because of its "regular" event
 };
 
 struct TimeoutEntry : public TimeoutEntryHandlerData
@@ -72,7 +73,7 @@ class TimeoutManager
 	std::unordered_map<uint64_t, TimeoutEntry> timers;
 	std::multimap<uint64_t, uint64_t> nextTimeouts;
 	template<class H>
-	nodecpp::Timeout appSetTimeoutImpl(H h, int32_t ms)
+	nodecpp::Timeout appSetTimeoutImpl(H h, bool indicateThrowing, int32_t ms)
 	{
 		if (ms == 0) ms = 1;
 		else if (ms < 0) ms = std::numeric_limits<int32_t>::max();
@@ -80,24 +81,25 @@ class TimeoutManager
 		uint64_t id = ++lastId;
 
 		TimeoutEntry entry;
+		entry.setExceptionWhenDone = indicateThrowing;
 		entry.id = id;
 		static_assert( !std::is_same<std::function<void()>, awaitable_handle_data::handler_fn_type>::value ); // we're in trouble anyway and not only here :)
-		if constexpr ( std::is_same<H, awaitable_handle_data::handler_fn_type>::value )
+		/*if constexpr ( std::is_same<H, awaitable_handle_data::handler_fn_type>::value )
 		{
 			entry.h = h;
 			entry.cb = nullptr;
 			entry.ahd = nullptr;
 		}
-		else if constexpr ( std::is_same<H, std::function<void()>>::value )
+		else */if constexpr ( std::is_same<H, std::function<void()>>::value )
 		{
 			entry.cb = h;
-			entry.h = nullptr;
+//			entry.h = nullptr;
 			entry.ahd = nullptr;
 		}
 		else if constexpr ( std::is_same<H, awaitable_handle_data*>::value )
 		{
 			entry.cb = nullptr;
-			entry.h = nullptr;
+//			entry.h = nullptr;
 			entry.ahd = h;
 		}
 		else
@@ -122,12 +124,13 @@ public:
 	void appSetTimeout(TimeoutEntry& entry);
 	void appClearTimeout(TimeoutEntry& entry);
 
-	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms) { return appSetTimeoutImpl( cb, ms ); }
+	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms) { return appSetTimeoutImpl( cb, false, ms ); }
 	void appClearTimeout(const nodecpp::Timeout& to);
 	void appRefresh(uint64_t id);
 #ifndef NODECPP_NO_COROUTINES
-	nodecpp::Timeout appSetTimeout(std::experimental::coroutine_handle<> h, int32_t ms) { return appSetTimeoutImpl( h, ms ); }
-	nodecpp::Timeout appSetTimeout(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, ms ); }
+//	nodecpp::Timeout appSetTimeout(std::experimental::coroutine_handle<> h, int32_t ms) { return appSetTimeoutImpl( h, false, ms ); }
+	nodecpp::Timeout appSetTimeout(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, false, ms ); }
+	nodecpp::Timeout appsetTimeoutForAction(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, true, ms ); }
 #endif
 	void appTimeoutDestructor(uint64_t id);
 

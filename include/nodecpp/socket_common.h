@@ -629,14 +629,15 @@ namespace nodecpp {
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
-						to = std::move( nodecpp::setTimeout( [this](){
+						/*to = std::move( nodecpp::setTimeout( [this](){
 								auto h = socket.dataForCommandProcessing.ahd_read.h;
 								socket.dataForCommandProcessing.ahd_read.h = nullptr;
 								socket.dataForCommandProcessing.ahd_read.is_exception = true;
 								socket.dataForCommandProcessing.ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 								h();
 							}, 
-							period ) );
+							period ) );*/
+						to = std::move( nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_read), period ) );
 					}
 
 					auto await_resume() {

@@ -418,14 +418,15 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						server.dataForCommandProcessing.ahd_connection.h = awaiting;
-						to = std::move( nodecpp::setTimeout( [this](){
+						/*to = std::move( nodecpp::setTimeout( [this](){
 								auto h = server.dataForCommandProcessing.ahd_connection.h;
 								server.dataForCommandProcessing.ahd_connection.h = nullptr;
 								server.dataForCommandProcessing.ahd_connection.is_exception = true;
 								server.dataForCommandProcessing.ahd_connection.exception = std::exception(); // TODO: switch to our exceptions ASAP!
 								h();
 							}, 
-							period ) );
+							period ) );*/
+						to = std::move( nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_connection), period ) );
 					}
 
 					auto await_resume() {

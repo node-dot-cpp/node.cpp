@@ -148,12 +148,17 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	{
 		if ( h.cb != nullptr )
 			h.cb();
-		else if ( h.h )
-			h.h();
+//		else if ( h.h )
+//			h.h();
 		else if ( h.ahd != nullptr )
 		{
 			auto hr = h.ahd->h;
 			h.ahd->h = nullptr;
+			if ( h.setExceptionWhenDone )
+			{
+				h.ahd->is_exception = true;
+				h.ahd->exception = std::exception();
+			}
 			hr();
 		}
 	}
@@ -177,6 +182,11 @@ namespace nodecpp {
 	nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
 	{
 		return timeoutManager->appSetTimeout(cb, ms);
+	}
+
+	nodecpp::Timeout setTimeoutForAction(awaitable_handle_data* ahd, int32_t ms)
+	{
+		return timeoutManager->appsetTimeoutForAction(ahd, ms);
 	}
 
 	void refreshTimeout(Timeout& to)

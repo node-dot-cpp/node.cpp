@@ -55,6 +55,7 @@ namespace nodecpp
 
 
 	Timeout setTimeout(std::function<void()> cb, int32_t ms);
+	Timeout setTimeoutForAction(awaitable_handle_data* ahd, int32_t ms);
 	void clearTimeout(const Timeout& to);
 	void refreshTimeout(Timeout& to);
 
