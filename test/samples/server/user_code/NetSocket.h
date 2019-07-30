@@ -20,8 +20,8 @@ using namespace fmt;
 //#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
 //#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based with use of DataParent concept)
-//#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
-#define IMPL_VERSION 9 // lambda-based
+#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff
+//#define IMPL_VERSION 9 // lambda-based
 #else
 #define IMPL_VERSION 8 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -1322,7 +1322,12 @@ public:
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");}
+	void onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");
+	}
+	void onCloseServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, bool hasError) {
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onClose()!");
+	}
 
 
 	class MyServerSocketTwo; // just forward declaration
@@ -1424,7 +1429,7 @@ public:
 			myNode->stats.sentSize += requestedSz;
 			++(myNode->stats.rqCnt);
 #ifdef AUTOMATED_TESTING_ONLY
-			if ( myNode->stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
+			if ( myNode->stopResponding )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				end();
@@ -1483,11 +1488,13 @@ public:
 	// working server
 	using workingServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListeningServer>;
 	using workingServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnectionServer>;
+	using workingServerClose_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onCloseServer>;
 
 	using workingServerListening = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerListening_2>;
 	using workingServerConnection = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerConnection_2>;
+	using workingServerClose = nodecpp::net::ServerHandlerDataList<MyServerSocketOne, workingServerClose_2>;
 
-	using workingServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketOne, nodecpp::net::ServerHandlerDescriptorBase<nodecpp::net::OnConnectionST<workingServerConnection>, nodecpp::net::OnListeningST<workingServerListening> > >;
+	using workingServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketOne, nodecpp::net::ServerHandlerDescriptorBase<nodecpp::net::OnConnectionST<workingServerConnection>, nodecpp::net::OnListeningST<workingServerListening>, nodecpp::net::OnCloseST<workingServerClose> > >;
 
 	// ctrl server
 	using ctrlServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListeningCtrl>;

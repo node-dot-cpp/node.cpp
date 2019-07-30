@@ -380,7 +380,7 @@ namespace nodecpp {
 				if constexpr ( !std::is_same< typename T1::HandlerDesciptorType::onCloseT, void >::value )
 				{
 					soft_ptr<typename T1::ServerType> serverTypedPtr = nodecpp::safememory::soft_ptr_static_cast<typename T1::ServerType>(ptr->getPtr());
-					T1::HandlerDesciptorType::onCloseT::emitCloseServer( nodePtr, serverTypedPtr, hadError );
+					T1::HandlerDesciptorType::onCloseT::emitClose( nodePtr, serverTypedPtr, hadError );
 				}
 			}
 			else

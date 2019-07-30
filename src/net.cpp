@@ -120,6 +120,12 @@ void ServerBase::reportBeingDestructed() { netServerManagerBase->appReportBeingD
 void ServerBase::close()
 {
 	netServerManagerBase->appClose(dataForCommandProcessing);
+	dataForCommandProcessing.state = DataForCommandProcessing::State::BeingClosed;
+}
+
+void ServerBase::reportAllAceptedConnectionsEnded()
+{
+	netServerManagerBase->appReportAllAceptedConnectionsEnded(dataForCommandProcessing);
 }
 
 void ServerBase::listen(uint16_t port, const char* ip, int backlog)
@@ -127,6 +133,7 @@ void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	netServerManagerBase->appListen(p, ip, port, backlog);
+	dataForCommandProcessing.state = DataForCommandProcessing::State::Listening; // TODO: consider assigning this state together with emitting a respective event instead
 }
 
 

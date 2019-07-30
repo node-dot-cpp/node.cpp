@@ -666,6 +666,16 @@ public:
 	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
 	void appClose(net::ServerBase::DataForCommandProcessing& serverData);
+	void appReportAllAceptedConnectionsEnded(net::ServerBase::DataForCommandProcessing& serverData) {
+		size_t id = serverData.index;
+		auto& entry = appGetEntry(id);
+		if (!entry.isUsed())
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
+			return;
+		}
+		pendingCloseEvents.emplace_back(id, false);
+	}
 	void appAddServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
@@ -767,8 +777,10 @@ public:
 //				if (entry.isValid())
 				if (entry.isUsed())
 				{
-					if (entry.getServerSocketData()->osSocket != INVALID_SOCKET)
-						internal_usage_only::internal_close(entry.getServerSocketData()->osSocket);
+					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, entry.getServerSocketData()->state == nodecpp::net::ServerBase::DataForCommandProcessing::State::BeingClosed ); 
+//					if (entry.getServerSocketData()->osSocket != INVALID_SOCKET)
+//						internal_usage_only::internal_close(entry.getServerSocketData()->osSocket);
+					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, ioSockets.socketsAt(entry.index) == INVALID_SOCKET ); 
 					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
 					{
 						//EmitterType::emitClose( entry.getEmitter(), current.second);

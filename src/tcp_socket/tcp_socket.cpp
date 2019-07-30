@@ -895,7 +895,7 @@ void NetServerManagerBase::appClose(net::ServerBase::DataForCommandProcessing& s
 	internal_usage_only::internal_close(serverData.osSocket);
 	ioSockets.setSocketClosed( entry.index );
 
-	pendingCloseEvents.emplace_back(entry.index, false);
+	//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
 }
 
 size_t NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)

@@ -51,6 +51,10 @@ namespace nodecpp {
 				//SOCKET osSocket = INVALID_SOCKET;
 				unsigned long long osSocket = 0;
 
+				enum State { Unused, Listening, BeingClosed, Closed }; // TODO: revise!
+				State state = State::Unused;
+
+
 				DataForCommandProcessing() {}
 				DataForCommandProcessing(const DataForCommandProcessing& other) = delete;
 				DataForCommandProcessing& operator=(const DataForCommandProcessing& other) = delete;
@@ -259,7 +263,7 @@ namespace nodecpp {
 //			uint16_t localPort = 0;
 
 //			size_t id = 0;
-			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
+//			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
 
 		//protected:
 		public:
@@ -298,7 +302,7 @@ namespace nodecpp {
 			const Address& address() const { return dataForCommandProcessing.localAddress; }
 			void close();
 
-			bool listening() const { return state == LISTENING; }
+			bool listening() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Listening; }
 			void ref();
 			void unref();
 			void reportBeingDestructed();
@@ -464,8 +468,15 @@ namespace nodecpp {
 			}	
 		private:
 			friend class SocketBase;
+			void reportAllAceptedConnectionsEnded();
 			void removeSocket( soft_ptr<SocketBase> sock ) {
-				this->socketList.removeAndDelete( sock );
+				socketList.removeAndDelete( sock );
+				if ( dataForCommandProcessing.state == DataForCommandProcessing::State::BeingClosed && socketList.getCount() == 0 )
+				{
+					//dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
+					//nodecpp::setInmediate( [this]() {} );
+					reportAllAceptedConnectionsEnded();
+				}
 			}
 		public:
 			size_t getSockCount() {return this->socketList.getCount();}
@@ -489,7 +500,7 @@ namespace nodecpp {
 
 		public:
 			void emitClose(bool hadError) {
-				state = CLOSED;
+//				state = CLOSED;
 				//id = 0;
 				dataForCommandProcessing.index = 0;
 				eClose.emit(hadError);
@@ -503,7 +514,7 @@ namespace nodecpp {
 				//this->id = id;
 				this->dataForCommandProcessing.index = id;
 				this->dataForCommandProcessing.localAddress = std::move(addr);
-				state = LISTENING;
+//				state = LISTENING;
 				eListening.emit(id, addr);
 			}
 
