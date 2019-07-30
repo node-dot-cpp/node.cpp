@@ -780,8 +780,20 @@ public:
 					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, entry.getServerSocketData()->state == nodecpp::net::ServerBase::DataForCommandProcessing::State::BeingClosed ); 
 //					if (entry.getServerSocketData()->osSocket != INVALID_SOCKET)
 //						internal_usage_only::internal_close(entry.getServerSocketData()->osSocket);
-					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, ioSockets.socketsAt(entry.index) == INVALID_SOCKET ); 
+					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, entry.getServerSocketData()->osSocket == INVALID_SOCKET ); 
 					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
+					auto hr = entry.getServerSocketData()->ahd_close.h;
+					if ( hr != nullptr )
+					{
+						entry.getServerSocketData()->ahd_close.h = nullptr;
+						if (current.second)
+						{
+							entry.getServerSocketData()->ahd_close.is_exception = true;
+							entry.getServerSocketData()->ahd_close.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+						}
+						hr();
+					}
+					else
 					{
 						//EmitterType::emitClose( entry.getEmitter(), current.second);
 						entry.getServerSocket()->emitClose( current.second );

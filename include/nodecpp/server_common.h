@@ -70,6 +70,7 @@ namespace nodecpp {
 					soft_ptr<SocketBase> sock;
 				};
 				awaitable_connection_handle_data ahd_connection;
+				awaitable_handle_data ahd_close;
 
 				struct UserHandlersCommon
 				{
@@ -447,6 +448,39 @@ namespace nodecpp {
 					}
 				};
 				return connection_awaiter(*this, socket, period);
+			}
+
+			template<class SocketT>
+			auto a_close() { 
+
+				struct close_awaiter {
+					ServerBase& server;
+
+					close_awaiter(ServerBase& server_) : server( server_ ) {}
+
+					close_awaiter(const close_awaiter &) = delete;
+					close_awaiter &operator = (const close_awaiter &) = delete;
+
+					~close_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						server.dataForCommandProcessing.ahd_close.h = awaiting;
+					}
+
+					auto await_resume() {
+						if ( server.dataForCommandProcessing.ahd_connection.is_exception )
+						{
+							server.dataForCommandProcessing.ahd_close.is_exception = false; // now we will throw it and that's it
+							throw server.dataForCommandProcessing.ahd_close.exception;
+						}
+					}
+				};
+				close();
+				return close_awaiter(*this);
 			}
 
 #else

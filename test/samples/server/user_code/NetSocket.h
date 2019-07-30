@@ -1297,11 +1297,14 @@ public:
 
 #ifdef AUTOMATED_TESTING_ONLY
 		to = std::move( nodecpp::setTimeout(  [this]() { 
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("About to request closing server");
 			srv->close();
 			srv->unref();
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("About to request closing ctrl server");
 			srvCtrl->close();
 			srvCtrl->unref();
 			stopAccepting = true;
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("resetting timer");
 			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
 		}, 3000 ) );
 #endif
