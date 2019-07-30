@@ -160,7 +160,7 @@ class Infrastructure
 	NetSocketManager<EmitterType> netSocket;
 	NetServerManager<ServerEmitterType> netServer;
 	TimeoutManager timeout;
-//	EvQueue inmediateQueue;
+	EvQueue inmediateQueue;
 
 public:
 	using EmitterTypeT = EmitterType;
@@ -176,19 +176,20 @@ public:
 	NetSocketManager<EmitterType>& getNetSocket() { return netSocket; }
 	NetServerManager<ServerEmitterType>& getNetServer() { return netServer; }
 	TimeoutManager& getTimeout() { return timeout; }
+	EvQueue& getInmediateQueue() { return inmediateQueue; }
 //	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
-//	void emitInmediates() { inmediateQueue.emit(); }
+	void emitInmediates() { inmediateQueue.emit(); }
 
 	bool refedTimeout() const noexcept
 	{
-//		return !inmediateQueue.empty() || timeout.infraRefedTimeout();
-		return timeout.infraRefedTimeout();
+		return !inmediateQueue.empty() || timeout.infraRefedTimeout();
+//		return timeout.infraRefedTimeout();
 	}
 
 	uint64_t nextTimeout() const noexcept
 	{
-//		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
-		return timeout.infraNextTimeout();
+		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
+//		return timeout.infraNextTimeout();
 	}
 
 	template<class Node>
@@ -300,7 +301,7 @@ public:
 				return;
 
 			queue.emit();
-	//		emitInmediates();
+			emitInmediates();
 
 			netSocket.template infraGetCloseEvent<Node>(/*queue*/);
 			netSocket.template infraProcessSockAcceptedEvents<Node>();
@@ -346,6 +347,7 @@ void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 }
 
 extern thread_local TimeoutManager* timeoutManager;
+extern thread_local EvQueue* inmediateQueue;
 
 inline
 auto a_timeout_impl(uint32_t ms) { 
@@ -405,6 +407,7 @@ class Runnable : public RunnableBase
 			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
 			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
 			timeoutManager = &infra.getTimeout();
+			inmediateQueue = &infra.getInmediateQueue();
 			if constexpr (!std::is_same< ServerSocketEmitter, void >::value)
 			{
 				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());

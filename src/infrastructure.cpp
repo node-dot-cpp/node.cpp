@@ -199,6 +199,11 @@ namespace nodecpp {
 		return timeoutManager->appClearTimeout(to.getId());
 	}
 
+	void setInmediate(std::function<void()> cb)
+	{
+		inmediateQueue->add(std::move(cb));
+	}
+
 	namespace time
 	{
 		size_t now()

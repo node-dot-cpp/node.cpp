@@ -520,6 +520,7 @@ thread_local NetSocketManagerBase* netSocketManagerBase;
 #ifndef NET_CLIENT_ONLY
 thread_local NetServerManagerBase* netServerManagerBase;
 thread_local TimeoutManager* timeoutManager;
+thread_local EvQueue* inmediateQueue;
 #endif
 
 
