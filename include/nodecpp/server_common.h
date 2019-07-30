@@ -483,6 +483,43 @@ namespace nodecpp {
 				return close_awaiter(*this);
 			}
 
+			template<class SocketT>
+			auto a_close(uint32_t period) { 
+
+				struct close_awaiter {
+					ServerBase& server;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					close_awaiter(ServerBase& server_, uint32_t period_) : server( server_ ), period( period_ ) {}
+
+					close_awaiter(const close_awaiter &) = delete;
+					close_awaiter &operator = (const close_awaiter &) = delete;
+
+					~close_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						server.dataForCommandProcessing.ahd_connahd_closeection.h = awaiting;
+						to = std::move( nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period ) );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						if ( server.dataForCommandProcessing.ahd_close.is_exception )
+						{
+							server.dataForCommandProcessing.ahd_close.is_exception = false; // now we will throw it and that's it
+							throw server.dataForCommandProcessing.ahd_close.exception;
+						}
+					}
+				};
+				close();
+				return close_awaiter(*this, period);
+			}
+
 #else
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
