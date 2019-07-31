@@ -1299,10 +1299,8 @@ public:
 		to = std::move( nodecpp::setTimeout(  [this]() { 
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("About to request closing server");
 			srv->close();
-			srv->unref();
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("About to request closing ctrl server");
 			srvCtrl->close();
-			srvCtrl->unref();
 			stopAccepting = true;
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("resetting timer");
 			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
@@ -1330,6 +1328,7 @@ public:
 	}
 	void onCloseServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, bool hasError) {
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onClose()!");
+		srv->unref();
 	}
 
 
@@ -1341,6 +1340,10 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
 	void onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
+	void onCloseServerCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, bool hasError) {
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseCtrl()!");
+		srvCtrl->unref();
+	}
 
 
 
@@ -1502,11 +1505,13 @@ public:
 	// ctrl server
 	using ctrlServerListening_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onListeningCtrl>;
 	using ctrlServerConnection_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onConnectionCtrl>;
+	using ctrlServerClose_2 = nodecpp::net::HandlerData<MySampleTNode, &MySampleTNode::onCloseServerCtrl>;
 
 	using ctrlServerListening = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerListening_2>;
 	using ctrlServerConnection = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerConnection_2>;
+	using ctrlServerClose = nodecpp::net::ServerHandlerDataList<MyServerSocketTwo, ctrlServerClose_2>;
 
-	using ctrlServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketTwo, nodecpp::net::ServerHandlerDescriptorBase< nodecpp::net::OnConnectionST<ctrlServerConnection>, nodecpp::net::OnListeningST<ctrlServerListening> > >;
+	using ctrlServerHD = nodecpp::net::ServerHandlerDescriptor< MyServerSocketTwo, nodecpp::net::ServerHandlerDescriptorBase< nodecpp::net::OnConnectionST<ctrlServerConnection>, nodecpp::net::OnListeningST<ctrlServerListening>, nodecpp::net::OnCloseST<ctrlServerClose> > >;
 
 	// all servers
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<ctrlServerHD, workingServerHD>;

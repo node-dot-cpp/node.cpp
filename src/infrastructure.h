@@ -215,7 +215,9 @@ public:
 		auto ret = ioSockets.wait( timeoutToUse );
 
 		if ( !ret.first )
-			return false;
+		{
+			return refed;
+		}
 
 		int retval = ret.second;
 
