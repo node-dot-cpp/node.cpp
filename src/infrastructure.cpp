@@ -184,10 +184,12 @@ namespace nodecpp {
 		return timeoutManager->appSetTimeout(cb, ms);
 	}
 
+#ifndef NODECPP_NO_COROUTINES
 	nodecpp::Timeout setTimeoutForAction(awaitable_handle_data* ahd, int32_t ms)
 	{
-		return timeoutManager->appsetTimeoutForAction(ahd, ms);
+		return timeoutManager->appSetTimeoutForAction(ahd, ms);
 	}
+#endif // NODECPP_NO_COROUTINES
 
 	void refreshTimeout(Timeout& to)
 	{

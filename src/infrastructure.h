@@ -130,7 +130,7 @@ public:
 #ifndef NODECPP_NO_COROUTINES
 //	nodecpp::Timeout appSetTimeout(std::experimental::coroutine_handle<> h, int32_t ms) { return appSetTimeoutImpl( h, false, ms ); }
 	nodecpp::Timeout appSetTimeout(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, false, ms ); }
-	nodecpp::Timeout appsetTimeoutForAction(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, true, ms ); }
+	nodecpp::Timeout appSetTimeoutForAction(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, true, ms ); }
 #endif
 	void appTimeoutDestructor(uint64_t id);
 
@@ -351,6 +351,7 @@ void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 extern thread_local TimeoutManager* timeoutManager;
 extern thread_local EvQueue* inmediateQueue;
 
+#ifndef NODECPP_NO_COROUTINES
 inline
 auto a_timeout_impl(uint32_t ms) { 
 
@@ -390,6 +391,7 @@ auto a_timeout_impl(uint32_t ms) {
     };
     return timeout_awaiter(ms);
 }
+#endif // NODECPP_NO_COROUTINES
 
 
 extern thread_local NodeBase* thisThreadNode;
