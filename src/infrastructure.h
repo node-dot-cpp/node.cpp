@@ -84,6 +84,7 @@ class TimeoutManager
 		entry.setExceptionWhenDone = indicateThrowing;
 		entry.id = id;
 		static_assert( !std::is_same<std::function<void()>, awaitable_handle_data::handler_fn_type>::value ); // we're in trouble anyway and not only here :)
+		static_assert( std::is_same<H, std::function<void()>>::value || std::is_same<H, awaitable_handle_data*>::value );
 		/*if constexpr ( std::is_same<H, awaitable_handle_data::handler_fn_type>::value )
 		{
 			entry.h = h;
@@ -96,14 +97,13 @@ class TimeoutManager
 //			entry.h = nullptr;
 			entry.ahd = nullptr;
 		}
-		else if constexpr ( std::is_same<H, awaitable_handle_data*>::value )
+		else
 		{
+			static_assert( std::is_same<H, awaitable_handle_data*>::value );
 			entry.cb = nullptr;
 //			entry.h = nullptr;
 			entry.ahd = h;
 		}
-		else
-			static_assert( false, "unexpected type" );
 		entry.delay = ms * 1000;
 
 		auto res = timers.insert(std::make_pair(id, std::move(entry)));

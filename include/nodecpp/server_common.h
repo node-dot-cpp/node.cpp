@@ -503,7 +503,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						server.dataForCommandProcessing.ahd_connahd_closeection.h = awaiting;
+						server.dataForCommandProcessing.ahd_close.h = awaiting;
 						to = std::move( nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period ) );
 					}
 

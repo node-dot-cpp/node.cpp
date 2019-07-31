@@ -218,7 +218,7 @@ namespace nodecpp {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (size_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
-}#else
+#else
 #error not implemented for this compiler
 #endif
 		}
