@@ -297,6 +297,7 @@ namespace nodecpp {
 			void setAcceptedSocketCreationRoutine(acceptedSocketCreationRoutineType socketCreationCB) { 	acceptedSocketCreationRoutine = std::move( socketCreationCB ); }
 			void onFinalCleanup()
 			{
+				dataForCommandProcessing.index = 0;
 				forceReleasingAllCoroHandles();
 			}
 
@@ -573,7 +574,6 @@ namespace nodecpp {
 			void emitClose(bool hadError) {
 //				state = CLOSED;
 				//id = 0;
-				dataForCommandProcessing.index = 0;
 				eClose.emit(hadError);
 			}
 
