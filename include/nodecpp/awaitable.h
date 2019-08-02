@@ -28,15 +28,23 @@
 #ifndef NODECPP_AWAITABLE_H
 #define NODECPP_AWAITABLE_H
 
-#if !((defined NODECPP_CLANG) || (defined NODECPP_MSVC))
-#define NODECPP_NO_COROUTINES
-#endif
-
-#include <foundation.h>
+#include <nodecpp/common.h>
 
 #ifndef NODECPP_NO_COROUTINES
 
 #include <experimental/coroutine>
+
+#if defined NODECPP_MSVC
+#define NODECPP_ALIGNED(x) __declspec(align(x))
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+#define NODECPP_ALIGNED(x) __attribute__ ((aligned(x)))
+#endif
+
+#if defined NODECPP_MSVC
+#define NODECPP_PROMISE_ALIGNMENT (std::experimental::coroutine_handle<int>::_ALIGN_REQ)
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+#define NODECPP_PROMISE_ALIGNMENT 8 // just a best approximation TODO: make it more precise!
+#endif
 
 #define CO_RETURN co_return
 
@@ -65,15 +73,21 @@ struct void_type_converter<void>
 	using type = placeholder_for_void_ret_type;
 };
 
-struct promise_type_struct_base {
+template<typename T> struct awaitable; // forward declaration
+
+template<class T>
+struct promise_type_struct {
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
+	T value;
 
-	promise_type_struct_base() {}
-	promise_type_struct_base(const promise_type_struct_base &) = delete;
-	promise_type_struct_base &operator = (const promise_type_struct_base &) = delete;
-	~promise_type_struct_base() {}
+	struct Somedata
+	{
+		size_t val1 = 0;
+		size_t val2 = 0;
+	};
+	Somedata NODECPP_ALIGNED( NODECPP_PROMISE_ALIGNMENT ) somedata;
 
     auto initial_suspend() {
 //            return std::experimental::suspend_always{};
@@ -92,16 +106,10 @@ struct promise_type_struct_base {
 	void unhandled_exception() {
 		e_pending = std::current_exception();
     }
-};
 
-template<typename T> struct awaitable; // forward declaration
-
-template<class T>
-struct promise_type_struct : public promise_type_struct_base {
-    T value;
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
 
-	promise_type_struct() : promise_type_struct_base() {}
+	promise_type_struct() {}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
 	~promise_type_struct() {}
@@ -115,9 +123,38 @@ struct promise_type_struct : public promise_type_struct_base {
 };
 
 template<>
-struct promise_type_struct<void> : public promise_type_struct_base {
+struct promise_type_struct<void> {
+	std::experimental::coroutine_handle<> hr = nullptr;
+	std::exception_ptr e_pending = nullptr;
+	bool is_value = false;
+
+	struct Somedata
+	{
+		size_t val1 = 0;
+		size_t val2 = 0;
+	};
+	Somedata NODECPP_ALIGNED( NODECPP_PROMISE_ALIGNMENT ) somedata;
+
+    auto initial_suspend() {
+//            return std::experimental::suspend_always{};
+        return std::experimental::suspend_never{};
+    }
+	auto final_suspend() {
+		if ( hr )
+		{
+			auto tmph = hr;
+			hr = nullptr;
+			tmph();
+		}
+//			return std::experimental::suspend_always{};
+		return std::experimental::suspend_never{};
+    }
+	void unhandled_exception() {
+		e_pending = std::current_exception();
+    }
+
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<void>>;
-	promise_type_struct() : promise_type_struct_base() {}
+	promise_type_struct() {}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
 	~promise_type_struct() {}
@@ -130,6 +167,7 @@ struct promise_type_struct<void> : public promise_type_struct_base {
 };
 
 
+
 template<typename T>
 struct awaitable  {
 	using promise_type = promise_type_struct<T>;
@@ -137,8 +175,19 @@ struct awaitable  {
 	handle_type coro = nullptr;
 	using value_type = T;
 
-	awaitable()  {}
-	awaitable(handle_type h) : coro(h) {}
+
+	awaitable()  {
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().somedata)) ==
+				reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().somedata)) );
+//		assert(	reinterpret_cast<uint8_t*>(&( (reinterpret_cast<std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(0x100000)>(0))->promise().somedata )) == 
+//					reinterpret_cast<uint8_t*>(&( (reinterpret_cast<std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>*>(0))->promise().somedata )) );
+	}
+	awaitable(handle_type h) : coro(h) {
+//		assert(	reinterpret_cast<uint8_t*>(&( (reinterpret_cast<std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>*>(0))->promise().somedata )) == 
+//					reinterpret_cast<uint8_t*>(&( (reinterpret_cast<std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>*>(0))->promise().somedata )) );
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().somedata)) ==
+				reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().somedata)) );
+	}
 
     awaitable(const awaitable &) = delete;
 	awaitable &operator = (const awaitable &) = delete;

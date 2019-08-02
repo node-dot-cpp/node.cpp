@@ -73,6 +73,7 @@ public:
 
 		struct read_data_awaiter {
 			int myIdx;
+			std::experimental::coroutine_handle<> ah = nullptr;
 
 			read_data_awaiter(int myIdx_) {
 				myIdx = myIdx_;
@@ -89,10 +90,16 @@ public:
 			}
 
 			void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address());
+				ah = awaiting;
+				h.promise().somedata.val1 = 11;
+				h.promise().somedata.val2 = 12;
 				set_read_awaiting_handle( myIdx, awaiting );
 			}
 
 			auto await_resume() {
+				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(ah.address());
+				printf( "    in proc of resuming: [%zd, %zd]\n", h.promise().somedata.val1, h.promise().somedata.val2 );
 				read_result r = read_data(myIdx);
 				if ( r.is_exception )
 					throw r.exception;
@@ -424,8 +431,8 @@ void processing_loop()
 	{
 		Processors p;
 //		/*auto core =*/ processing_loop_core_3(p);
-//		processing_loop_core_4(p);
-		processing_loop_core_5<Processors, int>(p);
+		processing_loop_core_4(p);
+//		processing_loop_core_5<Processors, int>(p);
 
 		for (;;)
 		{
@@ -441,6 +448,10 @@ void processing_loop()
 				if ( g_callbacks[ch - '1'].awaiting != nullptr )
 				{
 					auto tmp = g_callbacks[ch - '1'].awaiting;
+				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(tmp.address());
+				printf( "    about to resume: [%zd, %zd]\n", h.promise().somedata.val1, h.promise().somedata.val2 );
+				h.promise().somedata.val1 = 21;
+				h.promise().somedata.val2 = 22;
 					g_callbacks[ch - '1'].awaiting = nullptr;
 					tmp();
 				}
