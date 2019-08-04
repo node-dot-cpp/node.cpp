@@ -75,6 +75,12 @@ struct void_type_converter<void>
 
 template<typename T> struct awaitable; // forward declaration
 
+struct CoroEData
+{
+	bool is_exception = false;
+	std::exception exception;
+};
+
 template<class T>
 struct promise_type_struct {
 	std::experimental::coroutine_handle<> hr = nullptr;
@@ -82,12 +88,7 @@ struct promise_type_struct {
 	bool is_value = false;
 	T value;
 
-	struct EData
-	{
-		bool is_exception = false;
-		std::exception exception;
-	};
-	EData NODECPP_ALIGNED( NODECPP_PROMISE_ALIGNMENT ) edata;
+	CoroEData NODECPP_ALIGNED( NODECPP_PROMISE_ALIGNMENT ) edata;
 
     auto initial_suspend() {
 //            return std::experimental::suspend_always{};
@@ -128,12 +129,7 @@ struct promise_type_struct<void> {
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
 
-	struct EData
-	{
-		bool is_exception = false;
-		std::exception exception;
-	};
-	EData NODECPP_ALIGNED( NODECPP_PROMISE_ALIGNMENT ) edata;
+	CoroEData NODECPP_ALIGNED( NODECPP_PROMISE_ALIGNMENT ) edata;
 
     auto initial_suspend() {
 //            return std::experimental::suspend_always{};
@@ -165,6 +161,11 @@ struct promise_type_struct<void> {
         return std::experimental::suspend_never{};
     }
 };
+
+inline
+CoroEData& getEData(std::experimental::coroutine_handle<> awaiting) {
+	return std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+}
 
 
 
