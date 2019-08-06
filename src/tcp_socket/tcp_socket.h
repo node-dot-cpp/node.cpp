@@ -774,6 +774,7 @@ public:
 			if (current.first < ioSockets.size())
 			{
 				auto& entry = ioSockets.at(current.first);
+				entry.getServerSocket()->internalCleanupBeforeClosing();
 //				if (entry.isValid())
 				if (entry.isUsed())
 				{
@@ -807,7 +808,6 @@ public:
 							entry.getServerSocketData()->handleCloseEvent(entry.getServerSocket(), current.second);
 						// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 					}
-					entry.getServerSocket()->onFinalCleanup();
 				}
 				entry = NetSocketEntry(current.first);
 			}
