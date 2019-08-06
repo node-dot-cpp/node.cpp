@@ -381,7 +381,7 @@ auto a_timeout_impl(uint32_t ms) {
             who_is_awaiting = awaiting;
 			ahd.h = awaiting;
 			ahd.is_exception = false;
-			to = std::move( timeoutManager->appSetTimeout(&ahd, duration) );
+			to = timeoutManager->appSetTimeout(&ahd, duration);
         }
 
 		auto await_resume() {
