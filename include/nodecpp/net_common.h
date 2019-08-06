@@ -695,9 +695,13 @@ namespace nodecpp {
 		class UserHandlerClassPatterns
 		{
 			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>>;
+#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+			MapType _patterns;
+			MapType& patterns() { return _patterns; }
+#else
 			uint8_t mapbytes[sizeof(MapType)];
-//			MapType patterns;
 			MapType& patterns() { return *reinterpret_cast<MapType*>(mapbytes); }
+#endif
 			std::pair<UserHandlerType, bool>& getPattern( std::type_index idx )
 			{
 				auto pattern = patterns().find( idx );
@@ -710,6 +714,7 @@ namespace nodecpp {
 				}
 			}
 		public:
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			void init()
 			{
 				new(&(patterns()))MapType();
@@ -718,6 +723,7 @@ namespace nodecpp {
 			{
 				patterns().~MapType();
 			}
+#endif
 			template<class UserClass>
 			UserHandlerType& getPatternForUpdate()
 			{
