@@ -32,6 +32,13 @@
 #include <stdio.h>
 #include <string>
 
+struct ret_str
+{
+	int  NODECPP_ALIGNED( 32 ) dummy;
+	std::string NODECPP_ALIGNED( 32 ) str;
+	int  NODECPP_ALIGNED( 32 ) dummy1;
+};
+
 
 struct handler_context
 {
@@ -43,8 +50,6 @@ struct handler_context
 struct read_result
 {
 	std::string data;
-//	bool is_exception;
-//	std::exception exception;
 };
 
 static constexpr size_t max_h_count = 4;
@@ -117,7 +122,8 @@ class page_processor
 {
 	data_reader reader;
 
-	nodecpp::awaitable<std::string> complete_block_1()
+//	nodecpp::awaitable<std::string> complete_block_1()
+	nodecpp::awaitable<ret_str> complete_block_1()
 	{
 		std::string accumulated;
 		while ( accumulated.size() < 3 ) // jus some sample condition
@@ -137,21 +143,28 @@ class page_processor
 		}
 
 		accumulated += '\n';
-		co_return accumulated;
+//		co_return accumulated;
+		ret_str r;
+		r.str = accumulated;
+		co_return r;
 	}
 
 protected:
-	nodecpp::awaitable<std::string> complete_page_1()
+//	nodecpp::awaitable<std::string> complete_page_1()
+	nodecpp::awaitable<ret_str> complete_page_1()
 	{
 		int ctr = 0;
 		std::string accumulated;
 		while ( ctr < 2 ) // an artificial sample condition
 		{
-			accumulated += co_await complete_block_1();
+			accumulated += (co_await complete_block_1()).str;
 			++ctr;
 		}
 
-		co_return accumulated;
+//		co_return accumulated;
+		ret_str r;
+		r.str = accumulated;
+		co_return r;
 	}
 
 public:
@@ -172,7 +185,8 @@ public:
 		{
 			try
 			{
-				auto page = co_await complete_page_1();
+//				auto page = co_await complete_page_1();
+				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %d HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
 			}
@@ -192,7 +206,8 @@ public:
 			printf ( "run1(): starting page %zd\n", ctr );
 			try
 			{
-				auto page = co_await complete_page_1();
+//				auto page = co_await complete_page_1();
+				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
 			}
@@ -214,7 +229,8 @@ public:
 			printf ( "run1(): starting page %zd\n", ctr );
 			try
 			{
-				auto page = co_await complete_page_1();
+//				auto page = co_await complete_page_1();
+				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
 			}
@@ -238,7 +254,8 @@ public:
 		{
 			try
 			{
-				auto page = co_await complete_page_1();
+//				auto page = co_await complete_page_1();
+				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %d HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
 			}
@@ -258,7 +275,8 @@ public:
 			printf ( "run1(): starting page %zd\n", ctr );
 			try
 			{
-				auto page = co_await complete_page_1();
+//				auto page = co_await complete_page_1();
+				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
 			}
@@ -280,7 +298,8 @@ public:
 			printf ( "run1(): starting page %zd\n", ctr );
 			try
 			{
-				auto page = co_await complete_page_1();
+//				auto page = co_await complete_page_1();
+				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
 			}

@@ -43,7 +43,7 @@
 #if defined NODECPP_MSVC
 #define NODECPP_PROMISE_ALIGNMENT (std::experimental::coroutine_handle<int>::_ALIGN_REQ)
 #elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
-#define NODECPP_PROMISE_ALIGNMENT 8 // just a best approximation TODO: make it more precise!
+#define NODECPP_PROMISE_ALIGNMENT 16 // just a best approximation TODO: make it more precise!
 #endif
 
 #define CO_RETURN co_return
