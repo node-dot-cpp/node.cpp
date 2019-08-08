@@ -12,11 +12,11 @@ using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
-#define IMPL_VERSION 21 // main() is a single coro with non-default socket class
+//#define IMPL_VERSION 21 // main() is a single coro with non-default socket class
 //#define IMPL_VERSION 3 // onConnect is a coro (onConnect is added via addHandler<...>(...))
 //#define IMPL_VERSION 4 // registering handlers (per class)
 //#define IMPL_VERSION 5 // registering handlers (per class, template-based)
-//#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
+#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 //#define IMPL_VERSION 7 // lambda-based
 #else
 #define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
@@ -28,10 +28,6 @@ using namespace fmt;
 
 class MySampleTNode : public NodeBase
 {
-	size_t recvSize = 0;
-	size_t recvReplies = 0;
-	Buffer buf;
-
 	using SocketIdType = int;
 
 public:
@@ -41,6 +37,10 @@ public:
 	}
 
 #if IMPL_VERSION == 2
+
+	size_t recvSize = 0;
+	size_t recvReplies = 0;
+	Buffer buf;
 
 	virtual nodecpp::handler_ret_type main()
 	{
@@ -112,6 +112,10 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
 
 #elif IMPL_VERSION == 21
+
+	size_t recvSize = 0;
+	size_t recvReplies = 0;
+	Buffer buf;
 
 	class MySocketOne : public nodecpp::net::SocketBase
 	{
@@ -197,6 +201,10 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
 
 #elif IMPL_VERSION == 3
+
+	size_t recvSize = 0;
+	size_t recvReplies = 0;
+	Buffer buf;
 
 	class MySocketOne : public nodecpp::net::SocketBase
 	{
@@ -575,6 +583,10 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
 
 #elif IMPL_VERSION == 7
+
+	size_t recvSize = 0;
+	size_t recvReplies = 0;
+	Buffer buf;
 
 	using ClientSockType = nodecpp::net::SocketBase;
 	nodecpp::Timeout to;
