@@ -294,9 +294,11 @@ namespace nodecpp {
 				socketList.clear();
 				reportBeingDestructed();
 			}
-			void setAcceptedSocketCreationRoutine(acceptedSocketCreationRoutineType socketCreationCB) { 	acceptedSocketCreationRoutine = std::move( socketCreationCB ); }
-			void onFinalCleanup()
+			void setAcceptedSocketCreationRoutine(acceptedSocketCreationRoutineType socketCreationCB) { acceptedSocketCreationRoutine = std::move( socketCreationCB ); }
+			void internalCleanupBeforeClosing()
 			{
+				NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getSockCount() == 0 ); 
+				dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
 				dataForCommandProcessing.index = 0;
 				forceReleasingAllCoroHandles();
 			}

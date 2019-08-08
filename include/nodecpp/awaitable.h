@@ -28,10 +28,6 @@
 #ifndef NODECPP_AWAITABLE_H
 #define NODECPP_AWAITABLE_H
 
-#if !((defined NODECPP_CLANG) || (defined NODECPP_MSVC))
-#define NODECPP_NO_COROUTINES
-#endif
-
 #include <foundation.h>
 
 #ifndef NODECPP_NO_COROUTINES

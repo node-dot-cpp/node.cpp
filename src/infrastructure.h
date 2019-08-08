@@ -381,7 +381,7 @@ auto a_timeout_impl(uint32_t ms) {
             who_is_awaiting = awaiting;
 			ahd.h = awaiting;
 			ahd.is_exception = false;
-			to = std::move( timeoutManager->appSetTimeout(&ahd, duration) );
+			to = timeoutManager->appSetTimeout(&ahd, duration);
         }
 
 		auto await_resume() {
@@ -402,11 +402,13 @@ class Runnable : public RunnableBase
 	template<class ClientSocketEmitter, class ServerSocketEmitter>
 	void internalRun()
 	{
-		nodecpp::log::touch_log();
+		nodecpp::log::init_log();
 		interceptNewDeleteOperators(true);
 		{
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.init();
 			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.init();
+#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 
 			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
 			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
@@ -422,8 +424,10 @@ class Runnable : public RunnableBase
 			infra.template runInfraLoop2<Node>();
 			node = nullptr;
 
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		}
 		killAllZombies();
 		interceptNewDeleteOperators(false);

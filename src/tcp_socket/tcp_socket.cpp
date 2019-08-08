@@ -107,6 +107,7 @@ inline int getSockError()
 
 bool netInitialize()
 {
+	nodecpp::log::init_log(); // just make sure
 #ifdef _MSC_VER
 	// do Windows magic
 	WSADATA wsaData;

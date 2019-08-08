@@ -42,6 +42,11 @@
 #define NODECPP_UNUSED_VAR 
 #endif
 
+#include <stdint.h>
+namespace nodecpp {
+	constexpr uint64_t module_id = 4;
+} // namespace ::nodecpp
+
 /*#include <foundation.h>
 #include <nodecpp_assert.h>
 #include <iibmalloc.h>*/
@@ -62,10 +67,6 @@
 //#include "trace.h"
 //#include "assert.h"
 #include "mallocator.h"
-
-namespace nodecpp {
-	constexpr uint64_t module_id = 4;
-} // namespace ::nodecpp
 
 using namespace ::nodecpp::safememory;
 
