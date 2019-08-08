@@ -581,7 +581,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_connect.h = awaiting;
-						to = std::move( nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_connect), period ) );
+						to = nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_connect), period );
 					}
 
 					auto await_resume() {
@@ -670,7 +670,7 @@ namespace nodecpp {
 								h();
 							}, 
 							period ) );*/
-						to = std::move( nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_read), period ) );
+						to = nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_read), period );
 					}
 
 					auto await_resume() {
@@ -775,7 +775,7 @@ namespace nodecpp {
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
 						socket.dataForCommandProcessing.ahd_drain.h = awaiting;
-						to = std::move( nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_drain), period ) );
+						to = nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_drain), period );
 					}
 
 					auto await_resume() {

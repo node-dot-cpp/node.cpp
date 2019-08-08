@@ -434,7 +434,7 @@ namespace nodecpp {
 								h();
 							}, 
 							period ) );*/
-						to = std::move( nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_connection), period ) );
+						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_connection), period );
 					}
 
 					auto await_resume() {
@@ -507,7 +507,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						server.dataForCommandProcessing.ahd_close.h = awaiting;
-						to = std::move( nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period ) );
+						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period );
 					}
 
 					auto await_resume() {
