@@ -47,8 +47,8 @@ namespace nodecpp {
 			nodecpp::safememory::soft_this_ptr<SocketBase> myThis;
 		private:
 			friend class MultiOwner<SocketBase>;
-			SocketBase* prev_;
-			SocketBase* next_;
+//			SocketBase* prev_;
+//			SocketBase* next_;
 			friend class ServerBase;
 			nodecpp::safememory::soft_ptr<ServerBase> myServerSocket = nullptr;
 		public:

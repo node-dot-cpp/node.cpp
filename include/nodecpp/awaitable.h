@@ -40,7 +40,7 @@ namespace nodecpp {
 
 class placeholder_for_void_ret_type
 {
-	bool dummy = false;
+//	bool dummy = false;
 public:
 	placeholder_for_void_ret_type() {}
 	placeholder_for_void_ret_type(const placeholder_for_void_ret_type&) {}

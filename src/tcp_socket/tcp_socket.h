@@ -230,7 +230,7 @@ public:
 	void appConnectSocket(net::SocketBase* sockPtr, const char* ip, uint16_t port) // TODO: think about template with type checking inside
 	{
 		// TODO: check sockPtr validity
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.osSocket != INVALID_SOCKET);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (SOCKET)(sockPtr->dataForCommandProcessing.osSocket) != INVALID_SOCKET);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
 		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
@@ -337,7 +337,7 @@ public:
 				if (entry.isUsed())
 				{
 					bool err = entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::ErrorClosing;
-					if (entry.getClientSocketData()->osSocket != INVALID_SOCKET)
+					if ( (SOCKET)(entry.getClientSocketData()->osSocket) != INVALID_SOCKET)
 					{
 						if(err) // if error closing, then discard all buffers
 							internal_usage_only::internal_linger_zero_socket(entry.getClientSocketData()->osSocket);

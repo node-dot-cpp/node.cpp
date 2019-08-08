@@ -50,7 +50,6 @@ public:
 		size_t recvSize = 0;
 		size_t recvReplies = 0;
 		size_t sentSize = 0;
-		bool letOnDrain = false;
 
 	public:
 		using NodeType = MySampleTNode;
