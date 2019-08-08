@@ -349,7 +349,8 @@ namespace nodecpp {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.size() == 0 );
 			if ( begin <= end )
 			{
-				size_t sz2copy = b.capacity() >= end - begin ? end - begin : b.capacity();
+				size_t diff = (size_t)(end - begin);
+				size_t sz2copy = b.capacity() >= diff ? diff : b.capacity();
 				b.append( begin, sz2copy );
 				begin += sz2copy;
 			}
@@ -360,18 +361,21 @@ namespace nodecpp {
 				{
 					b.append( begin, b.capacity() );
 					begin += b.capacity();
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, begin < buff.get() + alloc_size() );
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin < buff.get() + alloc_size() );
 				}
 				else if ( sz2copy < b.capacity() )
 				{
 					b.append( begin, sz2copy );
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, begin + sz2copy == buff.get() + alloc_size() );
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin + sz2copy == buff.get() + alloc_size() );
 					begin = buff.get();
 					size_t sz2copy2 = b.capacity() - sz2copy;
-					if ( sz2copy2 > end - begin )
-						sz2copy2 = end - begin;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
+					size_t diff = (size_t)(end - begin);
+					if ( sz2copy2 > diff )
+						sz2copy2 = diff;
 					b.append( begin, sz2copy2 );
 					begin += sz2copy2;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
 				}
 				else
 				{
@@ -400,7 +404,7 @@ namespace nodecpp {
 				if (!can_continue || !till_end )
 					return;
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, end == buff.get() );
-				if ( buff.get() + alloc_size() - begin >= target_sz )
+				if ( buff.get() + alloc_size() >= begin + target_sz )
 					return;
 				if ( begin - end > 1 )
 				{
