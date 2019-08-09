@@ -141,7 +141,6 @@ struct promise_type_struct : public promise_type_struct_base {
 
     auto get_return_object();
     auto return_value(T v) {
-//        value = v;
 		getValue() = v;
 		is_value = true;
         return std::experimental::suspend_never{};
@@ -196,6 +195,7 @@ template<typename T>
 struct awaitable  {
 	static_assert( sizeof(promise_type_struct<T>) == sizeof(promise_type_struct<void>) );
 #ifdef NODECPP_MSVC
+	// well, clang refuses considering casts as const_expr, and msvc agrees...
 	static_assert( &((reinterpret_cast<promise_type_struct<T>*>((void*)(0x100000)))->edata) == &((reinterpret_cast<promise_type_struct<void>*>((void*)(0x100000)))->edata) );
 #endif
 
@@ -225,13 +225,11 @@ struct awaitable  {
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
-//			return coro.promise().value;
 			return coro.promise().getValue();
 	}
 
 	bool await_ready() noexcept { 
         return coro.promise().is_value;
-//		return false;
 	}
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
 		if ( coro )
@@ -247,7 +245,6 @@ struct awaitable  {
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
-//			return coro.promise().value;
 			return coro.promise().getValue();
 	}
 
