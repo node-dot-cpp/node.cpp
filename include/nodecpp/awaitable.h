@@ -34,6 +34,12 @@
 
 #include <experimental/coroutine>
 
+#if defined NODECPP_MSVC
+#define NODECPP_ALIGNED(x) __declspec(align(x))
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+#define NODECPP_ALIGNED(x) __attribute__ ((aligned(x)))
+#endif
+
 #define CO_RETURN co_return
 
 namespace nodecpp {
@@ -61,10 +67,18 @@ struct void_type_converter<void>
 	using type = placeholder_for_void_ret_type;
 };
 
+struct CoroEData
+{
+	bool is_exception = false;
+	std::exception exception;
+};
+
 struct promise_type_struct_base {
+	CoroEData /*NODECPP_ALIGNED( 32 )*/ edata;
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
+	uint8_t NODECPP_ALIGNED( 32 ) retValueMem[64];
 
 	promise_type_struct_base() {}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
@@ -94,17 +108,24 @@ template<typename T> struct awaitable; // forward declaration
 
 template<class T>
 struct promise_type_struct : public promise_type_struct_base {
-    T value;
+ //   T value;
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
 
-	promise_type_struct() : promise_type_struct_base() {}
+	T& getValue() { return *reinterpret_cast<T*>(this->retValueMem); }
+
+	promise_type_struct() : promise_type_struct_base() {
+		new(this->retValueMem)T();
+	}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
-	~promise_type_struct() {}
+	~promise_type_struct() {
+		getValue().~T();
+	}
 
     auto get_return_object();
     auto return_value(T v) {
-        value = v;
+//        value = v;
+		getValue() = v;
 		is_value = true;
         return std::experimental::suspend_never{};
     }
@@ -125,6 +146,11 @@ struct promise_type_struct<void> : public promise_type_struct_base {
     }
 };
 
+inline
+CoroEData& getEData(std::experimental::coroutine_handle<> awaiting) {
+	return std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+}
+
 
 template<typename T>
 struct awaitable  {
@@ -133,8 +159,20 @@ struct awaitable  {
 	handle_type coro = nullptr;
 	using value_type = T;
 
-	awaitable()  {}
-	awaitable(handle_type h) : coro(h) {}
+	awaitable()  {
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().edata)) ==
+				reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().edata)),
+				"{:x} vs. {:x}", 
+				(size_t)(reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().edata))),
+				(size_t)(reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().edata))));
+	}
+	awaitable(handle_type h) : coro(h) {
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().edata)) ==
+				reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().edata)),
+				"{:x} vs. {:x}", 
+				(size_t)(reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().edata))),
+				(size_t)(reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().edata))));
+	}
 
     awaitable(const awaitable &) = delete;
 	awaitable &operator = (const awaitable &) = delete;
@@ -150,12 +188,13 @@ struct awaitable  {
 	
 	~awaitable() {}
 
-    typename void_type_converter<T>::type get() {
+	typename void_type_converter<T>::type get() {
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
-			return coro.promise().value;
-    }
+//			return coro.promise().value;
+			return coro.promise().getValue();
+	}
 
 	bool await_ready() noexcept { 
         return coro.promise().is_value;
@@ -175,7 +214,8 @@ struct awaitable  {
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
-			return coro.promise().value;
+//			return coro.promise().value;
+			return coro.promise().getValue();
 	}
 
 };
