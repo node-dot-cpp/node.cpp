@@ -112,7 +112,6 @@ template<typename T> struct awaitable; // forward declaration
 
 template<class T>
 struct promise_type_struct : public promise_type_struct_base {
- //   T value;
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
 	static constexpr bool fitsToMem = sizeof(T) <= promise_type_struct_base::valueMemSize || valueAlignmentSize < alignof( T );
 
@@ -174,25 +173,18 @@ CoroEData& getEData(std::experimental::coroutine_handle<> awaiting) {
 
 template<typename T>
 struct awaitable  {
+	static_assert( sizeof(promise_type_struct<T>) == sizeof(promise_type_struct<void>) );
+#ifdef NODECPP_MSVC
+	static_assert( &((reinterpret_cast<promise_type_struct<T>*>((void*)(0x100000)))->edata) == &((reinterpret_cast<promise_type_struct<void>*>((void*)(0x100000)))->edata) );
+#endif
+
 	using promise_type = promise_type_struct<T>;
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
 	handle_type coro = nullptr;
 	using value_type = T;
 
-	awaitable()  {
-		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().edata)) ==
-				reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().edata)),
-				"{:x} vs. {:x}", 
-				(size_t)(reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().edata))),
-				(size_t)(reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().edata))));
-	}
-	awaitable(handle_type h) : coro(h) {
-		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().edata)) ==
-				reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().edata)),
-				"{:x} vs. {:x}", 
-				(size_t)(reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address((void*)(0x100000)).promise().edata))),
-				(size_t)(reinterpret_cast<uint8_t*>(&(std::experimental::coroutine_handle<nodecpp::promise_type_struct<T>>::from_address((void*)(0x100000)).promise().edata))));
-	}
+	awaitable()  {}
+	awaitable(handle_type h) : coro(h) {}
 
     awaitable(const awaitable &) = delete;
 	awaitable &operator = (const awaitable &) = delete;
