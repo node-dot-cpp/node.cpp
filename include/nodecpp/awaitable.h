@@ -74,16 +74,19 @@ struct CoroEData
 };
 
 struct promise_type_struct_base {
-	CoroEData /*NODECPP_ALIGNED( 32 )*/ edata;
+	static constexpr size_t valueAlignmentSize = 16;
+	static constexpr size_t valueMemSize = std::max( valueAlignmentSize, std::max( sizeof( std::max_align_t ), sizeof( std::string ) ) );
+	CoroEData edata;
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
-	static constexpr size_t valueMemSize = 16;
-	uint8_t NODECPP_ALIGNED( 32 ) retValueMem[valueMemSize];
+	uint8_t NODECPP_ALIGNED( valueAlignmentSize ) retValueMem[valueMemSize];
 
 	promise_type_struct_base() {}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
 	promise_type_struct_base &operator = (const promise_type_struct_base &) = delete;
+	promise_type_struct_base(promise_type_struct_base &&) = delete;
+	promise_type_struct_base &operator = (promise_type_struct_base &&) = delete;
 	~promise_type_struct_base() {}
 
     auto initial_suspend() {
@@ -111,24 +114,27 @@ template<class T>
 struct promise_type_struct : public promise_type_struct_base {
  //   T value;
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
+	static constexpr bool fitsToMem = sizeof(T) <= promise_type_struct_base::valueMemSize || valueAlignmentSize < alignof( T );
 
 	T& getValue() { 
-		if constexpr ( sizeof(T) <= promise_type_struct_base::valueMemSize )
+		if constexpr ( fitsToMem )
 			return *reinterpret_cast<T*>(this->retValueMem); 
 		else
 			return **reinterpret_cast<T**>(this->retValueMem); 
 	}
 
 	promise_type_struct() : promise_type_struct_base() {
-		if constexpr ( sizeof(T) <= promise_type_struct_base::valueMemSize )
+		if constexpr ( fitsToMem )
 			new(this->retValueMem)T();
 		else
 			*reinterpret_cast<T**>(this->retValueMem) = new T;
 	}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
+	promise_type_struct(promise_type_struct &&) = delete;
+	promise_type_struct &operator = (promise_type_struct &&) = delete;
 	~promise_type_struct() {
-		if constexpr ( sizeof(T) <= promise_type_struct_base::valueMemSize )
+		if constexpr ( fitsToMem )
 			getValue().~T();
 		else
 			delete *reinterpret_cast<T**>(this->retValueMem);
@@ -149,6 +155,8 @@ struct promise_type_struct<void> : public promise_type_struct_base {
 	promise_type_struct() : promise_type_struct_base() {}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
+	promise_type_struct(promise_type_struct &&) = delete;
+	promise_type_struct &operator = (promise_type_struct &&) = delete;
 	~promise_type_struct() {}
 
     auto get_return_object();
