@@ -94,15 +94,15 @@ public:
 				ah = awaiting;
 //				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address());
 //				h.promise().edata.is_exception = false;
-				nodecpp::getEData(awaiting).is_exception = false;
+				nodecpp::setNoException(awaiting);
 				set_read_awaiting_handle( myIdx, awaiting );
 			}
 
 			auto await_resume() {
 //				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(ah.address());
 				read_result r = read_data(myIdx);
-				if ( nodecpp::getEData(ah).is_exception )
-					throw nodecpp::getEData(ah).exception;
+				if ( nodecpp::isException(ah) )
+					throw nodecpp::getException(ah);
 				return r.data;
 			}
 		};
@@ -357,8 +357,7 @@ void processing_loop_2()
 			{
 				auto tmp = g_callbacks[ch - 'a'].awaiting;
 				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(tmp.address());
-				nodecpp::getEData(tmp).exception = std::exception();
-				nodecpp::getEData(tmp).is_exception = true;
+				nodecpp::setException(tmp, std::exception());
 				g_callbacks[ch - 'a'].awaiting = nullptr;
 				tmp();
 			}
@@ -477,8 +476,7 @@ void processing_loop()
 				{
 					auto tmp = g_callbacks[ch - 'a'].awaiting;
 					std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(tmp.address());
-					nodecpp::getEData(tmp).exception = std::exception();
-					nodecpp::getEData(tmp).is_exception = true;
+					nodecpp::setException(tmp, std::exception());
 					g_callbacks[ch - 'a'].awaiting = nullptr;
 					tmp();
 				}

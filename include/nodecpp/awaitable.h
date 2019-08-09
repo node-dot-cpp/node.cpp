@@ -165,9 +165,30 @@ struct promise_type_struct<void> : public promise_type_struct_base {
     }
 };
 
+
 inline
-CoroEData& getEData(std::experimental::coroutine_handle<> awaiting) {
-	return std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+void setNoException(std::experimental::coroutine_handle<> awaiting) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	edata.is_exception = false;
+}
+
+inline
+void setException(std::experimental::coroutine_handle<> awaiting, std::exception e) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	edata.is_exception = true;
+	edata.exception = e;
+}
+
+inline
+bool isException(std::experimental::coroutine_handle<> awaiting) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	return edata.is_exception;
+}
+
+inline
+std::exception& getException(std::experimental::coroutine_handle<> awaiting) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	return edata.exception;
 }
 
 
