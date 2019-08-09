@@ -78,7 +78,8 @@ struct promise_type_struct_base {
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
-	uint8_t NODECPP_ALIGNED( 32 ) retValueMem[64];
+	static constexpr size_t valueMemSize = 16;
+	uint8_t NODECPP_ALIGNED( 32 ) retValueMem[valueMemSize];
 
 	promise_type_struct_base() {}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
@@ -111,15 +112,26 @@ struct promise_type_struct : public promise_type_struct_base {
  //   T value;
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
 
-	T& getValue() { return *reinterpret_cast<T*>(this->retValueMem); }
+	T& getValue() { 
+		if constexpr ( sizeof(T) <= promise_type_struct_base::valueMemSize )
+			return *reinterpret_cast<T*>(this->retValueMem); 
+		else
+			return **reinterpret_cast<T**>(this->retValueMem); 
+	}
 
 	promise_type_struct() : promise_type_struct_base() {
-		new(this->retValueMem)T();
+		if constexpr ( sizeof(T) <= promise_type_struct_base::valueMemSize )
+			new(this->retValueMem)T();
+		else
+			*reinterpret_cast<T**>(this->retValueMem) = new T;
 	}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
 	~promise_type_struct() {
-		getValue().~T();
+		if constexpr ( sizeof(T) <= promise_type_struct_base::valueMemSize )
+			getValue().~T();
+		else
+			delete *reinterpret_cast<T**>(this->retValueMem);
 	}
 
     auto get_return_object();
