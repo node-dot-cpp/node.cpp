@@ -64,13 +64,14 @@ namespace nodecpp {
 
 				Address localAddress;
 
-				awaitable_handle_data ahd_listen;
-				struct awaitable_connection_handle_data : public awaitable_handle_data
+				awaitable_handle_t ahd_listen;
+				struct awaitable_connection_handle_data
 				{
+					awaitable_handle_t h;
 					soft_ptr<SocketBase> sock;
 				};
 				awaitable_connection_handle_data ahd_connection;
-				awaitable_handle_data ahd_close;
+				awaitable_handle_t ahd_close;
 
 				struct UserHandlersCommon
 				{
@@ -316,19 +317,17 @@ namespace nodecpp {
 #ifndef NODECPP_NO_COROUTINES
 			void forceReleasingAllCoroHandles()
 			{
-				if ( dataForCommandProcessing.ahd_listen.h != nullptr )
+				if ( dataForCommandProcessing.ahd_listen != nullptr )
 				{
-					auto hr = dataForCommandProcessing.ahd_listen.h;
-					dataForCommandProcessing.ahd_listen.is_exception = true;
-					dataForCommandProcessing.ahd_listen.exception = std::exception(); // TODO: switch to our exceptions ASAP!
-					dataForCommandProcessing.ahd_listen.h = nullptr;
+					auto hr = dataForCommandProcessing.ahd_listen;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_listen = nullptr;
 					hr();
 				}
 				if ( dataForCommandProcessing.ahd_connection.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_connection.h;
-					dataForCommandProcessing.ahd_connection.is_exception = true;
-					dataForCommandProcessing.ahd_connection.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_connection.h = nullptr;
 					hr();
 				}
@@ -352,14 +351,16 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						server.dataForCommandProcessing.ahd_listen.h = awaiting;
+						nodecpp::setNoException(awaiting);
+						server.dataForCommandProcessing.ahd_listen = awaiting;
 					}
 
 					auto await_resume() {
-						if ( server.dataForCommandProcessing.ahd_listen.is_exception )
+						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_listen) )
 						{
-							server.dataForCommandProcessing.ahd_listen.is_exception = false; // now we will throw it and that's it
-							throw server.dataForCommandProcessing.ahd_listen.exception;
+							auto hth = server.dataForCommandProcessing.ahd_listen;
+							server.dataForCommandProcessing.ahd_listen = nullptr;
+							throw nodecpp::getException(hth);
 						}
 					}
 				};
@@ -386,14 +387,16 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
 						server.dataForCommandProcessing.ahd_connection.h = awaiting;
 					}
 
 					auto await_resume() {
-						if ( server.dataForCommandProcessing.ahd_connection.is_exception )
+						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_connection.h) )
 						{
-							server.dataForCommandProcessing.ahd_connection.is_exception = false; // now we will throw it and that's it
-							throw server.dataForCommandProcessing.ahd_connection.exception;
+							auto hth = server.dataForCommandProcessing.ahd_connection.h;
+							server.dataForCommandProcessing.ahd_connection.h = nullptr;
+							throw nodecpp::getException(hth);
 						}
 						if constexpr ( std::is_same<SocketT, SocketBase>::value )
 							socket = server.dataForCommandProcessing.ahd_connection.sock;
@@ -425,6 +428,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
 						server.dataForCommandProcessing.ahd_connection.h = awaiting;
 						/*to = std::move( nodecpp::setTimeout( [this](){
 								auto h = server.dataForCommandProcessing.ahd_connection.h;
@@ -439,10 +443,11 @@ namespace nodecpp {
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
-						if ( server.dataForCommandProcessing.ahd_connection.is_exception )
+						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_connection.h) )
 						{
-							server.dataForCommandProcessing.ahd_connection.is_exception = false; // now we will throw it and that's it
-							throw server.dataForCommandProcessing.ahd_connection.exception;
+							auto hth = server.dataForCommandProcessing.ahd_connection.h;
+							server.dataForCommandProcessing.ahd_connection.h = nullptr;
+							throw nodecpp::getException(hth);
 						}
 						if constexpr ( std::is_same<SocketT, SocketBase>::value )
 							socket = server.dataForCommandProcessing.ahd_connection.sock;
@@ -471,14 +476,16 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
 						server.dataForCommandProcessing.ahd_close.h = awaiting;
 					}
 
 					auto await_resume() {
-						if ( server.dataForCommandProcessing.ahd_connection.is_exception )
+						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_close) )
 						{
-							server.dataForCommandProcessing.ahd_close.is_exception = false; // now we will throw it and that's it
-							throw server.dataForCommandProcessing.ahd_close.exception;
+							auto hth = server.dataForCommandProcessing.ahd_close;
+							server.dataForCommandProcessing.ahd_close = nullptr;
+							throw nodecpp::getException(hth);
 						}
 					}
 				};
@@ -506,16 +513,18 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
 						server.dataForCommandProcessing.ahd_close.h = awaiting;
 						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period );
 					}
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
-						if ( server.dataForCommandProcessing.ahd_close.is_exception )
+						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_close) )
 						{
-							server.dataForCommandProcessing.ahd_close.is_exception = false; // now we will throw it and that's it
-							throw server.dataForCommandProcessing.ahd_close.exception;
+							auto hth = server.dataForCommandProcessing.ahd_close;
+							server.dataForCommandProcessing.ahd_close = nullptr;
+							throw nodecpp::getException(hth);
 						}
 					}
 				};

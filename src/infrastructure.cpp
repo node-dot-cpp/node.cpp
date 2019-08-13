@@ -150,15 +150,14 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 			h.cb();
 //		else if ( h.h )
 //			h.h();
-		else if ( h.ahd != nullptr )
+		else if ( h.h != nullptr )
 		{
-			auto hr = h.ahd->h;
-			h.ahd->h = nullptr;
+			auto hr = h.h;
 			if ( h.setExceptionWhenDone )
 			{
-				h.ahd->is_exception = true;
-				h.ahd->exception = std::exception();
+				nodecpp::setException(h.h, std::exception()); // TODO: switch to our exceptions ASAP!
 			}
+			h.h = nullptr;
 			hr();
 		}
 	}
@@ -185,9 +184,9 @@ namespace nodecpp {
 	}
 
 #ifndef NODECPP_NO_COROUTINES
-	nodecpp::Timeout setTimeoutForAction(awaitable_handle_data* ahd, int32_t ms)
+	nodecpp::Timeout setTimeoutForAction(awaitable_handle_t h, int32_t ms)
 	{
-		return timeoutManager->appSetTimeoutForAction(ahd, ms);
+		return timeoutManager->appSetTimeoutForAction(h, ms);
 	}
 #endif // NODECPP_NO_COROUTINES
 

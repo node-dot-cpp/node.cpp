@@ -53,7 +53,7 @@ struct TimeoutEntryHandlerData
 {
 	std::function<void()> cb = nullptr; // is assumed to be self-contained in terms of required action
 //	nodecpp::awaitable_handle_data::handler_fn_type h = nullptr;
-	awaitable_handle_data* ahd = nullptr;
+	awaitable_handle_t h = nullptr;
 	bool setExceptionWhenDone = false; // is used to indicate that a handle is released because of timeout and not because of its "regular" event
 };
 
@@ -83,26 +83,18 @@ class TimeoutManager
 		TimeoutEntry entry;
 		entry.setExceptionWhenDone = indicateThrowing;
 		entry.id = id;
-		static_assert( !std::is_same<std::function<void()>, awaitable_handle_data::handler_fn_type>::value ); // we're in trouble anyway and not only here :)
-		static_assert( std::is_same<H, std::function<void()>>::value || std::is_same<H, awaitable_handle_data*>::value );
-		/*if constexpr ( std::is_same<H, awaitable_handle_data::handler_fn_type>::value )
-		{
-			entry.h = h;
-			entry.cb = nullptr;
-			entry.ahd = nullptr;
-		}
-		else */if constexpr ( std::is_same<H, std::function<void()>>::value )
+		static_assert( !std::is_same<std::function<void()>, awaitable_handle_t>::value ); // we're in trouble anyway and not only here :)
+		static_assert( std::is_same<H, std::function<void()>>::value || std::is_same<H, awaitable_handle_t>::value );
+		if constexpr ( std::is_same<H, std::function<void()>>::value )
 		{
 			entry.cb = h;
-//			entry.h = nullptr;
-			entry.ahd = nullptr;
+			entry.h = nullptr;
 		}
 		else
 		{
-			static_assert( std::is_same<H, awaitable_handle_data*>::value );
+			static_assert( std::is_same<H, awaitable_handle_t>::value );
 			entry.cb = nullptr;
-//			entry.h = nullptr;
-			entry.ahd = h;
+			entry.h = h;
 		}
 		entry.delay = ms * 1000;
 
@@ -129,8 +121,8 @@ public:
 	void appRefresh(uint64_t id);
 #ifndef NODECPP_NO_COROUTINES
 //	nodecpp::Timeout appSetTimeout(std::experimental::coroutine_handle<> h, int32_t ms) { return appSetTimeoutImpl( h, false, ms ); }
-	nodecpp::Timeout appSetTimeout(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, false, ms ); }
-	nodecpp::Timeout appSetTimeoutForAction(awaitable_handle_data* ahd, int32_t ms) { return appSetTimeoutImpl( ahd, true, ms ); }
+	nodecpp::Timeout appSetTimeout(awaitable_handle_t ahd, int32_t ms) { return appSetTimeoutImpl( ahd, false, ms ); }
+	nodecpp::Timeout appSetTimeoutForAction(awaitable_handle_t ahd, int32_t ms) { return appSetTimeoutImpl( ahd, true, ms ); }
 #endif
 	void appTimeoutDestructor(uint64_t id);
 
@@ -361,8 +353,6 @@ auto a_timeout_impl(uint32_t ms) {
 		uint32_t duration = 0;
 		nodecpp::Timeout to;
 
-		awaitable_handle_data ahd;
-
         timeout_awaiter(uint32_t ms) {duration = ms;}
 
         timeout_awaiter(const timeout_awaiter &) = delete;
@@ -378,15 +368,14 @@ auto a_timeout_impl(uint32_t ms) {
         }
 
         void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+			nodecpp::setNoException(awaiting);
             who_is_awaiting = awaiting;
-			ahd.h = awaiting;
-			ahd.is_exception = false;
-			to = timeoutManager->appSetTimeout(&ahd, duration);
+			to = timeoutManager->appSetTimeout(awaiting, duration);
         }
 
 		auto await_resume() {
-			if ( ahd.is_exception )
-				throw ahd.exception;
+			if ( nodecpp::isException(who_is_awaiting) )
+				throw nodecpp::getException(who_is_awaiting);
 		}
     };
     return timeout_awaiter(ms);

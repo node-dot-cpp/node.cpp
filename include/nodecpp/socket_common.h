@@ -62,21 +62,23 @@ namespace nodecpp {
 				state = Uninitialized;
 				size_t index = 0;
 
-				struct awaitable_read_handle_data : public awaitable_handle_data
+				struct awaitable_read_handle_data
 				{
+					awaitable_handle_t h;
 					size_t min_bytes;
 				};
-				struct awaitable_write_handle_data : public awaitable_handle_data
+				struct awaitable_write_handle_data
 				{
+					awaitable_handle_t h;
 					Buffer b;
 				};
 
 				// NOTE: make sure all of them are addressed at forceResumeWithThrowing()
-				awaitable_handle_data ahd_connect;
-				awaitable_handle_data ahd_accepted;
+				awaitable_handle_t ahd_connect;
+				awaitable_handle_t ahd_accepted;
 				awaitable_read_handle_data ahd_read;
 				awaitable_write_handle_data ahd_write;
-				awaitable_handle_data ahd_drain;
+				awaitable_handle_t ahd_drain;
 
 			//	bool connecting = false;
 				bool remoteEnded = false;
@@ -487,44 +489,39 @@ namespace nodecpp {
 
 			void forceReleasingAllCoroHandles()
 			{
-				if ( dataForCommandProcessing.ahd_accepted.h != nullptr )
+				if ( dataForCommandProcessing.ahd_accepted != nullptr )
 				{
-					auto hr = dataForCommandProcessing.ahd_accepted.h;
-					dataForCommandProcessing.ahd_accepted.is_exception = true;
-					dataForCommandProcessing.ahd_accepted.exception = std::exception(); // TODO: switch to our exceptions ASAP!
-					dataForCommandProcessing.ahd_accepted.h = nullptr;
+					auto hr = dataForCommandProcessing.ahd_accepted;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_accepted = nullptr;
 					hr();
 				}
-				if ( dataForCommandProcessing.ahd_connect.h != nullptr )
+				if ( dataForCommandProcessing.ahd_connect != nullptr )
 				{
-					auto hr = dataForCommandProcessing.ahd_connect.h;
-					dataForCommandProcessing.ahd_connect.is_exception = true;
-					dataForCommandProcessing.ahd_connect.exception = std::exception(); // TODO: switch to our exceptions ASAP!
-					dataForCommandProcessing.ahd_connect.h = nullptr;
+					auto hr = dataForCommandProcessing.ahd_connect;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_connect = nullptr;
 					hr();
 				}
 				if ( dataForCommandProcessing.ahd_read.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_read.h;
-					dataForCommandProcessing.ahd_read.is_exception = true;
-					dataForCommandProcessing.ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_read.h = nullptr;
 					hr();
 				}
 				if ( dataForCommandProcessing.ahd_write.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_write.h;
-					dataForCommandProcessing.ahd_write.is_exception = true;
-					dataForCommandProcessing.ahd_write.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_write.h = nullptr;
 					hr();
 				}
-				if ( dataForCommandProcessing.ahd_drain.h != nullptr )
+				if ( dataForCommandProcessing.ahd_drain != nullptr )
 				{
-					auto hr = dataForCommandProcessing.ahd_drain.h;
-					dataForCommandProcessing.ahd_drain.is_exception = true;
-					dataForCommandProcessing.ahd_drain.exception = std::exception(); // TODO: switch to our exceptions ASAP!
-					dataForCommandProcessing.ahd_drain.h = nullptr;
+					auto hr = dataForCommandProcessing.ahd_drain;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_drain = nullptr;
 					hr();
 				}
 			}
@@ -546,14 +543,16 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						socket.dataForCommandProcessing.ahd_connect.h = awaiting;
+						nodecpp::setNoException(awaiting);
+						socket.dataForCommandProcessing.ahd_connect = awaiting;
 					}
 
 					auto await_resume() {
-						if ( socket.dataForCommandProcessing.ahd_connect.is_exception )
+						if ( nodecpp::isException(socket.dataForCommandProcessing.ahd_connect) )
 						{
-							socket.dataForCommandProcessing.ahd_connect.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_connect.exception;
+							auto hth = socket.dataForCommandProcessing.ahd_connect;
+							socket.dataForCommandProcessing.ahd_connect = nullptr;
+							throw nodecpp::getException(hth);
 						}
 					}
 				};
@@ -580,16 +579,18 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						socket.dataForCommandProcessing.ahd_connect.h = awaiting;
-						to = nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_connect), period );
+						nodecpp::setNoException(awaiting);
+						socket.dataForCommandProcessing.ahd_connect = awaiting;
+						to = nodecpp::setTimeoutForAction( awaiting, period );
 					}
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
-						if ( socket.dataForCommandProcessing.ahd_connect.is_exception )
+						if ( nodecpp::isException(socket.dataForCommandProcessing.ahd_connect) )
 						{
-							socket.dataForCommandProcessing.ahd_connect.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_connect.exception;
+							auto hth = socket.dataForCommandProcessing.ahd_connect;
+							socket.dataForCommandProcessing.ahd_connect = nullptr;
+							throw nodecpp::getException(hth);
 						}
 					}
 				};
@@ -620,14 +621,16 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
+						nodecpp::setNoException(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 					}
 
 					auto await_resume() {
-						if ( socket.dataForCommandProcessing.ahd_read.is_exception )
+						if ( nodecpp::isException(socket.dataForCommandProcessing.ahd_read.h) )
 						{
-							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_read.exception;
+							auto hth = socket.dataForCommandProcessing.ahd_read.h;
+							socket.dataForCommandProcessing.ahd_read.h = nullptr;
+							throw nodecpp::getException(hth);
 						}
 						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
@@ -661,6 +664,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
+						nodecpp::setNoException(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						/*to = std::move( nodecpp::setTimeout( [this](){
 								auto h = socket.dataForCommandProcessing.ahd_read.h;
@@ -670,15 +674,16 @@ namespace nodecpp {
 								h();
 							}, 
 							period ) );*/
-						to = nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_read), period );
+						to = nodecpp::setTimeoutForAction( awaiting, period );
 					}
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
-						if ( socket.dataForCommandProcessing.ahd_read.is_exception )
+						if ( nodecpp::isException(socket.dataForCommandProcessing.ahd_read.h) )
 						{
-							socket.dataForCommandProcessing.ahd_read.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_read.exception;
+							auto hth = socket.dataForCommandProcessing.ahd_read.h;
+							socket.dataForCommandProcessing.ahd_read.h = nullptr;
+							throw nodecpp::getException(hth);
 						}
 						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
@@ -708,14 +713,16 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !write_ok ); // otherwise, why are we here?
+						nodecpp::setNoException(awaiting);
 						socket.dataForCommandProcessing.ahd_write.h = awaiting;
 					}
 
 					auto await_resume() {
-						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
+						if ( nodecpp::isException(socket.dataForCommandProcessing.ahd_write.h) )
 						{
-							socket.dataForCommandProcessing.ahd_write.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_write.exception;
+							auto hth = socket.dataForCommandProcessing.ahd_write.h;
+							socket.dataForCommandProcessing.ahd_write.h = nullptr;
+							throw nodecpp::getException(hth);
 						}
 					}
 				};
@@ -740,14 +747,16 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
-						socket.dataForCommandProcessing.ahd_drain.h = awaiting;
+						nodecpp::setNoException(awaiting);
+						socket.dataForCommandProcessing.ahd_drain = awaiting;
 					}
 
 					auto await_resume() {
-						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
+						if ( nodecpp::isException(socket.dataForCommandProcessing.ahd_write.h) )
 						{
-							socket.dataForCommandProcessing.ahd_drain.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_drain.exception;
+							auto hth = socket.dataForCommandProcessing.ahd_write.h;
+							socket.dataForCommandProcessing.ahd_write.h = nullptr;
+							throw nodecpp::getException(hth);
 						}
 					}
 				};
@@ -774,16 +783,18 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
-						socket.dataForCommandProcessing.ahd_drain.h = awaiting;
-						to = nodecpp::setTimeoutForAction( &(socket.dataForCommandProcessing.ahd_drain), period );
+						nodecpp::setNoException(awaiting);
+						socket.dataForCommandProcessing.ahd_drain = awaiting;
+						to = nodecpp::setTimeoutForAction( awaiting, period );
 					}
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
-						if ( socket.dataForCommandProcessing.ahd_write.is_exception )
+						if ( nodecpp::isException(socket.dataForCommandProcessing.ahd_write.h) )
 						{
-							socket.dataForCommandProcessing.ahd_drain.is_exception = false; // now we will throw it and that's it
-							throw socket.dataForCommandProcessing.ahd_drain.exception;
+							auto hth = socket.dataForCommandProcessing.ahd_write.h;
+							socket.dataForCommandProcessing.ahd_write.h = nullptr;
+							throw nodecpp::getException(hth);
 						}
 					}
 				};

@@ -405,10 +405,10 @@ public:
 //				if (entry.isValid())
 				if (entry.isUsed())
 				{
-					auto hr = entry.getClientSocketData()->ahd_accepted.h;
+					auto hr = entry.getClientSocketData()->ahd_accepted;
 					if ( hr )
 					{
-						entry.getClientSocketData()->ahd_accepted.h = nullptr;
+						entry.getClientSocketData()->ahd_accepted = nullptr;
 						hr();
 					}
 					else // TODO: make sure we never have both cases in the same time
@@ -487,19 +487,16 @@ private:
 		auto hr = entry.getClientSocketData()->ahd_read.h;
 		if ( hr )
 		{
+			entry.getClientSocketData()->ahd_read.h = nullptr;
 			size_t target_sz = entry.getClientSocketData()->ahd_read.min_bytes;
 			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, target_sz);
-			entry.getClientSocketData()->ahd_read.is_exception = !read_ok;
 			if ( !read_ok )
 			{
-				entry.getClientSocketData()->ahd_read.is_exception = true;
-				entry.getClientSocketData()->ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
-				entry.getClientSocketData()->ahd_read.h = nullptr;
+				nodecpp::setException(entry.getClientSocketData()->ahd_read.h, std::exception()); // TODO: switch to our exceptions ASAP!
 				hr();
 			}
 			else if ( entry.getClientSocketData()->readBuffer.used_size() >= entry.getClientSocketData()->ahd_read.min_bytes )
 			{
-				entry.getClientSocketData()->ahd_read.h = nullptr;
 				hr();
 			}
 		}
@@ -596,10 +593,10 @@ private:
 		{
 			case NetSocketManagerBase::ShouldEmit::EmitConnect:
 			{
-				auto hr = current.getClientSocketData()->ahd_connect.h;
+				auto hr = current.getClientSocketData()->ahd_connect;
 				if ( hr )
 				{
-					current.getClientSocketData()->ahd_connect.h = nullptr;
+					current.getClientSocketData()->ahd_connect = nullptr;
 					hr();
 				}
 				else
@@ -617,10 +614,10 @@ private:
 			}
 			case NetSocketManagerBase::ShouldEmit::EmitDrain:
 			{
-				auto hr = current.getClientSocketData()->ahd_drain.h;
+				auto hr = current.getClientSocketData()->ahd_drain;
 				if ( hr )
 				{
-					current.getClientSocketData()->ahd_drain.h = nullptr;
+					current.getClientSocketData()->ahd_drain = nullptr;
 					hr();
 				}
 				else // TODO: make sure we never have both cases in the same time
@@ -784,15 +781,12 @@ public:
 //					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, entry.getServerSocketData()->osSocket == INVALID_SOCKET ); 
 					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, ioSockets.socketsAt(current.first) == INVALID_SOCKET ); 
 					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
-					auto hr = entry.getServerSocketData()->ahd_close.h;
+					auto hr = entry.getServerSocketData()->ahd_close;
 					if ( hr != nullptr )
 					{
-						entry.getServerSocketData()->ahd_close.h = nullptr;
+						entry.getServerSocketData()->ahd_close = nullptr;
 						if (current.second)
-						{
-							entry.getServerSocketData()->ahd_close.is_exception = true;
-							entry.getServerSocketData()->ahd_close.exception = std::exception(); // TODO: switch to our exceptions ASAP!
-						}
+							nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 						hr();
 					}
 					else
@@ -828,10 +822,10 @@ public:
 					auto& entry = ioSockets.at(current);
 					if (entry.isUsed())
 					{
-						auto hr = entry.getServerSocketData()->ahd_listen.h;
+						auto hr = entry.getServerSocketData()->ahd_listen;
 						if ( hr != nullptr )
 						{
-							entry.getServerSocketData()->ahd_listen.h = nullptr;
+							entry.getServerSocketData()->ahd_listen = nullptr;
 							hr();
 						}
 						else
