@@ -492,7 +492,7 @@ private:
 			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, target_sz);
 			if ( !read_ok )
 			{
-				nodecpp::setException(entry.getClientSocketData()->ahd_read.h, std::exception()); // TODO: switch to our exceptions ASAP!
+				nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 				hr();
 			}
 			else if ( entry.getClientSocketData()->readBuffer.used_size() >= entry.getClientSocketData()->ahd_read.min_bytes )
@@ -876,10 +876,12 @@ private:
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
 			return;
 //		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+printf( "infraProcessAcceptEvent(): about to make socket\n" );
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
 
+printf( "infraProcessAcceptEvent(): about to call handlers\n" );
 		auto hr = entry.getServerSocketData()->ahd_connection.h;
 		if ( hr )
 		{

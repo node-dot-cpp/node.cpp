@@ -64,14 +64,14 @@ namespace nodecpp {
 
 				Address localAddress;
 
-				awaitable_handle_t ahd_listen;
+				awaitable_handle_t ahd_listen = nullptr;
 				struct awaitable_connection_handle_data
 				{
-					awaitable_handle_t h;
+					awaitable_handle_t h = nullptr;
 					soft_ptr<SocketBase> sock;
 				};
 				awaitable_connection_handle_data ahd_connection;
-				awaitable_handle_t ahd_close;
+				awaitable_handle_t ahd_close = nullptr;
 
 				struct UserHandlersCommon
 				{
@@ -337,6 +337,7 @@ namespace nodecpp {
 			auto a_listen(uint16_t port, const char* ip, int backlog) { 
 
 				struct listen_awaiter {
+					std::experimental::coroutine_handle<> myawaiting;
 					ServerBase& server;
 
 					listen_awaiter(ServerBase& server_) : server( server_ ) {}
@@ -353,15 +354,13 @@ namespace nodecpp {
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						nodecpp::setNoException(awaiting);
 						server.dataForCommandProcessing.ahd_listen = awaiting;
+						myawaiting = awaiting;
 					}
 
 					auto await_resume() {
-						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_listen) )
-						{
-							auto hth = server.dataForCommandProcessing.ahd_listen;
-							server.dataForCommandProcessing.ahd_listen = nullptr;
-							throw nodecpp::getException(hth);
-						}
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
 					}
 				};
 				listen( port, ip, backlog );
@@ -372,6 +371,7 @@ namespace nodecpp {
 			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket) { 
 
 				struct connection_awaiter {
+					std::experimental::coroutine_handle<> myawaiting;
 					ServerBase& server;
 					nodecpp::safememory::soft_ptr<SocketT>& socket;
 
@@ -389,15 +389,13 @@ namespace nodecpp {
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						nodecpp::setNoException(awaiting);
 						server.dataForCommandProcessing.ahd_connection.h = awaiting;
+						myawaiting = awaiting;
 					}
 
 					auto await_resume() {
-						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_connection.h) )
-						{
-							auto hth = server.dataForCommandProcessing.ahd_connection.h;
-							server.dataForCommandProcessing.ahd_connection.h = nullptr;
-							throw nodecpp::getException(hth);
-						}
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
 						if constexpr ( std::is_same<SocketT, SocketBase>::value )
 							socket = server.dataForCommandProcessing.ahd_connection.sock;
 						else
@@ -411,6 +409,7 @@ namespace nodecpp {
 			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket, uint32_t period) { 
 
 				struct connection_awaiter {
+					std::experimental::coroutine_handle<> myawaiting;
 					ServerBase& server;
 					nodecpp::safememory::soft_ptr<SocketT>& socket;
 					uint32_t period;
@@ -430,6 +429,7 @@ namespace nodecpp {
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						nodecpp::setNoException(awaiting);
 						server.dataForCommandProcessing.ahd_connection.h = awaiting;
+						myawaiting = awaiting;
 						/*to = std::move( nodecpp::setTimeout( [this](){
 								auto h = server.dataForCommandProcessing.ahd_connection.h;
 								server.dataForCommandProcessing.ahd_connection.h = nullptr;
@@ -443,12 +443,9 @@ namespace nodecpp {
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
-						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_connection.h) )
-						{
-							auto hth = server.dataForCommandProcessing.ahd_connection.h;
-							server.dataForCommandProcessing.ahd_connection.h = nullptr;
-							throw nodecpp::getException(hth);
-						}
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
 						if constexpr ( std::is_same<SocketT, SocketBase>::value )
 							socket = server.dataForCommandProcessing.ahd_connection.sock;
 						else
@@ -462,6 +459,7 @@ namespace nodecpp {
 			auto a_close() { 
 
 				struct close_awaiter {
+					std::experimental::coroutine_handle<> myawaiting;
 					ServerBase& server;
 
 					close_awaiter(ServerBase& server_) : server( server_ ) {}
@@ -477,16 +475,14 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						nodecpp::setNoException(awaiting);
-						server.dataForCommandProcessing.ahd_close.h = awaiting;
+						server.dataForCommandProcessing.ahd_close = awaiting;
+						myawaiting = awaiting;
 					}
 
 					auto await_resume() {
-						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_close) )
-						{
-							auto hth = server.dataForCommandProcessing.ahd_close;
-							server.dataForCommandProcessing.ahd_close = nullptr;
-							throw nodecpp::getException(hth);
-						}
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
 					}
 				};
 				close();
@@ -497,6 +493,7 @@ namespace nodecpp {
 			auto a_close(uint32_t period) { 
 
 				struct close_awaiter {
+					std::experimental::coroutine_handle<> myawaiting;
 					ServerBase& server;
 					uint32_t period;
 					nodecpp::Timeout to;
@@ -514,18 +511,16 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						nodecpp::setNoException(awaiting);
-						server.dataForCommandProcessing.ahd_close.h = awaiting;
+						myawaiting = awaiting;
+						server.dataForCommandProcessing.ahd_close = awaiting;
 						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period );
 					}
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
-						if ( nodecpp::isException(server.dataForCommandProcessing.ahd_close) )
-						{
-							auto hth = server.dataForCommandProcessing.ahd_close;
-							server.dataForCommandProcessing.ahd_close = nullptr;
-							throw nodecpp::getException(hth);
-						}
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
 					}
 				};
 				close();

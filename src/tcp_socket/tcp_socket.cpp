@@ -683,12 +683,12 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 		throw Error();
 	}
 
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !nodecpp::isException(sockData.ahd_write.h) ); // should not be set yet
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sockData.ahd_write.h == nullptr || !nodecpp::isException(sockData.ahd_write.h) ); // should not be set yet
 
 	if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding || sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("StreamSocket {} already ended", sockData.index);
-		nodecpp::setException(sockData.ahd_write.h, std::exception()); // TODO: switch to our exceptions ASAP!
+//		nodecpp::setException(sockData.ahd_write.h, std::exception()); // TODO: switch to our exceptions ASAP!
 //		errorCloseSocket(sockData, storeError(Error()));
 		Error e;
 		OSLayer::errorCloseSocket(sockData, e);
@@ -701,7 +701,7 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 		uint8_t res = internal_usage_only::internal_send_packet(buff.begin(), buff.size(), sockData.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
-			nodecpp::setException(sockData.ahd_write.h, std::exception()); // TODO: switch to our exceptions ASAP!
+//			nodecpp::setException(sockData.ahd_write.h, std::exception()); // TODO: switch to our exceptions ASAP!
 //			errorCloseSocket(sockData, storeError(Error()));
 			Error e;
 			OSLayer::errorCloseSocket(sockData, e);
