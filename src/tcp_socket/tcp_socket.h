@@ -430,7 +430,7 @@ public:
 				}
 			}
 		}
-		if ( inisz = pendingAcceptedEvents.size() )
+		if ( inisz == pendingAcceptedEvents.size() )
 			pendingAcceptedEvents.clear();
 		else
 			pendingAcceptedEvents.erase( pendingAcceptedEvents.begin(), pendingAcceptedEvents.begin() + inisz );
