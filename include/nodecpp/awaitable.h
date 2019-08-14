@@ -32,13 +32,20 @@
 
 #ifndef NODECPP_NO_COROUTINES
 
+/*#include <coroutine.h>*/
+#if (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG)
+#include <coroutine.h>
+#else
 #include <experimental/coroutine>
+#endif
 
 #if defined NODECPP_MSVC
 #define NODECPP_ALIGNED(x) __declspec(align(x))
 #elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
 #define NODECPP_ALIGNED(x) __attribute__ ((aligned(x)))
 #endif
+
+/*#define NODECPP_ALIGNED(x)*/
 
 #define CO_RETURN co_return
 

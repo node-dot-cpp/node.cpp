@@ -12,6 +12,8 @@ Global
 		automated_testing_release|x86 = automated_testing_release|x86
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		debug-clang|x64 = debug-clang|x64
+		debug-clang|x86 = debug-clang|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
@@ -28,6 +30,10 @@ Global
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.Build.0 = Debug|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x86.ActiveCfg = Debug|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x86.Build.0 = Debug|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug-clang|x64.ActiveCfg = debug-clang|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug-clang|x64.Build.0 = debug-clang|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug-clang|x86.ActiveCfg = debug-clang|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug-clang|x86.Build.0 = debug-clang|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x64.ActiveCfg = Release|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x64.Build.0 = Release|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x86.ActiveCfg = Release|Win32
