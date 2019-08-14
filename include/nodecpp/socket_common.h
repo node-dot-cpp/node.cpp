@@ -529,7 +529,7 @@ namespace nodecpp {
 			auto a_connect(uint16_t port, const char* ip) { 
 
 				struct connect_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 
 					connect_awaiter(SocketBase& socket_) : socket( socket_ ) {}
@@ -562,7 +562,7 @@ namespace nodecpp {
 			auto a_connect(uint16_t port, const char* ip, uint32_t period) { 
 
 				struct connect_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					uint32_t period;
 					nodecpp::Timeout to;
@@ -602,7 +602,7 @@ namespace nodecpp {
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.capacity() >= min_bytes, "indeed: {} vs. {} bytes", buff.capacity(), min_bytes );
 
 				struct read_data_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					Buffer& buff;
 					size_t min_bytes;
@@ -641,7 +641,7 @@ namespace nodecpp {
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.capacity() >= min_bytes, "indeed: {} vs. {} bytes", buff.capacity(), min_bytes );
 
 				struct read_data_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					Buffer& buff;
 					size_t min_bytes;
@@ -689,7 +689,7 @@ namespace nodecpp {
 			auto a_write(Buffer& buff) { 
 
 				struct write_data_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					Buffer& buff;
 					bool write_ok = false;
@@ -724,7 +724,7 @@ namespace nodecpp {
 			auto a_drain() { 
 
 				struct drain_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 
 					drain_awaiter(SocketBase& socket_) : socket( socket_ )  {}
@@ -756,7 +756,7 @@ namespace nodecpp {
 			auto a_drain(uint32_t period) { 
 
 				struct drain_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					uint32_t period;
 					nodecpp::Timeout to;

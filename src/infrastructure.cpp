@@ -209,7 +209,7 @@ namespace nodecpp {
 	{
 		size_t now()
 		{
-#if defined NODECPP_MSVC
+#if defined NODECPP_MSVC || ( (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG) )
 #ifdef NODECPP_X64
 			return GetTickCount64();
 #else

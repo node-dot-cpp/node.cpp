@@ -337,7 +337,7 @@ namespace nodecpp {
 			auto a_listen(uint16_t port, const char* ip, int backlog) { 
 
 				struct listen_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
 
 					listen_awaiter(ServerBase& server_) : server( server_ ) {}
@@ -371,7 +371,7 @@ namespace nodecpp {
 			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket) { 
 
 				struct connection_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
 					nodecpp::safememory::soft_ptr<SocketT>& socket;
 
@@ -409,7 +409,7 @@ namespace nodecpp {
 			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket, uint32_t period) { 
 
 				struct connection_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
 					nodecpp::safememory::soft_ptr<SocketT>& socket;
 					uint32_t period;
@@ -459,7 +459,7 @@ namespace nodecpp {
 			auto a_close() { 
 
 				struct close_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
 
 					close_awaiter(ServerBase& server_) : server( server_ ) {}
@@ -493,7 +493,7 @@ namespace nodecpp {
 			auto a_close(uint32_t period) { 
 
 				struct close_awaiter {
-					std::experimental::coroutine_handle<> myawaiting;
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
 					uint32_t period;
 					nodecpp::Timeout to;
