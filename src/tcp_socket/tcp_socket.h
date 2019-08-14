@@ -397,8 +397,10 @@ public:
 	template<class Node>
 	void infraProcessSockAcceptedEvents()
 	{
-		for ( auto idx:pendingAcceptedEvents )
+		size_t inisz = pendingAcceptedEvents.size();
+		for ( size_t i=0; i<inisz; ++i )
 		{
+			size_t idx = pendingAcceptedEvents[i];
 			if (idx < ioSockets.size())
 			{
 				auto& entry = ioSockets.at(idx);
@@ -427,8 +429,11 @@ public:
 					//ioSockets.setAssociated( idx );
 				}
 			}
-			pendingAcceptedEvents.clear();
 		}
+		if ( inisz = pendingAcceptedEvents.size() )
+			pendingAcceptedEvents.clear();
+		else
+			pendingAcceptedEvents.erase( pendingAcceptedEvents.begin(), pendingAcceptedEvents.begin() + inisz );
 	}
 
 	template<class Node>
@@ -876,12 +881,10 @@ private:
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
 			return;
 //		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
-printf( "infraProcessAcceptEvent(): about to make socket\n" );
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
 
-printf( "infraProcessAcceptEvent(): about to call handlers\n" );
 		auto hr = entry.getServerSocketData()->ahd_connection.h;
 		if ( hr )
 		{
