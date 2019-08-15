@@ -32,20 +32,11 @@
 
 #ifndef NODECPP_NO_COROUTINES
 
-/*#include <coroutine.h>*/
 #if (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG)
 #include <coroutine.h>
 #else
 #include <experimental/coroutine>
 #endif
-
-#if defined NODECPP_MSVC
-#define NODECPP_ALIGNED(x) __declspec(align(x))
-#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
-#define NODECPP_ALIGNED(x) __attribute__ ((aligned(x)))
-#endif
-
-/*#define NODECPP_ALIGNED(x)*/
 
 #define CO_RETURN co_return
 
@@ -81,13 +72,19 @@ struct CoroEData
 };
 
 struct promise_type_struct_base {
-	static constexpr size_t valueAlignmentSize = 16;
-	static constexpr size_t valueMemSize = std::max( valueAlignmentSize, std::max( sizeof( std::max_align_t ), sizeof( std::string ) ) );
 	CoroEData edata;
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
-	uint8_t NODECPP_ALIGNED( valueAlignmentSize ) retValueMem[valueMemSize];
+
+	static constexpr size_t valueAlignmentSize = alignof(std::max_align_t);
+	static constexpr size_t valueMemSizeBase = std::max( alignof( std::max_align_t ), 
+		( sizeof( std::string ) / alignof(std::max_align_t) ) * alignof(std::max_align_t) + std::min( (size_t)1, sizeof( std::string ) % alignof(std::max_align_t)) * alignof(std::max_align_t) );
+	static_assert( valueMemSizeBase % alignof(std::max_align_t) == 0 );
+	static constexpr size_t valueMemSizeItems = valueMemSizeBase / sizeof(std::max_align_t) + std::min( (size_t)1, valueMemSizeBase % sizeof(std::max_align_t));
+	std::max_align_t retValueMem[valueMemSizeItems];
+	static constexpr size_t valueMemSize = sizeof( retValueMem );
+	static_assert( valueMemSize >= sizeof( std::string ) );
 
 	promise_type_struct_base() {}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
