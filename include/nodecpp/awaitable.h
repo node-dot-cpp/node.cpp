@@ -282,6 +282,11 @@ auto wait_for_all( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std:
 
 namespace nodecpp {
 
+inline void setNoException(void (*)()) {}
+inline void setException(void (*)(), std::exception) {}
+inline bool isException(void (*)()) { return false; }
+inline std::exception getException(void (*)()) { return std::exception(); }
+
 template<class T>
 struct awaitable
 {
