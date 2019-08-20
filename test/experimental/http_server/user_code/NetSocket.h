@@ -24,7 +24,7 @@ class MySampleTNode : public NodeBase
 	};
 	Stats stats;
 
-	Buffer replyBuff;
+	Buffer ctrlReplyBuff;
 
 public:
 
@@ -34,25 +34,19 @@ public:
 	nodecpp::Timeout to;
 #endif
 
-#ifdef AUTOMATED_TESTING_ONLY
-	bool stopAccepting = false;
-	bool stopResponding = false;
-	nodecpp::Timeout to;
-#endif
-
-	class MyServerSocketOne : public nodecpp::net::ServerSocket<MySampleTNode>
+	class HttpServer : public nodecpp::net::ServerSocket<MySampleTNode>
 	{
 	public:
-		MyServerSocketOne() {}
-		MyServerSocketOne(MySampleTNode* node) : nodecpp::net::ServerSocket<MySampleTNode>(node) {}
-		virtual ~MyServerSocketOne() {}
+		HttpServer() {}
+		HttpServer(MySampleTNode* node) : nodecpp::net::ServerSocket<MySampleTNode>(node) {}
+		virtual ~HttpServer() {}
 	};
 
-	class MyServerSocketTwo : public nodecpp::net::ServerBase
+	class CtrlServer : public nodecpp::net::ServerBase
 	{
 	public:
-		MyServerSocketTwo() {}
-		virtual ~MyServerSocketTwo() {}
+		CtrlServer() {}
+		virtual ~CtrlServer() {}
 	};
 
 	class HttpSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<MySampleTNode>
@@ -178,7 +172,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<HttpServer> server, nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
@@ -192,74 +186,7 @@ public:
 	nodecpp::handler_ret_type readLine(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 	}
 
-	nodecpp::handler_ret_type onDataHttpServerSocket(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
-#if 0
-		if ( buffer.size() < 2 )
-		{
-//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data: received {} bytes", buffer.size() );
-			socket->unref();
-			CO_RETURN;
-		}
-//		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *(socket->getExtra()) );
-
-		size_t receivedSz = buffer.begin()[0];
-		if ( receivedSz != buffer.size() )
-		{
-//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data: received {}, expected: {} bytes", receivedSz, buffer.size() );
-			socket->unref();
-			CO_RETURN;
-		}
-
-		uint32_t requestedSz = buffer.begin()[1];
-		if ( requestedSz )
-		{
-			Buffer reply(requestedSz);
-			//buffer.begin()[0] = (uint8_t)requestedSz;
-			memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-			reply.set_size(requestedSz);
-			socket->write(reply);
-		}
-
-		stats.recvSize += receivedSz;
-		stats.sentSize += requestedSz;
-#else
-		printf( "Received data:\n\n%s", buffer.begin() );
-			Buffer reply;
-
-			std::string replyBegin = "HTTP/1.1 200 OK\r\n"
-"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
-"Server: Apache/2.2.14 (Win32)\r\n"
-"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
-"Content-Length: 88\r\n"
-"Content-Type: text/html\r\n"
-"Connection: keep-alive\r\n"
-"\r\n\r\n"
-"<html>\r\n"
-"<body>\r\n";
-			std::string replyEnd = "</body>\r\n"
-"</html>\r\n"
-"\r\n\r\n";
-			std::string replyBody = fmt::format( "<h1>Fuck you! (# {})</h1>\r\n", stats.rqCnt + 1 );
-			std::string r = replyBegin + replyBody + replyEnd;
-			reply.append( r.c_str(), r.size() );
-			socket->write(reply);
-			socket->end();
-#endif
-		++(stats.rqCnt);
-#ifdef AUTOMATED_TESTING_ONLY
-		/*if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by count)" );
-			socket->end();
-			socket->unref();
-		}*/
-#endif
-		CO_RETURN;
-	}
-
-	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<CtrlServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
@@ -284,10 +211,10 @@ public:
 	using SockTypeServerSocket = nodecpp::net::SocketBase;
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
 
-	using ServerType = MyServerSocketOne;
+	using ServerType = HttpServer;
 	nodecpp::safememory::owning_ptr<ServerType> srv; 
 
-	using CtrlServerType = MyServerSocketTwo;
+	using CtrlServerType = CtrlServer;
 	nodecpp::safememory::owning_ptr<CtrlServerType>  srvCtrl;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
@@ -300,9 +227,9 @@ public:
 			Buffer reply(sizeof(stats));
 			stats.connCnt = srv->getSockCount();
 			uint32_t replySz = sizeof(Stats);
-			replyBuff.clear();
-			replyBuff.append( &stats, replySz); // naive marshalling will work for a limited number of cases
-			socket->write(replyBuff);
+			ctrlReplyBuff.clear();
+			ctrlReplyBuff.append( &stats, replySz); // naive marshalling will work for a limited number of cases
+			socket->write(ctrlReplyBuff);
 		}
 		CO_RETURN;
 	}
