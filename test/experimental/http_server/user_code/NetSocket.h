@@ -61,7 +61,7 @@ public:
 			bool popLine(Buffer& b) 
 			{ 
 				for ( ; currpos<base.size(); ++currpos )
-					if ( *(base.begin() + currpos) = '\n' )
+					if ( *(base.begin() + currpos) == '\n' )
 					{
 						b.clear();
 						b.append( base, 0, currpos+1 );
@@ -74,6 +74,91 @@ public:
 		};
 		DummyBuffer dbuf;
 
+		size_t rqCnt = 0;
+
+		nodecpp::handler_ret_type readLine(Buffer& lb)
+		{
+			nodecpp::Buffer r_buff(0x200);
+			while ( !dbuf.popLine( lb ) )
+			{
+				co_await a_read( r_buff, 2 );
+				dbuf.pushFragment( r_buff );
+			}
+
+			CO_RETURN;
+		}
+
+		nodecpp::handler_ret_type sendReply2()
+		{
+			Buffer reply;
+			std::string replyHeadFormat = "HTTP/1.1 200 OK\r\n"
+				"Content-Length: {}\r\n"
+				"Content-Type: text/html\r\n"
+				"Connection: keep-alive\r\n"
+				"\r\n";
+			std::string replyHtmlFormat = "<html>\r\n"
+				"<body>\r\n"
+				"<h1>Get reply! (# {})</h1>\r\n"
+				"</body>\r\n"
+				"</html>\r\n";
+			std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), getDataParent()->stats.rqCnt + 1 );
+			std::string replyHead = fmt::format( replyHeadFormat.c_str(), replyHtml.size() );
+
+			std::string r = replyHead + replyHtml;
+			reply.append( r.c_str(), r.size() );
+			write(reply);
+//			end();
+
+			++(getDataParent()->stats.rqCnt);
+
+			CO_RETURN;
+		}
+
+		nodecpp::handler_ret_type sendReply()
+		{
+			Buffer reply;
+			std::string replyBegin = "HTTP/1.1 200 OK\r\n"
+			"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
+			"Server: Apache/2.2.14 (Win32)\r\n"
+			"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
+			"Content-Length: 88\r\n"
+			"Content-Type: text/html\r\n"
+			"Connection: keep-alive\r\n"
+			"\r\n\r\n"
+			"<html>\r\n"
+			"<body>\r\n";
+						std::string replyEnd = "</body>\r\n"
+			"</html>\r\n"
+			"\r\n\r\n";
+			std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", getDataParent()->stats.rqCnt + 1 );
+			std::string r = replyBegin + replyBody + replyEnd;
+			reply.append( r.c_str(), r.size() );
+			write(reply);
+			end();
+
+			++(getDataParent()->stats.rqCnt);
+
+			CO_RETURN;
+		}
+
+		nodecpp::handler_ret_type processRequest()
+		{
+			bool ready = false;
+			Buffer lb;
+			do
+			{
+				co_await readLine(lb);
+				lb.appendUint8( 0 );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "rq {}, line: {}", rqCnt, lb.begin() );
+				ready = lb.size() == 3 && lb.begin()[0] == '\r' && lb.begin()[1] == '\n';
+			}
+			while( !ready );
+
+			co_await sendReply();
+
+			CO_RETURN;
+		}
+
 	public:
 		using NodeType = MySampleTNode;
 		friend class MySampleTNode;
@@ -85,55 +170,8 @@ public:
 
 		nodecpp::handler_ret_type processRequests()
 		{
-			nodecpp::Buffer r_buff(0x200);
-			for (;;)
-			{
-	#ifdef AUTOMATED_TESTING_ONLY
-				if ( stopResponding )
-				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
-					socket->end();
-					socket->unref();
-					break;
-				}
-	#endif
-				co_await a_read( r_buff, 2 );
-				co_await onDataHttpServerSocket(r_buff);
-			}
-			CO_RETURN;
-		}
-		nodecpp::handler_ret_type onDataHttpServerSocket(Buffer& buffer) {
-
-		printf( "Received data:\n\n%s", buffer.begin() );
-				Buffer reply;
-
-				std::string replyBegin = "HTTP/1.1 200 OK\r\n"
-	"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
-	"Server: Apache/2.2.14 (Win32)\r\n"
-	"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
-	"Content-Length: 88\r\n"
-	"Content-Type: text/html\r\n"
-	"Connection: keep-alive\r\n"
-	"\r\n\r\n"
-	"<html>\r\n"
-	"<body>\r\n";
-				std::string replyEnd = "</body>\r\n"
-	"</html>\r\n"
-	"\r\n\r\n";
-				std::string replyBody = fmt::format( "<h1>Fuck you! (# {})</h1>\r\n", getDataParent()->stats.rqCnt + 1 );
-				std::string r = replyBegin + replyBody + replyEnd;
-				reply.append( r.c_str(), r.size() );
-				write(reply);
-				end();
-			++(getDataParent()->stats.rqCnt);
-#ifdef AUTOMATED_TESTING_ONLY
-			/*if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by count)" );
-				end();
-				unref();
-			}*/
-#endif
+			co_await processRequest();
+			++rqCnt;
 			CO_RETURN;
 		}
 
