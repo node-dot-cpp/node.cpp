@@ -100,7 +100,10 @@ public:
 			Method method;
 			typedef std::map<std::string, std::string> header_t;
 			header_t header;
+			size_t contentLength = 0;
 			nodecpp::Buffer body;
+			enum ConnStatus { close, keep_alive };
+			ConnStatus connStatus = ConnStatus::keep_alive;
 			enum Status { noinit, in_hdr, in_body, completed };
 			Status status = Status::noinit;
 
@@ -109,6 +112,29 @@ public:
 			{
 				std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
 				return str;
+			}
+
+			void setCL()
+			{
+				auto cl = header.find( "content-length" );
+				if ( cl != header.end() )
+					contentLength = ::atol( cl->second.c_str() ); // quick and dirty; TODO: revise
+				contentLength = 0;
+			}
+
+			void setConnStatus()
+			{
+				auto cs = header.find( "connection" );
+				if ( cs != header.end() )
+				{
+					std::string val = cs->second.c_str();
+					val = makeLower( val );
+					if ( val == "keep alive" )
+						connStatus = ConnStatus::keep_alive;
+					else if ( val == "close" )
+						connStatus = ConnStatus::close;
+				}
+				contentLength = 0;
 			}
 
 		public:
@@ -120,6 +146,7 @@ public:
 				method = std::move( other.method );
 				header = std::move( other.header );
 				status = other.status;
+				contentLength = other.contentLength;
 				other.status = Status::noinit;
 			}
 			DummyHttpMessage& operator = (DummyHttpMessage&& other)
@@ -128,6 +155,8 @@ public:
 				header = std::move( other.header );
 				status = other.status;
 				other.status = Status::noinit;
+				contentLength = other.contentLength;
+				other.contentLength = 0;
 				return *this;
 			}
 			void clear() // TODO: ensure necessity (added for reuse purposes)
@@ -135,6 +164,7 @@ public:
 				method.clear();
 				header.clear();
 				body.clear();
+				contentLength = 0;
 				status = Status::noinit;
 			}
 
@@ -166,7 +196,8 @@ public:
 				{
 					if ( !( line.size() == 2 || line[0] == '\r' && line[1] == '\n' ) )
 						return true;
-					status = getContentLength() ? Status::in_body : Status::completed;
+					setCL();
+					status = contentLength ? Status::in_body : Status::completed;
 					return false;
 				}
 				size_t start = line.find_first_not_of( " \t" );
@@ -179,12 +210,14 @@ public:
 				return true;
 			}
 
-			size_t getContentLength()
+			size_t getContentLength() const { return contentLength; }
+
+			void dbgTrace()
 			{
-				auto cs = header.find( "content-length" );
-				if ( cs != header.end() )
-					return ::atol( cs->second.c_str() ); // quick and dirty; TODO: revise
-				return 0;
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{} {}", method.name, method.value );
+				for ( auto& entry : header )
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
 			}
 		};
 
@@ -201,15 +234,6 @@ public:
 
 			CO_RETURN;
 		}
-
-		/*void addLine( DummyHttpMessage& message, const std::string& line )
-		{
-			size_t idx = line.find(':', 0);
-			if( idx != std::string::npos ) 
-			{
-				lines.insert( std::make_pair( line.substr( 0, idx ), line.substr( idx + 1 ) ));
-			}
-		}*/
 
 		nodecpp::handler_ret_type sendReply2()
 		{
@@ -264,23 +288,43 @@ public:
 			CO_RETURN;
 		}
 
-		nodecpp::handler_ret_type processRequest()
+		nodecpp::handler_ret_type getRequest( DummyHttpMessage& message )
 		{
 			bool ready = false;
 			Buffer lb;
-			DummyHttpMessage message;
 			co_await readLine(lb);
 			lb.appendUint8( 0 );
-			/*message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
+			{
+				end();
+				co_await sendReply();
+			}
 
 			do
 			{
+				lb.clear();
 				co_await readLine(lb);
 				lb.appendUint8( 0 );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "rq {}, line: {}", rqCnt, lb.begin() );
-				ready = lb.size() == 3 && lb.begin()[0] == '\r' && lb.begin()[1] == '\n';
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
 			}
-			while( !ready );*/
+			while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
+
+			if ( message.getContentLength() )
+			{
+				lb.clear();
+				lb.reserve( message.getContentLength() );
+				co_await a_read( lb, message.getContentLength() );
+			}
+
+			CO_RETURN;
+		}
+
+		nodecpp::handler_ret_type processRequest()
+		{
+			DummyHttpMessage message;
+			co_await getRequest( message );
+			message.dbgTrace();
 
 			co_await sendReply();
 
