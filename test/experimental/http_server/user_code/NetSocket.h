@@ -54,6 +54,8 @@ public:
 
 	class HttpSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<MySampleTNode>
 	{
+		// NOTE: private part is for future move to lib
+		// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
 		class DummyBuffer
 		{
 			Buffer base;
@@ -235,6 +237,47 @@ public:
 			CO_RETURN;
 		}
 
+		nodecpp::handler_ret_type getRequest( DummyHttpMessage& message )
+		{
+			bool ready = false;
+			Buffer lb;
+			co_await readLine(lb);
+			lb.appendUint8( 0 );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
+			{
+				end();
+				co_await sendReply();
+			}
+
+			do
+			{
+				lb.clear();
+				co_await readLine(lb);
+				lb.appendUint8( 0 );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			}
+			while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
+
+			if ( message.getContentLength() )
+			{
+				lb.clear();
+				lb.reserve( message.getContentLength() );
+				co_await a_read( lb, message.getContentLength() );
+			}
+
+			CO_RETURN;
+		}
+
+	public:
+		using NodeType = MySampleTNode;
+		friend class MySampleTNode;
+
+	public:
+		HttpSocket() {}
+		HttpSocket(MySampleTNode* node) : nodecpp::net::SocketBase(), ::nodecpp::DataParent<MySampleTNode>(node) {}
+		virtual ~HttpSocket() {}
+
 		nodecpp::handler_ret_type sendReply2()
 		{
 			Buffer reply;
@@ -288,62 +331,15 @@ public:
 			CO_RETURN;
 		}
 
-		nodecpp::handler_ret_type getRequest( DummyHttpMessage& message )
-		{
-			bool ready = false;
-			Buffer lb;
-			co_await readLine(lb);
-			lb.appendUint8( 0 );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
-			if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
-			{
-				end();
-				co_await sendReply();
-			}
-
-			do
-			{
-				lb.clear();
-				co_await readLine(lb);
-				lb.appendUint8( 0 );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
-			}
-			while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
-
-			if ( message.getContentLength() )
-			{
-				lb.clear();
-				lb.reserve( message.getContentLength() );
-				co_await a_read( lb, message.getContentLength() );
-			}
-
-			CO_RETURN;
-		}
-
 		nodecpp::handler_ret_type processRequest()
 		{
 			DummyHttpMessage message;
 			co_await getRequest( message );
 			message.dbgTrace();
 
+			++rqCnt;
 			co_await sendReply();
 
-			CO_RETURN;
-		}
-
-	public:
-		using NodeType = MySampleTNode;
-		friend class MySampleTNode;
-
-	public:
-		HttpSocket() {}
-		HttpSocket(MySampleTNode* node) : nodecpp::net::SocketBase(), ::nodecpp::DataParent<MySampleTNode>(node) {}
-		virtual ~HttpSocket() {}
-
-		nodecpp::handler_ret_type processRequests()
-		{
-			co_await processRequest();
-			++rqCnt;
 			CO_RETURN;
 		}
 
@@ -388,7 +384,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		soft_ptr<HttpSocket> socketPtr = nodecpp::safememory::soft_ptr_static_cast<HttpSocket>(socket);
 
-		socketPtr->processRequests();
+		try { for(;;) { co_await socketPtr->processRequest(); } } catch (...) { socketPtr->end(); }
 
 		CO_RETURN;
 	}
