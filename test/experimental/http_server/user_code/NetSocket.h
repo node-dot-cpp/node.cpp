@@ -80,15 +80,15 @@ public:
 		class DummyHttpMessage
 		{
 			static constexpr std::pair<const char *, size_t> MethodNames[] = { 
-				std::make_pair( "GET ", sizeof( "GET " ) - 1 ),
-				std::make_pair( "HEAD ", sizeof( "HEAD " ) - 1 ),
-				std::make_pair( "POST ", sizeof( "POST " ) - 1 ),
-				std::make_pair( "PUT ", sizeof( "PUT " ) - 1 ),
-				std::make_pair( "DELETE ", sizeof( "DELETE " ) - 1 ),
-				std::make_pair( "TRACE ", sizeof( "TRACE " ) - 1 ),
-				std::make_pair( "OPTIONS ", sizeof( "OPTIONS " ) - 1 ),
-				std::make_pair( "CONNECT ", sizeof( "CONNECT " ) - 1 ),
-				std::make_pair( "PATCH ", sizeof( "PATCH " ) - 1 ) };
+				std::make_pair( "GET", sizeof( "GET" ) - 1 ),
+				std::make_pair( "HEAD", sizeof( "HEAD" ) - 1 ),
+				std::make_pair( "POST", sizeof( "POST" ) - 1 ),
+				std::make_pair( "PUT", sizeof( "PUT" ) - 1 ),
+				std::make_pair( "DELETE", sizeof( "DELETE" ) - 1 ),
+				std::make_pair( "TRACE", sizeof( "TRACE" ) - 1 ),
+				std::make_pair( "OPTIONS", sizeof( "OPTIONS" ) - 1 ),
+				std::make_pair( "CONNECT", sizeof( "CONNECT" ) - 1 ),
+				std::make_pair( "PATCH", sizeof( "PATCH" ) - 1 ) };
 			static constexpr size_t MethodCount = sizeof( MethodNames ) / sizeof( std::pair<const char *, size_t> );
 
 			struct Method // so far
@@ -175,13 +175,13 @@ public:
 				if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
 					return false;
 				for ( size_t i=0; i<MethodCount; ++i )
-					if ( line.size() >= MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 ) // TODO: cthink about rfind(*,0)
+					if ( line.size() > MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 && line.c_str()[ MethodNames[i].second] == ' ' ) // TODO: cthink about rfind(*,0)
 					{
 						method.name = MethodNames[i].first;
-						start += MethodNames[i].second;
+						start += MethodNames[i].second + 1;
 						start = line.find_first_not_of( " \t", start );
 						size_t end = line.find_last_not_of(" \t\r\n" );
-						method.value = line.substr( start, end - start );
+						method.value = line.substr( start, end - start + 1 );
 						status = Status::in_hdr;
 						return true;
 					}
@@ -206,7 +206,7 @@ public:
 					return false;
 				size_t valStart = line.find_first_not_of( " \t", idx + 1 );
 				std::string key = line.substr( start, idx-start );
-				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart ) ));
+				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
 				return true;
 			}
 
