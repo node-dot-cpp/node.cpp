@@ -16,6 +16,169 @@ using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
+class HttpMessageBase // TODO: candidate for being a part of lib
+{
+public:
+	static constexpr std::pair<const char *, size_t> MethodNames[] = { 
+		std::make_pair( "GET", sizeof( "GET" ) - 1 ),
+		std::make_pair( "HEAD", sizeof( "HEAD" ) - 1 ),
+		std::make_pair( "POST", sizeof( "POST" ) - 1 ),
+		std::make_pair( "PUT", sizeof( "PUT" ) - 1 ),
+		std::make_pair( "DELETE", sizeof( "DELETE" ) - 1 ),
+		std::make_pair( "TRACE", sizeof( "TRACE" ) - 1 ),
+		std::make_pair( "OPTIONS", sizeof( "OPTIONS" ) - 1 ),
+		std::make_pair( "CONNECT", sizeof( "CONNECT" ) - 1 ),
+		std::make_pair( "PATCH", sizeof( "PATCH" ) - 1 ) };
+	static constexpr size_t MethodCount = sizeof( MethodNames ) / sizeof( std::pair<const char *, size_t> );
+
+	struct Method // so far a struct
+	{
+		std::string name;
+		std::string value;
+		void clear() { name.clear(); value.clear(); }
+	};
+	Method method;
+
+public:
+	// utils
+	std::string makeLower( std::string& str ) // quick and dirty; TODO: revise (see, for instance, discussion at https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case)
+	{
+		std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
+		return str;
+	}
+};
+
+class IncomingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
+{
+private:
+	typedef std::map<std::string, std::string> header_t;
+	header_t header;
+	size_t contentLength = 0;
+	nodecpp::Buffer body;
+	enum ConnStatus { close, keep_alive };
+	ConnStatus connStatus = ConnStatus::keep_alive;
+	enum ReadStatus { noinit, in_hdr, in_body, completed };
+	ReadStatus readStatus = ReadStatus::noinit;
+
+private:
+	void setCL()
+	{
+		auto cl = header.find( "content-length" );
+		if ( cl != header.end() )
+			contentLength = ::atol( cl->second.c_str() ); // quick and dirty; TODO: revise
+		contentLength = 0;
+	}
+
+	void setConnStatus()
+	{
+		auto cs = header.find( "connection" );
+		if ( cs != header.end() )
+		{
+			std::string val = cs->second.c_str();
+			val = makeLower( val );
+			if ( val == "keep alive" )
+				connStatus = ConnStatus::keep_alive;
+			else if ( val == "close" )
+				connStatus = ConnStatus::close;
+		}
+		contentLength = 0;
+	}
+
+public:
+	IncomingHttpMessageAtServer() {}
+	IncomingHttpMessageAtServer(const IncomingHttpMessageAtServer&) = delete;
+	IncomingHttpMessageAtServer operator = (const IncomingHttpMessageAtServer&) = delete;
+	IncomingHttpMessageAtServer(IncomingHttpMessageAtServer&& other)
+	{
+		method = std::move( other.method );
+		header = std::move( other.header );
+		readStatus = other.readStatus;
+		contentLength = other.contentLength;
+		other.readStatus = ReadStatus::noinit;
+	}
+	IncomingHttpMessageAtServer& operator = (IncomingHttpMessageAtServer&& other)
+	{
+		method = std::move( other.method );
+		header = std::move( other.header );
+		readStatus = other.readStatus;
+		other.readStatus = ReadStatus::noinit;
+		contentLength = other.contentLength;
+		other.contentLength = 0;
+		return *this;
+	}
+	void clear() // TODO: ensure necessity (added for reuse purposes)
+	{
+		method.clear();
+		header.clear();
+		body.clear();
+		contentLength = 0;
+		readStatus = ReadStatus::noinit;
+	}
+
+	bool setMethod( const std::string& line )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::noinit ); 
+		size_t start = line.find_first_not_of( " \t" );
+		if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
+			return false;
+		for ( size_t i=0; i<MethodCount; ++i )
+			if ( line.size() > MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 && line.c_str()[ MethodNames[i].second] == ' ' ) // TODO: cthink about rfind(*,0)
+			{
+				method.name = MethodNames[i].first;
+				start += MethodNames[i].second + 1;
+				start = line.find_first_not_of( " \t", start );
+				size_t end = line.find_last_not_of(" \t\r\n" );
+				method.value = line.substr( start, end - start + 1 );
+				readStatus = ReadStatus::in_hdr;
+				return true;
+			}
+		return false;
+	}
+
+	bool addHeaderEntry( const std::string& line )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::in_hdr ); 
+		size_t end = line.find_last_not_of(" \t\r\n" );
+		if ( end == std::string::npos )
+		{
+			if ( !( line.size() == 2 || line[0] == '\r' && line[1] == '\n' ) )
+				return true;
+			setCL();
+			readStatus = contentLength ? ReadStatus::in_body : ReadStatus::completed;
+			return false;
+		}
+		size_t start = line.find_first_not_of( " \t" );
+		size_t idx = line.find(':', start);
+		if ( idx >= end )
+			return false;
+		size_t valStart = line.find_first_not_of( " \t", idx + 1 );
+		std::string key = line.substr( start, idx-start );
+		header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
+		return true;
+	}
+
+	size_t getContentLength() const { return contentLength; }
+
+	void dbgTrace()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{} {}", method.name, method.value );
+		for ( auto& entry : header )
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
+	}
+};
+
+template<class DP>
+class HttpServer : public nodecpp::net::ServerSocket<DP>
+{
+public:
+	HttpServer() {}
+	HttpServer(DP* dp) : nodecpp::net::ServerSocket<DP>(dp) {}
+	virtual ~HttpServer() {}
+};
+
+
 template<class DP>
 class HttpSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<DP>
 {
@@ -44,150 +207,6 @@ class HttpSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent
 	};
 	DummyBuffer dbuf;
 
-	class DummyHttpMessage
-	{
-		static constexpr std::pair<const char *, size_t> MethodNames[] = { 
-			std::make_pair( "GET", sizeof( "GET" ) - 1 ),
-			std::make_pair( "HEAD", sizeof( "HEAD" ) - 1 ),
-			std::make_pair( "POST", sizeof( "POST" ) - 1 ),
-			std::make_pair( "PUT", sizeof( "PUT" ) - 1 ),
-			std::make_pair( "DELETE", sizeof( "DELETE" ) - 1 ),
-			std::make_pair( "TRACE", sizeof( "TRACE" ) - 1 ),
-			std::make_pair( "OPTIONS", sizeof( "OPTIONS" ) - 1 ),
-			std::make_pair( "CONNECT", sizeof( "CONNECT" ) - 1 ),
-			std::make_pair( "PATCH", sizeof( "PATCH" ) - 1 ) };
-		static constexpr size_t MethodCount = sizeof( MethodNames ) / sizeof( std::pair<const char *, size_t> );
-
-		struct Method // so far
-		{
-			std::string name;
-			std::string value;
-			void clear() { name.clear(); value.clear(); }
-		};
-		Method method;
-		typedef std::map<std::string, std::string> header_t;
-		header_t header;
-		size_t contentLength = 0;
-		nodecpp::Buffer body;
-		enum ConnStatus { close, keep_alive };
-		ConnStatus connStatus = ConnStatus::keep_alive;
-		enum Status { noinit, in_hdr, in_body, completed };
-		Status status = Status::noinit;
-
-	private:
-		std::string makeLower( std::string& str ) // quick and dirty; TODO: revise (see, for instance, discussion at https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case)
-		{
-			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
-			return str;
-		}
-
-		void setCL()
-		{
-			auto cl = header.find( "content-length" );
-			if ( cl != header.end() )
-				contentLength = ::atol( cl->second.c_str() ); // quick and dirty; TODO: revise
-			contentLength = 0;
-		}
-
-		void setConnStatus()
-		{
-			auto cs = header.find( "connection" );
-			if ( cs != header.end() )
-			{
-				std::string val = cs->second.c_str();
-				val = makeLower( val );
-				if ( val == "keep alive" )
-					connStatus = ConnStatus::keep_alive;
-				else if ( val == "close" )
-					connStatus = ConnStatus::close;
-			}
-			contentLength = 0;
-		}
-
-	public:
-		DummyHttpMessage() {}
-		DummyHttpMessage(const DummyHttpMessage&) = delete;
-		DummyHttpMessage operator = (const DummyHttpMessage&) = delete;
-		DummyHttpMessage(DummyHttpMessage&& other)
-		{
-			method = std::move( other.method );
-			header = std::move( other.header );
-			status = other.status;
-			contentLength = other.contentLength;
-			other.status = Status::noinit;
-		}
-		DummyHttpMessage& operator = (DummyHttpMessage&& other)
-		{
-			method = std::move( other.method );
-			header = std::move( other.header );
-			status = other.status;
-			other.status = Status::noinit;
-			contentLength = other.contentLength;
-			other.contentLength = 0;
-			return *this;
-		}
-		void clear() // TODO: ensure necessity (added for reuse purposes)
-		{
-			method.clear();
-			header.clear();
-			body.clear();
-			contentLength = 0;
-			status = Status::noinit;
-		}
-
-		bool setMethod( const std::string& line )
-		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, status == Status::noinit ); 
-			size_t start = line.find_first_not_of( " \t" );
-			if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
-				return false;
-			for ( size_t i=0; i<MethodCount; ++i )
-				if ( line.size() > MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 && line.c_str()[ MethodNames[i].second] == ' ' ) // TODO: cthink about rfind(*,0)
-				{
-					method.name = MethodNames[i].first;
-					start += MethodNames[i].second + 1;
-					start = line.find_first_not_of( " \t", start );
-					size_t end = line.find_last_not_of(" \t\r\n" );
-					method.value = line.substr( start, end - start + 1 );
-					status = Status::in_hdr;
-					return true;
-				}
-			return false;
-		}
-
-		bool addHeaderEntry( const std::string& line )
-		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, status == Status::in_hdr ); 
-			size_t end = line.find_last_not_of(" \t\r\n" );
-			if ( end == std::string::npos )
-			{
-				if ( !( line.size() == 2 || line[0] == '\r' && line[1] == '\n' ) )
-					return true;
-				setCL();
-				status = contentLength ? Status::in_body : Status::completed;
-				return false;
-			}
-			size_t start = line.find_first_not_of( " \t" );
-			size_t idx = line.find(':', start);
-			if ( idx >= end )
-				return false;
-			size_t valStart = line.find_first_not_of( " \t", idx + 1 );
-			std::string key = line.substr( start, idx-start );
-			header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
-			return true;
-		}
-
-		size_t getContentLength() const { return contentLength; }
-
-		void dbgTrace()
-		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{} {}", method.name, method.value );
-			for ( auto& entry : header )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
-		}
-	};
-
 	size_t rqCnt = 0;
 
 	nodecpp::handler_ret_type readLine(Buffer& lb)
@@ -202,7 +221,7 @@ class HttpSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type getRequest( DummyHttpMessage& message )
+	nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message )
 	{
 		bool ready = false;
 		Buffer lb;
@@ -277,7 +296,7 @@ public:
 		"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
 		"Content-Length: 88\r\n"
 		"Content-Type: text/html\r\n"
-		"Connection: keep-alive\r\n"
+		"Connection: close\r\n"
 		"\r\n\r\n"
 		"<html>\r\n"
 		"<body>\r\n";
@@ -297,7 +316,7 @@ public:
 
 	nodecpp::handler_ret_type processRequest()
 	{
-		DummyHttpMessage message;
+		IncomingHttpMessageAtServer message;
 		co_await getRequest( message );
 		message.dbgTrace();
 
@@ -331,12 +350,12 @@ public:
 	nodecpp::Timeout to;
 #endif
 
-	class HttpServer : public nodecpp::net::ServerSocket<MySampleTNode>
+	class MyHttpServer : public HttpServer<MySampleTNode>
 	{
 	public:
-		HttpServer() {}
-		HttpServer(MySampleTNode* node) : nodecpp::net::ServerSocket<MySampleTNode>(node) {}
-		virtual ~HttpServer() {}
+		MyHttpServer() {}
+		MyHttpServer(MySampleTNode* node) : HttpServer<MySampleTNode>(node) {}
+		virtual ~MyHttpServer() {}
 	};
 
 	class CtrlServer : public nodecpp::net::ServerBase
@@ -392,7 +411,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<HttpServer> server, nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyHttpServer> server, nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
@@ -431,7 +450,7 @@ public:
 	using SockTypeServerSocket = nodecpp::net::SocketBase;
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
 
-	using ServerType = HttpServer;
+	using ServerType = MyHttpServer;
 	nodecpp::safememory::owning_ptr<ServerType> srv; 
 
 	using CtrlServerType = CtrlServer;
