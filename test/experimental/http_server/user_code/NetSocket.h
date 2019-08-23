@@ -54,6 +54,8 @@ public:
 
 	class HttpSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<MySampleTNode>
 	{
+		// NOTE: private part is for future move to lib
+		// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
 		class DummyBuffer
 		{
 			Buffer base;
@@ -80,15 +82,15 @@ public:
 		class DummyHttpMessage
 		{
 			static constexpr std::pair<const char *, size_t> MethodNames[] = { 
-				std::make_pair( "GET ", sizeof( "GET " ) - 1 ),
-				std::make_pair( "HEAD ", sizeof( "HEAD " ) - 1 ),
-				std::make_pair( "POST ", sizeof( "POST " ) - 1 ),
-				std::make_pair( "PUT ", sizeof( "PUT " ) - 1 ),
-				std::make_pair( "DELETE ", sizeof( "DELETE " ) - 1 ),
-				std::make_pair( "TRACE ", sizeof( "TRACE " ) - 1 ),
-				std::make_pair( "OPTIONS ", sizeof( "OPTIONS " ) - 1 ),
-				std::make_pair( "CONNECT ", sizeof( "CONNECT " ) - 1 ),
-				std::make_pair( "PATCH ", sizeof( "PATCH " ) - 1 ) };
+				std::make_pair( "GET", sizeof( "GET" ) - 1 ),
+				std::make_pair( "HEAD", sizeof( "HEAD" ) - 1 ),
+				std::make_pair( "POST", sizeof( "POST" ) - 1 ),
+				std::make_pair( "PUT", sizeof( "PUT" ) - 1 ),
+				std::make_pair( "DELETE", sizeof( "DELETE" ) - 1 ),
+				std::make_pair( "TRACE", sizeof( "TRACE" ) - 1 ),
+				std::make_pair( "OPTIONS", sizeof( "OPTIONS" ) - 1 ),
+				std::make_pair( "CONNECT", sizeof( "CONNECT" ) - 1 ),
+				std::make_pair( "PATCH", sizeof( "PATCH" ) - 1 ) };
 			static constexpr size_t MethodCount = sizeof( MethodNames ) / sizeof( std::pair<const char *, size_t> );
 
 			struct Method // so far
@@ -100,7 +102,10 @@ public:
 			Method method;
 			typedef std::map<std::string, std::string> header_t;
 			header_t header;
+			size_t contentLength = 0;
 			nodecpp::Buffer body;
+			enum ConnStatus { close, keep_alive };
+			ConnStatus connStatus = ConnStatus::keep_alive;
 			enum Status { noinit, in_hdr, in_body, completed };
 			Status status = Status::noinit;
 
@@ -109,6 +114,29 @@ public:
 			{
 				std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
 				return str;
+			}
+
+			void setCL()
+			{
+				auto cl = header.find( "content-length" );
+				if ( cl != header.end() )
+					contentLength = ::atol( cl->second.c_str() ); // quick and dirty; TODO: revise
+				contentLength = 0;
+			}
+
+			void setConnStatus()
+			{
+				auto cs = header.find( "connection" );
+				if ( cs != header.end() )
+				{
+					std::string val = cs->second.c_str();
+					val = makeLower( val );
+					if ( val == "keep alive" )
+						connStatus = ConnStatus::keep_alive;
+					else if ( val == "close" )
+						connStatus = ConnStatus::close;
+				}
+				contentLength = 0;
 			}
 
 		public:
@@ -120,6 +148,7 @@ public:
 				method = std::move( other.method );
 				header = std::move( other.header );
 				status = other.status;
+				contentLength = other.contentLength;
 				other.status = Status::noinit;
 			}
 			DummyHttpMessage& operator = (DummyHttpMessage&& other)
@@ -128,6 +157,8 @@ public:
 				header = std::move( other.header );
 				status = other.status;
 				other.status = Status::noinit;
+				contentLength = other.contentLength;
+				other.contentLength = 0;
 				return *this;
 			}
 			void clear() // TODO: ensure necessity (added for reuse purposes)
@@ -135,6 +166,7 @@ public:
 				method.clear();
 				header.clear();
 				body.clear();
+				contentLength = 0;
 				status = Status::noinit;
 			}
 
@@ -145,13 +177,13 @@ public:
 				if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
 					return false;
 				for ( size_t i=0; i<MethodCount; ++i )
-					if ( line.size() >= MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 ) // TODO: cthink about rfind(*,0)
+					if ( line.size() > MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 && line.c_str()[ MethodNames[i].second] == ' ' ) // TODO: cthink about rfind(*,0)
 					{
 						method.name = MethodNames[i].first;
-						start += MethodNames[i].second;
+						start += MethodNames[i].second + 1;
 						start = line.find_first_not_of( " \t", start );
 						size_t end = line.find_last_not_of(" \t\r\n" );
-						method.value = line.substr( start, end - start );
+						method.value = line.substr( start, end - start + 1 );
 						status = Status::in_hdr;
 						return true;
 					}
@@ -166,7 +198,8 @@ public:
 				{
 					if ( !( line.size() == 2 || line[0] == '\r' && line[1] == '\n' ) )
 						return true;
-					status = getContentLength() ? Status::in_body : Status::completed;
+					setCL();
+					status = contentLength ? Status::in_body : Status::completed;
 					return false;
 				}
 				size_t start = line.find_first_not_of( " \t" );
@@ -175,16 +208,18 @@ public:
 					return false;
 				size_t valStart = line.find_first_not_of( " \t", idx + 1 );
 				std::string key = line.substr( start, idx-start );
-				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart ) ));
+				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
 				return true;
 			}
 
-			size_t getContentLength()
+			size_t getContentLength() const { return contentLength; }
+
+			void dbgTrace()
 			{
-				auto cs = header.find( "content-length" );
-				if ( cs != header.end() )
-					return ::atol( cs->second.c_str() ); // quick and dirty; TODO: revise
-				return 0;
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{} {}", method.name, method.value );
+				for ( auto& entry : header )
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
 			}
 		};
 
@@ -202,14 +237,46 @@ public:
 			CO_RETURN;
 		}
 
-		/*void addLine( DummyHttpMessage& message, const std::string& line )
+		nodecpp::handler_ret_type getRequest( DummyHttpMessage& message )
 		{
-			size_t idx = line.find(':', 0);
-			if( idx != std::string::npos ) 
+			bool ready = false;
+			Buffer lb;
+			co_await readLine(lb);
+			lb.appendUint8( 0 );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
 			{
-				lines.insert( std::make_pair( line.substr( 0, idx ), line.substr( idx + 1 ) ));
+				end();
+				co_await sendReply();
 			}
-		}*/
+
+			do
+			{
+				lb.clear();
+				co_await readLine(lb);
+				lb.appendUint8( 0 );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			}
+			while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
+
+			if ( message.getContentLength() )
+			{
+				lb.clear();
+				lb.reserve( message.getContentLength() );
+				co_await a_read( lb, message.getContentLength() );
+			}
+
+			CO_RETURN;
+		}
+
+	public:
+		using NodeType = MySampleTNode;
+		friend class MySampleTNode;
+
+	public:
+		HttpSocket() {}
+		HttpSocket(MySampleTNode* node) : nodecpp::net::SocketBase(), ::nodecpp::DataParent<MySampleTNode>(node) {}
+		virtual ~HttpSocket() {}
 
 		nodecpp::handler_ret_type sendReply2()
 		{
@@ -266,40 +333,13 @@ public:
 
 		nodecpp::handler_ret_type processRequest()
 		{
-			bool ready = false;
-			Buffer lb;
 			DummyHttpMessage message;
-			co_await readLine(lb);
-			lb.appendUint8( 0 );
-			/*message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) );
+			co_await getRequest( message );
+			message.dbgTrace();
 
-			do
-			{
-				co_await readLine(lb);
-				lb.appendUint8( 0 );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "rq {}, line: {}", rqCnt, lb.begin() );
-				ready = lb.size() == 3 && lb.begin()[0] == '\r' && lb.begin()[1] == '\n';
-			}
-			while( !ready );*/
-
+			++rqCnt;
 			co_await sendReply();
 
-			CO_RETURN;
-		}
-
-	public:
-		using NodeType = MySampleTNode;
-		friend class MySampleTNode;
-
-	public:
-		HttpSocket() {}
-		HttpSocket(MySampleTNode* node) : nodecpp::net::SocketBase(), ::nodecpp::DataParent<MySampleTNode>(node) {}
-		virtual ~HttpSocket() {}
-
-		nodecpp::handler_ret_type processRequests()
-		{
-			co_await processRequest();
-			++rqCnt;
 			CO_RETURN;
 		}
 
@@ -344,7 +384,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		soft_ptr<HttpSocket> socketPtr = nodecpp::safememory::soft_ptr_static_cast<HttpSocket>(socket);
 
-		socketPtr->processRequests();
+		try { for(;;) { co_await socketPtr->processRequest(); } } catch (...) { socketPtr->end(); }
 
 		CO_RETURN;
 	}
