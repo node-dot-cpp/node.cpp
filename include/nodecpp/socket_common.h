@@ -49,6 +49,7 @@ namespace nodecpp {
 			friend class MultiOwner<SocketBase>;
 //			SocketBase* prev_;
 //			SocketBase* next_;
+		protected:
 			friend class ServerBase;
 			nodecpp::safememory::soft_ptr<ServerBase> myServerSocket = nullptr;
 		public:
@@ -596,18 +597,22 @@ namespace nodecpp {
 				return connect_awaiter(*this, period);
 			}
 
-			auto a_read( Buffer& buff, size_t min_bytes = 1 ) { 
+			auto a_read( Buffer& buff, size_t min_bytes = 1, size_t max_bytes = SIZE_MAX ) { 
 
 				buff.clear();
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.capacity() >= min_bytes, "indeed: {} vs. {} bytes", buff.capacity(), min_bytes );
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, min_bytes <= max_bytes, "indeed: {} vs. {} bytes", min_bytes, max_bytes );
+				if ( max_bytes > buff.capacity() )
+					max_bytes = buff.capacity();
 
 				struct read_data_awaiter {
 					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					Buffer& buff;
 					size_t min_bytes;
+					size_t max_bytes;
 
-					read_data_awaiter(SocketBase& socket_, Buffer& buff_, size_t min_bytes_) : socket( socket_ ), buff( buff_ ), min_bytes( min_bytes_ ) {}
+					read_data_awaiter(SocketBase& socket_, Buffer& buff_, size_t min_bytes_, size_t max_bytes_) : socket( socket_ ), buff( buff_ ), min_bytes( min_bytes_ ), max_bytes( max_bytes_ ) {}
 
 					read_data_awaiter(const read_data_awaiter &) = delete;
 					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
@@ -628,27 +633,31 @@ namespace nodecpp {
 					auto await_resume() {
 						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
 							throw nodecpp::getException(myawaiting);
-						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
+						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
 					}
 				};
-				return read_data_awaiter(*this, buff, min_bytes);
+				return read_data_awaiter(*this, buff, min_bytes, max_bytes);
 			}
 
-			auto a_read( Buffer& buff, size_t min_bytes, uint32_t period ) { 
+			auto a_read( uint32_t period, Buffer& buff, size_t min_bytes = 1, size_t max_bytes = SIZE_MAX ) { 
 
 				buff.clear();
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.capacity() >= min_bytes, "indeed: {} vs. {} bytes", buff.capacity(), min_bytes );
+				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, min_bytes <= max_bytes, "indeed: {} vs. {} bytes", min_bytes, max_bytes );
+				if ( max_bytes > buff.capacity() )
+					max_bytes = buff.capacity();
 
 				struct read_data_awaiter {
 					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					Buffer& buff;
 					size_t min_bytes;
+					size_t max_bytes;
 					uint32_t period;
 					nodecpp::Timeout to;
 
-					read_data_awaiter(SocketBase& socket_, Buffer& buff_, size_t min_bytes_, uint32_t period_) : socket( socket_ ), buff( buff_ ), min_bytes( min_bytes_ ), period( period_ ) {}
+					read_data_awaiter(SocketBase& socket_, uint32_t period_, Buffer& buff_, size_t min_bytes_, size_t max_bytes_) : socket( socket_ ), buff( buff_ ), min_bytes( min_bytes_ ), max_bytes( max_bytes_ ), period( period_ ) {}
 
 					read_data_awaiter(const read_data_awaiter &) = delete;
 					read_data_awaiter &operator = (const read_data_awaiter &) = delete;
@@ -679,11 +688,11 @@ namespace nodecpp {
 						nodecpp::clearTimeout( to );
 						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
 							throw nodecpp::getException(myawaiting);
-						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff );
+						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
 					}
 				};
-				return read_data_awaiter(*this, buff, min_bytes, period);
+				return read_data_awaiter(*this, period, buff, min_bytes, max_bytes);
 			}
 
 			auto a_write(Buffer& buff) { 

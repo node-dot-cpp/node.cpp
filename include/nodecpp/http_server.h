@@ -252,8 +252,7 @@ namespace nodecpp {
 		};
 
 
-        template<class DP>
-        class HttpSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<DP>
+        class HttpSocketBase : public nodecpp::net::SocketBase
 		{
 			// NOTE: private part is for future move to lib
 			// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
@@ -326,10 +325,29 @@ namespace nodecpp {
 				CO_RETURN;
 			}
 
+			nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
+			nodecpp::safememory::owning_ptr<OutgoingHttpMessageAtServer> response;
+
 		public:
-			HttpSocket() {}
-            HttpSocket(DP* node) : nodecpp::net::SocketBase(), ::nodecpp::DataParent<DP>(node) {}
-			virtual ~HttpSocket() {}
+			HttpSocketBase() {
+				request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
+				response = nodecpp::safememory::make_owning<OutgoingHttpMessageAtServer>();
+				run(); // TODO: think about proper time for this call
+			}
+			virtual ~HttpSocketBase() {}
+
+			nodecpp::handler_ret_type run()
+			{
+				for(;;)
+				{
+					co_await getRequest( *request );
+					request->dbgTrace();
+
+					++rqCnt;
+					// TODO: let server fire a 'request' event
+				}
+				CO_RETURN;
+			}
 
 			nodecpp::handler_ret_type sendReply2()
 			{
@@ -344,7 +362,8 @@ namespace nodecpp {
 					"<h1>Get reply! (# {})</h1>\r\n"
 					"</body>\r\n"
 					"</html>\r\n";
-				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
+//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
+				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
 				std::string replyHead = fmt::format( replyHeadFormat.c_str(), replyHtml.size() );
 
 				std::string r = replyHead + replyHtml;
@@ -352,7 +371,7 @@ namespace nodecpp {
 				write(reply);
 		//			end();
 
-				++(this->getDataParent()->stats.rqCnt);
+//				++(this->getDataParent()->stats.rqCnt);
 
 				CO_RETURN;
 			}
@@ -373,13 +392,14 @@ namespace nodecpp {
 							std::string replyEnd = "</body>\r\n"
 				"</html>\r\n"
 				"\r\n\r\n";
-				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
+//				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
+				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", 1 );
 				std::string r = replyBegin + replyBody + replyEnd;
 				reply.append( r.c_str(), r.size() );
 				write(reply);
 				end();
 
-				++(this->getDataParent()->stats.rqCnt);
+//				++(this->getDataParent()->stats.rqCnt);
 
 				CO_RETURN;
 			}
@@ -396,6 +416,25 @@ namespace nodecpp {
 				CO_RETURN;
 			}
 
+		};
+
+		template<class DataParentT>
+		class HttpSocket : public HttpSocketBase, public ::nodecpp::DataParent<DataParentT>
+		{
+		public:
+			using DataParentType = DataParentT;
+			HttpSocket<DataParentT>() {};
+			HttpSocket<DataParentT>(DataParentT* dataParent ) : HttpSocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~HttpSocket<DataParentT>() {}
+		};
+
+		template<>
+		class HttpSocket<void> : public HttpSocketBase
+		{
+		public:
+			using DataParentType = void;
+			HttpSocket() {};
+			virtual ~HttpSocket() {}
 		};
 
 		class HttpServerBase : public nodecpp::net::ServerBase
@@ -682,6 +721,20 @@ namespace nodecpp {
 			HttpServer() {};
 			virtual ~HttpServer() {}
 		};
+
+		template<class ServerT, class SocketT, class ... Types>
+		static
+		nodecpp::safememory::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
+			static_assert( std::is_base_of< HttpServerBase, ServerT >::value );
+			static_assert( std::is_base_of< HttpSocketBase, SocketT >::value );
+			return createServer<ServerT, HttpSocket, Types ...>(::std::forward<Types>(args)...);
+		}
+
+		template<class ServerT, class ... Types>
+		static
+		nodecpp::safememory::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
+			return createHttpServer<ServerT, HttpSocket, Types ...>(::std::forward<Types>(args)...);
+		}
 
 	} //namespace net
 } //namespace nodecpp

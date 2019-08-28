@@ -356,29 +356,34 @@ namespace nodecpp {
 			return true;
 		}*/
 		void get_ready_data( Buffer& b ) {
+			get_ready_data( b, b.capacity() );
+		}
+		void get_ready_data( Buffer& b, size_t bytes2read ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.size() == 0 );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, bytes2read <= b.capacity(), "indeed: {} vs. {}", bytes2read, b.capacity() );
+
 			if ( begin <= end )
 			{
 				size_t diff = (size_t)(end - begin);
-				size_t sz2copy = b.capacity() >= diff ? diff : b.capacity();
+				size_t sz2copy = bytes2read >= diff ? diff : bytes2read;
 				b.append( begin, sz2copy );
 				begin += sz2copy;
 			}
 			else
 			{
 				size_t sz2copy = buff.get() + alloc_size() - begin;
-				if ( sz2copy > b.capacity() )
+				if ( sz2copy > bytes2read )
 				{
-					b.append( begin, b.capacity() );
-					begin += b.capacity();
+					b.append( begin, bytes2read );
+					begin += bytes2read;
 					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin < buff.get() + alloc_size() );
 				}
-				else if ( sz2copy < b.capacity() )
+				else if ( sz2copy < bytes2read )
 				{
 					b.append( begin, sz2copy );
 					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin + sz2copy == buff.get() + alloc_size() );
 					begin = buff.get();
-					size_t sz2copy2 = b.capacity() - sz2copy;
+					size_t sz2copy2 = bytes2read - sz2copy;
 					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
 					size_t diff = (size_t)(end - begin);
 					if ( sz2copy2 > diff )
