@@ -41,9 +41,13 @@ namespace nodecpp {
 	namespace net {
 
 		class HttpServerBase; // forward declaration
+		class HttpSocketBase; // forward declaration
 
 		class HttpMessageBase // TODO: candidate for being a part of lib
 		{
+		protected:
+			nodecpp::safememory::soft_ptr<HttpSocketBase> sock;
+
 		public:
 			static constexpr std::pair<const char *, size_t> MethodNames[] = { 
 				std::make_pair( "GET", sizeof( "GET" ) - 1 ),
@@ -76,6 +80,232 @@ namespace nodecpp {
 			}
 		};
 
+		class IncomingHttpMessageAtServer; // forward declaration
+		class OutgoingHttpMessageAtServer; // forward declaration
+
+
+
+        class HttpSocketBase : public nodecpp::net::SocketBase
+		{
+			friend class IncomingHttpMessageAtServer;
+			friend class OutgoingHttpMessageAtServer;
+
+			// NOTE: private part is for future move to lib
+			// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
+			class DummyBuffer
+			{
+				Buffer base;
+				size_t currpos = 0;
+			public:
+				DummyBuffer() : base(0x10000) {}
+				void pushFragment(const Buffer& b) { base.append( b ); }
+				bool popLine(Buffer& b) 
+				{ 
+					for ( ; currpos<base.size(); ++currpos )
+						if ( *(base.begin() + currpos) == '\n' )
+						{
+							b.clear();
+							b.append( base, 0, currpos+1 );
+							base.popFront( currpos+1 );
+							currpos = 0;
+							return true;
+						}
+					return false;
+				}
+			};
+			DummyBuffer dbuf;
+
+			size_t rqCnt = 0;
+
+			nodecpp::handler_ret_type readLine(Buffer& lb)
+			{
+				nodecpp::Buffer r_buff(0x200);
+				while ( !dbuf.popLine( lb ) )
+				{
+					co_await a_read( r_buff, 2 );
+					dbuf.pushFragment( r_buff );
+				}
+
+				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
+
+			nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
+			nodecpp::safememory::owning_ptr<OutgoingHttpMessageAtServer> response;
+			awaitable_handle_t ahd_continueGetting = nullptr;
+
+#ifndef NODECPP_NO_COROUTINES
+			auto a_continueGetting() { 
+
+				struct continue_getting_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					HttpSocketBase& socket;
+
+					continue_getting_awaiter(HttpSocketBase& socket_) : socket( socket_ ) {}
+
+					continue_getting_awaiter(const continue_getting_awaiter &) = delete;
+					continue_getting_awaiter &operator = (const continue_getting_awaiter &) = delete;
+
+					~continue_getting_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						socket.ahd_continueGetting = awaiting;
+						myawaiting = awaiting;
+					}
+
+					auto await_resume() {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+					}
+				};
+				return continue_getting_awaiter(*this);
+			}
+
+#endif // NODECPP_NO_COROUTINES
+
+		public:
+			HttpSocketBase() {
+				request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
+				response = nodecpp::safememory::make_owning<OutgoingHttpMessageAtServer>();
+				run(); // TODO: think about proper time for this call
+			}
+			virtual ~HttpSocketBase() {}
+
+			nodecpp::handler_ret_type run()
+			{
+				for(;;)
+				{
+					co_await getRequest( *request );
+//					request->dbgTrace();
+
+					++rqCnt;
+					// TODO: let server fire a 'request' event
+					co_await a_continueGetting();
+				}
+				CO_RETURN;
+			}
+
+			void proceedToNext()
+			{
+				if ( ahd_continueGetting != nullptr )
+				{
+					auto hr = ahd_continueGetting;
+					ahd_continueGetting = nullptr;
+					hr();
+				}
+			}
+
+#ifndef NODECPP_NO_COROUTINES
+			void forceReleasingAllCoroHandles()
+			{
+				if ( ahd_continueGetting != nullptr )
+				{
+					auto hr = ahd_continueGetting;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					ahd_continueGetting = nullptr;
+					hr();
+				}
+			}
+#else
+			void forceReleasingAllCoroHandles() {}
+#endif // NODECPP_NO_COROUTINES
+
+
+			nodecpp::handler_ret_type sendReply2()
+			{
+				Buffer reply;
+				std::string replyHeadFormat = "HTTP/1.1 200 OK\r\n"
+					"Content-Length: {}\r\n"
+					"Content-Type: text/html\r\n"
+					"Connection: keep-alive\r\n"
+					"\r\n";
+				std::string replyHtmlFormat = "<html>\r\n"
+					"<body>\r\n"
+					"<h1>Get reply! (# {})</h1>\r\n"
+					"</body>\r\n"
+					"</html>\r\n";
+//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
+				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
+				std::string replyHead = fmt::format( replyHeadFormat.c_str(), replyHtml.size() );
+
+				std::string r = replyHead + replyHtml;
+				reply.append( r.c_str(), r.size() );
+				write(reply);
+		//			end();
+
+//				++(this->getDataParent()->stats.rqCnt);
+
+				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type sendReply()
+			{
+				Buffer reply;
+				std::string replyBegin = "HTTP/1.1 200 OK\r\n"
+				"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
+				"Server: Apache/2.2.14 (Win32)\r\n"
+				"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
+				"Content-Length: 88\r\n"
+				"Content-Type: text/html\r\n"
+				"Connection: close\r\n"
+				"\r\n\r\n"
+				"<html>\r\n"
+				"<body>\r\n";
+							std::string replyEnd = "</body>\r\n"
+				"</html>\r\n"
+				"\r\n\r\n";
+//				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
+				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", 1 );
+				std::string r = replyBegin + replyBody + replyEnd;
+				reply.append( r.c_str(), r.size() );
+				write(reply);
+				end();
+
+//				++(this->getDataParent()->stats.rqCnt);
+
+				CO_RETURN;
+			}
+
+			/*nodecpp::handler_ret_type processRequest()
+			{
+				IncomingHttpMessageAtServer message;
+				co_await getRequest( message );
+				message.dbgTrace();
+
+				++rqCnt;
+				co_await sendReply();
+
+				CO_RETURN;
+			}*/
+
+		};
+
+		template<class DataParentT>
+		class HttpSocket : public HttpSocketBase, public ::nodecpp::DataParent<DataParentT>
+		{
+		public:
+			using DataParentType = DataParentT;
+			HttpSocket<DataParentT>() {};
+			HttpSocket<DataParentT>(DataParentT* dataParent ) : HttpSocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~HttpSocket<DataParentT>() {}
+		};
+
+		template<>
+		class HttpSocket<void> : public HttpSocketBase
+		{
+		public:
+			using DataParentType = void;
+			HttpSocket() {};
+			virtual ~HttpSocket() {}
+		};
+
 		class IncomingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
 		{
 		private:
@@ -87,6 +317,7 @@ namespace nodecpp {
 			ConnStatus connStatus = ConnStatus::keep_alive;
 			enum ReadStatus { noinit, in_hdr, in_body, completed };
 			ReadStatus readStatus = ReadStatus::noinit;
+			size_t bodyBytesRetrieved = 0;
 
 		private:
 			void setCL()
@@ -141,7 +372,22 @@ namespace nodecpp {
 				body.clear();
 				contentLength = 0;
 				readStatus = ReadStatus::noinit;
+				bodyBytesRetrieved = 0;
 			}
+			nodecpp::handler_ret_type a_readBody( Buffer& b )
+			{
+				if ( bodyBytesRetrieved < getContentLength() )
+				{
+					b.clear();
+					co_await sock->a_read( b, getContentLength() - bodyBytesRetrieved );
+					bodyBytesRetrieved += b.size();
+				}
+				if ( bodyBytesRetrieved == getContentLength() )
+					sock->proceedToNext();
+
+				CO_RETURN;
+			}
+
 
 			bool setMethod( const std::string& line )
 			{
@@ -243,204 +489,50 @@ namespace nodecpp {
 			}
 		};
 
-		struct HttpRR
+		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
+		{
+			bool ready = false;
+			Buffer lb;
+			co_await readLine(lb);
+			lb.appendUint8( 0 );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
+			{
+				end();
+				co_await sendReply();
+			}
+
+			do
+			{
+				lb.clear();
+				co_await readLine(lb);
+				lb.appendUint8( 0 );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			}
+			while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
+
+			/*if ( message.getContentLength() )
+			{
+				lb.clear();
+				lb.reserve( message.getContentLength() );
+				co_await a_read( lb, message.getContentLength() );
+			}*/
+
+			CO_RETURN;
+		}
+
+		/*struct HttpRR
 		{
 			IncomingHttpMessageAtServer request;
 			OutgoingHttpMessageAtServer response;
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
 			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerBase> server;
-		};
-
-
-        class HttpSocketBase : public nodecpp::net::SocketBase
-		{
-			// NOTE: private part is for future move to lib
-			// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
-			class DummyBuffer
-			{
-				Buffer base;
-				size_t currpos = 0;
-			public:
-				DummyBuffer() : base(0x10000) {}
-				void pushFragment(const Buffer& b) { base.append( b ); }
-				bool popLine(Buffer& b) 
-				{ 
-					for ( ; currpos<base.size(); ++currpos )
-						if ( *(base.begin() + currpos) == '\n' )
-						{
-							b.clear();
-							b.append( base, 0, currpos+1 );
-							base.popFront( currpos+1 );
-							currpos = 0;
-							return true;
-						}
-					return false;
-				}
-			};
-			DummyBuffer dbuf;
-
-			size_t rqCnt = 0;
-
-			nodecpp::handler_ret_type readLine(Buffer& lb)
-			{
-				nodecpp::Buffer r_buff(0x200);
-				while ( !dbuf.popLine( lb ) )
-				{
-					co_await a_read( r_buff, 2 );
-					dbuf.pushFragment( r_buff );
-				}
-
-				CO_RETURN;
-			}
-
-			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message )
-			{
-				bool ready = false;
-				Buffer lb;
-				co_await readLine(lb);
-				lb.appendUint8( 0 );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
-				if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
-				{
-					end();
-					co_await sendReply();
-				}
-
-				do
-				{
-					lb.clear();
-					co_await readLine(lb);
-					lb.appendUint8( 0 );
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
-				}
-				while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
-
-				if ( message.getContentLength() )
-				{
-					lb.clear();
-					lb.reserve( message.getContentLength() );
-					co_await a_read( lb, message.getContentLength() );
-				}
-
-				CO_RETURN;
-			}
-
-			nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
-			nodecpp::safememory::owning_ptr<OutgoingHttpMessageAtServer> response;
-
-		public:
-			HttpSocketBase() {
-				request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
-				response = nodecpp::safememory::make_owning<OutgoingHttpMessageAtServer>();
-				run(); // TODO: think about proper time for this call
-			}
-			virtual ~HttpSocketBase() {}
-
-			nodecpp::handler_ret_type run()
-			{
-				for(;;)
-				{
-					co_await getRequest( *request );
-					request->dbgTrace();
-
-					++rqCnt;
-					// TODO: let server fire a 'request' event
-				}
-				CO_RETURN;
-			}
-
-			nodecpp::handler_ret_type sendReply2()
-			{
-				Buffer reply;
-				std::string replyHeadFormat = "HTTP/1.1 200 OK\r\n"
-					"Content-Length: {}\r\n"
-					"Content-Type: text/html\r\n"
-					"Connection: keep-alive\r\n"
-					"\r\n";
-				std::string replyHtmlFormat = "<html>\r\n"
-					"<body>\r\n"
-					"<h1>Get reply! (# {})</h1>\r\n"
-					"</body>\r\n"
-					"</html>\r\n";
-//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
-				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
-				std::string replyHead = fmt::format( replyHeadFormat.c_str(), replyHtml.size() );
-
-				std::string r = replyHead + replyHtml;
-				reply.append( r.c_str(), r.size() );
-				write(reply);
-		//			end();
-
-//				++(this->getDataParent()->stats.rqCnt);
-
-				CO_RETURN;
-			}
-
-			nodecpp::handler_ret_type sendReply()
-			{
-				Buffer reply;
-				std::string replyBegin = "HTTP/1.1 200 OK\r\n"
-				"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
-				"Server: Apache/2.2.14 (Win32)\r\n"
-				"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
-				"Content-Length: 88\r\n"
-				"Content-Type: text/html\r\n"
-				"Connection: close\r\n"
-				"\r\n\r\n"
-				"<html>\r\n"
-				"<body>\r\n";
-							std::string replyEnd = "</body>\r\n"
-				"</html>\r\n"
-				"\r\n\r\n";
-//				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
-				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", 1 );
-				std::string r = replyBegin + replyBody + replyEnd;
-				reply.append( r.c_str(), r.size() );
-				write(reply);
-				end();
-
-//				++(this->getDataParent()->stats.rqCnt);
-
-				CO_RETURN;
-			}
-
-			nodecpp::handler_ret_type processRequest()
-			{
-				IncomingHttpMessageAtServer message;
-				co_await getRequest( message );
-				message.dbgTrace();
-
-				++rqCnt;
-				co_await sendReply();
-
-				CO_RETURN;
-			}
-
-		};
-
-		template<class DataParentT>
-		class HttpSocket : public HttpSocketBase, public ::nodecpp::DataParent<DataParentT>
-		{
-		public:
-			using DataParentType = DataParentT;
-			HttpSocket<DataParentT>() {};
-			HttpSocket<DataParentT>(DataParentT* dataParent ) : HttpSocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
-			virtual ~HttpSocket<DataParentT>() {}
-		};
-
-		template<>
-		class HttpSocket<void> : public HttpSocketBase
-		{
-		public:
-			using DataParentType = void;
-			HttpSocket() {};
-			virtual ~HttpSocket() {}
-		};
+		};*/
 
 		class HttpServerBase : public nodecpp::net::ServerBase
 		{
-		protected:
-			MultiOwner<HttpRR> MessageList;
+		/*protected:
+			MultiOwner<HttpRR> MessageList;*/
 
 		public:
 
@@ -538,7 +630,7 @@ namespace nodecpp {
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
 
-		nodecpp::handler_ret_type a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response) { 
+		/*nodecpp::handler_ret_type a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response) { 
 			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
 			co_await a_connection<nodecpp::net::SocketBase>( socket );
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
@@ -551,12 +643,12 @@ namespace nodecpp {
 			MessageList.add( std::move(rr) );
 
 			CO_RETURN;
-		}
+		}*/
 
 		public:
 			HttpServerBase() {}
 			virtual ~HttpServerBase() {
-				MessageList.clear();
+//				MessageList.clear();
 			}
 
 			struct UserHandlersCommon
