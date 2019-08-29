@@ -451,10 +451,12 @@ namespace nodecpp {
 
 			nodecpp::handler_ret_type readLine(Buffer& lb)
 			{
+printf( "about to read line\n" );
 				nodecpp::Buffer r_buff(0x200);
 				while ( !dbuf.popLine( lb ) )
 				{
 					co_await a_read( r_buff, 2 );
+printf( "a segment has been read\n" );
 					dbuf.pushFragment( r_buff );
 				}
 
@@ -495,6 +497,7 @@ namespace nodecpp {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
 						if ( nodecpp::isException(myawaiting) )
 							throw nodecpp::getException(myawaiting);
+printf( "resumed ahd_continueGetting\n" );
 					}
 				};
 				return continue_getting_awaiter(*this);
@@ -510,14 +513,15 @@ namespace nodecpp {
 			{
 				for(;;)
 				{
+printf( "about to get (next) request\n" );
 					co_await getRequest( *request );
+					auto cg = a_continueGetting();
 //					request->dbgTrace();
 
 					++rqCnt;
-					// TODO: let server fire a 'request' event
 
 					nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( request, response );
-					co_await a_continueGetting();
+//					co_await cg;
 				}
 				CO_RETURN;
 			}
@@ -528,6 +532,7 @@ namespace nodecpp {
 				{
 					auto hr = ahd_continueGetting;
 					ahd_continueGetting = nullptr;
+printf( "about to resume ahd_continueGetting\n" );
 					hr();
 				}
 			}
@@ -696,8 +701,8 @@ namespace nodecpp {
 					co_await sock->a_read( b, getContentLength() - bodyBytesRetrieved );
 					bodyBytesRetrieved += b.size();
 				}
-				if ( bodyBytesRetrieved == getContentLength() )
-					sock->proceedToNext();
+//				if ( bodyBytesRetrieved == getContentLength() )
+//					sock->proceedToNext();
 
 				CO_RETURN;
 			}
@@ -749,9 +754,9 @@ namespace nodecpp {
 
 			void dbgTrace()
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{} {}", method.name, method.value );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [->] {} {}", method.name, method.value );
 				for ( auto& entry : header )
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [->] {}: {}", entry.first, entry.second );
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
 			}
@@ -799,13 +804,14 @@ namespace nodecpp {
 				header.clear();
 				body.clear();
 				contentLength = 0;
+				writeStatus = WriteStatus::notyet;
 			}
 
 			void dbgTrace()
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}", replyStatus );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [<-] {}", replyStatus );
 				for ( auto& entry : header )
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [<-] {}: {}", entry.first, entry.second );
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
 			}
 
@@ -823,6 +829,32 @@ namespace nodecpp {
 
 			nodecpp::handler_ret_type flushHeaders()
 			{
+#if 0
+				Buffer reply;
+				std::string replyBegin = "HTTP/1.1 200 OK\r\n"
+				"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
+				"Server: Apache/2.2.14 (Win32)\r\n"
+				"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
+				"Content-Length: 88\r\n"
+				"Content-Type: text/html\r\n"
+				"Connection: close\r\n"
+				"\r\n\r\n"
+				"<html>\r\n"
+				"<body>\r\n";
+							std::string replyEnd = "</body>\r\n"
+				"</html>\r\n"
+				"\r\n\r\n";
+//				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
+				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", 1 );
+				std::string r = replyBegin + replyBody + replyEnd;
+				reply.append( r.c_str(), r.size() );
+				sock->write(reply);
+				sock->end();
+
+				CO_RETURN;
+
+#else
+
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: add real implementation
 				std::string out = replyStatus;
@@ -835,6 +867,14 @@ namespace nodecpp {
 					out += "\r\n";
 				}
 				out += "\r\n";
+/*std::string replyHtmlFormat = "<html>\r\n"
+	"<body>\r\n"
+	"<h1>Get reply! (# {})</h1>\r\n"
+	"</body>\r\n"
+	"</html>\r\n";
+//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
+std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
+out += replyHtml;*/
 				Buffer b;
 				b.append( out.c_str(), out.size() );
 				parseContentLength();
@@ -843,15 +883,39 @@ namespace nodecpp {
 				parseConnStatus();
 				header.clear();
 				CO_RETURN;
+#endif
 			}
 
 			nodecpp::handler_ret_type writeBodyPart(Buffer& b)
 			{
+/*std::string replyHtmlFormat = "<html>\r\n"
+	"<body>\r\n"
+	"<h1>Get reply! (# {})</h1>\r\n"
+	"</body>\r\n"
+	"</html>\r\n";
+//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
+std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
+Buffer b1;
+b1.append( replyHtml.c_str(), replyHtml.size() );
+co_await sock->a_write( b1 );
+sock->end();
+				CO_RETURN;*/
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
 				// TODO: add real implementation
 				co_await sock->a_write( b );
+printf( "request has been sent\n" );
+sock->request->clear();
 				if ( connStatus != ConnStatus::keep_alive )
+				{
+printf( "socket has been ended\n" );
 					sock->end();
+					clear();
+					CO_RETURN;
+				}
+//				else
+					clear();
+sock->proceedToNext();
+printf( "getting next request has been allowed\n" );
 				CO_RETURN;
 			}
 		};

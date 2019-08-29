@@ -98,6 +98,8 @@ public:
 		try { 
 			for(;;) { 
 				co_await srv->a_request(request, response); 
+				Buffer b1(0x1000);
+				co_await request->a_readBody( b1 );
 				++(stats.rqCnt);
 				request->dbgTrace();
 				// TODO: co_await for msg body, if any
@@ -105,6 +107,7 @@ public:
 				std::string replyHtmlFormat = "<html>\r\n"
 					"<body>\r\n"
 					"<h1>Get reply! (# {})</h1>\r\n"
+					"please proceed to <a href=\"whatever.html\">whatever.html</a>"
 					"</body>\r\n"
 					"</html>\r\n";
 //				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
