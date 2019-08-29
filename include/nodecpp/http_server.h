@@ -358,6 +358,8 @@ namespace nodecpp {
 
 		class HttpMessageBase // TODO: candidate for being a part of lib
 		{
+			friend class HttpSocketBase;
+
 		protected:
 			nodecpp::safememory::soft_ptr<HttpSocketBase> sock;
 
@@ -374,6 +376,7 @@ namespace nodecpp {
 			static constexpr size_t MethodCount = sizeof( MethodNames ) / sizeof( std::pair<const char *, size_t> );
 
 			enum ConnStatus { close, keep_alive };
+			ConnStatus connStatus = ConnStatus::keep_alive;
 
 			size_t contentLength = 0;
 
@@ -387,7 +390,7 @@ namespace nodecpp {
 				return str;
 			}
 
-			void setCL()
+			void parseContentLength()
 			{
 				auto cl = header.find( "content-length" );
 				if ( cl != header.end() )
@@ -395,6 +398,21 @@ namespace nodecpp {
 				contentLength = 0;
 			}
 
+			void parseConnStatus()
+			{
+				auto cs = header.find( "connection" );
+				if ( cs != header.end() )
+				{
+					std::string val = cs->second.c_str();
+					val = makeLower( val );
+					if ( val == "keep alive" )
+						connStatus = ConnStatus::keep_alive;
+					else if ( val == "close" )
+						connStatus = ConnStatus::close;
+				}
+				else
+					connStatus = ConnStatus::close;
+			}
 		};
 
 
@@ -485,11 +503,7 @@ namespace nodecpp {
 #endif // NODECPP_NO_COROUTINES
 
 		public:
-			HttpSocketBase() {
-				request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
-				response = nodecpp::safememory::make_owning<OutgoingHttpMessageAtServer>();
-				run(); // TODO: think about proper time for this call
-			}
+			HttpSocketBase();
 			virtual ~HttpSocketBase() {}
 
 			nodecpp::handler_ret_type run()
@@ -625,6 +639,8 @@ namespace nodecpp {
 
 		class IncomingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
 		{
+			friend class HttpSocketBase;
+
 		private:
 			struct Method // so far a struct
 			{
@@ -635,27 +651,11 @@ namespace nodecpp {
 			Method method;
 
 			nodecpp::Buffer body;
-			enum ConnStatus { close, keep_alive };
-			ConnStatus connStatus = ConnStatus::keep_alive;
 			enum ReadStatus { noinit, in_hdr, in_body, completed };
 			ReadStatus readStatus = ReadStatus::noinit;
 			size_t bodyBytesRetrieved = 0;
 
 		private:
-			void setConnStatus()
-			{
-				auto cs = header.find( "connection" );
-				if ( cs != header.end() )
-				{
-					std::string val = cs->second.c_str();
-					val = makeLower( val );
-					if ( val == "keep alive" )
-						connStatus = ConnStatus::keep_alive;
-					else if ( val == "close" )
-						connStatus = ConnStatus::close;
-				}
-				contentLength = 0;
-			}
 
 		public:
 			IncomingHttpMessageAtServer() {}
@@ -731,7 +731,7 @@ namespace nodecpp {
 				{
 					if ( !( line.size() == 2 || line[0] == '\r' && line[1] == '\n' ) )
 						return true;
-					setCL();
+					parseContentLength();
 					readStatus = contentLength ? ReadStatus::in_body : ReadStatus::completed;
 					return false;
 				}
@@ -759,6 +759,8 @@ namespace nodecpp {
 
 		class OutgoingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
 		{
+			friend class HttpSocketBase;
+
 		private:
 			typedef std::map<std::string, std::string> header_t;
 			header_t header;
@@ -834,10 +836,12 @@ namespace nodecpp {
 				}
 				out += "\r\n";
 				Buffer b;
-				b.append( out.c_str(), out.size() - 1 );
-				setCL();
+				b.append( out.c_str(), out.size() );
+				parseContentLength();
 				co_await sock->a_write( b );
 				writeStatus = WriteStatus::hdr_flushed;
+				parseConnStatus();
+				header.clear();
 				CO_RETURN;
 			}
 
@@ -846,6 +850,8 @@ namespace nodecpp {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
 				// TODO: add real implementation
 				co_await sock->a_write( b );
+				if ( connStatus != ConnStatus::keep_alive )
+					sock->end();
 				CO_RETURN;
 			}
 		};
@@ -880,6 +886,14 @@ namespace nodecpp {
 			}*/
 
 			CO_RETURN;
+		}
+
+		HttpSocketBase::HttpSocketBase() {
+			request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
+			request->sock = myThis.getSoftPtr<HttpSocketBase>(this);
+			response = nodecpp::safememory::make_owning<OutgoingHttpMessageAtServer>();
+			response->sock = myThis.getSoftPtr<HttpSocketBase>(this);
+			run(); // TODO: think about proper time for this call
 		}
 
 		/*struct HttpRR

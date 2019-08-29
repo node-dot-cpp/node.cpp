@@ -96,6 +96,9 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\awaitable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\http_server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
