@@ -43,491 +43,8 @@ namespace nodecpp {
 		class HttpServerBase; // forward declaration
 		class HttpSocketBase; // forward declaration
 
-		class HttpMessageBase // TODO: candidate for being a part of lib
-		{
-		protected:
-			nodecpp::safememory::soft_ptr<HttpSocketBase> sock;
-
-		public:
-			static constexpr std::pair<const char *, size_t> MethodNames[] = { 
-				std::make_pair( "GET", sizeof( "GET" ) - 1 ),
-				std::make_pair( "HEAD", sizeof( "HEAD" ) - 1 ),
-				std::make_pair( "POST", sizeof( "POST" ) - 1 ),
-				std::make_pair( "PUT", sizeof( "PUT" ) - 1 ),
-				std::make_pair( "DELETE", sizeof( "DELETE" ) - 1 ),
-				std::make_pair( "TRACE", sizeof( "TRACE" ) - 1 ),
-				std::make_pair( "OPTIONS", sizeof( "OPTIONS" ) - 1 ),
-				std::make_pair( "CONNECT", sizeof( "CONNECT" ) - 1 ),
-				std::make_pair( "PATCH", sizeof( "PATCH" ) - 1 ) };
-			static constexpr size_t MethodCount = sizeof( MethodNames ) / sizeof( std::pair<const char *, size_t> );
-
-			struct Method // so far a struct
-			{
-				std::string name;
-				std::string value;
-				void clear() { name.clear(); value.clear(); }
-			};
-			Method method;
-
-			enum ConnStatus { close, keep_alive };
-
-		public:
-			// utils
-			std::string makeLower( std::string& str ) // quick and dirty; TODO: revise (see, for instance, discussion at https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case)
-			{
-				std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
-				return str;
-			}
-		};
-
 		class IncomingHttpMessageAtServer; // forward declaration
 		class OutgoingHttpMessageAtServer; // forward declaration
-
-
-
-        class HttpSocketBase : public nodecpp::net::SocketBase
-		{
-			friend class IncomingHttpMessageAtServer;
-			friend class OutgoingHttpMessageAtServer;
-
-			// NOTE: private part is for future move to lib
-			// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
-			class DummyBuffer
-			{
-				Buffer base;
-				size_t currpos = 0;
-			public:
-				DummyBuffer() : base(0x10000) {}
-				void pushFragment(const Buffer& b) { base.append( b ); }
-				bool popLine(Buffer& b) 
-				{ 
-					for ( ; currpos<base.size(); ++currpos )
-						if ( *(base.begin() + currpos) == '\n' )
-						{
-							b.clear();
-							b.append( base, 0, currpos+1 );
-							base.popFront( currpos+1 );
-							currpos = 0;
-							return true;
-						}
-					return false;
-				}
-			};
-			DummyBuffer dbuf;
-
-			size_t rqCnt = 0;
-
-			nodecpp::handler_ret_type readLine(Buffer& lb)
-			{
-				nodecpp::Buffer r_buff(0x200);
-				while ( !dbuf.popLine( lb ) )
-				{
-					co_await a_read( r_buff, 2 );
-					dbuf.pushFragment( r_buff );
-				}
-
-				CO_RETURN;
-			}
-
-			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
-
-			nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
-			nodecpp::safememory::owning_ptr<OutgoingHttpMessageAtServer> response;
-			awaitable_handle_t ahd_continueGetting = nullptr;
-
-#ifndef NODECPP_NO_COROUTINES
-			auto a_continueGetting() { 
-
-				struct continue_getting_awaiter {
-					std::experimental::coroutine_handle<> myawaiting = nullptr;
-					HttpSocketBase& socket;
-
-					continue_getting_awaiter(HttpSocketBase& socket_) : socket( socket_ ) {}
-
-					continue_getting_awaiter(const continue_getting_awaiter &) = delete;
-					continue_getting_awaiter &operator = (const continue_getting_awaiter &) = delete;
-
-					~continue_getting_awaiter() {}
-
-					bool await_ready() {
-						return false;
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
-						socket.ahd_continueGetting = awaiting;
-						myawaiting = awaiting;
-					}
-
-					auto await_resume() {
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
-					}
-				};
-				return continue_getting_awaiter(*this);
-			}
-
-#endif // NODECPP_NO_COROUTINES
-
-		public:
-			HttpSocketBase() {
-				request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
-				response = nodecpp::safememory::make_owning<OutgoingHttpMessageAtServer>();
-				run(); // TODO: think about proper time for this call
-			}
-			virtual ~HttpSocketBase() {}
-
-			nodecpp::handler_ret_type run()
-			{
-				for(;;)
-				{
-					co_await getRequest( *request );
-//					request->dbgTrace();
-
-					++rqCnt;
-					// TODO: let server fire a 'request' event
-					co_await a_continueGetting();
-				}
-				CO_RETURN;
-			}
-
-			void proceedToNext()
-			{
-				if ( ahd_continueGetting != nullptr )
-				{
-					auto hr = ahd_continueGetting;
-					ahd_continueGetting = nullptr;
-					hr();
-				}
-			}
-
-#ifndef NODECPP_NO_COROUTINES
-			void forceReleasingAllCoroHandles()
-			{
-				if ( ahd_continueGetting != nullptr )
-				{
-					auto hr = ahd_continueGetting;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
-					ahd_continueGetting = nullptr;
-					hr();
-				}
-			}
-#else
-			void forceReleasingAllCoroHandles() {}
-#endif // NODECPP_NO_COROUTINES
-
-
-			nodecpp::handler_ret_type sendReply2()
-			{
-				Buffer reply;
-				std::string replyHeadFormat = "HTTP/1.1 200 OK\r\n"
-					"Content-Length: {}\r\n"
-					"Content-Type: text/html\r\n"
-					"Connection: keep-alive\r\n"
-					"\r\n";
-				std::string replyHtmlFormat = "<html>\r\n"
-					"<body>\r\n"
-					"<h1>Get reply! (# {})</h1>\r\n"
-					"</body>\r\n"
-					"</html>\r\n";
-//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
-				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
-				std::string replyHead = fmt::format( replyHeadFormat.c_str(), replyHtml.size() );
-
-				std::string r = replyHead + replyHtml;
-				reply.append( r.c_str(), r.size() );
-				write(reply);
-		//			end();
-
-//				++(this->getDataParent()->stats.rqCnt);
-
-				CO_RETURN;
-			}
-
-			nodecpp::handler_ret_type sendReply()
-			{
-				Buffer reply;
-				std::string replyBegin = "HTTP/1.1 200 OK\r\n"
-				"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
-				"Server: Apache/2.2.14 (Win32)\r\n"
-				"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
-				"Content-Length: 88\r\n"
-				"Content-Type: text/html\r\n"
-				"Connection: close\r\n"
-				"\r\n\r\n"
-				"<html>\r\n"
-				"<body>\r\n";
-							std::string replyEnd = "</body>\r\n"
-				"</html>\r\n"
-				"\r\n\r\n";
-//				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
-				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", 1 );
-				std::string r = replyBegin + replyBody + replyEnd;
-				reply.append( r.c_str(), r.size() );
-				write(reply);
-				end();
-
-//				++(this->getDataParent()->stats.rqCnt);
-
-				CO_RETURN;
-			}
-
-			/*nodecpp::handler_ret_type processRequest()
-			{
-				IncomingHttpMessageAtServer message;
-				co_await getRequest( message );
-				message.dbgTrace();
-
-				++rqCnt;
-				co_await sendReply();
-
-				CO_RETURN;
-			}*/
-
-		};
-
-		template<class DataParentT>
-		class HttpSocket : public HttpSocketBase, public ::nodecpp::DataParent<DataParentT>
-		{
-		public:
-			using DataParentType = DataParentT;
-			HttpSocket<DataParentT>() {};
-			HttpSocket<DataParentT>(DataParentT* dataParent ) : HttpSocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
-			virtual ~HttpSocket<DataParentT>() {}
-		};
-
-		template<>
-		class HttpSocket<void> : public HttpSocketBase
-		{
-		public:
-			using DataParentType = void;
-			HttpSocket() {};
-			virtual ~HttpSocket() {}
-		};
-
-		class IncomingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
-		{
-		private:
-			typedef std::map<std::string, std::string> header_t;
-			header_t header;
-			size_t contentLength = 0;
-			nodecpp::Buffer body;
-			enum ConnStatus { close, keep_alive };
-			ConnStatus connStatus = ConnStatus::keep_alive;
-			enum ReadStatus { noinit, in_hdr, in_body, completed };
-			ReadStatus readStatus = ReadStatus::noinit;
-			size_t bodyBytesRetrieved = 0;
-
-		private:
-			void setCL()
-			{
-				auto cl = header.find( "content-length" );
-				if ( cl != header.end() )
-					contentLength = ::atol( cl->second.c_str() ); // quick and dirty; TODO: revise
-				contentLength = 0;
-			}
-
-			void setConnStatus()
-			{
-				auto cs = header.find( "connection" );
-				if ( cs != header.end() )
-				{
-					std::string val = cs->second.c_str();
-					val = makeLower( val );
-					if ( val == "keep alive" )
-						connStatus = ConnStatus::keep_alive;
-					else if ( val == "close" )
-						connStatus = ConnStatus::close;
-				}
-				contentLength = 0;
-			}
-
-		public:
-			IncomingHttpMessageAtServer() {}
-			IncomingHttpMessageAtServer(const IncomingHttpMessageAtServer&) = delete;
-			IncomingHttpMessageAtServer operator = (const IncomingHttpMessageAtServer&) = delete;
-			IncomingHttpMessageAtServer(IncomingHttpMessageAtServer&& other)
-			{
-				method = std::move( other.method );
-				header = std::move( other.header );
-				readStatus = other.readStatus;
-				contentLength = other.contentLength;
-				other.readStatus = ReadStatus::noinit;
-			}
-			IncomingHttpMessageAtServer& operator = (IncomingHttpMessageAtServer&& other)
-			{
-				method = std::move( other.method );
-				header = std::move( other.header );
-				readStatus = other.readStatus;
-				other.readStatus = ReadStatus::noinit;
-				contentLength = other.contentLength;
-				other.contentLength = 0;
-				return *this;
-			}
-			void clear() // TODO: ensure necessity (added for reuse purposes)
-			{
-				method.clear();
-				header.clear();
-				body.clear();
-				contentLength = 0;
-				readStatus = ReadStatus::noinit;
-				bodyBytesRetrieved = 0;
-			}
-			nodecpp::handler_ret_type a_readBody( Buffer& b )
-			{
-				if ( bodyBytesRetrieved < getContentLength() )
-				{
-					b.clear();
-					co_await sock->a_read( b, getContentLength() - bodyBytesRetrieved );
-					bodyBytesRetrieved += b.size();
-				}
-				if ( bodyBytesRetrieved == getContentLength() )
-					sock->proceedToNext();
-
-				CO_RETURN;
-			}
-
-
-			bool setMethod( const std::string& line )
-			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::noinit ); 
-				size_t start = line.find_first_not_of( " \t" );
-				if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
-					return false;
-				for ( size_t i=0; i<MethodCount; ++i )
-					if ( line.size() > MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 && line.c_str()[ MethodNames[i].second] == ' ' ) // TODO: cthink about rfind(*,0)
-					{
-						method.name = MethodNames[i].first;
-						start += MethodNames[i].second + 1;
-						start = line.find_first_not_of( " \t", start );
-						size_t end = line.find_last_not_of(" \t\r\n" );
-						method.value = line.substr( start, end - start + 1 );
-						readStatus = ReadStatus::in_hdr;
-						return true;
-					}
-				return false;
-			}
-
-			bool addHeaderEntry( const std::string& line )
-			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::in_hdr ); 
-				size_t end = line.find_last_not_of(" \t\r\n" );
-				if ( end == std::string::npos )
-				{
-					if ( !( line.size() == 2 || line[0] == '\r' && line[1] == '\n' ) )
-						return true;
-					setCL();
-					readStatus = contentLength ? ReadStatus::in_body : ReadStatus::completed;
-					return false;
-				}
-				size_t start = line.find_first_not_of( " \t" );
-				size_t idx = line.find(':', start);
-				if ( idx >= end )
-					return false;
-				size_t valStart = line.find_first_not_of( " \t", idx + 1 );
-				std::string key = line.substr( start, idx-start );
-				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
-				return true;
-			}
-
-			size_t getContentLength() const { return contentLength; }
-
-			void dbgTrace()
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{} {}", method.name, method.value );
-				for ( auto& entry : header )
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
-			}
-		};
-
-		class OutgoingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
-		{
-		private:
-			typedef std::map<std::string, std::string> header_t;
-			header_t header;
-			size_t contentLength = 0;
-			nodecpp::Buffer body;
-			ConnStatus connStatus = ConnStatus::keep_alive;
-
-		private:
-
-		public:
-			OutgoingHttpMessageAtServer() {}
-			OutgoingHttpMessageAtServer(const OutgoingHttpMessageAtServer&) = delete;
-			OutgoingHttpMessageAtServer operator = (const OutgoingHttpMessageAtServer&) = delete;
-			OutgoingHttpMessageAtServer(OutgoingHttpMessageAtServer&& other)
-			{
-				method = std::move( other.method );
-				header = std::move( other.header );
-				contentLength = other.contentLength;
-			}
-			OutgoingHttpMessageAtServer& operator = (OutgoingHttpMessageAtServer&& other)
-			{
-				method = std::move( other.method );
-				header = std::move( other.header );
-				contentLength = other.contentLength;
-				other.contentLength = 0;
-				return *this;
-			}
-			void clear() // TODO: ensure necessity (added for reuse purposes)
-			{
-				method.clear();
-				header.clear();
-				body.clear();
-				contentLength = 0;
-			}
-
-			void dbgTrace()
-			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{} {}", method.name, method.value );
-				for ( auto& entry : header )
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
-			}
-		};
-
-		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
-		{
-			bool ready = false;
-			Buffer lb;
-			co_await readLine(lb);
-			lb.appendUint8( 0 );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
-			if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
-			{
-				end();
-				co_await sendReply();
-			}
-
-			do
-			{
-				lb.clear();
-				co_await readLine(lb);
-				lb.appendUint8( 0 );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
-			}
-			while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
-
-			/*if ( message.getContentLength() )
-			{
-				lb.clear();
-				lb.reserve( message.getContentLength() );
-				co_await a_read( lb, message.getContentLength() );
-			}*/
-
-			CO_RETURN;
-		}
-
-		/*struct HttpRR
-		{
-			IncomingHttpMessageAtServer request;
-			OutgoingHttpMessageAtServer response;
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
-			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerBase> server;
-		};*/
 
 		class HttpServerBase : public nodecpp::net::ServerBase
 		{
@@ -537,17 +54,36 @@ namespace nodecpp {
 		public:
 
 #ifndef NODECPP_NO_COROUTINES
-			awaitable_handle_t ahd_request = nullptr;
+			struct awaitable_request_data
+			{
+				awaitable_handle_t h = nullptr;
+				nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request;
+				nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response;
+			};
+			awaitable_request_data ahd_request;
 			void forceReleasingAllCoroHandles()
 			{
-				if ( ahd_request != nullptr )
+				if ( ahd_request.h != nullptr )
 				{
-					auto hr = ahd_request;
+					auto hr = ahd_request.h;
 					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
-					ahd_request = nullptr;
+					ahd_request.h = nullptr;
 					hr();
 				}
 			}
+
+			void onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response )
+			{
+				if ( ahd_request.h != nullptr )
+				{
+					ahd_request.request = request;
+					ahd_request.response = response;
+					auto hr = ahd_request.h;
+					ahd_request.h = nullptr;
+					hr();
+				}
+			}
+
 
 
 			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response) { 
@@ -572,7 +108,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						nodecpp::setNoException(awaiting);
-						server.ahd_request = awaiting;
+						server.ahd_request.h = awaiting;
 						myawaiting = awaiting;
 					}
 
@@ -580,7 +116,10 @@ namespace nodecpp {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
 						if ( nodecpp::isException(myawaiting) )
 							throw nodecpp::getException(myawaiting);
-						// TODO: ...
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.request != nullptr ); 
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.response != nullptr ); 
+						request = server.ahd_request.request;
+						response = server.ahd_request.response;
 					}
 				};
 				return connection_awaiter(*this, request, response);
@@ -610,9 +149,9 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						nodecpp::setNoException(awaiting);
-						server.ahd_request = awaiting;
+						server.ahd_request.h = awaiting;
 						myawaiting = awaiting;
-						to = nodecpp::setTimeoutForAction( server.ahd_request, period );
+						to = nodecpp::setTimeoutForAction( server.ahd_request.h, period );
 					}
 
 					auto await_resume() {
@@ -620,7 +159,10 @@ namespace nodecpp {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
 						if ( nodecpp::isException(myawaiting) )
 							throw nodecpp::getException(myawaiting);
-						// TODO: ...
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.request != nullptr ); 
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.response != nullptr ); 
+						request = server.ahd_request.request;
+						response = server.ahd_request.response;
 					}
 				};
 				return connection_awaiter(*this, request, response, period);
@@ -813,6 +355,540 @@ namespace nodecpp {
 			HttpServer() {};
 			virtual ~HttpServer() {}
 		};
+
+		class HttpMessageBase // TODO: candidate for being a part of lib
+		{
+		protected:
+			nodecpp::safememory::soft_ptr<HttpSocketBase> sock;
+
+			static constexpr std::pair<const char *, size_t> MethodNames[] = { 
+				std::make_pair( "GET", sizeof( "GET" ) - 1 ),
+				std::make_pair( "HEAD", sizeof( "HEAD" ) - 1 ),
+				std::make_pair( "POST", sizeof( "POST" ) - 1 ),
+				std::make_pair( "PUT", sizeof( "PUT" ) - 1 ),
+				std::make_pair( "DELETE", sizeof( "DELETE" ) - 1 ),
+				std::make_pair( "TRACE", sizeof( "TRACE" ) - 1 ),
+				std::make_pair( "OPTIONS", sizeof( "OPTIONS" ) - 1 ),
+				std::make_pair( "CONNECT", sizeof( "CONNECT" ) - 1 ),
+				std::make_pair( "PATCH", sizeof( "PATCH" ) - 1 ) };
+			static constexpr size_t MethodCount = sizeof( MethodNames ) / sizeof( std::pair<const char *, size_t> );
+
+			enum ConnStatus { close, keep_alive };
+
+			size_t contentLength = 0;
+
+			typedef std::map<std::string, std::string> header_t; // so far good for both directions
+			header_t header;
+
+			// utils
+			std::string makeLower( std::string& str ) // quick and dirty; TODO: revise (see, for instance, discussion at https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case)
+			{
+				std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
+				return str;
+			}
+
+			void setCL()
+			{
+				auto cl = header.find( "content-length" );
+				if ( cl != header.end() )
+					contentLength = ::atol( cl->second.c_str() ); // quick and dirty; TODO: revise
+				contentLength = 0;
+			}
+
+		};
+
+
+
+        class HttpSocketBase : public nodecpp::net::SocketBase
+		{
+			friend class IncomingHttpMessageAtServer;
+			friend class OutgoingHttpMessageAtServer;
+
+			// NOTE: private part is for future move to lib
+			// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
+			class DummyBuffer
+			{
+				Buffer base;
+				size_t currpos = 0;
+			public:
+				DummyBuffer() : base(0x10000) {}
+				void pushFragment(const Buffer& b) { base.append( b ); }
+				bool popLine(Buffer& b) 
+				{ 
+					for ( ; currpos<base.size(); ++currpos )
+						if ( *(base.begin() + currpos) == '\n' )
+						{
+							b.clear();
+							b.append( base, 0, currpos+1 );
+							base.popFront( currpos+1 );
+							currpos = 0;
+							return true;
+						}
+					return false;
+				}
+			};
+			DummyBuffer dbuf;
+
+			size_t rqCnt = 0;
+
+			nodecpp::handler_ret_type readLine(Buffer& lb)
+			{
+				nodecpp::Buffer r_buff(0x200);
+				while ( !dbuf.popLine( lb ) )
+				{
+					co_await a_read( r_buff, 2 );
+					dbuf.pushFragment( r_buff );
+				}
+
+				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
+
+			nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
+			nodecpp::safememory::owning_ptr<OutgoingHttpMessageAtServer> response;
+			awaitable_handle_t ahd_continueGetting = nullptr;
+
+#ifndef NODECPP_NO_COROUTINES
+			auto a_continueGetting() { 
+
+				struct continue_getting_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					HttpSocketBase& socket;
+
+					continue_getting_awaiter(HttpSocketBase& socket_) : socket( socket_ ) {}
+
+					continue_getting_awaiter(const continue_getting_awaiter &) = delete;
+					continue_getting_awaiter &operator = (const continue_getting_awaiter &) = delete;
+
+					~continue_getting_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						socket.ahd_continueGetting = awaiting;
+						myawaiting = awaiting;
+					}
+
+					auto await_resume() {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+					}
+				};
+				return continue_getting_awaiter(*this);
+			}
+
+#endif // NODECPP_NO_COROUTINES
+
+		public:
+			HttpSocketBase() {
+				request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
+				response = nodecpp::safememory::make_owning<OutgoingHttpMessageAtServer>();
+				run(); // TODO: think about proper time for this call
+			}
+			virtual ~HttpSocketBase() {}
+
+			nodecpp::handler_ret_type run()
+			{
+				for(;;)
+				{
+					co_await getRequest( *request );
+//					request->dbgTrace();
+
+					++rqCnt;
+					// TODO: let server fire a 'request' event
+
+					nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( request, response );
+					co_await a_continueGetting();
+				}
+				CO_RETURN;
+			}
+
+			void proceedToNext()
+			{
+				if ( ahd_continueGetting != nullptr )
+				{
+					auto hr = ahd_continueGetting;
+					ahd_continueGetting = nullptr;
+					hr();
+				}
+			}
+
+#ifndef NODECPP_NO_COROUTINES
+			void forceReleasingAllCoroHandles()
+			{
+				if ( ahd_continueGetting != nullptr )
+				{
+					auto hr = ahd_continueGetting;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					ahd_continueGetting = nullptr;
+					hr();
+				}
+			}
+#else
+			void forceReleasingAllCoroHandles() {}
+#endif // NODECPP_NO_COROUTINES
+
+#if 0
+			nodecpp::handler_ret_type sendReply2()
+			{
+				Buffer reply;
+				std::string replyHeadFormat = "HTTP/1.1 200 OK\r\n"
+					"Content-Length: {}\r\n"
+					"Content-Type: text/html\r\n"
+					"Connection: keep-alive\r\n"
+					"\r\n";
+				std::string replyHtmlFormat = "<html>\r\n"
+					"<body>\r\n"
+					"<h1>Get reply! (# {})</h1>\r\n"
+					"</body>\r\n"
+					"</html>\r\n";
+//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
+				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
+				std::string replyHead = fmt::format( replyHeadFormat.c_str(), replyHtml.size() );
+
+				std::string r = replyHead + replyHtml;
+				reply.append( r.c_str(), r.size() );
+				write(reply);
+		//			end();
+
+//				++(this->getDataParent()->stats.rqCnt);
+
+				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type sendReply()
+			{
+				Buffer reply;
+				std::string replyBegin = "HTTP/1.1 200 OK\r\n"
+				"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
+				"Server: Apache/2.2.14 (Win32)\r\n"
+				"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
+				"Content-Length: 88\r\n"
+				"Content-Type: text/html\r\n"
+				"Connection: close\r\n"
+				"\r\n\r\n"
+				"<html>\r\n"
+				"<body>\r\n";
+							std::string replyEnd = "</body>\r\n"
+				"</html>\r\n"
+				"\r\n\r\n";
+//				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
+				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", 1 );
+				std::string r = replyBegin + replyBody + replyEnd;
+				reply.append( r.c_str(), r.size() );
+				write(reply);
+				end();
+
+//				++(this->getDataParent()->stats.rqCnt);
+
+				CO_RETURN;
+			}
+#endif
+
+			/*nodecpp::handler_ret_type processRequest()
+			{
+				IncomingHttpMessageAtServer message;
+				co_await getRequest( message );
+				message.dbgTrace();
+
+				++rqCnt;
+				co_await sendReply();
+
+				CO_RETURN;
+			}*/
+
+		};
+
+		template<class DataParentT>
+		class HttpSocket : public HttpSocketBase, public ::nodecpp::DataParent<DataParentT>
+		{
+		public:
+			using DataParentType = DataParentT;
+			HttpSocket<DataParentT>() {};
+			HttpSocket<DataParentT>(DataParentT* dataParent ) : HttpSocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~HttpSocket<DataParentT>() {}
+		};
+
+		template<>
+		class HttpSocket<void> : public HttpSocketBase
+		{
+		public:
+			using DataParentType = void;
+			HttpSocket() {};
+			virtual ~HttpSocket() {}
+		};
+
+		class IncomingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
+		{
+		private:
+			struct Method // so far a struct
+			{
+				std::string name;
+				std::string value;
+				void clear() { name.clear(); value.clear(); }
+			};
+			Method method;
+
+			nodecpp::Buffer body;
+			enum ConnStatus { close, keep_alive };
+			ConnStatus connStatus = ConnStatus::keep_alive;
+			enum ReadStatus { noinit, in_hdr, in_body, completed };
+			ReadStatus readStatus = ReadStatus::noinit;
+			size_t bodyBytesRetrieved = 0;
+
+		private:
+			void setConnStatus()
+			{
+				auto cs = header.find( "connection" );
+				if ( cs != header.end() )
+				{
+					std::string val = cs->second.c_str();
+					val = makeLower( val );
+					if ( val == "keep alive" )
+						connStatus = ConnStatus::keep_alive;
+					else if ( val == "close" )
+						connStatus = ConnStatus::close;
+				}
+				contentLength = 0;
+			}
+
+		public:
+			IncomingHttpMessageAtServer() {}
+			IncomingHttpMessageAtServer(const IncomingHttpMessageAtServer&) = delete;
+			IncomingHttpMessageAtServer operator = (const IncomingHttpMessageAtServer&) = delete;
+			IncomingHttpMessageAtServer(IncomingHttpMessageAtServer&& other)
+			{
+				method = std::move( other.method );
+				header = std::move( other.header );
+				readStatus = other.readStatus;
+				contentLength = other.contentLength;
+				other.readStatus = ReadStatus::noinit;
+			}
+			IncomingHttpMessageAtServer& operator = (IncomingHttpMessageAtServer&& other)
+			{
+				method = std::move( other.method );
+				header = std::move( other.header );
+				readStatus = other.readStatus;
+				other.readStatus = ReadStatus::noinit;
+				contentLength = other.contentLength;
+				other.contentLength = 0;
+				return *this;
+			}
+			void clear() // TODO: ensure necessity (added for reuse purposes)
+			{
+				method.clear();
+				header.clear();
+				body.clear();
+				contentLength = 0;
+				readStatus = ReadStatus::noinit;
+				bodyBytesRetrieved = 0;
+			}
+			nodecpp::handler_ret_type a_readBody( Buffer& b )
+			{
+				if ( bodyBytesRetrieved < getContentLength() )
+				{
+					b.clear();
+					co_await sock->a_read( b, getContentLength() - bodyBytesRetrieved );
+					bodyBytesRetrieved += b.size();
+				}
+				if ( bodyBytesRetrieved == getContentLength() )
+					sock->proceedToNext();
+
+				CO_RETURN;
+			}
+
+
+			bool setMethod( const std::string& line )
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::noinit ); 
+				size_t start = line.find_first_not_of( " \t" );
+				if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
+					return false;
+				for ( size_t i=0; i<MethodCount; ++i )
+					if ( line.size() > MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 && line.c_str()[ MethodNames[i].second] == ' ' ) // TODO: cthink about rfind(*,0)
+					{
+						method.name = MethodNames[i].first;
+						start += MethodNames[i].second + 1;
+						start = line.find_first_not_of( " \t", start );
+						size_t end = line.find_last_not_of(" \t\r\n" );
+						method.value = line.substr( start, end - start + 1 );
+						readStatus = ReadStatus::in_hdr;
+						return true;
+					}
+				return false;
+			}
+
+			bool addHeaderEntry( const std::string& line )
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::in_hdr ); 
+				size_t end = line.find_last_not_of(" \t\r\n" );
+				if ( end == std::string::npos )
+				{
+					if ( !( line.size() == 2 || line[0] == '\r' && line[1] == '\n' ) )
+						return true;
+					setCL();
+					readStatus = contentLength ? ReadStatus::in_body : ReadStatus::completed;
+					return false;
+				}
+				size_t start = line.find_first_not_of( " \t" );
+				size_t idx = line.find(':', start);
+				if ( idx >= end )
+					return false;
+				size_t valStart = line.find_first_not_of( " \t", idx + 1 );
+				std::string key = line.substr( start, idx-start );
+				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
+				return true;
+			}
+
+			size_t getContentLength() const { return contentLength; }
+
+			void dbgTrace()
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{} {}", method.name, method.value );
+				for ( auto& entry : header )
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
+			}
+		};
+
+		class OutgoingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
+		{
+		private:
+			typedef std::map<std::string, std::string> header_t;
+			header_t header;
+			size_t contentLength = 0;
+			nodecpp::Buffer body;
+			ConnStatus connStatus = ConnStatus::keep_alive;
+			enum WriteStatus { notyet, hdr_flushed, in_body, completed };
+			WriteStatus writeStatus = WriteStatus::notyet;
+
+			std::string replyStatus;
+			size_t bodyBytesWritten = 0;
+
+		private:
+
+		public:
+			OutgoingHttpMessageAtServer() {}
+			OutgoingHttpMessageAtServer(const OutgoingHttpMessageAtServer&) = delete;
+			OutgoingHttpMessageAtServer operator = (const OutgoingHttpMessageAtServer&) = delete;
+			OutgoingHttpMessageAtServer(OutgoingHttpMessageAtServer&& other)
+			{
+				replyStatus = std::move( other.replyStatus );
+				header = std::move( other.header );
+				contentLength = other.contentLength;
+			}
+			OutgoingHttpMessageAtServer& operator = (OutgoingHttpMessageAtServer&& other)
+			{
+				replyStatus = std::move( other.replyStatus );
+				header = std::move( other.header );
+				contentLength = other.contentLength;
+				other.contentLength = 0;
+				return *this;
+			}
+			void clear() // TODO: ensure necessity (added for reuse purposes)
+			{
+				replyStatus.clear();
+				header.clear();
+				body.clear();
+				contentLength = 0;
+			}
+
+			void dbgTrace()
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}", replyStatus );
+				for ( auto& entry : header )
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}: {}", entry.first, entry.second );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
+			}
+
+			void addHeader( std::string key, std::string value )
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
+				// TODO: sanitize
+				header.insert( std::make_pair( key, value ) );
+			}
+
+			void setStatus( std::string status ) // temporary stub; TODO: ...
+			{
+				replyStatus = status;
+			}
+
+			nodecpp::handler_ret_type flushHeaders()
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
+				// TODO: add real implementation
+				std::string out = replyStatus;
+				out += "\r\n";
+				for ( auto h: header )
+				{
+					out += h.first;
+					out += ": ";
+					out += h.second;
+					out += "\r\n";
+				}
+				out += "\r\n";
+				Buffer b;
+				b.append( out.c_str(), out.size() - 1 );
+				setCL();
+				co_await sock->a_write( b );
+				writeStatus = WriteStatus::hdr_flushed;
+				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type writeBodyPart(Buffer& b)
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
+				// TODO: add real implementation
+				co_await sock->a_write( b );
+				CO_RETURN;
+			}
+		};
+
+		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
+		{
+			bool ready = false;
+			Buffer lb;
+			co_await readLine(lb);
+			lb.appendUint8( 0 );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
+			{
+				end();
+//				co_await sendReply();
+			}
+
+			do
+			{
+				lb.clear();
+				co_await readLine(lb);
+				lb.appendUint8( 0 );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+			}
+			while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
+
+			/*if ( message.getContentLength() )
+			{
+				lb.clear();
+				lb.reserve( message.getContentLength() );
+				co_await a_read( lb, message.getContentLength() );
+			}*/
+
+			CO_RETURN;
+		}
+
+		/*struct HttpRR
+		{
+			IncomingHttpMessageAtServer request;
+			OutgoingHttpMessageAtServer response;
+			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerBase> server;
+		};*/
 
 		template<class ServerT, class SocketT, class ... Types>
 		static

@@ -98,8 +98,26 @@ public:
 		try { 
 			for(;;) { 
 				co_await srv->a_request(request, response); 
+				request->dbgTrace();
 				// TODO: co_await for msg body, if any
 				// TODO: form and send response
+				std::string replyHtmlFormat = "<html>\r\n"
+					"<body>\r\n"
+					"<h1>Get reply! (# {})</h1>\r\n"
+					"</body>\r\n"
+					"</html>\r\n";
+//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
+				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
+
+				response->setStatus( "HTTP/1.1 200 OK" );
+				response->addHeader( "Content-Type", "text/html" );
+				response->addHeader( "Connection", "keep-alive" );
+				response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size() - 1) );
+
+				co_await response->flushHeaders();
+				Buffer b;
+				b.append( replyHtml.c_str(), replyHtml.size() - 1 );
+				co_await response->writeBodyPart(b);
 			} 
 		} 
 		catch (...) { // TODO: what?
