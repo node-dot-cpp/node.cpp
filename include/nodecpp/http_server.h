@@ -36,6 +36,8 @@
 #include <cctype>
 #include <string>
 
+// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
+
 namespace nodecpp {
 
 	namespace net {
@@ -58,6 +60,7 @@ namespace nodecpp {
 				nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response;
 			};
 			awaitable_request_data ahd_request;
+
 			void forceReleasingAllCoroHandles()
 			{
 				if ( ahd_request.h != nullptr )
@@ -80,8 +83,6 @@ namespace nodecpp {
 					hr();
 				}
 			}
-
-
 
 			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response) { 
 
@@ -171,9 +172,7 @@ namespace nodecpp {
 
 		public:
 			HttpServerBase() {}
-			virtual ~HttpServerBase() {
-//				MessageList.clear();
-			}
+			virtual ~HttpServerBase() {}
 
 			struct UserHandlersCommon
 			{
@@ -397,15 +396,11 @@ namespace nodecpp {
 			}
 		};
 
-
-
         class HttpSocketBase : public nodecpp::net::SocketBase
 		{
 			friend class IncomingHttpMessageAtServer;
 			friend class OutgoingHttpMessageAtServer;
 
-			// NOTE: private part is for future move to lib
-			// NOTE: current implementation is anty-optimal; it's just a sketch of what could be in use
 			class DummyBuffer
 			{
 				Buffer base;
@@ -429,8 +424,6 @@ namespace nodecpp {
 			};
 			DummyBuffer dbuf;
 
-			size_t rqCnt = 0;
-
 			nodecpp::handler_ret_type readLine(Buffer& lb)
 			{
 printf( "about to read line\n" );
@@ -438,7 +431,7 @@ printf( "about to read line\n" );
 				while ( !dbuf.popLine( lb ) )
 				{
 					co_await a_read( r_buff, 2 );
-printf( "a segment has been read\n" );
+printf( "(a segment of) a line has been read\n" );
 					dbuf.pushFragment( r_buff );
 				}
 
@@ -498,9 +491,6 @@ printf( "resumed ahd_continueGetting\n" );
 printf( "about to get (next) request\n" );
 					co_await getRequest( *request );
 					auto cg = a_continueGetting();
-//					request->dbgTrace();
-
-					++rqCnt;
 
 					nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( request, response );
 //					co_await cg;
