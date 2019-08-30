@@ -48,9 +48,6 @@ namespace nodecpp {
 
 		class HttpServerBase : public nodecpp::net::ServerBase
 		{
-		/*protected:
-			MultiOwner<HttpRR> MessageList;*/
-
 		public:
 
 #ifndef NODECPP_NO_COROUTINES
@@ -171,21 +168,6 @@ namespace nodecpp {
 #else
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
-
-		/*nodecpp::handler_ret_type a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response) { 
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
-			co_await a_connection<nodecpp::net::SocketBase>( socket );
-			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("http server: got connected()!");
-			owning_ptr<HttpRR> rr = nodecpp::safememory::make_owning<HttpRR>();
-			rr->socket = socket;
-			nodecpp::safememory::soft_ptr<HttpServerBase> myPtr = myThis.getSoftPtr<HttpServerBase>(this);
-			rr->server = myPtr;
-			soft_ptr<HttpRR> retRR( rr );
-			MessageList.add( std::move(rr) );
-
-			CO_RETURN;
-		}*/
 
 		public:
 			HttpServerBase() {}
@@ -552,75 +534,6 @@ printf( "about to resume ahd_continueGetting\n" );
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
 
-#if 0
-			nodecpp::handler_ret_type sendReply2()
-			{
-				Buffer reply;
-				std::string replyHeadFormat = "HTTP/1.1 200 OK\r\n"
-					"Content-Length: {}\r\n"
-					"Content-Type: text/html\r\n"
-					"Connection: keep-alive\r\n"
-					"\r\n";
-				std::string replyHtmlFormat = "<html>\r\n"
-					"<body>\r\n"
-					"<h1>Get reply! (# {})</h1>\r\n"
-					"</body>\r\n"
-					"</html>\r\n";
-//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
-				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
-				std::string replyHead = fmt::format( replyHeadFormat.c_str(), replyHtml.size() );
-
-				std::string r = replyHead + replyHtml;
-				reply.append( r.c_str(), r.size() );
-				write(reply);
-		//			end();
-
-//				++(this->getDataParent()->stats.rqCnt);
-
-				CO_RETURN;
-			}
-
-			nodecpp::handler_ret_type sendReply()
-			{
-				Buffer reply;
-				std::string replyBegin = "HTTP/1.1 200 OK\r\n"
-				"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
-				"Server: Apache/2.2.14 (Win32)\r\n"
-				"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
-				"Content-Length: 88\r\n"
-				"Content-Type: text/html\r\n"
-				"Connection: close\r\n"
-				"\r\n\r\n"
-				"<html>\r\n"
-				"<body>\r\n";
-							std::string replyEnd = "</body>\r\n"
-				"</html>\r\n"
-				"\r\n\r\n";
-//				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
-				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", 1 );
-				std::string r = replyBegin + replyBody + replyEnd;
-				reply.append( r.c_str(), r.size() );
-				write(reply);
-				end();
-
-//				++(this->getDataParent()->stats.rqCnt);
-
-				CO_RETURN;
-			}
-#endif
-
-			/*nodecpp::handler_ret_type processRequest()
-			{
-				IncomingHttpMessageAtServer message;
-				co_await getRequest( message );
-				message.dbgTrace();
-
-				++rqCnt;
-				co_await sendReply();
-
-				CO_RETURN;
-			}*/
-
 		};
 
 		template<class DataParentT>
@@ -829,32 +742,6 @@ printf( "about to resume ahd_continueGetting\n" );
 
 			nodecpp::handler_ret_type flushHeaders()
 			{
-#if 0
-				Buffer reply;
-				std::string replyBegin = "HTTP/1.1 200 OK\r\n"
-				"Date: Mon, 27 Jul 2009 12:28:53 GMT\r\n"
-				"Server: Apache/2.2.14 (Win32)\r\n"
-				"Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\n"
-				"Content-Length: 88\r\n"
-				"Content-Type: text/html\r\n"
-				"Connection: close\r\n"
-				"\r\n\r\n"
-				"<html>\r\n"
-				"<body>\r\n";
-							std::string replyEnd = "</body>\r\n"
-				"</html>\r\n"
-				"\r\n\r\n";
-//				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", this->getDataParent()->stats.rqCnt + 1 );
-				std::string replyBody = fmt::format( "<h1>Get reply! (# {})</h1>\r\n", 1 );
-				std::string r = replyBegin + replyBody + replyEnd;
-				reply.append( r.c_str(), r.size() );
-				sock->write(reply);
-				sock->end();
-
-				CO_RETURN;
-
-#else
-
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: add real implementation
 				std::string out = replyStatus;
@@ -867,14 +754,7 @@ printf( "about to resume ahd_continueGetting\n" );
 					out += "\r\n";
 				}
 				out += "\r\n";
-/*std::string replyHtmlFormat = "<html>\r\n"
-	"<body>\r\n"
-	"<h1>Get reply! (# {})</h1>\r\n"
-	"</body>\r\n"
-	"</html>\r\n";
-//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
-std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
-out += replyHtml;*/
+
 				Buffer b;
 				b.append( out.c_str(), out.size() );
 				parseContentLength();
@@ -883,23 +763,10 @@ out += replyHtml;*/
 				parseConnStatus();
 				header.clear();
 				CO_RETURN;
-#endif
 			}
 
 			nodecpp::handler_ret_type writeBodyPart(Buffer& b)
 			{
-/*std::string replyHtmlFormat = "<html>\r\n"
-	"<body>\r\n"
-	"<h1>Get reply! (# {})</h1>\r\n"
-	"</body>\r\n"
-	"</html>\r\n";
-//				std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), this->getDataParent()->stats.rqCnt + 1 );
-std::string replyHtml = fmt::format( replyHtmlFormat.c_str(), 1 );
-Buffer b1;
-b1.append( replyHtml.c_str(), replyHtml.size() );
-co_await sock->a_write( b1 );
-sock->end();
-				CO_RETURN;*/
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
 				// TODO: add real implementation
 				co_await sock->a_write( b );
@@ -959,14 +826,6 @@ printf( "getting next request has been allowed\n" );
 			response->sock = myThis.getSoftPtr<HttpSocketBase>(this);
 			run(); // TODO: think about proper time for this call
 		}
-
-		/*struct HttpRR
-		{
-			IncomingHttpMessageAtServer request;
-			OutgoingHttpMessageAtServer response;
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
-			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerBase> server;
-		};*/
 
 		template<class ServerT, class SocketT, class ... Types>
 		static
