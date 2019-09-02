@@ -73,7 +73,6 @@ public:
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-//		nodecpp::net::ServerBase::addHandler<ServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionx>(this);
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
 		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
@@ -279,29 +278,6 @@ public:
 
 		CO_RETURN;
 	}
-
-	/*nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyHttpServer> server, nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
-		//srv.unref();
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
-		soft_ptr<HttpSock> socketPtr = nodecpp::safememory::soft_ptr_static_cast<HttpSock>(socket);
-
-		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
-		nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response;
-		try { 
-			for(;;) { 
-				co_await socketPtr->a_(request, response); 
-				// TODO: co_await for msg body, if any
-				// TODO: form and send response
-			} 
-		} 
-		catch (...) { socketPtr->end(); }
-
-		CO_RETURN;
-	}
-
-	nodecpp::handler_ret_type readLine(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
-	}*/
 
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<CtrlServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
