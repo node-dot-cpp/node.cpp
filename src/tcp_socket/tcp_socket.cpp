@@ -130,7 +130,7 @@ namespace nodecpp
 	{
 		void internal_close(SOCKET sock)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_close() on sock {}", sock);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_close() on sock {}", sock);
 			CLOSE_SOCKET(sock);
 		}
 
@@ -142,13 +142,13 @@ namespace nodecpp
 			int how = SHUT_WR;
 		#endif
 
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_shutdown_send() on sock {}", sock);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_shutdown_send() on sock {}", sock);
 
 			int res = shutdown(sock, how);
 			if (0 != res)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("shutdown on sock {} failed; error {}", sock, error);
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("shutdown on sock {} failed; error {}", sock, error);
 			}
 		}
 
@@ -336,7 +336,7 @@ namespace nodecpp
 
 		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_tcp_accept() on sock {}", sock);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_tcp_accept() on sock {}", sock);
 			struct ::sockaddr_in sa;
 			socklen_t sz = sizeof(struct ::sockaddr_in);
 			memset(&sa, 0, sz);
@@ -353,7 +353,7 @@ namespace nodecpp
 	
 			ip = Ip4::fromNetwork(sa.sin_addr.s_addr);
 			port = Port::fromNetwork(sa.sin_port);
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() new sock {} from {}:{}", outSock, ip.toStr(), port.toStr());
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() new sock {} from {}:{}", outSock, ip.toStr(), port.toStr());
 
 			if (!internal_async_socket(outSock))
 			{
@@ -397,13 +397,13 @@ namespace nodecpp
 				int error = getSockError();
 				if (isErrorWouldBlock(error))
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} PENDING", sock, size, sentSize);
+//!!//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} PENDING", sock, size, sentSize);
 
 					return COMMLAYER_RET_PENDING;
 				}
 				else
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} ERROR {}", sock, size, error);
+//!!//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} ERROR {}", sock, size, error);
 					return COMMLAYER_RET_FAILED;
 				}
 			}

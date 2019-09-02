@@ -74,14 +74,14 @@ namespace nodecpp {
 
 			void onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response )
 			{
-printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
+//printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
 				if ( ahd_request.h != nullptr )
 				{
 					ahd_request.request = request;
 					ahd_request.response = response;
 					auto hr = ahd_request.h;
 					ahd_request.h = nullptr;
-printf( "about to rezume ahd_request.h\n" );
+//printf( "about to rezume ahd_request.h\n" );
 					hr();
 				}
 			}
@@ -428,12 +428,12 @@ printf( "about to rezume ahd_request.h\n" );
 
 			nodecpp::handler_ret_type readLine(Buffer& lb)
 			{
-printf( "about to read line\n" );
+//printf( "about to read line\n" );
 				nodecpp::Buffer r_buff(0x200);
 				while ( !dbuf.popLine( lb ) )
 				{
 					co_await a_read( r_buff, 2 );
-printf( "(a segment of) a line has been read; size = %zd (%zd)\n", r_buff.size(), r_buff.size() + 54 );
+//printf( "(a segment of) a line has been read; size = %zd (%zd)\n", r_buff.size(), r_buff.size() + 54 );
 					dbuf.pushFragment( r_buff );
 					r_buff.clear();
 				}
@@ -475,7 +475,7 @@ printf( "(a segment of) a line has been read; size = %zd (%zd)\n", r_buff.size()
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
 						if ( nodecpp::isException(myawaiting) )
 							throw nodecpp::getException(myawaiting);
-printf( "resumed ahd_continueGetting\n" );
+//printf( "resumed ahd_continueGetting\n" );
 					}
 				};
 				return continue_getting_awaiter(*this);
@@ -491,7 +491,7 @@ printf( "resumed ahd_continueGetting\n" );
 			{
 				for(;;)
 				{
-printf( "about to get (next) request\n" );
+//printf( "about to get (next) request\n" );
 					co_await getRequest( *request );
 					auto cg = a_continueGetting();
 
@@ -507,7 +507,7 @@ printf( "about to get (next) request\n" );
 				{
 					auto hr = ahd_continueGetting;
 					ahd_continueGetting = nullptr;
-printf( "about to resume ahd_continueGetting\n" );
+//printf( "about to resume ahd_continueGetting\n" );
 					hr();
 				}
 			}
@@ -788,11 +788,11 @@ printf( "about to resume ahd_continueGetting\n" );
 					clear();
 					sock->proceedToNext();
 				}
-printf( "request has been sent\n" );
+//printf( "request has been sent\n" );
 sock->request->clear();
 				if ( connStatus != ConnStatus::keep_alive )
 				{
-printf( "socket has been ended\n" );
+//printf( "socket has been ended\n" );
 					sock->end();
 					clear();
 					CO_RETURN;
@@ -800,7 +800,7 @@ printf( "socket has been ended\n" );
 //				else
 					clear();
 sock->proceedToNext();
-printf( "getting next request has been allowed\n" );
+//printf( "getting next request has been allowed\n" );
 				CO_RETURN;
 			}
 		};
@@ -811,7 +811,7 @@ printf( "getting next request has been allowed\n" );
 			Buffer lb;
 			co_await readLine(lb);
 			lb.appendUint8( 0 );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			if ( !message.parseMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
 			{
 				end();
@@ -823,7 +823,7 @@ printf( "getting next request has been allowed\n" );
 				lb.clear();
 				co_await readLine(lb);
 				lb.appendUint8( 0 );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
 			while ( message.parseHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
 
