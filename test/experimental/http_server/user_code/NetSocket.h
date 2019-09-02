@@ -103,7 +103,8 @@ public:
 				++(stats.rqCnt);
 				request->dbgTrace();
 
-				simpleProcessing( request, response );
+//				simpleProcessing( request, response );
+				yetSimpleProcessing( request, response );
 			} 
 		} 
 		catch (...) { // TODO: what?
@@ -197,6 +198,42 @@ public:
 
 		// TODO: co_await for msg body, if any
 		// TODO: form and send response
+
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type yetSimpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response )
+	{
+		// unexpected method
+		if ( !(request->getMethod() == "GET" || request->getMethod() == "HEAD" ) )
+		{
+			response->setStatus( "HTTP/1.1 405 Method Not Allowed" );
+			response->addHeader( "Connection", "close" );
+			response->addHeader( "Content-Length", "0" );
+			response->dbgTrace();
+			co_await response->flushHeaders();
+			CO_RETURN;
+		}
+
+		const auto & url = request->getUrl();
+		size_t start = url.find_first_of( "?" );
+		response->setStatus( "HTTP/1.1 200 OK" );
+		response->addHeader( "Content-Type", "text/xml" );
+		Buffer b;
+		if ( start == std::string::npos )
+		{
+			b.append( "no value specified", sizeof( "no value specified" ) - 1 );
+			response->addHeader( "Connection", "close" );
+		}
+		else
+		{
+			b.append( url.c_str() + start, url.size() - start );
+			response->addHeader( "Connection", "keep-alive" );
+		}
+		response->addHeader( "Content-Length", fmt::format( "{}", b.size() ) );
+		response->dbgTrace();
+		co_await response->flushHeaders();
+		co_await response->writeBodyPart(b);
 
 		CO_RETURN;
 	}
