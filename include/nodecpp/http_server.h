@@ -74,12 +74,14 @@ namespace nodecpp {
 
 			void onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response )
 			{
+printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
 				if ( ahd_request.h != nullptr )
 				{
 					ahd_request.request = request;
 					ahd_request.response = response;
 					auto hr = ahd_request.h;
 					ahd_request.h = nullptr;
+printf( "about to rezume ahd_request.h\n" );
 					hr();
 				}
 			}
@@ -431,8 +433,9 @@ printf( "about to read line\n" );
 				while ( !dbuf.popLine( lb ) )
 				{
 					co_await a_read( r_buff, 2 );
-printf( "(a segment of) a line has been read\n" );
+printf( "(a segment of) a line has been read; size = %zd (%zd)\n", r_buff.size(), r_buff.size() + 54 );
 					dbuf.pushFragment( r_buff );
+					r_buff.clear();
 				}
 
 				CO_RETURN;
@@ -553,8 +556,9 @@ printf( "about to resume ahd_continueGetting\n" );
 			struct Method // so far a struct
 			{
 				std::string name;
-				std::string value;
-				void clear() { name.clear(); value.clear(); }
+				std::string url;
+				std::string version;
+				void clear() { name.clear(); url.clear(); version.clear(); }
 			};
 			Method method;
 
@@ -611,27 +615,42 @@ printf( "about to resume ahd_continueGetting\n" );
 			}
 
 
-			bool setMethod( const std::string& line )
+			bool parseMethod( const std::string& line )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::noinit ); 
 				size_t start = line.find_first_not_of( " \t" );
 				if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
 					return false;
+				bool found = false;
+				// Method name
 				for ( size_t i=0; i<MethodCount; ++i )
 					if ( line.size() > MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 && line.c_str()[ MethodNames[i].second] == ' ' ) // TODO: cthink about rfind(*,0)
 					{
 						method.name = MethodNames[i].first;
 						start += MethodNames[i].second + 1;
 						start = line.find_first_not_of( " \t", start );
-						size_t end = line.find_last_not_of(" \t\r\n" );
-						method.value = line.substr( start, end - start + 1 );
-						readStatus = ReadStatus::in_hdr;
-						return true;
+						found = true;
+						break;
 					}
-				return false;
+				if ( !found )
+					return false;
+				// URI
+				size_t endOfURI = line.find_first_of(" \t\r\n", start + 1 );
+				method.url = line.substr( start, endOfURI - start );
+				if ( method.url.size() == 0 )
+					return false;
+				start = line.find_first_not_of( " \t", endOfURI );
+				// HTTP version
+				size_t end = line.find_last_not_of(" \t\r\n" );
+				if ( memcmp( line.c_str() + start, "HTTP/", 5 ) != 0 )
+					return false;
+				start += 5;
+				method.version = line.substr( start, end - start + 1 );
+				readStatus = ReadStatus::in_hdr;
+				return true;
 			}
 
-			bool addHeaderEntry( const std::string& line )
+			bool parseHeaderEntry( const std::string& line )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::in_hdr ); 
 				size_t end = line.find_last_not_of(" \t\r\n" );
@@ -653,11 +672,15 @@ printf( "about to resume ahd_continueGetting\n" );
 				return true;
 			}
 
+			const std::string& getMethod() { return method.name; }
+			const std::string& getUrl() { return method.url; }
+			const std::string& getHttpVersion() { return method.version; }
+
 			size_t getContentLength() const { return contentLength; }
 
 			void dbgTrace()
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [->] {} {}", method.name, method.value );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [->] {} {} HTTP/{}", method.name, method.url, method.version );
 				for ( auto& entry : header )
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [->] {}: {}", entry.first, entry.second );
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
@@ -759,7 +782,12 @@ printf( "about to resume ahd_continueGetting\n" );
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
 				// TODO: add real implementation
-				co_await sock->a_write( b );
+				try { co_await sock->a_write( b ); } 
+				catch(...) {
+					sock->end();
+					clear();
+					sock->proceedToNext();
+				}
 printf( "request has been sent\n" );
 sock->request->clear();
 				if ( connStatus != ConnStatus::keep_alive )
@@ -783,8 +811,8 @@ printf( "getting next request has been allowed\n" );
 			Buffer lb;
 			co_await readLine(lb);
 			lb.appendUint8( 0 );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
-			if ( !message.setMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+			if ( !message.parseMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
 			{
 				end();
 //				co_await sendReply();
@@ -795,9 +823,9 @@ printf( "getting next request has been allowed\n" );
 				lb.clear();
 				co_await readLine(lb);
 				lb.appendUint8( 0 );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line: {}", reinterpret_cast<char*>(lb.begin()) );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
-			while ( message.addHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
+			while ( message.parseHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
 
 			/*if ( message.getContentLength() )
 			{
