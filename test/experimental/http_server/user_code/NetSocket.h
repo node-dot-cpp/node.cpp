@@ -103,93 +103,100 @@ public:
 				++(stats.rqCnt);
 				request->dbgTrace();
 
-				// unexpected method
-				if ( !(request->getMethod() == "GET" || request->getMethod() == "HEAD" ) )
-				{
-					response->setStatus( "HTTP/1.1 405 Method Not Allowed" );
-					response->addHeader( "Connection", "close" );
-					response->addHeader( "Content-Length", "0" );
-					response->dbgTrace();
-					co_await response->flushHeaders();
-					CO_RETURN;
-				}
-
-				bool dataAvailable = false;
-				std::string replyHtml;
-				if ( request->getUrl() == "/" )
-				{
-					std::string replyHtmlFormat = "<html>\r\n"
-						"<body>\r\n"
-						"<h1>HOME</h1>\r\n"
-						"<p>ordinal at server: {}\r\n"
-						"<p>Please proceed to <a href=\"another_page.html\">another_page.html</a>"
-						"</body>\r\n"
-						"</html>\r\n";
-					replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
-					dataAvailable = true;
-				}
-				else if ( request->getUrl() == "/another_page.html" )
-				{
-					std::string replyHtmlFormat = "<html>\r\n"
-						"<body>\r\n"
-						"<h1>Another Page</h1>\r\n"
-						"<p>ordinal at server: {}\r\n"
-						"<p>Please proceed to <a href=\"another_page.html\">this page</a> again, or back to <a href=\"/\">HOME</a><br/>"
-						"( or try to access <a href=\"x.html\">inexistent</a> page to (hopefully) see 404 error"
-						"</body>\r\n"
-						"</html>\r\n";
-					replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
-					dataAvailable = true;
-				}
-				else // not found (body for 404)
-				{
-					std::string replyHtmlFormat = "<html>\r\n"
-						"<body>\r\n"
-						"<h1>404 Not Found</h1>\r\n"
-						"<p>ordinal at server: {}\r\n"
-						"<p>Please proceed to <a href=\"/\">HOME</a>"
-						"</body>\r\n"
-						"</html>\r\n";
-					replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
-					dataAvailable = false;
-				}
-
-				if ( dataAvailable )
-				{
-					response->setStatus( "HTTP/1.1 200 OK" );
-					response->addHeader( "Content-Type", "text/html" );
-					response->addHeader( "Connection", "keep-alive" );
-	//				response->addHeader( "Connection", "close" );
-					response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()) );
-
-					response->dbgTrace();
-					co_await response->flushHeaders();
-					Buffer b;
-					b.append( replyHtml.c_str(), replyHtml.size() );
-					co_await response->writeBodyPart(b);
-				}
-				else
-				{
-					response->setStatus( "HTTP/1.1 404 Not Found" );
-					response->addHeader( "Connection", "keep-alive" );
-	//				response->addHeader( "Connection", "close" );
-//					response->addHeader( "Content-Length", "0" );
-					response->addHeader( "Content-Type", "text/html" );
-					response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()) );
-
-					response->dbgTrace();
-					co_await response->flushHeaders();
-					Buffer b;
-					b.append( replyHtml.c_str(), replyHtml.size() );
-					co_await response->writeBodyPart(b);
-				}
-
-				// TODO: co_await for msg body, if any
-				// TODO: form and send response
+				simpleProcessing( request, response );
 			} 
 		} 
 		catch (...) { // TODO: what?
 		}
+
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type simpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response )
+	{
+		// unexpected method
+		if ( !(request->getMethod() == "GET" || request->getMethod() == "HEAD" ) )
+		{
+			response->setStatus( "HTTP/1.1 405 Method Not Allowed" );
+			response->addHeader( "Connection", "close" );
+			response->addHeader( "Content-Length", "0" );
+			response->dbgTrace();
+			co_await response->flushHeaders();
+			CO_RETURN;
+		}
+
+		bool dataAvailable = false;
+		std::string replyHtml;
+		if ( request->getUrl() == "/" )
+		{
+			std::string replyHtmlFormat = "<html>\r\n"
+				"<body>\r\n"
+				"<h1>HOME</h1>\r\n"
+				"<p>ordinal at server: {}\r\n"
+				"<p>Please proceed to <a href=\"another_page.html\">another_page.html</a>"
+				"</body>\r\n"
+				"</html>\r\n";
+			replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
+			dataAvailable = true;
+		}
+		else if ( request->getUrl() == "/another_page.html" )
+		{
+			std::string replyHtmlFormat = "<html>\r\n"
+				"<body>\r\n"
+				"<h1>Another Page</h1>\r\n"
+				"<p>ordinal at server: {}\r\n"
+				"<p>Please proceed to <a href=\"another_page.html\">this page</a> again, or back to <a href=\"/\">HOME</a><br/>"
+				"( or try to access <a href=\"x.html\">inexistent</a> page to (hopefully) see 404 error"
+				"</body>\r\n"
+				"</html>\r\n";
+			replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
+			dataAvailable = true;
+		}
+		else // not found (body for 404)
+		{
+			std::string replyHtmlFormat = "<html>\r\n"
+				"<body>\r\n"
+				"<h1>404 Not Found</h1>\r\n"
+				"<p>ordinal at server: {}\r\n"
+				"<p>Please proceed to <a href=\"/\">HOME</a>"
+				"</body>\r\n"
+				"</html>\r\n";
+			replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
+			dataAvailable = false;
+		}
+
+		if ( dataAvailable )
+		{
+			response->setStatus( "HTTP/1.1 200 OK" );
+			response->addHeader( "Content-Type", "text/html" );
+			response->addHeader( "Connection", "keep-alive" );
+//				response->addHeader( "Connection", "close" );
+			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()) );
+
+			response->dbgTrace();
+			co_await response->flushHeaders();
+			Buffer b;
+			b.append( replyHtml.c_str(), replyHtml.size() );
+			co_await response->writeBodyPart(b);
+		}
+		else
+		{
+			response->setStatus( "HTTP/1.1 404 Not Found" );
+			response->addHeader( "Connection", "keep-alive" );
+//				response->addHeader( "Connection", "close" );
+//					response->addHeader( "Content-Length", "0" );
+			response->addHeader( "Content-Type", "text/html" );
+			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()) );
+
+			response->dbgTrace();
+			co_await response->flushHeaders();
+			Buffer b;
+			b.append( replyHtml.c_str(), replyHtml.size() );
+			co_await response->writeBodyPart(b);
+		}
+
+		// TODO: co_await for msg body, if any
+		// TODO: form and send response
 
 		CO_RETURN;
 	}
