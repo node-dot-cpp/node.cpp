@@ -73,7 +73,6 @@ public:
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-//		nodecpp::net::ServerBase::addHandler<ServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionx>(this);
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
 		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
@@ -101,7 +100,7 @@ public:
 				Buffer b1(0x1000);
 				co_await request->a_readBody( b1 );
 				++(stats.rqCnt);
-				request->dbgTrace();
+//				request->dbgTrace();
 
 //				simpleProcessing( request, response );
 				yetSimpleProcessing( request, response );
@@ -201,6 +200,31 @@ public:
 
 		CO_RETURN;
 	}
+	void parseUrlQueryString(const std::string& query, std::vector<std::pair<std::string, std::string>>& queryValues )
+	{
+		size_t start = 0;
+
+		for(;;)
+		{
+			size_t endEq = query.find_first_of( "=", start );
+			if ( endEq == std::string::npos )
+			{
+				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), "" ) );
+				break;
+			}
+			size_t endAmp = query.find_first_of( "&", endEq+ 1  );
+			if ( endAmp == std::string::npos )
+			{
+				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), query.substr( endEq + 1 ) ) );
+				break;
+			}
+			else
+			{
+				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), query.substr( endEq + 1, endAmp - endEq - 1 ) ) );
+				start = endAmp + 1;
+			}
+		}
+	}
 
 	nodecpp::handler_ret_type yetSimpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response )
 	{
@@ -222,44 +246,37 @@ public:
 		Buffer b;
 		if ( start == std::string::npos )
 		{
-			b.append( "no value specified", sizeof( "no value specified" ) - 1 );
+			b.append( "no value specified", sizeof( "undefined" ) - 1 );
 			response->addHeader( "Connection", "close" );
 		}
 		else
 		{
-			b.append( url.c_str() + start, url.size() - start );
-			response->addHeader( "Connection", "keep-alive" );
+			std::vector<std::pair<std::string, std::string>> queryValues;
+			parseUrlQueryString(url.substr(start+1), queryValues );
+			for ( auto entry: queryValues )
+				if ( entry.first == "value" )
+				{
+					b.append( entry.second.c_str(), entry.second.size() );
+					b.appendUint8( ',' );
+				}
+			if ( b.size() )
+			{
+				b.trim( 1 );
+				response->addHeader( "Connection", "keep-alive" );
+			}
+			else
+			{
+				b.append( "no value specified", sizeof( "no value specified" ) - 1 );
+				response->addHeader( "Connection", "close" );
+			}
 		}
 		response->addHeader( "Content-Length", fmt::format( "{}", b.size() ) );
-		response->dbgTrace();
+//		response->dbgTrace();
 		co_await response->flushHeaders();
 		co_await response->writeBodyPart(b);
 
 		CO_RETURN;
 	}
-
-	/*nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyHttpServer> server, nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
-		//srv.unref();
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
-		soft_ptr<HttpSock> socketPtr = nodecpp::safememory::soft_ptr_static_cast<HttpSock>(socket);
-
-		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
-		nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response;
-		try { 
-			for(;;) { 
-				co_await socketPtr->a_(request, response); 
-				// TODO: co_await for msg body, if any
-				// TODO: form and send response
-			} 
-		} 
-		catch (...) { socketPtr->end(); }
-
-		CO_RETURN;
-	}
-
-	nodecpp::handler_ret_type readLine(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
-	}*/
 
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<CtrlServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");

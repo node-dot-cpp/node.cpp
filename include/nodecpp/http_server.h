@@ -74,14 +74,14 @@ namespace nodecpp {
 
 			void onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response )
 			{
-printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
+//printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
 				if ( ahd_request.h != nullptr )
 				{
 					ahd_request.request = request;
 					ahd_request.response = response;
 					auto hr = ahd_request.h;
 					ahd_request.h = nullptr;
-printf( "about to rezume ahd_request.h\n" );
+//printf( "about to rezume ahd_request.h\n" );
 					hr();
 				}
 			}
@@ -176,148 +176,152 @@ printf( "about to rezume ahd_request.h\n" );
 			HttpServerBase() {}
 			virtual ~HttpServerBase() {}
 
-			struct UserHandlersCommon
+			struct DataForHttpCommandProcessing
 			{
-			public:
-				// originating from member functions of ServertBase-derived classes
-				template<class T> using userIncomingRequestMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
-				template<class T> using userCloseMemberHandler = nodecpp::handler_ret_type (T::*)(bool);
-				template<class T> using userErrorMemberHandler = nodecpp::handler_ret_type (T::*)(Error&);
-
-				// originating from member functions of NodeBase-derived classes
-				template<class T, class ServerT> using userIncomingRequestNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
-				template<class T, class ServerT> using userCloseNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, bool);
-				template<class T, class ServerT> using userErrorNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, Error&);
-
-				using userDefIncomingRequestHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
-				using userDefCloseHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, bool);
-				using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, Error&);
-
-				// originating from member functions of HttpServerBase-derived classes
-
-				template<class ObjectT, userIncomingRequestMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::handler_ret_type incomingRequestHandler( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request )
+				struct UserHandlersCommon
 				{
-					//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(request);
-					CO_RETURN;
-				}
+				public:
+					// originating from member functions of ServertBase-derived classes
+					template<class T> using userIncomingRequestMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
+					template<class T> using userCloseMemberHandler = nodecpp::handler_ret_type (T::*)(bool);
+					template<class T> using userErrorMemberHandler = nodecpp::handler_ret_type (T::*)(Error&);
 
-				template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::handler_ret_type closeHandler( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, bool hadError )
+					// originating from member functions of NodeBase-derived classes
+					template<class T, class ServerT> using userIncomingRequestNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
+					template<class T, class ServerT> using userCloseNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, bool);
+					template<class T, class ServerT> using userErrorNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, Error&);
+
+					using userDefIncomingRequestHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
+					using userDefCloseHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, bool);
+					using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, Error&);
+
+					// originating from member functions of HttpServerBase-derived classes
+
+					template<class ObjectT, userIncomingRequestMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type incomingRequestHandler( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request )
+					{
+						//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(request);
+						CO_RETURN;
+					}
+
+					template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type closeHandler( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, bool hadError )
+					{
+						//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
+						CO_RETURN;
+					}
+
+					template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
+					static nodecpp::handler_ret_type errorHandler( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, Error& e )
+					{
+						//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
+						CO_RETURN;
+					}
+
+					// originating from member functions of NodeBase-derived classes
+
+					template<class ObjectT, class ServerT, userIncomingRequestNodeMemberHandler<ObjectT, ServerT> MemberFnT>
+					static nodecpp::handler_ret_type incomingRequestHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request )
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), request);
+						CO_RETURN;
+					}
+
+					template<class ObjectT, class ServerT, userCloseNodeMemberHandler<ObjectT, ServerT> MemberFnT>
+					static nodecpp::handler_ret_type closeHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, bool hadError )
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), hadError);
+						CO_RETURN;
+					}
+
+					template<class ObjectT, class ServerT, userErrorNodeMemberHandler<ObjectT, ServerT> MemberFnT>
+					static nodecpp::handler_ret_type errorHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, Error& e )
+					{
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), e);
+						CO_RETURN;
+					}
+
+					enum class Handler { IncomingReques, Close, Error };
+				};
+
+				struct UserHandlersForDataCollecting : public UserHandlersCommon
 				{
-					//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
-					CO_RETURN;
-				}
+					UserDefHandlers<UserHandlersCommon::userDefIncomingRequestHandlerFnT> userDefIncomingRequestHandlers;
+					UserDefHandlers<UserHandlersCommon::userDefCloseHandlerFnT> userDefCloseHandlers;
+					UserDefHandlers<UserHandlersCommon::userDefErrorHandlerFnT> userDefErrorHandlers;
 
-				template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
-				static nodecpp::handler_ret_type errorHandler( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, Error& e )
+					template<UserHandlersCommon::Handler handler, auto memmberFn, class ObjectT>
+					void addHandler()
+					{
+						if constexpr (handler == Handler::IncomingReques)
+						{
+							userDefIncomingRequestHandlers.add( &UserHandlersCommon::template incomingRequestHandler<ObjectT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Close)
+						{
+							userDefCloseHandlers.add(&UserHandlersCommon::template closeHandler<ObjectT, memmberFn>);
+						}
+						else
+						{
+							static_assert(handler == Handler::Error); // the only remaining option
+							userDefErrorHandlers.add(&UserHandlersCommon::template errorHandler<ObjectT, memmberFn>);
+						}
+					}
+
+					template<UserHandlersCommon::Handler handler, auto memmberFn, class ObjectT, class ServerT>
+					void addHandlerFromNode(ObjectT* object)
+					{
+						if constexpr (handler == Handler::IncomingReques)
+						{
+							userDefIncomingRequestHandlers.add(object, &UserHandlersCommon::template incomingRequestHandlerFromNode<ObjectT, ServerT, memmberFn>);
+						}
+						else if constexpr (handler == Handler::Close)
+						{
+							userDefCloseHandlers.add(object, &UserHandlersCommon::template closeHandlerFromNode<ObjectT, ServerT, memmberFn>);
+						}
+						else
+						{
+							static_assert(handler == Handler::Error); // the only remaining option
+							userDefErrorHandlers.add(object, &UserHandlersCommon::template errorHandlerFromNode<ObjectT, ServerT, memmberFn>);
+						}
+					}
+				};
+				thread_local static UserHandlerClassPatterns<UserHandlersForDataCollecting> userHandlerClassPattern; // TODO: consider using thread-local allocator
+
+				struct UserHandlers : public UserHandlersCommon
 				{
-					//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
-					CO_RETURN;
-				}
+					bool initialized = false;
+				public:
+					UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefIncomingRequestHandlerFnT> userDefIncomingRequestHandlers;
+					UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefCloseHandlerFnT> userDefCloseHandlers;
+					UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefErrorHandlerFnT> userDefErrorHandlers;
 
-				// originating from member functions of NodeBase-derived classes
+					void from(const UserHandlersForDataCollecting& patternUH, void* defaultObjPtr)
+					{
+						if ( initialized )
+							return;
+						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
+						userDefIncomingRequestHandlers.from(patternUH.userDefIncomingRequestHandlers, defaultObjPtr);
+						userDefCloseHandlers.from(patternUH.userDefCloseHandlers, defaultObjPtr);
+						userDefErrorHandlers.from(patternUH.userDefErrorHandlers, defaultObjPtr);
+						initialized = true;
+					}
+				};
+				UserHandlers userHandlers;
 
-				template<class ObjectT, class ServerT, userIncomingRequestNodeMemberHandler<ObjectT, ServerT> MemberFnT>
-				static nodecpp::handler_ret_type incomingRequestHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), request);
-					CO_RETURN;
-				}
+				bool isIncomingRequesEventHandler() { return userHandlers.userDefIncomingRequestHandlers.willHandle(); }
+				void handleIncomingRequesEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request) { userHandlers.userDefIncomingRequestHandlers.execute(server, request); }
 
-				template<class ObjectT, class ServerT, userCloseNodeMemberHandler<ObjectT, ServerT> MemberFnT>
-				static nodecpp::handler_ret_type closeHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, bool hadError )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), hadError);
-					CO_RETURN;
-				}
+				bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
+				void handleCloseEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, bool hasError) { userHandlers.userDefCloseHandlers.execute(server, hasError); }
 
-				template<class ObjectT, class ServerT, userErrorNodeMemberHandler<ObjectT, ServerT> MemberFnT>
-				static nodecpp::handler_ret_type errorHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, Error& e )
-				{
-					((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), e);
-					CO_RETURN;
-				}
-
-				enum class Handler { IncomingReques, Close, Error };
+				bool isErrorEventHandler() { return userHandlers.userDefErrorHandlers.willHandle(); }
+				void handleErrorEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, Error& e) { userHandlers.userDefErrorHandlers.execute(server, e); }
 			};
-
-			struct UserHandlersForDataCollecting : public UserHandlersCommon
-			{
-				UserDefHandlers<UserHandlersCommon::userDefIncomingRequestHandlerFnT> userDefIncomingRequestHandlers;
-				UserDefHandlers<UserHandlersCommon::userDefCloseHandlerFnT> userDefCloseHandlers;
-				UserDefHandlers<UserHandlersCommon::userDefErrorHandlerFnT> userDefErrorHandlers;
-
-				template<UserHandlersCommon::Handler handler, auto memmberFn, class ObjectT>
-				void addHandler()
-				{
-					if constexpr (handler == Handler::IncomingReques)
-					{
-						userDefIncomingRequestHandlers.add( &UserHandlers::template IncomingRequestHandler<ObjectT, memmberFn>);
-					}
-					else if constexpr (handler == Handler::Close)
-					{
-						userDefCloseHandlers.add(&UserHandlers::template closeHandler<ObjectT, memmberFn>);
-					}
-					else
-					{
-						static_assert(handler == Handler::Error); // the only remaining option
-						userDefErrorHandlers.add(&UserHandlers::template errorHandler<ObjectT, memmberFn>);
-					}
-				}
-
-				template<UserHandlersCommon::Handler handler, auto memmberFn, class ObjectT, class ServerT>
-				void addHandlerFromNode(ObjectT* object)
-				{
-					if constexpr (handler == Handler::IncomingReques)
-					{
-						userDefIncomingRequestHandlers.add(object, &UserHandlers::template IncomingRequestHandlerFromNode<ObjectT, ServerT, memmberFn>);
-					}
-					else if constexpr (handler == Handler::Close)
-					{
-						userDefCloseHandlers.add(object, &UserHandlers::template closeHandlerFromNode<ObjectT, ServerT, memmberFn>);
-					}
-					else
-					{
-						static_assert(handler == Handler::Error); // the only remaining option
-						userDefErrorHandlers.add(object, &UserHandlers::template errorHandlerFromNode<ObjectT, ServerT, memmberFn>);
-					}
-				}
-			};
-			thread_local static UserHandlerClassPatterns<UserHandlersForDataCollecting> userHandlerClassPattern; // TODO: consider using thread-local allocator
-
-			struct UserHandlers : public UserHandlersCommon
-			{
-				bool initialized = false;
-			public:
-				UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefIncomingRequestHandlerFnT> userDefIncomingRequestHandlers;
-				UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefCloseHandlerFnT> userDefCloseHandlers;
-				UserDefHandlersWithOptimizedStorage<UserHandlersCommon::userDefErrorHandlerFnT> userDefErrorHandlers;
-
-				void from(const UserHandlersForDataCollecting& patternUH, void* defaultObjPtr)
-				{
-					if ( initialized )
-						return;
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, defaultObjPtr != nullptr);
-					userDefIncomingRequestHandlers.from(patternUH.userDefIncomingRequestHandlers, defaultObjPtr);
-					userDefCloseHandlers.from(patternUH.userDefCloseHandlers, defaultObjPtr);
-					userDefErrorHandlers.from(patternUH.userDefErrorHandlers, defaultObjPtr);
-					initialized = true;
-				}
-			};
-			UserHandlers userHandlers;
-
-			bool isIncomingRequesEventHandler() { return userHandlers.userDefIncomingRequestHandlers.willHandle(); }
-			void handleIncomingRequesEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request) { userHandlers.userDefIncomingRequestHandlers.execute(server, request); }
-
-			bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
-			void handleCloseEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, bool hasError) { userHandlers.userDefCloseHandlers.execute(server, hasError); }
-
-			bool isErrorEventHandler() { return userHandlers.userDefErrorHandlers.willHandle(); }
-			void handleErrorEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, Error& e) { userHandlers.userDefErrorHandlers.execute(server, e); }
+			DataForHttpCommandProcessing dataForHttpCommandProcessing;
 		};
 
 		template<class DataParentT>
@@ -428,12 +432,12 @@ printf( "about to rezume ahd_request.h\n" );
 
 			nodecpp::handler_ret_type readLine(Buffer& lb)
 			{
-printf( "about to read line\n" );
+//printf( "about to read line\n" );
 				nodecpp::Buffer r_buff(0x200);
 				while ( !dbuf.popLine( lb ) )
 				{
 					co_await a_read( r_buff, 2 );
-printf( "(a segment of) a line has been read; size = %zd (%zd)\n", r_buff.size(), r_buff.size() + 54 );
+//printf( "(a segment of) a line has been read; size = %zd (%zd)\n", r_buff.size(), r_buff.size() + 54 );
 					dbuf.pushFragment( r_buff );
 					r_buff.clear();
 				}
@@ -475,7 +479,7 @@ printf( "(a segment of) a line has been read; size = %zd (%zd)\n", r_buff.size()
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
 						if ( nodecpp::isException(myawaiting) )
 							throw nodecpp::getException(myawaiting);
-printf( "resumed ahd_continueGetting\n" );
+//printf( "resumed ahd_continueGetting\n" );
 					}
 				};
 				return continue_getting_awaiter(*this);
@@ -491,7 +495,7 @@ printf( "resumed ahd_continueGetting\n" );
 			{
 				for(;;)
 				{
-printf( "about to get (next) request\n" );
+//printf( "about to get (next) request\n" );
 					co_await getRequest( *request );
 					auto cg = a_continueGetting();
 
@@ -507,7 +511,7 @@ printf( "about to get (next) request\n" );
 				{
 					auto hr = ahd_continueGetting;
 					ahd_continueGetting = nullptr;
-printf( "about to resume ahd_continueGetting\n" );
+//printf( "about to resume ahd_continueGetting\n" );
 					hr();
 				}
 			}
@@ -656,8 +660,8 @@ printf( "about to resume ahd_continueGetting\n" );
 				size_t end = line.find_last_not_of(" \t\r\n" );
 				if ( end == std::string::npos )
 				{
-					if ( !( line.size() == 2 || line[0] == '\r' && line[1] == '\n' ) )
-						return true;
+					if ( !( line.size() == 2 && line[0] == '\r' && line[1] == '\n' ) ) // last empty line
+						return true; // TODO: what should we do with this line of spaces? - just ignore or report a parsing error?
 					parseContentLength();
 					readStatus = contentLength ? ReadStatus::in_body : ReadStatus::completed;
 					return false;
@@ -702,7 +706,7 @@ printf( "about to resume ahd_continueGetting\n" );
 			WriteStatus writeStatus = WriteStatus::notyet;
 
 			std::string replyStatus;
-			size_t bodyBytesWritten = 0;
+			//size_t bodyBytesWritten = 0;
 
 		private:
 
@@ -788,11 +792,11 @@ printf( "about to resume ahd_continueGetting\n" );
 					clear();
 					sock->proceedToNext();
 				}
-printf( "request has been sent\n" );
+//printf( "request has been sent\n" );
 sock->request->clear();
 				if ( connStatus != ConnStatus::keep_alive )
 				{
-printf( "socket has been ended\n" );
+//printf( "socket has been ended\n" );
 					sock->end();
 					clear();
 					CO_RETURN;
@@ -800,7 +804,7 @@ printf( "socket has been ended\n" );
 //				else
 					clear();
 sock->proceedToNext();
-printf( "getting next request has been allowed\n" );
+//printf( "getting next request has been allowed\n" );
 				CO_RETURN;
 			}
 		};
@@ -811,7 +815,7 @@ printf( "getting next request has been allowed\n" );
 			Buffer lb;
 			co_await readLine(lb);
 			lb.appendUint8( 0 );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			if ( !message.parseMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
 			{
 				end();
@@ -823,7 +827,7 @@ printf( "getting next request has been allowed\n" );
 				lb.clear();
 				co_await readLine(lb);
 				lb.appendUint8( 0 );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
 			while ( message.parseHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
 
