@@ -203,11 +203,10 @@ public:
 	void parseUrlQueryString(const std::string& query, std::vector<std::pair<std::string, std::string>>& queryValues )
 	{
 		size_t start = 0;
-		size_t endEq;
-		size_t endAmp;
+
 		for(;;)
 		{
-			endEq = query.find_first_of( "=", start );
+			size_t endEq = query.find_first_of( "=", start );
 			if ( endEq == std::string::npos )
 			{
 				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), "" ) );
