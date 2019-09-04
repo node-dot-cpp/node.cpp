@@ -72,8 +72,10 @@ class NetSockets
 	std::vector<pollfd> osSide;
 	size_t associatedCount = 0;
 	//mb: xxxSide[0] is always reserved and invalid.
+	static const size_t capacity_ = 1000000; // just a temporary workaround to prevent reallocation
 public:
-	NetSockets() {ourSide.reserve(1000); osSide.reserve(1000); ourSide.emplace_back(0); osSide.emplace_back();}
+
+	NetSockets() {ourSide.reserve(capacity_); osSide.reserve(capacity_); ourSide.emplace_back(0); osSide.emplace_back();}
 
 	NetSocketEntry& at(size_t idx) { return ourSide.at(idx);}
 	const NetSocketEntry& at(size_t idx) const { return ourSide.at(idx);}
@@ -100,6 +102,7 @@ public:
 		}
 
 		size_t ix = ourSide.size();
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ix < ourSide.capacity() ); // just a temporary workaround to prevent reallocation
 		ourSide.emplace_back(ix/*, node*/, ptr, typeId);
 		pollfd p;
 		p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
