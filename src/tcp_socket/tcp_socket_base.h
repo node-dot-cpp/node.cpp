@@ -193,7 +193,7 @@ namespace nodecpp
 		SOCKET internal_make_tcp_socket();
 		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self);
 		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port);
-		bool internal_listen_tcp_socket(SOCKET sock);
+		bool internal_listen_tcp_socket(SOCKET sock, int backlog);
 		bool internal_getsockopt_so_error(SOCKET sock);
 		void internal_shutdown_send(SOCKET sock);
 		bool internal_linger_zero_socket(SOCKET sock);

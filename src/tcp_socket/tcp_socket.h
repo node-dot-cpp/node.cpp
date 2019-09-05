@@ -697,7 +697,7 @@ public:
 		if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort)) {
 			throw Error();
 		}
-		if (!internal_usage_only::internal_listen_tcp_socket(ptr->dataForCommandProcessing.osSocket)) {
+		if (!internal_usage_only::internal_listen_tcp_socket(ptr->dataForCommandProcessing.osSocket, backlog)) {
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.refed = true;

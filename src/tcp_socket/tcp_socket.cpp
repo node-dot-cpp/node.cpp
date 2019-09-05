@@ -78,7 +78,7 @@ using namespace std;
 /////////////////////////////////////////////     COMMUNICATION     ///////////////////////////////////////////
 
 
-const int tcpListenBacklogSize = 3;
+//const int tcpListenBacklogSize = 6000;
 static bool netInitialize();
 
 static bool netInitialized = netInitialize();
@@ -307,9 +307,10 @@ namespace nodecpp
 			return internal_bind_socket(sock, sa);
 		}
 
-		bool internal_listen_tcp_socket(SOCKET sock)
+		bool internal_listen_tcp_socket(SOCKET sock, int backlog)
 		{
-			int res = listen(sock, tcpListenBacklogSize);
+//			int res = listen(sock, tcpListenBacklogSize);
+			int res = listen(sock, backlog);
 			if (0 != res) {
 				int error = getSockError();
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("listen() on sock {} failed; error {}", sock, error);
