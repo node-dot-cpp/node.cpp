@@ -346,7 +346,7 @@ namespace nodecpp
 			if (INVALID_SOCKET == outSock)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() on sock {} failed; error {}", error);
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() on sock {} failed; error {}", sock, error);
 
 				return INVALID_SOCKET;
 			}
@@ -398,7 +398,7 @@ namespace nodecpp
 				int error = getSockError();
 				if (isErrorWouldBlock(error))
 				{
-//!!//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} PENDING", sock, size, sentSize);
+//!!//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} PENDING", sock, size);
 
 					return COMMLAYER_RET_PENDING;
 				}
