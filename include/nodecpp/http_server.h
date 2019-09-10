@@ -695,6 +695,7 @@ namespace nodecpp {
 		class OutgoingHttpMessageAtServer : protected HttpMessageBase // TODO: candidate for being a part of lib
 		{
 			friend class HttpSocketBase;
+			Buffer headerBuff;
 
 		private:
 			typedef std::map<std::string, std::string> header_t;
@@ -711,7 +712,7 @@ namespace nodecpp {
 		private:
 
 		public:
-			OutgoingHttpMessageAtServer() {}
+			OutgoingHttpMessageAtServer() : headerBuff(0x1000) {}
 			OutgoingHttpMessageAtServer(const OutgoingHttpMessageAtServer&) = delete;
 			OutgoingHttpMessageAtServer operator = (const OutgoingHttpMessageAtServer&) = delete;
 			OutgoingHttpMessageAtServer(OutgoingHttpMessageAtServer&& other)
@@ -719,11 +720,13 @@ namespace nodecpp {
 				replyStatus = std::move( other.replyStatus );
 				header = std::move( other.header );
 				contentLength = other.contentLength;
+				headerBuff = std::move( other.headerBuff );
 			}
 			OutgoingHttpMessageAtServer& operator = (OutgoingHttpMessageAtServer&& other)
 			{
 				replyStatus = std::move( other.replyStatus );
 				header = std::move( other.header );
+				headerBuff = std::move( other.headerBuff );
 				contentLength = other.contentLength;
 				other.contentLength = 0;
 				return *this;
@@ -733,6 +736,7 @@ namespace nodecpp {
 				replyStatus.clear();
 				header.clear();
 				body.clear();
+				headerBuff.clear();
 				contentLength = 0;
 				writeStatus = WriteStatus::notyet;
 			}
@@ -761,23 +765,21 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: add real implementation
-				std::string out = replyStatus;
-				out += "\r\n";
+				headerBuff.append( replyStatus.c_str(), replyStatus.size() );
+				headerBuff.append( "\r\n", 2 );
 				for ( auto h: header )
 				{
-					out += h.first;
-					out += ": ";
-					out += h.second;
-					out += "\r\n";
+					headerBuff.append( h.first.c_str(), h.first.size() );
+					headerBuff.append( ": ", 2 );
+					headerBuff.append( h.second.c_str(), h.second.size() );
+					headerBuff.append( "\r\n", 2 );
 				}
-				out += "\r\n";
+				headerBuff.append( "\r\n", 2 );
 
-				Buffer b;
-				b.append( out.c_str(), out.size() );
 				parseContentLength();
-				co_await sock->a_write( b );
-				writeStatus = WriteStatus::hdr_flushed;
 				parseConnStatus();
+//				co_await sock->a_write( headerBuff );
+				writeStatus = WriteStatus::hdr_flushed;
 				header.clear();
 				CO_RETURN;
 			}
@@ -786,7 +788,16 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
 				// TODO: add real implementation
-				try { co_await sock->a_write( b ); } 
+				try {
+					if ( headerBuff.size() )
+					{
+						headerBuff.append( b );
+						co_await sock->a_write( headerBuff );
+						headerBuff.clear();
+					}
+					else
+						co_await sock->a_write( headerBuff );
+				} 
 				catch(...) {
 					sock->end();
 					clear();
