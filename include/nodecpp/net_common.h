@@ -399,6 +399,40 @@ namespace nodecpp {
 				}
 			}
 		}
+		void skip_data( size_t bytes2skip ) // "read" without reading
+		{
+			if ( begin <= end )
+			{
+				size_t diff = (size_t)(end - begin);
+				size_t sz2skip = bytes2skip >= diff ? diff : bytes2skip;
+				begin += sz2skip;
+			}
+			else
+			{
+				size_t sz2skip = buff.get() + alloc_size() - begin;
+				if ( sz2skip > bytes2skip )
+				{
+					begin += bytes2skip;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin < buff.get() + alloc_size() );
+				}
+				else if ( sz2skip < bytes2skip )
+				{
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin + sz2skip == buff.get() + alloc_size() );
+					begin = buff.get();
+					size_t sz2skip2 = bytes2skip - sz2skip;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
+					size_t diff = (size_t)(end - begin);
+					if ( sz2skip2 > diff )
+						sz2skip2 = diff;
+					begin += sz2skip2;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
+				}
+				else
+				{
+					begin = buff.get();
+				}
+			}
+		}
 
 		template<class Reader>
 		void read( Reader& reader, size_t& bytesRead, size_t target_sz ) {
