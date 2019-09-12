@@ -236,12 +236,16 @@ public:
 		}
 		else //if(retval)
 		{
-			for ( size_t i=0; i<ioSockets.size(); ++i)
+			int processed = 0;
+			for ( size_t i=0; processed<retval; ++i)
 			{
-				if ( (int64_t)(ioSockets.socketsAt(i + 1)) > 0 )
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, i<ioSockets.size() );
+				short revents = ioSockets.reventsAt( 1 + i );
+				if ( revents )
 				{
+					++processed;
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, (int64_t)(ioSockets.socketsAt(i + 1)) > 0 );
 					NetSocketEntry& current = ioSockets.at( 1 + i );
-					short revents = ioSockets.reventsAt( 1 + i );
 					switch ( current.emitter.objectType )
 					{
 						case OpaqueEmitter::ObjectType::ClientSocket:
