@@ -444,7 +444,8 @@ namespace nodecpp {
 			}
 			else
 			{
-				size_t sz2read = buff.get() + alloc_size() - end;
+				uint8_t* endpoint = begin != buff.get() ? buff.get() + alloc_size() : buff.get() + alloc_size() - 1;
+				size_t sz2read = endpoint - end;
 				bool can_continue = reader.read( end, sz2read, bytesRead );
 				end += bytesRead;
 				bool till_end = end == (buff.get() + alloc_size());
