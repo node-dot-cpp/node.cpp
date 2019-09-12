@@ -294,6 +294,38 @@ namespace nodecpp {
 		bool empty() const { return begin == end; }
 		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
 
+		// direct access to data
+		struct AvailableDataDescriptor
+		{
+			uint8_t* ptr1;
+			uint8_t* ptr2;
+			size_t sz1;
+			size_t sz2;
+		};
+		void get_available_data(AvailableDataDescriptor& d)
+		{
+			d.ptr1 = begin;
+			if ( begin < end )
+			{
+				d.sz1 = end - begin;
+				d.ptr2 = nullptr;
+				d.sz2 = 0;
+			}
+			else if ( begin > end )
+			{
+				d.sz1 = buff.get() + alloc_size() - begin;
+				d.ptr2 = buff.get();
+				d.sz2 = end - buff.get();
+			}
+			else
+			{
+				d.ptr1 = nullptr;
+				d.sz1 = 0;
+				d.ptr2 = nullptr;
+				d.sz2 = 0;
+			}
+		}
+
 		// writer-related
 		bool append( const uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )

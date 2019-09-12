@@ -485,7 +485,115 @@ namespace nodecpp {
 				return continue_getting_awaiter(*this);
 			}
 
+			auto a_dataAvailable( CircularByteBuffer::AvailableDataDescriptor& d ) { 
+
+				struct data_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					SocketBase& socket;
+					CircularByteBuffer::AvailableDataDescriptor& d;
+
+					data_awaiter(SocketBase& socket_, CircularByteBuffer::AvailableDataDescriptor& d_) : socket( socket_ ), d( d_ ) {}
+
+					data_awaiter(const data_awaiter &) = delete;
+					data_awaiter &operator = (const data_awaiter &) = delete;
+	
+					~data_awaiter() {}
+
+					bool await_ready() {
+						return socket.dataForCommandProcessing.readBuffer.used_size() != 0;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						socket.dataForCommandProcessing.ahd_read.min_bytes = 1;
+						nodecpp::setNoException(awaiting);
+						socket.dataForCommandProcessing.ahd_read.h = awaiting;
+						myawaiting = awaiting;
+					}
+
+					auto await_resume() {
+						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+						socket.dataForCommandProcessing.readBuffer.get_available_data( d );
+					}
+				};
+				return data_awaiter(*this, d);
+			}
+
+			auto a_dataAvailable( uint32_t period, CircularByteBuffer::AvailableDataDescriptor& d ) { 
+
+				struct data_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					SocketBase& socket;
+					CircularByteBuffer::AvailableDataDescriptor& d;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					data_awaiter(SocketBase& socket_, uint32_t period_, CircularByteBuffer::AvailableDataDescriptor& d_) : socket( socket_ ), d( d_ ), period( period_ ) {}
+
+					data_awaiter(const data_awaiter &) = delete;
+					data_awaiter &operator = (const data_awaiter &) = delete;
+	
+					~data_awaiter() {}
+
+					bool await_ready() {
+						return socket.dataForCommandProcessing.readBuffer.used_size() > 0;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						socket.dataForCommandProcessing.ahd_read.min_bytes = 1;
+						nodecpp::setNoException(awaiting);
+						socket.dataForCommandProcessing.ahd_read.h = awaiting;
+						myawaiting = awaiting;
+						to = nodecpp::setTimeoutForAction( awaiting, period );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+						socket.dataForCommandProcessing.readBuffer.get_available_data( d );
+					}
+				};
+				return data_awaiter(*this, period, d);
+			}
+
 #endif // NODECPP_NO_COROUTINES
+
+			nodecpp::handler_ret_type readLine(std::string& line)
+			{
+				size_t pos = 0;
+				line.clear();
+				CircularByteBuffer::AvailableDataDescriptor d;
+				for(;;)
+				{
+					co_await a_dataAvailable( d );
+					for ( ; pos<d.sz1; ++pos )
+						if ( d.ptr1[pos] == '\n' )
+						{
+							line = line + std::string( (const char*)(d.ptr1), pos + 1 );
+							dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
+							CO_RETURN;
+						}
+					line += std::string( (const char*)(d.ptr1), pos );
+					dataForCommandProcessing.readBuffer.skip_data( pos );
+					pos = 0;
+					if ( d.ptr2 && d.sz2 )
+					{
+						for ( ; pos<d.sz2; ++pos )
+							if ( d.ptr2[pos] == '\n' )
+							{
+								line += std::string( (const char*)(d.ptr2), pos + 1 );
+								dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
+								CO_RETURN;
+							}
+						line += std::string( (const char*)(d.ptr2), pos );
+						dataForCommandProcessing.readBuffer.skip_data( pos );
+						pos = 0;
+					}
+				}
+
+				CO_RETURN;
+			}
 
 		public:
 			HttpSocketBase();
@@ -823,11 +931,11 @@ sock->proceedToNext();
 		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
 			bool ready = false;
-			Buffer lb;
-			co_await readLine(lb);
-			lb.appendUint8( 0 );
+			std::string line;
+			co_await readLine(line);
 //			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
-			if ( !message.parseMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
+//			if ( !message.parseMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
+			if ( !message.parseMethod( line ) )
 			{
 				end();
 //				co_await sendReply();
@@ -835,12 +943,11 @@ sock->proceedToNext();
 
 			do
 			{
-				lb.clear();
-				co_await readLine(lb);
-				lb.appendUint8( 0 );
+				co_await readLine(line);
 //				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
-			while ( message.parseHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
+//			while ( message.parseHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
+			while ( message.parseHeaderEntry( line ) );
 
 			/*if ( message.getContentLength() )
 			{
