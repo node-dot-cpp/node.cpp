@@ -46,7 +46,7 @@ namespace nodecpp {
 		public:
 			nodecpp::safememory::soft_this_ptr<SocketBase> myThis;
 		private:
-			friend class MultiOwner<SocketBase>;
+//			friend class MultiOwner<SocketBase>;
 //			SocketBase* prev_;
 //			SocketBase* next_;
 		protected:
@@ -91,9 +91,8 @@ namespace nodecpp {
 				bool refed = false;
 
 				//Buffer writeBuffer = Buffer(64 * 1024);
-				CircularByteBuffer writeBuffer = CircularByteBuffer( 16 );
-				CircularByteBuffer readBuffer = CircularByteBuffer( 16 );
-				Buffer recvBuffer = Buffer(64 * 1024);
+				CircularByteBuffer writeBuffer = CircularByteBuffer( 12 );
+				CircularByteBuffer readBuffer = CircularByteBuffer( 12 );
 
 				//SOCKET osSocket = INVALID_SOCKET;
 				//UINT_PTR osSocket = INVALID_SOCKET;

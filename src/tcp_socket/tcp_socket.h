@@ -510,30 +510,33 @@ private:
 		}
 		else
 		{
-			auto res = OSLayer::infraGetPacketBytes(entry.getClientSocketData()->recvBuffer, entry.getClientSocketData()->osSocket);
-			if (res.first)
+			recvBuffer.clear();
+			bool res = OSLayer::infraGetPacketBytes(recvBuffer, entry.getClientSocketData()->osSocket);
+			if (res)
 			{
-				if (res.second.size() != 0)
+				if (recvBuffer.size() != 0)
 				{
 		//			entry.ptr->emitData(std::move(res.second));
 
 		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
 	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
 //					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
-					Buffer b = std::move(res.second);
+//					Buffer b = std::move(res.second);
 					/*entry.getClientSocket()->emitData( std::ref(b));
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 						EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(b));
 					if (entry.getClientSocketData()->isDataEventHandler())
 						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), std::ref(b));*/
-					entry.getClientSocket()->emitData( b);
+					entry.getClientSocket()->emitData( recvBuffer);
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 					{
-						if ( EmitterType::template isDataEmitter<Node>(entry.getEmitter(), b) )
-							EmitterType::template emitData<Node>(entry.getEmitter(), b);
+						if ( EmitterType::template isDataEmitter<Node>(entry.getEmitter(), recvBuffer) )
+							EmitterType::template emitData<Node>(entry.getEmitter(), recvBuffer);
 					}
 					if (entry.getClientSocketData()->isDataEventHandler())
-						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), b);
+						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), recvBuffer);
+					
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.capacity() == recvBufferCapacity );
 				}
 				else //if (!entry.remoteEnded)
 				{

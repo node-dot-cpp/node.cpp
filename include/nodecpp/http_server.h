@@ -570,7 +570,7 @@ namespace nodecpp {
 					for ( ; pos<d.sz1; ++pos )
 						if ( d.ptr1[pos] == '\n' )
 						{
-							line = line + std::string( (const char*)(d.ptr1), pos + 1 );
+							line.append( (const char*)(d.ptr1), pos + 1 );
 							dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 							CO_RETURN;
 						}

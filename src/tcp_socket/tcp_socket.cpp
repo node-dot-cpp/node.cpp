@@ -736,21 +736,14 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 	}
 }
 
-std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
+bool OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
 	size_t sz = 0;
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;
 	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
 
-	if (ret != COMMLAYER_RET_OK)
-		return make_pair(false, Buffer());
-
-	Buffer res(sz);
-	res.append(buff.begin(), sz);
-	buff.clear();
-
-	return make_pair(true, std::move(res));
+	return ret == COMMLAYER_RET_OK;
 }
 
 bool OSLayer::infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz)
