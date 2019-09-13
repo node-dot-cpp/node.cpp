@@ -45,10 +45,6 @@ namespace nodecpp {
 
 		public:
 			nodecpp::safememory::soft_this_ptr<SocketBase> myThis;
-		private:
-//			friend class MultiOwner<SocketBase>;
-//			SocketBase* prev_;
-//			SocketBase* next_;
 		protected:
 			friend class ServerBase;
 			nodecpp::safememory::soft_ptr<ServerBase> myServerSocket = nullptr;
@@ -90,12 +86,9 @@ namespace nodecpp {
 
 				bool refed = false;
 
-				//Buffer writeBuffer = Buffer(64 * 1024);
 				CircularByteBuffer writeBuffer = CircularByteBuffer( 12 );
 				CircularByteBuffer readBuffer = CircularByteBuffer( 12 );
 
-				//SOCKET osSocket = INVALID_SOCKET;
-				//UINT_PTR osSocket = INVALID_SOCKET;
 				unsigned long long osSocket = 0;
 
 
@@ -429,11 +422,7 @@ namespace nodecpp {
 
 			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
 
-//			SocketBase(NodeBase* node_) {node = node_; /*registerMeAndAcquireSocket(-1);*/}
 			SocketBase() {}
-//			SocketBase(int typeID, NodeBase* node_) {node = node_; registerMeAndAcquireSocket( typeID );}
-//			SocketBase(NodeBase* node_, OpaqueSocketData& sdata);
-//			SocketBase(int typeID, NodeBase* node_, OpaqueSocketData& sdata);
 
 			SocketBase(const SocketBase&) = delete;
 			SocketBase& operator=(const SocketBase&) = delete;

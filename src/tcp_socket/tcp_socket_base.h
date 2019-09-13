@@ -236,7 +236,7 @@ public:
 	static void appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable);
 	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
-	static std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
+	static bool infraGetPacketBytes(Buffer& buff, SOCKET sock);
 	static bool infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz);
 
 	//enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };

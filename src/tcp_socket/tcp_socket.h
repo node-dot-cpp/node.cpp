@@ -318,9 +318,11 @@ extern thread_local NetSocketManagerBase* netSocketManagerBase;
 
 template<class EmitterType>
 class NetSocketManager : public NetSocketManagerBase {
+	Buffer recvBuffer;
+	static constexpr size_t recvBufferCapacity = 64 * 1024;
 
 public:
-	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets) {}
+	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets), recvBuffer(recvBufferCapacity) {}
 
 	// to help with 'poll'
 	template<class Node>
@@ -516,17 +518,6 @@ private:
 			{
 				if (recvBuffer.size() != 0)
 				{
-		//			entry.ptr->emitData(std::move(res.second));
-
-		//			evs.add(&net::Socket::emitData, entry.getPtr(), std::ref(infraStoreBuffer(std::move(res.second))));
-	//				entry.getEmitter().emitData(std::ref(infraStoreBuffer(std::move(res.second))));
-//					EmitterType::emitData(entry.getEmitter(), std::ref(infraStoreBuffer(std::move(res.second))));
-//					Buffer b = std::move(res.second);
-					/*entry.getClientSocket()->emitData( std::ref(b));
-					if constexpr ( !std::is_same<EmitterType, void>::value )
-						EmitterType::template emitData<Node>(entry.getEmitter(), std::ref(b));
-					if (entry.getClientSocketData()->isDataEventHandler())
-						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), std::ref(b));*/
 					entry.getClientSocket()->emitData( recvBuffer);
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 					{
@@ -546,7 +537,6 @@ private:
 			else
 			{
 				internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
-		//		return errorCloseSocket(entry, storeError(Error()));
 				Error e;
 				errorCloseSocket(entry, e);
 			}
