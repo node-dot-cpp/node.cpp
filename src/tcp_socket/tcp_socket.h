@@ -379,12 +379,9 @@ public:
 
 		for (auto& current : pendingCloseEvents)
 		{
-//			if (current.first < ioSockets.size())
 			if (ioSockets.isValidId(current.first))
 			{
-//				auto& entry = ioSockets[current.first];
 				auto& entry = ioSockets.at(current.first);
-//				if (entry.isValid())
 				if (entry.isUsed())
 				{
 					bool err = entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::ErrorClosing;
@@ -397,25 +394,9 @@ public:
 						ioSockets.setSocketClosed( entry.index );
 					}
 
-#if 0 // old version (note that emitClose is before emiterror in both cases; whether it is OK or not, is a separate question)
-					if (err) //if error closing, then first error event
-					{
-	//					evs.add(std::move(current.second));
-//						std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), current.second.second);
-						std::function<void()> ev = std::bind(&EmitterType::emitError, entry.getEmitter(), current.second.second);
-						evs.add(std::move(ev));
-					}
-
-	//				evs.add(&net::Socket::emitClose, entry.getPtr(), err);
-	//				entry.getPtr()->emitClose(err);
-					EmitterType::emitClose(entry.getEmitter(), err);
-					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
-#else // new version
-//					if (err && entry.isValid()) //if error closing, then first error event
 					if (err && entry.isUsed()) //if error closing, then first error event
 					{
 						entry.getClientSocket()->emitError(current.second.second);
-//						EmitterType::emitError(entry.getEmitter(), current.second.second);
 						if constexpr ( !std::is_same<EmitterType, void>::value )
 						{
 							if ( EmitterType::template isErrorEmitter<Node>(entry.getEmitter(), current.second.second) )
@@ -426,7 +407,6 @@ public:
 					}
 					if (entry.isUsed())
 						entry.getClientSocket()->emitClose(err);
-//					EmitterType::emitClose(entry.getEmitter(), err);
 					if constexpr ( !std::is_same<EmitterType, void>::value )
 					{
 						if ( EmitterType::template isCloseEmitter<Node>(entry.getEmitter(), err) )
@@ -437,7 +417,6 @@ public:
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
 					entry.getClientSocket()->onFinalCleanup();
-#endif // 0
 				}
 				entry = NetSocketEntry(current.first); 
 			}
