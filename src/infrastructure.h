@@ -321,17 +321,17 @@ public:
 };
 
 inline
-size_t registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
+void registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAcquireSocket(/*node, */t, typeId);
+	netSocketManagerBase->appAcquireSocket(/*node, */t, typeId);
 }
 
 inline
-size_t registerWithInfraAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
+void registerWithInfraAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAssignSocket(/*node, */t, typeId, sdata);
+	netSocketManagerBase->appAssignSocket(/*node, */t, typeId, sdata);
 }
 
 inline

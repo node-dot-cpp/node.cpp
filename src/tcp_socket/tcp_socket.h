@@ -105,7 +105,7 @@ public:
 	bool isValidId( size_t idx ) { return idx && idx < ourSide.size(); };
 
 	template<class SocketType>
-	size_t addEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
+	void addEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
@@ -118,7 +118,7 @@ public:
 				osSide[i].events = 0;
 				osSide[i].revents = 0;
 				++usedCount;
-				return i;
+				return;
 			}
 		}
 
@@ -131,7 +131,7 @@ public:
 		p.revents = 0;
 		osSide.push_back( p );
 		++usedCount;
-		return ix;
+		return;
 	}
 	void makeCompactIfNecessary() {
 		if ( ourSide.size() <= compactionMinSize || usedCount < ourSide.size() / 2 )
@@ -255,26 +255,24 @@ public:
 		ioSockets.setPollin(id);
 	}
 
-	size_t appAcquireSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId)
+	void appAcquireSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId)
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
-		return registerAndAssignSocket(/*node, */ptr, typeId, s);
+		registerAndAssignSocket(/*node, */ptr, typeId, s);
 	}
 
-	size_t appAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, OpaqueSocketData& sdata)
+	void appAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, OpaqueSocketData& sdata)
 	{
 		SocketRiia s( sdata.s.release() );
-		return registerAndAssignSocket(/*node, */ptr, typeId, s);
+		registerAndAssignSocket(/*node, */ptr, typeId, s);
 	}
 
 private:
-	size_t registerAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, SocketRiia& s)
+	void registerAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, SocketRiia& s)
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		size_t id = ioSockets.addEntry<net::SocketBase>(/*node, */ptr, typeId);
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
-		return id;
+		ioSockets.addEntry<net::SocketBase>(/*node, */ptr, typeId);
 	}
 
 public:
@@ -729,8 +727,7 @@ public:
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		size_t id = addServerEntry(/*node, */ptr, typeId);
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,id != 0);
+		addServerEntry(/*node, */ptr, typeId);
 	}
 	void appListen(soft_ptr<net::ServerBase> ptr, const char* ip, uint16_t port, int backlog) {
 		Ip4 myIp = Ip4::parse(ip);
@@ -781,7 +778,7 @@ public:
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 
 protected:
-	size_t addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
+	void addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };

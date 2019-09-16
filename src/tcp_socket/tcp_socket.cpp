@@ -892,7 +892,7 @@ void NetServerManagerBase::appClose(net::ServerBase::DataForCommandProcessing& s
 	//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
 }
 
-size_t NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
 {
-	return ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
+	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
 }
