@@ -314,6 +314,8 @@ public:
 			{
 				netServer.infraClearStores();
 			}
+
+			ioSockets.makeCompactIfNecessary();
 		}
 	}
 };
