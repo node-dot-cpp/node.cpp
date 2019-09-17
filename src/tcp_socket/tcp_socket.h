@@ -87,52 +87,15 @@ public:
 class NetSockets
 {
 	std::vector<NetSocketEntry> ourSide;
+	std::vector<NetSocketEntry> ourSideAccum;
 	std::vector<pollfd> osSide;
+	std::vector<pollfd> osSideAccum;
 	size_t associatedCount = 0;
 	size_t usedCount = 0;
 	//mb: xxxSide[0] is always reserved and invalid.
-	static const size_t capacity_ = 1000000; // just a temporary workaround to prevent reallocation at arbitrary time; TODO: address properly!
+	static const size_t capacity_ = 2; // just a temporary workaround to prevent reallocation at arbitrary time; TODO: address properly!
 	static const size_t compactionMinSize = 32;
-public:
 
-	NetSockets() {ourSide.reserve(capacity_); osSide.reserve(capacity_); ourSide.emplace_back(0); osSide.emplace_back();}
-
-	NetSocketEntry& at(size_t idx) { return ourSide.at(idx);}
-	const NetSocketEntry& at(size_t idx) const { return ourSide.at(idx);}
-	short reventsAt(size_t idx) const { return osSide.at(idx).revents;}
-	SOCKET socketsAt(size_t idx) const { return osSide.at(idx).fd;}
-	size_t size() const {return ourSide.size() - 1; }
-	bool isValidId( size_t idx ) { return idx && idx < ourSide.size(); };
-
-	template<class SocketType>
-	void addEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
-		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
-		{
-			if (!ourSide[i].isUsed())
-			{
-				NetSocketEntry entry(i/*, node*/, ptr, typeId);
-				ourSide[i] = std::move(entry);
-				osSide[i].fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
-				osSide[i].events = 0;
-				osSide[i].revents = 0;
-				++usedCount;
-				return;
-			}
-		}
-
-		size_t ix = ourSide.size();
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ix < ourSide.capacity() ); // just a temporary workaround to prevent reallocation
-		ourSide.emplace_back(ix/*, node*/, ptr, typeId);
-		pollfd p;
-		p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
-		p.events = 0;
-		p.revents = 0;
-		osSide.push_back( p );
-		++usedCount;
-		return;
-	}
 	void makeCompactIfNecessary() {
 		if ( ourSide.size() <= compactionMinSize || usedCount < ourSide.size() / 2 )
 			return;
@@ -158,38 +121,274 @@ public:
 		ourSide.swap( ourSideNew );
 		osSide.swap( osSideNew );
 	}
-	void setAssociated( size_t idx/*, pollfd p*/ ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() );
-		ourSide[idx].setAssociated();
-		osSide[idx].fd = (SOCKET)(-((int64_t)(osSide[idx].fd)));
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].events == 0, "indeed: {}", osSide[idx].events );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].revents == 0, "indeed: {}", osSide[idx].revents );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].fd > 0 );
-		++associatedCount;
-	}
-	//short getEvents( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); return osSide[idx].events; }
-	void setPollout( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); osSide[idx].events |= POLLOUT; }
-	void unsetPollout( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); osSide[idx].events &= ~POLLOUT; }
-	void setPollin( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); osSide[idx].events |= POLLIN; }
-	void unsetPollin( size_t idx ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); osSide[idx].events &= ~POLLIN; }
-	void setRefed( size_t idx, bool refed ) {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); ourSide[idx].refed = refed; }
-	void setUnused( size_t idx ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() );
-		if ( osSide[idx].fd != INVALID_SOCKET )
+
+public:
+
+	NetSockets() {ourSide.reserve(capacity_); osSide.reserve(capacity_); ourSide.emplace_back(0); osSide.emplace_back();}
+
+	NetSocketEntry& at(size_t idx) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
 		{
-			osSide[idx].fd = INVALID_SOCKET; 
-			--associatedCount;
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
+			return ourSide.at(idx);
 		}
-		ourSide[idx].setUnused();
-		--usedCount;
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			return ourSideAccum.at(idx);
+		}
+	}
+	const NetSocketEntry& at(size_t idx) const {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
+			return ourSide.at(idx);
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			return ourSideAccum.at(idx);
+		}
+	}
+	short reventsAt(size_t idx) const {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+		{
+			return osSide.at(idx).revents;
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			return osSideAccum.at(idx).revents;
+		}
+	}
+	SOCKET socketsAt(size_t idx) const { 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+		{
+			return osSide.at(idx).fd;
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			return osSideAccum.at(idx).fd;
+		}
+	}
+	size_t size() const {return ourSide.size() - 1; }
+	bool isValidId( size_t idx ) { return idx && idx < ourSide.size() + ourSideAccum.size(); }
+
+	template<class SocketType>
+	void addEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
+		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
+		{
+			if (!ourSide[i].isUsed())
+			{
+				NetSocketEntry entry(i/*, node*/, ptr, typeId);
+				ourSide[i] = std::move(entry);
+				osSide[i].fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
+				osSide[i].events = 0;
+				osSide[i].revents = 0;
+				++usedCount;
+				return;
+			}
+		}
+
+		if ( ourSide.size() < ourSide.capacity() )
+		{
+			size_t ix = ourSide.size();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ix < ourSide.capacity() ); // just a temporary workaround to prevent reallocation
+			ourSide.emplace_back(ix/*, node*/, ptr, typeId);
+			pollfd p;
+			p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
+			p.events = 0;
+			p.revents = 0;
+			osSide.push_back( p );
+			++usedCount;
+		}
+		else // reallocation of all the underlaying array would happen
+		{
+			size_t bazeSz = ourSide.size();
+			size_t ix = bazeSz + ourSideAccum.size();
+			ourSideAccum.emplace_back(ix/*, node*/, ptr, typeId);
+			pollfd p;
+			p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
+			p.events = 0;
+			p.revents = 0;
+			osSideAccum.push_back( p );
+			++usedCount;
+		}
+
+		return;
+	}
+	void reworkIfNecessary()
+	{
+		if ( ourSideAccum.size() )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSideAccum.size() == ourSideAccum.size(), "indeed; {} vs. {}", osSideAccum.size(), ourSideAccum.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity(), "indeed; {} vs. {}", ourSide.size(), ourSide.capacity() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide.size() == ourSide.size(), "indeed; {} vs. {}", osSide.size(), ourSide.size() );
+			for (size_t i=0; i != ourSideAccum.size(); ++i)
+			{
+//				ourSideAccum[i].updateIndex( ourSide.size() );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSideAccum[i].index == ourSide.size(), "indeed; {} vs. {}", ourSideAccum[i].index, ourSide.size() );
+				ourSide.emplace_back( std::move( ourSideAccum[i] ) );
+				osSide.push_back( osSideAccum[i] );
+			}
+			ourSideAccum.clear();
+			osSideAccum.clear();
+		}
+		makeCompactIfNecessary();
+	}
+
+	void setAssociated( size_t idx/*, pollfd p*/ ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
+			ourSide[idx].setAssociated();
+			osSide[idx].fd = (SOCKET)(-((int64_t)(osSide[idx].fd)));
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].events == 0, "indeed: {}", osSide[idx].events );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].revents == 0, "indeed: {}", osSide[idx].revents );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].fd > 0 );
+			++associatedCount;
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			ourSideAccum[idx].setAssociated();
+			osSideAccum[idx].fd = (SOCKET)(-((int64_t)(osSideAccum[idx].fd)));
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSideAccum[idx].events == 0, "indeed: {}", osSideAccum[idx].events );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSideAccum[idx].revents == 0, "indeed: {}", osSideAccum[idx].revents );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSideAccum[idx].fd > 0 );
+			++associatedCount;
+		}
+	}
+	void setPollout( size_t idx ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+			osSide[idx].events |= POLLOUT; 
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			osSideAccum[idx].events |= POLLOUT; 
+		}
+	}
+	void unsetPollout( size_t idx ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+			osSide[idx].events &= ~POLLOUT; 
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			osSideAccum[idx].events &= ~POLLOUT; 
+		}
+	}
+	void setPollin( size_t idx ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+			osSide[idx].events |= POLLIN; 
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			osSideAccum[idx].events |= POLLIN; 
+		}
+	}
+	void unsetPollin( size_t idx ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+			osSide[idx].events &= ~POLLIN; 
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			osSideAccum[idx].events &= ~POLLIN; 
+		}
+	}
+	void setRefed( size_t idx, bool refed ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !refed || ourSide[idx].isUsed() ); 
+			ourSide[idx].refed = refed;
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			ourSideAccum[idx].refed = refed;
+		}
+	}
+	void setUnused( size_t idx ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
+			if ( osSide[idx].fd != INVALID_SOCKET )
+			{
+				osSide[idx].fd = INVALID_SOCKET; 
+				--associatedCount;
+			}
+			ourSide[idx].setUnused();
+			--usedCount;
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			if ( osSideAccum[idx].fd != INVALID_SOCKET )
+			{
+				osSideAccum[idx].fd = INVALID_SOCKET; 
+				--associatedCount;
+			}
+			ourSideAccum[idx].setUnused();
+			--usedCount;
+		}
+
 	}
 	void setSocketClosed( size_t idx ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx && idx <= ourSide.size() ); 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
-		if ( ourSide[idx].isAssociated() )
-			--associatedCount;
-		osSide[idx].fd = INVALID_SOCKET; 
-		ourSide[idx].setSocketClosed();
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
+			if ( ourSide[idx].isAssociated() )
+				--associatedCount;
+			osSide[idx].fd = INVALID_SOCKET; 
+			ourSide[idx].setSocketClosed();
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSideAccum[idx].isUsed() ); 
+			if ( ourSideAccum[idx].isAssociated() )
+				--associatedCount;
+			osSideAccum[idx].fd = INVALID_SOCKET; 
+			ourSideAccum[idx].setSocketClosed();
+		}
 	}
 	std::pair<pollfd*, size_t> getPollfd() { 
 		return osSide.size() > 1 ? ( associatedCount > 0 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ) ) : std::make_pair( nullptr, 0 ); 
@@ -332,14 +531,10 @@ protected:
 
 public:
 	void appRef(size_t id) { 
-		auto& entry = appGetEntry(id);
-		//entry.getClientSocketData()->refed = true;
-		entry.refed = true; 
+		ioSockets.setRefed( id, true );
 	}
 	void appUnref(size_t id) { 
-		auto& entry = appGetEntry(id);
-		//entry.getClientSocketData()->refed = false; 
-		entry.refed = false; 
+		ioSockets.setRefed( id, false );
 	}
 	void appPause(size_t id) { 
 		auto& entry = appGetEntry(id);
