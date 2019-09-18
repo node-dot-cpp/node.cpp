@@ -432,8 +432,8 @@ namespace nodecpp {
 
 			virtual ~SocketBase() {
 				if (state == CONNECTING || state == CONNECTED) destroy();
-				reportBeingDestructed(); 
 				unref(); /*or assert that is must already be unrefed*/
+				reportBeingDestructed(); 
 			}
 
 		public:
