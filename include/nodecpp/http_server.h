@@ -50,30 +50,32 @@ namespace nodecpp {
 
 		class HttpServerBase : public nodecpp::net::ServerBase
 		{
-		private:
+		public:
+			enum class Handler { IncomingReques, Close, Error };
+//		private:
 			struct DataForHttpCommandProcessing
 			{
 				struct UserHandlersCommon
 				{
 				public:
 					// originating from member functions of ServertBase-derived classes
-					template<class T> using userIncomingRequestMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
+					template<class T> using userIncomingRequestMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>);
 					template<class T> using userCloseMemberHandler = nodecpp::handler_ret_type (T::*)(bool);
 					template<class T> using userErrorMemberHandler = nodecpp::handler_ret_type (T::*)(Error&);
 
 					// originating from member functions of NodeBase-derived classes
-					template<class T, class ServerT> using userIncomingRequestNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
+					template<class T, class ServerT> using userIncomingRequestNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>);
 					template<class T, class ServerT> using userCloseNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, bool);
 					template<class T, class ServerT> using userErrorNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, Error&);
 
-					using userDefIncomingRequestHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>);
+					using userDefIncomingRequestHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>);
 					using userDefCloseHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, bool);
 					using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<HttpServerBase>, Error&);
 
 					// originating from member functions of HttpServerBase-derived classes
 
 					template<class ObjectT, userIncomingRequestMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::handler_ret_type incomingRequestHandler( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request )
+					static nodecpp::handler_ret_type incomingRequestHandler( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response )
 					{
 						//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(request);
@@ -99,9 +101,9 @@ namespace nodecpp {
 					// originating from member functions of NodeBase-derived classes
 
 					template<class ObjectT, class ServerT, userIncomingRequestNodeMemberHandler<ObjectT, ServerT> MemberFnT>
-					static nodecpp::handler_ret_type incomingRequestHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request )
+					static nodecpp::handler_ret_type incomingRequestHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<HttpServerBase> serverPtr, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response )
 					{
-						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), request);
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), request, response);
 						CO_RETURN;
 					}
 
@@ -118,8 +120,6 @@ namespace nodecpp {
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), e);
 						CO_RETURN;
 					}
-
-					enum class Handler { IncomingReques, Close, Error };
 				};
 
 				struct UserHandlersForDataCollecting : public UserHandlersCommon
@@ -128,7 +128,7 @@ namespace nodecpp {
 					UserDefHandlers<UserHandlersCommon::userDefCloseHandlerFnT> userDefCloseHandlers;
 					UserDefHandlers<UserHandlersCommon::userDefErrorHandlerFnT> userDefErrorHandlers;
 
-					template<UserHandlersCommon::Handler handler, auto memmberFn, class ObjectT>
+					template<HttpServerBase::Handler handler, auto memmberFn, class ObjectT>
 					void addHandler()
 					{
 						if constexpr (handler == Handler::IncomingReques)
@@ -146,7 +146,7 @@ namespace nodecpp {
 						}
 					}
 
-					template<UserHandlersCommon::Handler handler, auto memmberFn, class ObjectT, class ServerT>
+					template<HttpServerBase::Handler handler, auto memmberFn, class ObjectT, class ServerT>
 					void addHandlerFromNode(ObjectT* object)
 					{
 						if constexpr (handler == Handler::IncomingReques)
@@ -188,7 +188,7 @@ namespace nodecpp {
 				UserHandlers userHandlers;
 
 				bool isIncomingRequesEventHandler() { return userHandlers.userDefIncomingRequestHandlers.willHandle(); }
-				void handleIncomingRequesEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request) { userHandlers.userDefIncomingRequestHandlers.execute(server, request); }
+				void handleIncomingRequesEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response) { userHandlers.userDefIncomingRequestHandlers.execute(server, request, response); }
 
 				bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
 				void handleCloseEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, bool hasError) { userHandlers.userDefCloseHandlers.execute(server, hasError); }
@@ -234,6 +234,8 @@ namespace nodecpp {
 //printf( "about to rezume ahd_request.h\n" );
 					hr();
 				}
+				else if ( dataForHttpCommandProcessing.isIncomingRequesEventHandler() )
+					dataForHttpCommandProcessing.handleIncomingRequesEvent( myThis.getSoftPtr<HttpServerBase>(this), request, response );
 			}
 
 			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response) { 
@@ -321,6 +323,17 @@ namespace nodecpp {
 #else
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
+
+			template<class UserClass, HttpServerBase::Handler handler, auto memmberFn, class ObjectT>
+			static void addHttpHandler(ObjectT* object)
+			{
+				DataForHttpCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandlerFromNode<handler, memmberFn, ObjectT, UserClass>(object);
+			}
+			template<class UserClass, HttpServerBase::Handler handler, auto memmberFn>
+			static void addHttpHandler()
+			{
+				DataForHttpCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandler<handler, memmberFn, UserClass>();
+			}
 		};
 
 		template<class DataParentT>
@@ -889,6 +902,7 @@ sock->proceedToNext();
 			}
 		};
 
+		inline
 		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
 			bool ready = false;
@@ -920,6 +934,7 @@ sock->proceedToNext();
 			CO_RETURN;
 		}
 
+		inline
 		HttpSocketBase::HttpSocketBase() {
 			request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
 			request->sock = myThis.getSoftPtr<HttpSocketBase>(this);
