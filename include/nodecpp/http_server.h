@@ -50,132 +50,7 @@ namespace nodecpp {
 
 		class HttpServerBase : public nodecpp::net::ServerBase
 		{
-		public:
-
-#ifndef NODECPP_NO_COROUTINES
-			struct awaitable_request_data
-			{
-				awaitable_handle_t h = nullptr;
-				nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request;
-				nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response;
-			};
-			awaitable_request_data ahd_request;
-
-			void forceReleasingAllCoroHandles()
-			{
-				if ( ahd_request.h != nullptr )
-				{
-					auto hr = ahd_request.h;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
-					ahd_request.h = nullptr;
-					hr();
-				}
-			}
-
-			void onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response )
-			{
-//printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
-				if ( ahd_request.h != nullptr )
-				{
-					ahd_request.request = request;
-					ahd_request.response = response;
-					auto hr = ahd_request.h;
-					ahd_request.h = nullptr;
-//printf( "about to rezume ahd_request.h\n" );
-					hr();
-				}
-			}
-
-			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response) { 
-
-				struct connection_awaiter {
-					std::experimental::coroutine_handle<> myawaiting = nullptr;
-					HttpServerBase& server;
-					nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request;
-					nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response;
-
-					connection_awaiter(HttpServerBase& server_, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request_, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response_) : 
-						server( server_ ), request( request_ ), response( response_) {}
-
-					connection_awaiter(const connection_awaiter &) = delete;
-					connection_awaiter &operator = (const connection_awaiter &) = delete;
-
-					~connection_awaiter() {}
-
-					bool await_ready() {
-						return false;
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
-						server.ahd_request.h = awaiting;
-						myawaiting = awaiting;
-					}
-
-					auto await_resume() {
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.request != nullptr ); 
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.response != nullptr ); 
-						request = server.ahd_request.request;
-						response = server.ahd_request.response;
-					}
-				};
-				return connection_awaiter(*this, request, response);
-			}
-
-			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response, uint32_t period) { 
-
-				struct connection_awaiter {
-					std::experimental::coroutine_handle<> myawaiting = nullptr;
-					HttpServerBase& server;
-					nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request;
-					nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response;
-					uint32_t period;
-					nodecpp::Timeout to;
-
-					connection_awaiter(HttpServerBase& server_, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request_, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response_, uint32_t period_) : 
-						server( server_ ), request( request_ ), response( response_), period( period_ ) {}
-
-					connection_awaiter(const connection_awaiter &) = delete;
-					connection_awaiter &operator = (const connection_awaiter &) = delete;
-
-					~connection_awaiter() {}
-
-					bool await_ready() {
-						return false;
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
-						server.ahd_request.h = awaiting;
-						myawaiting = awaiting;
-						to = nodecpp::setTimeoutForAction( server.ahd_request.h, period );
-					}
-
-					auto await_resume() {
-						nodecpp::clearTimeout( to );
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.request != nullptr ); 
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.response != nullptr ); 
-						request = server.ahd_request.request;
-						response = server.ahd_request.response;
-					}
-				};
-				return connection_awaiter(*this, request, response, period);
-			}
-
-#else
-			void forceReleasingAllCoroHandles() {}
-#endif // NODECPP_NO_COROUTINES
-
-		public:
-			HttpServerBase() {}
-			virtual ~HttpServerBase() {}
-
+		private:
 			struct DataForHttpCommandProcessing
 			{
 				struct UserHandlersCommon
@@ -322,6 +197,130 @@ namespace nodecpp {
 				void handleErrorEvent(nodecpp::safememory::soft_ptr<HttpServerBase> server, Error& e) { userHandlers.userDefErrorHandlers.execute(server, e); }
 			};
 			DataForHttpCommandProcessing dataForHttpCommandProcessing;
+
+		public:
+			HttpServerBase() {}
+			virtual ~HttpServerBase() {}
+
+#ifndef NODECPP_NO_COROUTINES
+			struct awaitable_request_data
+			{
+				awaitable_handle_t h = nullptr;
+				nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request;
+				nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response;
+			};
+			awaitable_request_data ahd_request;
+
+			void forceReleasingAllCoroHandles()
+			{
+				if ( ahd_request.h != nullptr )
+				{
+					auto hr = ahd_request.h;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					ahd_request.h = nullptr;
+					hr();
+				}
+			}
+
+			void onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer> response )
+			{
+//printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
+				if ( ahd_request.h != nullptr )
+				{
+					ahd_request.request = request;
+					ahd_request.response = response;
+					auto hr = ahd_request.h;
+					ahd_request.h = nullptr;
+//printf( "about to rezume ahd_request.h\n" );
+					hr();
+				}
+			}
+
+			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response) { 
+
+				struct connection_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					HttpServerBase& server;
+					nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request;
+					nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response;
+
+					connection_awaiter(HttpServerBase& server_, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request_, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response_) : 
+						server( server_ ), request( request_ ), response( response_) {}
+
+					connection_awaiter(const connection_awaiter &) = delete;
+					connection_awaiter &operator = (const connection_awaiter &) = delete;
+
+					~connection_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						server.ahd_request.h = awaiting;
+						myawaiting = awaiting;
+					}
+
+					auto await_resume() {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.request != nullptr ); 
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.response != nullptr ); 
+						request = server.ahd_request.request;
+						response = server.ahd_request.response;
+					}
+				};
+				return connection_awaiter(*this, request, response);
+			}
+
+			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response, uint32_t period) { 
+
+				struct connection_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					HttpServerBase& server;
+					nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request;
+					nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					connection_awaiter(HttpServerBase& server_, nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request_, nodecpp::safememory::soft_ptr<OutgoingHttpMessageAtServer>& response_, uint32_t period_) : 
+						server( server_ ), request( request_ ), response( response_), period( period_ ) {}
+
+					connection_awaiter(const connection_awaiter &) = delete;
+					connection_awaiter &operator = (const connection_awaiter &) = delete;
+
+					~connection_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						server.ahd_request.h = awaiting;
+						myawaiting = awaiting;
+						to = nodecpp::setTimeoutForAction( server.ahd_request.h, period );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.request != nullptr ); 
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.response != nullptr ); 
+						request = server.ahd_request.request;
+						response = server.ahd_request.response;
+					}
+				};
+				return connection_awaiter(*this, request, response, period);
+			}
+
+#else
+			void forceReleasingAllCoroHandles() {}
+#endif // NODECPP_NO_COROUTINES
 		};
 
 		template<class DataParentT>
