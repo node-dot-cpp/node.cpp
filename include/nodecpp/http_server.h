@@ -407,44 +407,6 @@ namespace nodecpp {
 			friend class IncomingHttpMessageAtServer;
 			friend class OutgoingHttpMessageAtServer;
 
-			class DummyBuffer
-			{
-				Buffer base;
-				size_t currpos = 0;
-			public:
-				DummyBuffer() : base(0x10000) {}
-				void pushFragment(const Buffer& b) { base.append( b ); }
-				bool popLine(Buffer& b) 
-				{ 
-					for ( ; currpos<base.size(); ++currpos )
-						if ( *(base.begin() + currpos) == '\n' )
-						{
-							b.clear();
-							b.append( base, 0, currpos+1 );
-							base.popFront( currpos+1 );
-							currpos = 0;
-							return true;
-						}
-					return false;
-				}
-			};
-			DummyBuffer dbuf;
-
-			nodecpp::handler_ret_type readLine(Buffer& lb)
-			{
-//printf( "about to read line\n" );
-				nodecpp::Buffer r_buff(0x200);
-				while ( !dbuf.popLine( lb ) )
-				{
-					co_await a_read( r_buff, 2 );
-//printf( "(a segment of) a line has been read; size = %zd (%zd)\n", r_buff.size(), r_buff.size() + 54 );
-					dbuf.pushFragment( r_buff );
-					r_buff.clear();
-				}
-
-				CO_RETURN;
-			}
-
 			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
 
 			nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
