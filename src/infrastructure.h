@@ -241,10 +241,15 @@ public:
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, i<ioSockets.size() );
 				short revents = ioSockets.reventsAt( 1 + i );
+#ifdef NODECPP_LINUX
 				if ( revents )
 				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, (int64_t)(ioSockets.socketsAt(i + 1)) > 0, "indeed: {}", (int64_t)(ioSockets.socketsAt(i + 1)) );
+#else
+				if ( revents && (int64_t)(ioSockets.socketsAt(i + 1)) > 0 ) // on Windows WSAPoll() may set revents to a non-zero value despite the socket is invalid
+				{
+#endif
 					++processed;
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, (int64_t)(ioSockets.socketsAt(i + 1)) > 0 );
 					NetSocketEntry& current = ioSockets.at( 1 + i );
 					switch ( current.emitter.objectType )
 					{
