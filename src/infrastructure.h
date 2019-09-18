@@ -320,7 +320,7 @@ public:
 				netServer.infraClearStores();
 			}
 
-			ioSockets.makeCompactIfNecessary();
+			ioSockets.reworkIfNecessary();
 		}
 	}
 };

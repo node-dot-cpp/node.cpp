@@ -72,14 +72,17 @@ public:
 				auto* pdata = getClientSocketData();
 				if ( pdata )
 					pdata->index = idx;
+				break;
 			}
 			case OpaqueEmitter::ObjectType::ServerSocket: {
 				auto* pdata = getServerSocketData();
 				if ( pdata )
 					pdata->index = idx;
+				break;
 			}
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(emitter.objectType));
+				break;
 		}
 	}
 };
