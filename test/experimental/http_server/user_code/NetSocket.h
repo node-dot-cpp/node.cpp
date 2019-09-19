@@ -13,6 +13,9 @@ using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
+//#define IMPL_VERSION 1 // main() is a single coro
+#define IMPL_VERSION 2 // onRequest is a coro
+
 class MySampleTNode : public NodeBase
 {
 public: // just temporarily
@@ -68,7 +71,7 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-
+#if IMPL_VERSION == 1
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
@@ -78,7 +81,7 @@ public:
 		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
 		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
-		srv->listen(2000, "127.0.0.1", 5);
+		srv->listen(2000, "127.0.0.1", 5000);
 		srvCtrl->listen(2001, "127.0.0.1", 5);
 
 #ifdef AUTOMATED_TESTING_ONLY
@@ -100,7 +103,7 @@ public:
 				Buffer b1(0x1000);
 				co_await request->a_readBody( b1 );
 				++(stats.rqCnt);
-//				request->dbgTrace();
+				request->dbgTrace();
 
 //				simpleProcessing( request, response );
 				yetSimpleProcessing( request, response );
@@ -111,6 +114,71 @@ public:
 
 		CO_RETURN;
 	}
+#elif IMPL_VERSION == 2
+	virtual nodecpp::handler_ret_type main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+		nodecpp::net::HttpServerBase::addHttpHandler<nodecpp::net::HttpServerBase, nodecpp::net::HttpServerBase::Handler::IncomingReques, &MySampleTNode::onRequest>(this);
+		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+
+		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
+		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
+
+		srv->listen(2000, "127.0.0.1", 5000);
+		srvCtrl->listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+		to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
+#endif
+
+		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
+		nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response;
+		try { 
+			for(;;) { 
+				co_await srv->a_request(request, response); 
+				Buffer b1(0x1000);
+				co_await request->a_readBody( b1 );
+				++(stats.rqCnt);
+				request->dbgTrace();
+
+//				simpleProcessing( request, response );
+				yetSimpleProcessing( request, response );
+			} 
+		} 
+		catch (...) { // TODO: what?
+		}
+
+		CO_RETURN;
+	}
+	virtual nodecpp::handler_ret_type onRequest(nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerBase> server, nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response)
+	{
+//		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
+//		nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response;
+		try { 
+				Buffer b1(0x1000);
+				co_await request->a_readBody( b1 );
+				++(stats.rqCnt);
+				request->dbgTrace();
+
+//				simpleProcessing( request, response );
+				yetSimpleProcessing( request, response );
+		} 
+		catch (...) { // TODO: what?
+		}
+
+		CO_RETURN;
+	}
+#else
+#error
+#endif // IMPL_VERSION
 
 	nodecpp::handler_ret_type simpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response )
 	{
@@ -271,7 +339,7 @@ public:
 			}
 		}
 		response->addHeader( "Content-Length", fmt::format( "{}", b.size() ) );
-//		response->dbgTrace();
+		response->dbgTrace();
 		co_await response->flushHeaders();
 		co_await response->writeBodyPart(b);
 
