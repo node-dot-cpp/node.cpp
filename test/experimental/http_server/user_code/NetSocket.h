@@ -96,7 +96,7 @@ public:
 #endif
 
 		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
-		nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response;
+		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
 		try { 
 			for(;;) { 
 				co_await srv->a_request(request, response); 
@@ -140,7 +140,7 @@ public:
 #endif
 
 		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
-		nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response;
+		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
 		try { 
 			for(;;) { 
 				co_await srv->a_request(request, response); 
@@ -158,10 +158,10 @@ public:
 
 		CO_RETURN;
 	}
-	virtual nodecpp::handler_ret_type onRequest(nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerBase> server, nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response)
+	virtual nodecpp::handler_ret_type onRequest(nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerBase> server, nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response)
 	{
 //		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
-//		nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response;
+//		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
 		try { 
 				Buffer b1(0x1000);
 				co_await request->a_readBody( b1 );
@@ -180,7 +180,7 @@ public:
 #error
 #endif // IMPL_VERSION
 
-	nodecpp::handler_ret_type simpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response )
+	nodecpp::handler_ret_type simpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response )
 	{
 		// unexpected method
 		if ( !(request->getMethod() == "GET" || request->getMethod() == "HEAD" ) )
@@ -294,7 +294,7 @@ public:
 		}
 	}
 
-	nodecpp::handler_ret_type yetSimpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response )
+	nodecpp::handler_ret_type yetSimpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response )
 	{
 		// unexpected method
 		if ( !(request->getMethod() == "GET" || request->getMethod() == "HEAD" ) )

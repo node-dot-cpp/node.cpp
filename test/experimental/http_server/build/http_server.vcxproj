@@ -396,7 +396,9 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\error.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\event.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\http_socket_at_server.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\http_server.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\http_server_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h" />
