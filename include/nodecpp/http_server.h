@@ -531,8 +531,6 @@ namespace nodecpp {
 				return data_awaiter(*this, period, d);
 			}
 
-#endif // NODECPP_NO_COROUTINES
-
 			nodecpp::handler_ret_type readLine(std::string& line)
 			{
 				size_t pos = 0;
@@ -569,10 +567,13 @@ namespace nodecpp {
 				CO_RETURN;
 			}
 
+#endif // NODECPP_NO_COROUTINES
+
 		public:
 			HttpSocketBase();
 			virtual ~HttpSocketBase() {}
 
+#ifndef NODECPP_NO_COROUTINES
 			nodecpp::handler_ret_type run()
 			{
 				for(;;)
@@ -598,7 +599,6 @@ namespace nodecpp {
 				}
 			}
 
-#ifndef NODECPP_NO_COROUTINES
 			void forceReleasingAllCoroHandles()
 			{
 				if ( ahd_continueGetting != nullptr )
@@ -686,6 +686,7 @@ namespace nodecpp {
 				readStatus = ReadStatus::noinit;
 				bodyBytesRetrieved = 0;
 			}
+#ifndef NODECPP_NO_COROUTINES
 			nodecpp::handler_ret_type a_readBody( Buffer& b )
 			{
 				if ( bodyBytesRetrieved < getContentLength() )
@@ -699,6 +700,7 @@ namespace nodecpp {
 
 				CO_RETURN;
 			}
+#endif // NODECPP_NO_COROUTINES
 
 
 			bool parseMethod( const std::string& line )
@@ -843,6 +845,7 @@ namespace nodecpp {
 				replyStatus = status;
 			}
 
+#ifndef NODECPP_NO_COROUTINES
 			nodecpp::handler_ret_type flushHeaders()
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
@@ -900,6 +903,7 @@ sock->proceedToNext();
 //printf( "getting next request has been allowed\n" );
 				CO_RETURN;
 			}
+#endif // NODECPP_NO_COROUTINES
 		};
 
 		inline
@@ -909,11 +913,10 @@ sock->proceedToNext();
 			std::string line;
 			co_await readLine(line);
 //			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
-//			if ( !message.parseMethod( std::string( reinterpret_cast<char*>(lb.begin()) ) ) )
 			if ( !message.parseMethod( line ) )
 			{
+				// TODO: report error
 				end();
-//				co_await sendReply();
 			}
 
 			do
@@ -921,15 +924,7 @@ sock->proceedToNext();
 				co_await readLine(line);
 //				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
-//			while ( message.parseHeaderEntry( std::string( reinterpret_cast<char*>(lb.begin()) ) ) );
 			while ( message.parseHeaderEntry( line ) );
-
-			/*if ( message.getContentLength() )
-			{
-				lb.clear();
-				lb.reserve( message.getContentLength() );
-				co_await a_read( lb, message.getContentLength() );
-			}*/
 
 			CO_RETURN;
 		}

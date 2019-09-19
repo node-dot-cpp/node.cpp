@@ -28,6 +28,7 @@
 #include "../include/nodecpp/net_common.h"
 #include "../include/nodecpp/socket_common.h"
 #include "../include/nodecpp/server_common.h"
+#include "../include/nodecpp/http_server.h"
 
 #include "infrastructure.h"
 
@@ -38,6 +39,7 @@ using namespace nodecpp::net;
 
 thread_local nodecpp::net::UserHandlerClassPatterns<nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlersForDataCollecting> nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern;
 thread_local nodecpp::net::UserHandlerClassPatterns<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlersForDataCollecting> nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern;
+thread_local nodecpp::net::UserHandlerClassPatterns<nodecpp::net::HttpServerBase::DataForHttpCommandProcessing::UserHandlersForDataCollecting> nodecpp::net::HttpServerBase::DataForHttpCommandProcessing::userHandlerClassPattern;
 
 thread_local NodeBase* thisThreadNode = nullptr;
 
