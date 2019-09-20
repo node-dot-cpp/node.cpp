@@ -29,7 +29,7 @@
 #define HTTP_SOCKET_AT_SERVER_H
 
 #include "http_server_common.h"
-#include <nodecpp/socket_common.h>
+#include "socket_common.h"
 
 #include <algorithm>
 #include <cctype>

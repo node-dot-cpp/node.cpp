@@ -45,18 +45,20 @@ namespace nodecpp {
 
 
 
-		template<class ServerT, class SocketT, class ... Types>
+		template<class ServerT, class RequestT, class ... Types>
 		static
 		nodecpp::safememory::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
 			static_assert( std::is_base_of< HttpServerBase, ServerT >::value );
-			static_assert( std::is_base_of< HttpSocketBase, SocketT >::value );
-			return createServer<ServerT, HttpSocket, Types ...>(::std::forward<Types>(args)...);
+			static_assert( std::is_base_of< IncomingHttpMessageAtServer, RequestT >::value );
+			auto retServer = createServer<ServerT, HttpSocketBase, Types ...>(::std::forward<Types>(args)...);
+			retServer->dataForHttpCommandProcessing.userHandlers.from(HttpServerBase::DataForHttpCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*retServer));
+			return retServer;
 		}
 
 		template<class ServerT, class ... Types>
 		static
 		nodecpp::safememory::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
-			return createHttpServer<ServerT, HttpSocket, Types ...>(::std::forward<Types>(args)...);
+			return createHttpServer<ServerT, IncomingHttpMessageAtServer, Types ...>(::std::forward<Types>(args)...);
 		}
 
 	} //namespace net

@@ -28,8 +28,8 @@
 #ifndef HTTP_SERVER_COMMON_H
 #define HTTP_SERVER_COMMON_H
 
-#include <nodecpp/common.h>
-#include <nodecpp/server_common.h>
+#include "common.h"
+#include "server_common.h"
 
 #include <algorithm>
 #include <cctype>

@@ -13,8 +13,8 @@ using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
-//#define IMPL_VERSION 1 // main() is a single coro
-#define IMPL_VERSION 2 // onRequest is a coro
+#define IMPL_VERSION 1 // main() is a single coro
+//#define IMPL_VERSION 2 // onRequest is a coro
 
 class MySampleTNode : public NodeBase
 {
@@ -38,11 +38,11 @@ public:
 	nodecpp::Timeout to;
 #endif
 
-	class MyHttpServer : public nodecpp::net::HttpServer<MySampleTNode>
+	class MyHttpServer : public nodecpp::net::HttpServerBase //nodecpp::net::HttpServer<MySampleTNode>
 	{
 	public:
 		MyHttpServer() {}
-		MyHttpServer(MySampleTNode* node) : HttpServer<MySampleTNode>(node) {}
+//		MyHttpServer(MySampleTNode* node) : HttpServer<MySampleTNode>(node) {}
 		virtual ~MyHttpServer() {}
 	};
 
@@ -66,6 +66,15 @@ public:
 		virtual ~HttpSock() {}
 	};
 
+	using SockTypeServerSocket = nodecpp::net::SocketBase;
+	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
+
+	using ServerType = MyHttpServer;
+	nodecpp::safememory::owning_ptr<ServerType> srv; 
+
+	using CtrlServerType = CtrlServer;
+	nodecpp::safememory::owning_ptr<CtrlServerType>  srvCtrl;
+
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
@@ -78,7 +87,8 @@ public:
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
-		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
+//		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
+		srv = nodecpp::net::createHttpServer<ServerType>();
 		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
 		srv->listen(2000, "127.0.0.1", 5000);
@@ -119,10 +129,12 @@ public:
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		nodecpp::net::HttpServerBase::addHttpHandler<nodecpp::net::HttpServerBase, nodecpp::net::HttpServerBase::Handler::IncomingReques, &MySampleTNode::onRequest>(this);
+		nodecpp::net::HttpServerBase::addHttpHandler<ServerType, nodecpp::net::HttpServerBase::Handler::IncomingReques, &MySampleTNode::onRequest>(this);
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
-		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
+//		srv = nodecpp::net::createHttpServer<ServerType, HttpSock>(this);
+//		srv = nodecpp::net::createHttpServer<ServerType>(this);
+		srv = nodecpp::net::createHttpServer<ServerType>();
 		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
 		srv->listen(2000, "127.0.0.1", 5000);
@@ -139,7 +151,7 @@ public:
 		}, 3000 ) );
 #endif
 
-		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
+		/*nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
 		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
 		try { 
 			for(;;) { 
@@ -154,11 +166,11 @@ public:
 			} 
 		} 
 		catch (...) { // TODO: what?
-		}
+		}*/
 
 		CO_RETURN;
 	}
-	virtual nodecpp::handler_ret_type onRequest(nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerBase> server, nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response)
+	virtual nodecpp::handler_ret_type onRequest(nodecpp::safememory::soft_ptr<ServerType> server, nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response)
 	{
 //		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
 //		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
@@ -367,15 +379,6 @@ public:
 		}
 		CO_RETURN;
 	}
-
-	using SockTypeServerSocket = nodecpp::net::SocketBase;
-	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
-
-	using ServerType = MyHttpServer;
-	nodecpp::safememory::owning_ptr<ServerType> srv; 
-
-	using CtrlServerType = CtrlServer;
-	nodecpp::safememory::owning_ptr<CtrlServerType>  srvCtrl;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
