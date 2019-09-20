@@ -13,8 +13,8 @@ using namespace std;
 using namespace nodecpp;
 using namespace fmt;
 
-#define IMPL_VERSION 1 // main() is a single coro
-//#define IMPL_VERSION 2 // onRequest is a coro
+//#define IMPL_VERSION 1 // main() is a single coro
+#define IMPL_VERSION 2 // onRequest is a coro
 
 class MySampleTNode : public NodeBase
 {
@@ -133,8 +133,9 @@ public:
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
 //		srv = nodecpp::net::createHttpServer<ServerType, HttpSock>(this);
-//		srv = nodecpp::net::createHttpServer<ServerType>(this);
-		srv = nodecpp::net::createHttpServer<ServerType>();
+//		srv = nodecpp::net::createHttpServer<ServerType, nodecpp::net::IncomingHttpMessageAtServer>(this);
+		srv = nodecpp::net::createHttpServer<ServerType, nodecpp::net::IncomingHttpMessageAtServer>();
+//		srv = nodecpp::net::createHttpServer<ServerType>();
 		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
 		srv->listen(2000, "127.0.0.1", 5000);
@@ -150,23 +151,6 @@ public:
 			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
 		}, 3000 ) );
 #endif
-
-		/*nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
-		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
-		try { 
-			for(;;) { 
-				co_await srv->a_request(request, response); 
-				Buffer b1(0x1000);
-				co_await request->a_readBody( b1 );
-				++(stats.rqCnt);
-				request->dbgTrace();
-
-//				simpleProcessing( request, response );
-				yetSimpleProcessing( request, response );
-			} 
-		} 
-		catch (...) { // TODO: what?
-		}*/
 
 		CO_RETURN;
 	}
