@@ -50,7 +50,7 @@ namespace nodecpp {
 		nodecpp::safememory::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
 			static_assert( std::is_base_of< HttpServerBase, ServerT >::value );
 			static_assert( std::is_base_of< IncomingHttpMessageAtServer, RequestT >::value );
-			auto retServer = createServer<ServerT, HttpSocketBase, Types ...>(::std::forward<Types>(args)...);
+			auto retServer = createServer<ServerT, HttpSocket<typename ServerT::DataParentType>, Types ...>(::std::forward<Types>(args)...);
 			retServer->dataForHttpCommandProcessing.userHandlers.from(HttpServerBase::DataForHttpCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*retServer));
 			return retServer;
 		}

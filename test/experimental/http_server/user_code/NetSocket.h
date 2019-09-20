@@ -38,11 +38,11 @@ public:
 	nodecpp::Timeout to;
 #endif
 
-	class MyHttpServer : public nodecpp::net::HttpServerBase //nodecpp::net::HttpServer<MySampleTNode>
+	class MyHttpServer : public nodecpp::net::HttpServer<MySampleTNode>
 	{
 	public:
 		MyHttpServer() {}
-//		MyHttpServer(MySampleTNode* node) : HttpServer<MySampleTNode>(node) {}
+		MyHttpServer(MySampleTNode* node) : HttpServer<MySampleTNode>(node) {}
 		virtual ~MyHttpServer() {}
 	};
 
