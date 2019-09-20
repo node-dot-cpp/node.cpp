@@ -897,7 +897,7 @@ public:
 		}
 		pendingCloseEvents.emplace_back(id, false);
 	}
-	void appAddServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) {
+	void appAddServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) { //TODO:CLUSTERING alt impl
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
@@ -906,7 +906,7 @@ public:
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addServerEntry(/*node, */ptr, typeId);
 	}
-	void appListen(soft_ptr<net::ServerBase> ptr, const char* ip, uint16_t port, int backlog) {
+	void appListen(soft_ptr<net::ServerBase> ptr, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Ip4 myIp = Ip4::parse(ip);
 		Port myPort = Port::fromHost(port);
 		if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort)) {
@@ -1093,11 +1093,17 @@ public:
 	}
 private:
 	template<class Node>
-	void infraProcessAcceptEvent(NetSocketEntry& entry)
+	void infraProcessAcceptEvent(NetSocketEntry& entry) //TODO:CLUSTERING alt impl
 	{
 		OpaqueSocketData osd( false );
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
 			return;
+		consumeAcceptedSocket<Node>(entry, osd);
+	}
+
+	template<class Node>
+	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd)
+	{
 //		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
