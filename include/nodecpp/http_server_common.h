@@ -50,7 +50,11 @@ namespace nodecpp {
 		class HttpServerBase : public nodecpp::net::ServerBase
 		{
 		public:
-			enum class Handler { IncomingReques, Close, Error };
+			using NodeType = void;
+			using DataParentType = void;
+
+		public:
+			enum class Handler { IncomingRequest, Close, Error };
 //		private:
 			struct DataForHttpCommandProcessing
 			{
@@ -130,7 +134,7 @@ namespace nodecpp {
 					template<HttpServerBase::Handler handler, auto memmberFn, class ObjectT>
 					void addHandler()
 					{
-						if constexpr (handler == Handler::IncomingReques)
+						if constexpr (handler == Handler::IncomingRequest)
 						{
 							userDefIncomingRequestHandlers.add( &UserHandlersCommon::template incomingRequestHandler<ObjectT, memmberFn>);
 						}
@@ -148,7 +152,7 @@ namespace nodecpp {
 					template<HttpServerBase::Handler handler, auto memmberFn, class ObjectT, class ServerT>
 					void addHandlerFromNode(ObjectT* object)
 					{
-						if constexpr (handler == Handler::IncomingReques)
+						if constexpr (handler == Handler::IncomingRequest)
 						{
 							userDefIncomingRequestHandlers.add(object, &UserHandlersCommon::template incomingRequestHandlerFromNode<ObjectT, ServerT, memmberFn>);
 						}
