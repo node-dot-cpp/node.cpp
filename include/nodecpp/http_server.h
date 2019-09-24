@@ -50,9 +50,76 @@ namespace nodecpp {
 		nodecpp::safememory::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
 			static_assert( std::is_base_of< HttpServerBase, ServerT >::value );
 			static_assert( std::is_base_of< IncomingHttpMessageAtServer, RequestT >::value );
+#if 0
 			auto retServer = createServer<ServerT, HttpSocket<typename ServerT::DataParentType>, Types ...>(::std::forward<Types>(args)...);
+//			auto retServer = createServer<ServerT, HttpSocketBase<Types ...>(::std::forward<Types>(args)...);
 			retServer->dataForHttpCommandProcessing.userHandlers.from(HttpServerBase::DataForHttpCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*retServer));
 			return retServer;
+#else
+			nodecpp::safememory::owning_ptr<ServerT> retServer = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
+			if constexpr ( !std::is_same<typename ServerT::NodeType, void>::value )
+			{
+				static_assert( std::is_base_of< NodeBase, typename ServerT::NodeType >::value );
+				retServer->template registerServer<typename ServerT::NodeType, ServerT>(retServer);
+			}
+			else
+			{
+				retServer->registerServer(retServer);
+			}
+			if constexpr ( std::is_same< typename ServerT::DataParentType, void >::value )
+			{
+				using SocketT = HttpSocket< RequestT, typename ServerT::DataParentType>;
+				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
+						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
+						/*if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
+						{
+							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
+							int id = -1;
+							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
+								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
+							ret->registerMeByIDAndAssignSocket(sdata, id);
+						}
+						else*/
+						{
+							ret->registerMeByIDAndAssignSocket(sdata, -1);
+						}
+						return ret;
+					} );
+			}
+			else
+			{
+				using SocketT = HttpSocket<RequestT, void>;
+				auto myDataParent = retServer->getDataParent();
+				retServer->setAcceptedSocketCreationRoutine( [myDataParent](OpaqueSocketData& sdata) {
+						nodecpp::safememory::owning_ptr<SocketT> retSock;
+#if 0
+						if constexpr ( std::is_base_of< NodeBase, typename ServerT::DataParentType >::value )
+						{
+							retSock = nodecpp::safememory::make_owning<SocketT>(myDataParent);
+						}
+						else
+#endif // 0
+						{
+							retSock = nodecpp::safememory::make_owning<SocketT>();
+						}
+						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
+						{
+							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
+							int id = -1;
+							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
+								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
+							retSock->registerMeByIDAndAssignSocket(sdata, id);
+						}
+						else
+						{
+							retSock->registerMeByIDAndAssignSocket(sdata, -1);
+						}
+						return retSock;
+					} );
+			}
+			retServer->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*retServer));
+			return retServer;
+#endif // 0/1
 		}
 
 		template<class ServerT, class ... Types>

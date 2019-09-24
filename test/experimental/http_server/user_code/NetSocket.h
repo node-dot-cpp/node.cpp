@@ -53,7 +53,7 @@ public:
 		virtual ~CtrlServer() {}
 	};
 
-	class HttpSock : public nodecpp::net::HttpSocket<MySampleTNode>
+	/*class HttpSock : public nodecpp::net::HttpSocket<MySampleTNode>
 	{
 
 	public:
@@ -64,7 +64,7 @@ public:
 		HttpSock() {}
 		HttpSock(MySampleTNode* node) : HttpSocket<MySampleTNode>(node) {}
 		virtual ~HttpSock() {}
-	};
+	};*/
 
 	using SockTypeServerSocket = nodecpp::net::SocketBase;
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;

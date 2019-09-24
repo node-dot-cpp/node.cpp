@@ -246,18 +246,18 @@ namespace nodecpp {
 
 		};
 
-		template<class DataParentT>
+		template<class RequestT, class DataParentT>
 		class HttpSocket : public HttpSocketBase, public ::nodecpp::DataParent<DataParentT>
 		{
 		public:
 			using DataParentType = DataParentT;
-			HttpSocket<DataParentT>() {};
-			HttpSocket<DataParentT>(DataParentT* dataParent ) : HttpSocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
-			virtual ~HttpSocket<DataParentT>() {}
+			HttpSocket<RequestT, DataParentT>() {};
+			HttpSocket<RequestT, DataParentT>(DataParentT* dataParent ) : HttpSocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~HttpSocket<RequestT, DataParentT>() {}
 		};
 
-		template<>
-		class HttpSocket<void> : public HttpSocketBase
+		template<class RequestT>
+		class HttpSocket<RequestT, void> : public HttpSocketBase
 		{
 		public:
 			using DataParentType = void;
