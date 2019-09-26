@@ -8,6 +8,9 @@
 #include <nodecpp/socket_type_list.h>
 #include <nodecpp/server_type_list.h>
 #include <nodecpp/http_server.h>
+#ifdef NODECPP_ENABLE_CLUSTERING
+#include <nodecpp/cluster.h>
+#endif // NODECPP_ENABLE_CLUSTERING
 
 using namespace std;
 using namespace nodecpp;

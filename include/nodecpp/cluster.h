@@ -25,22 +25,52 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#ifndef CLUSTER_H
+#define CLUSTER_H
 
-#ifdef NODECPP_ENABLE_CLUSTERING
-
-#include "clustering_common.h"
-#include "../../include/nodecpp/cluster.h"
-
-thread_local size_t thisThreadID = (size_t)(-1);
+#include "net_common.h"
 
 namespace nodecpp
 {
-	thread_local Cluster cluster;
-
-	void initCurrentThreadClusterObject(size_t id)
+	class Cluster; // forward declaration
+	class Worker
 	{
-		cluster.init( id );
-	}
-}
+		static constexpr size_t invalidID = (size_t)(-1);
+		friend class Cluster;
+		size_t id_ = invalidID;
+		Worker() {}
+		void setID( size_t id ) { 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, id_ == invalidID, "indeed: id_ = {}", id_ ); 
+			id_ = id; 
+		}
+	public:
+		size_t id() const { return id_; }
+	};
 
-#endif // NODECPP_ENABLE_CLUSTERING
+	extern void initCurrentThreadClusterObject( size_t id);
+	class Cluster
+	{
+		Worker thisThreadWorker;
+		std::vector<Worker> workers_;
+		friend void initCurrentThreadClusterObject(size_t);
+		void init(size_t threadID) { thisThreadWorker.id_ = threadID; }
+	public:
+		Cluster() {}
+		Cluster(const Cluster&) = delete;
+		Cluster& operator = (const Cluster&) = delete;
+		Cluster(Cluster&&) = delete;
+		Cluster& operator = (Cluster&&) = delete;
+
+		bool isMaster() const { return thisThreadWorker.id() == 0; }
+		bool isWorker() const { return thisThreadWorker.id() != 0; }
+		Worker& fork();
+		const std::vector<Worker>& workers() const { return workers_; }
+	};
+	extern thread_local Cluster cluster;
+
+	inline
+	Cluster& getCluster() { return cluster; }
+}
+#endif //CLUSTER_H
+
+

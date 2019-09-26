@@ -30,7 +30,7 @@
 #define TCP_SOCKET_H
 
 #include "tcp_socket_base.h"
-#include "clustering/clustering_common.h"
+#include "clustering_impl/clustering_common.h"
 
 using namespace nodecpp;
 
