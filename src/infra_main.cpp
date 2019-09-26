@@ -93,24 +93,41 @@ int main()
 
 #else
 
+#include "clustering_impl/clustering_common.h"
+
 namespace nodecpp {
 extern void initCurrentThreadClusterObject(size_t id);
 }
 
+int worker_thread_main( void* pdata )
+{
+	ThreadStartupData* startupData = reinterpret_cast<ThreadStartupData*>(pdata);
+#ifdef NODECPP_USE_IIBMALLOC
+		g_AllocManager.initialize();
+#endif
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData->assignedThreadID != 0 ); 
+	nodecpp::initCurrentThreadClusterObject( startupData->assignedThreadID );
+	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
+		f.second->create()->run();
+
+	return 0;
+}
+
 int main( int argc, char *argv[] )
 {
+#ifdef NODECPP_USE_IIBMALLOC
+		g_AllocManager.initialize();
+#endif
 	size_t coreCnt = 1;
 	if ( argc > 1 )
 	{
 		if ( strncmp( argv[1], "numcores=", 9 ) == 0 )
 			coreCnt = atol(argv[1] + 9);
 	}
-#ifdef NODECPP_USE_IIBMALLOC
-		g_AllocManager.initialize();
-#endif
 	nodecpp::initCurrentThreadClusterObject( 0 );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-		f.second->create()->run(coreCnt);
+		f.second->create()->run();
 
 	return 0;
 }
