@@ -453,7 +453,7 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc_windows.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\page_allocator_windows.cpp" />
-    <ClCompile Include="..\..\..\..\src\clustering\clustering.cpp" />
+    <ClCompile Include="..\..\..\..\src\clustering_impl\clustering.cpp" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\..\src\net.cpp" />
@@ -477,7 +477,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\trace.h" />
-    <ClInclude Include="..\..\..\..\src\clustering\clustering_common.h" />
+    <ClInclude Include="..\..\..\..\src\clustering_impl\clustering_common.h" />
     <ClInclude Include="..\..\..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />
