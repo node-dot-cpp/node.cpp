@@ -17,7 +17,8 @@ using namespace nodecpp;
 using namespace fmt;
 
 //#define IMPL_VERSION 1 // main() is a single coro
-#define IMPL_VERSION 2 // onRequest is a coro
+#define IMPL_VERSION 12 // main() is a single coro (with clustering)
+//#define IMPL_VERSION 2 // onRequest is a coro
 
 class MySampleTNode : public NodeBase
 {
@@ -55,19 +56,6 @@ public:
 		CtrlServer() {}
 		virtual ~CtrlServer() {}
 	};
-
-	/*class HttpSock : public nodecpp::net::HttpSocket<MySampleTNode>
-	{
-
-	public:
-		using NodeType = MySampleTNode;
-		friend class MySampleTNode;
-
-	public:
-		HttpSock() {}
-		HttpSock(MySampleTNode* node) : HttpSocket<MySampleTNode>(node) {}
-		virtual ~HttpSock() {}
-	};*/
 
 	using SockTypeServerSocket = nodecpp::net::SocketBase;
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
@@ -123,6 +111,59 @@ public:
 			} 
 		} 
 		catch (...) { // TODO: what?
+		}
+
+		CO_RETURN;
+	}
+
+#elif IMPL_VERSION == 12
+
+	virtual nodecpp::handler_ret_type main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+
+		if ( getCluster().isMaster() )
+		{
+			for ( size_t i=0; i<1; ++i )
+				getCluster().fork();
+		}
+		else
+		{
+			srv = nodecpp::net::createHttpServer<ServerType>();
+			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
+
+			srv->listen(2000, "127.0.0.1", 5000);
+			srvCtrl->listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+			to = std::move( nodecpp::setTimeout(  [this]() { 
+				srv->close();
+				srv->unref();
+				srvCtrl->close();
+				srvCtrl->unref();
+				stopAccepting = true;
+				to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+			}, 3000 ) );
+#endif
+
+			nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
+			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
+			try { 
+				for(;;) { 
+					co_await srv->a_request(request, response); 
+					Buffer b1(0x1000);
+					co_await request->a_readBody( b1 );
+					++(stats.rqCnt);
+					request->dbgTrace();
+
+	//				simpleProcessing( request, response );
+					yetSimpleProcessing( request, response );
+				} 
+			} 
+			catch (...) { // TODO: what?
+			}
 		}
 
 		CO_RETURN;

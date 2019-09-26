@@ -78,14 +78,41 @@ void registerFactory( const char* name, RunnableFactoryBase* factory )
 	NodeFactoryMap::getInstance().registerFactory( name, factory );
 }
 
+#ifndef NODECPP_ENABLE_CLUSTERING
+
 int main()
 {
 #ifdef NODECPP_USE_IIBMALLOC
 		g_AllocManager.initialize();
-//		g_AllocManager.enable();
 #endif
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-		f.second->create()->run();
+		f.second->create()->run(1);
 
 	return 0;
 }
+
+#else
+
+namespace nodecpp {
+extern void initCurrentThreadClusterObject(size_t id);
+}
+
+int main( int argc, char *argv[] )
+{
+	size_t coreCnt = 1;
+	if ( argc > 1 )
+	{
+		if ( strncmp( argv[1], "numcores=", 9 ) == 0 )
+			coreCnt = atol(argv[1] + 9);
+	}
+#ifdef NODECPP_USE_IIBMALLOC
+		g_AllocManager.initialize();
+#endif
+	nodecpp::initCurrentThreadClusterObject( 0 );
+	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
+		f.second->create()->run(coreCnt);
+
+	return 0;
+}
+
+#endif // NODECPP_ENABLE_CLUSTERING

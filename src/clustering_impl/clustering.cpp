@@ -41,6 +41,15 @@ namespace nodecpp
 	{
 		cluster.init( id );
 	}
+	
+	Worker& Cluster::fork()
+	{
+		size_t internalID = workers_.size();
+		Worker worker;
+		// TODO: init new thread, fill worker
+		workers_.push_back( worker );
+		return workers_[internalID];
+	}
 }
 
 #endif // NODECPP_ENABLE_CLUSTERING
