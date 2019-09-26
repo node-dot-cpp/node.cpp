@@ -29,6 +29,7 @@
 #define NET_COMMON_H
 
 #include "common.h"
+#include "ip_and_port.h"
 #include "timers.h"
 #include <map>
 #include <typeinfo>
@@ -609,7 +610,7 @@ namespace nodecpp {
 		struct Address {
 			uint16_t port;
 			std::string family;
-			std::string address;
+			Ip4 ip;
 		};
 
 //		enum Mode { callable, awaitable };

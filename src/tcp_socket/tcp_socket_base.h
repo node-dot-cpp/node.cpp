@@ -32,6 +32,7 @@
 #include "../../include/nodecpp/common.h"
 #include "../../include/nodecpp/socket_common.h"
 #include "../../include/nodecpp/server_common.h"
+#include "../../include/nodecpp/ip_and_port.h"
 #include "../ev_queue.h"
 
 #ifdef _MSC_VER
@@ -108,42 +109,6 @@ public:
 	}
 };
 
-
-class Ip4
-{
-	uint32_t ip = -1;
-	Ip4(uint32_t ip) :ip(ip) {}
-public:
-	Ip4() {}
-	Ip4(const Ip4&) = default;
-	Ip4(Ip4&&) = default;
-	Ip4& operator=(const Ip4&) = default;
-	Ip4& operator=(Ip4&&) = default;
-
-
-	uint32_t getNetwork() const { return ip; }
-	static Ip4 parse(const char* ip);
-	static Ip4 fromNetwork(uint32_t ip);
-	std::string toStr() const { return std::string("TODO"); }
-};
-
-class Port
-{
-	uint16_t port = -1;
-	Port(uint16_t port) :port(port) {}
-public:
-	Port() {}
-	Port(const Port&) = default;
-	Port(Port&&) = default;
-	Port& operator=(const Port&) = default;
-	Port& operator=(Port&&) = default;
-
-	uint16_t getNetwork() const { return port; }
-	static Port fromHost(uint16_t port);
-	static Port fromNetwork(uint16_t port);
-	std::string toStr() const { return std::string("TODO"); }
-
-};
 
 class SocketRiia // moved to .h
 {

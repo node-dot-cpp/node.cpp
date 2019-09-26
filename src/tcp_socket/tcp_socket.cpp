@@ -502,6 +502,12 @@ Ip4 Ip4::fromNetwork(uint32_t ip)
 	return Ip4(ip);
 }
 
+std::string Ip4::toStr() const { 
+	uint32_t hn = ntohl( ip ); 
+	return fmt::format("{}.{}.{}.{}", hn >> 24, (hn >> 16) & 0xFF, (hn >> 8) & 0xFF, hn & 0xFF );
+}
+
+
 
 /* static */
 Port Port::fromHost(uint16_t port)
@@ -514,6 +520,12 @@ Port Port::fromNetwork(uint16_t port)
 {
 	return Port(port);
 }
+
+std::string Port::toStr() const
+{ 
+	return fmt::format("{}", ntohs( port ) );
+}
+
 
 //thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 thread_local NetSocketManagerBase* netSocketManagerBase;

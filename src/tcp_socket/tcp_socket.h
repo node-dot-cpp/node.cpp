@@ -30,6 +30,7 @@
 #define TCP_SOCKET_H
 
 #include "tcp_socket_base.h"
+#include "clustering/clustering_common.h"
 
 using namespace nodecpp;
 
@@ -916,7 +917,7 @@ public:
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.refed = true;
-		ptr->dataForCommandProcessing.localAddress.address = ip;
+		ptr->dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
 		ptr->dataForCommandProcessing.localAddress.port = port;
 		ptr->dataForCommandProcessing.localAddress.family = family;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.index != 0 );
@@ -1092,6 +1093,8 @@ public:
 		}
 	}
 private:
+#ifndef NODECPP_ENABLE_CLUSTERING
+
 	template<class Node>
 	void infraProcessAcceptEvent(NetSocketEntry& entry) //TODO:CLUSTERING alt impl
 	{
@@ -1100,6 +1103,25 @@ private:
 			return;
 		consumeAcceptedSocket<Node>(entry, osd);
 	}
+
+#else
+
+	template<class Node>
+	void infraProcessAcceptEvent(NetSocketEntry& entry) //TODO:CLUSTERING alt impl
+	{
+		OpaqueSocketData osd( false );
+		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
+			return;
+
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, thisThreadID == 0 );
+		passToWorkerThreadForConsumption(entry.getServerSocketData()->localAddress.ip.getNetwork(), entry.getServerSocketData()->localAddress.port, osd);
+	}
+
+	void passToWorkerThreadForConsumption(uint32_t ip, uint16_t port, OpaqueSocketData& osd)
+	{
+	}
+
+#endif // NODECPP_ENABLE_CLUSTERING
 
 	template<class Node>
 	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd)
