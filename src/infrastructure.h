@@ -402,7 +402,6 @@ class Runnable : public RunnableBase
 	template<class ClientSocketEmitter, class ServerSocketEmitter>
 	void internalRun()
 	{
-		nodecpp::log::init_log();
 		interceptNewDeleteOperators(true);
 		{
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702

@@ -30,8 +30,11 @@
 
 #include "clustering_common.h"
 #include "../../include/nodecpp/cluster.h"
-
+#include <thread>
+		
 thread_local size_t thisThreadID = (size_t)(-1);
+
+extern void workerThreadMain( void* pdata );
 
 namespace nodecpp
 {
@@ -46,7 +49,20 @@ namespace nodecpp
 	{
 		size_t internalID = workers_.size();
 		Worker worker;
+		worker.id_ = 1; // TODO: assign an actual value
 		// TODO: init new thread, fill worker
+		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
+		bool newDelInterceptionState = interceptNewDeleteOperators(false);
+		ThreadStartupData* startupData = new ThreadStartupData;
+		startupData->assignedThreadID = worker.id_;
+		interceptNewDeleteOperators(newDelInterceptionState);
+		// run worker thread
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("about to start Worker thread with threadID = {}...", worker.id_ );
+		std::thread t1( workerThreadMain, (void*)(startupData) );
+		// startupData is no longer valid
+		startupData = nullptr;
+		t1.detach();
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("...starting Worker thread with threadID = {} completed at Master thread side", worker.id_ );
 		workers_.push_back( worker );
 		return workers_[internalID];
 	}

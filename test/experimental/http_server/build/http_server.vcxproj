@@ -462,6 +462,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\awaitable.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\cluster.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\error.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\event.h" />
