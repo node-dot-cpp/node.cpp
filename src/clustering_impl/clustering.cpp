@@ -50,6 +50,11 @@ namespace nodecpp
 		workers_.push_back( worker );
 		return workers_[internalID];
 	}
+	
+	void Worker::disconnect()
+	{
+		// TODO: ...
+	}
 }
 
 #endif // NODECPP_ENABLE_CLUSTERING

@@ -45,6 +45,7 @@ namespace nodecpp
 		}
 	public:
 		size_t id() const { return id_; }
+		void disconnect();
 	};
 
 	extern void initCurrentThreadClusterObject( size_t id);
@@ -63,8 +64,13 @@ namespace nodecpp
 
 		bool isMaster() const { return thisThreadWorker.id() == 0; }
 		bool isWorker() const { return thisThreadWorker.id() != 0; }
-		Worker& fork();
 		const std::vector<Worker>& workers() const { return workers_; }
+		const Worker& worker() const { return thisThreadWorker; }
+
+		Worker& fork();
+		void disconnect() { for ( auto& w : workers_ ) w.disconnect(); }
+
+		// event handling
 	};
 	extern thread_local Cluster cluster;
 
