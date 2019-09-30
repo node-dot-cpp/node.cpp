@@ -97,7 +97,8 @@ int main()
 #include "clustering_impl/clustering_common.h"
 
 namespace nodecpp {
-extern void initCurrentThreadClusterObject(size_t id);
+extern void preinitMasterThreadClusterObject();
+extern void preinitSlaveThreadClusterObject(size_t id);
 }
 
 void workerThreadMain( void* pdata )
@@ -112,8 +113,7 @@ void workerThreadMain( void* pdata )
 	g_AllocManager.initialize();
 #endif
 	nodecpp::log::init_log();
-	nodecpp::initCurrentThreadClusterObject( threadId );
-	nodecpp::log::init_log();
+	nodecpp::preinitSlaveThreadClusterObject( threadId );
 	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("starting Worker thread with threadID = {}", threadId );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
@@ -131,7 +131,7 @@ int main( int argc, char *argv[] )
 		if ( strncmp( argv[1], "numcores=", 9 ) == 0 )
 			coreCnt = atol(argv[1] + 9);
 	}
-	nodecpp::initCurrentThreadClusterObject( 0 );
+	nodecpp::preinitMasterThreadClusterObject();
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
 

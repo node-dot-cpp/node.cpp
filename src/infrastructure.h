@@ -417,6 +417,8 @@ class Runnable : public RunnableBase
 			{
 				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
 			}
+			// from now on all internal structures are ready to use; let's run their "users"
+			nodecpp::postinitThreadClusterObject();
 printf( "internalRun() [1]\n" );
 			node = make_owning<Node>();
 printf( "internalRun() [2]\n" );

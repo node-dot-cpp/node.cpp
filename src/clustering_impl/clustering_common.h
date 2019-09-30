@@ -31,8 +31,6 @@
 
 #include "../../include/nodecpp/common.h"
 
-extern thread_local size_t thisThreadID;
-
 struct ThreadStartupData
 {
 	size_t assignedThreadID;

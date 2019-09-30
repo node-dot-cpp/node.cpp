@@ -29,6 +29,7 @@
 #define CLUSTER_H
 
 #include "net_common.h"
+#include "server_common.h"
 
 namespace nodecpp
 {
@@ -43,18 +44,101 @@ namespace nodecpp
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, id_ == invalidID, "indeed: id_ = {}", id_ ); 
 			id_ = id; 
 		}
+
+		nodecpp::safememory::owning_ptr<nodecpp::net::SocketBase> ctrlServer; // TODO: this might be a temporary solution
+
 	public:
+		Worker(const Worker&) = delete;
+		Worker& operator = (const Worker&) = delete;
+		Worker(Worker&& other) {
+			id_ = other.id_;
+			other.id_ = invalidID;
+			ctrlServer = std::move( other.ctrlServer );
+		}
 		size_t id() const { return id_; }
 		void disconnect();
 	};
 
-	extern void initCurrentThreadClusterObject( size_t id);
+	extern void preinitMasterThreadClusterObject();
+	extern void preinitSlaveThreadClusterObject( size_t id);
+	extern void postinitThreadClusterObject();
 	class Cluster
 	{
+		class MasterSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<Cluster>
+		{
+		public:
+			nodecpp::handler_ret_type onAccepted()
+			{
+				CO_RETURN;
+			}
+			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
+			{
+				CO_RETURN;
+			}
+		};
+
+		class SlaveSocket : public nodecpp::net::SocketBase
+		{
+		public:
+			nodecpp::handler_ret_type onConnect()
+			{
+				CO_RETURN;
+			}
+			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
+			{
+				CO_RETURN;
+			}
+		};
+
+		class MasterServer : public nodecpp::net::ServerSocket<Cluster>
+		{
+			nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MasterSocket> socket) { 
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+				//srv.unref();
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
+
+				/*nodecpp::Buffer r_buff(0x200);
+				for (;;)
+				{
+					co_await socket->a_read( r_buff, 2 );
+					co_await onDataServerSocket_(socket, r_buff);
+				}*/
+				CO_RETURN;
+			}
+
+		};
+
 		Worker thisThreadWorker;
 		std::vector<Worker> workers_;
-		friend void initCurrentThreadClusterObject(size_t);
-		void init(size_t threadID) { thisThreadWorker.id_ = threadID; }
+		uint64_t coreCtr = 0; // for: thread ID generation at master; requestID generation at Slave
+
+		using CtrlServerT = MasterServer;
+		nodecpp::safememory::owning_ptr<CtrlServerT> ctrlServer; // TODO: this might be a temporary solution
+
+		friend void preinitMasterThreadClusterObject();
+		friend void preinitSlaveThreadClusterObject(size_t);
+		friend void postinitThreadClusterObject();
+
+		void preinitMaster() { 
+			thisThreadWorker.id_ = 0; 
+		}
+		void preinitSlave(size_t threadID) { 
+			thisThreadWorker.id_ = threadID; 
+		}
+		void postinit() { 
+			if ( isMaster() )
+			{
+				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Accepted, &MasterSocket::onAccepted>();
+				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MasterSocket::onData>();
+				ctrlServer = nodecpp::net::createServer<CtrlServerT, MasterSocket>();
+				ctrlServer->listen(21000, "127.0.0.1", 500);
+			}
+			else
+			{
+				nodecpp::net::SocketBase::addHandler<SlaveSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &SlaveSocket::onConnect>();
+				nodecpp::net::SocketBase::addHandler<SlaveSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &SlaveSocket::onData>();
+			}
+		}
 	public:
 		Cluster() {}
 		Cluster(const Cluster&) = delete;
@@ -70,7 +154,7 @@ namespace nodecpp
 		Worker& fork();
 		void disconnect() { for ( auto& w : workers_ ) w.disconnect(); }
 
-		// event handling
+		// event handling (awaitable)
 	};
 	extern thread_local Cluster cluster;
 
