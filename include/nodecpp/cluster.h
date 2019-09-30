@@ -93,16 +93,10 @@ namespace nodecpp
 		class MasterServer : public nodecpp::net::ServerSocket<Cluster>
 		{
 			nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MasterSocket> socket) { 
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering ctrl server: onConnection()!");
 				//srv.unref();
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 
-				/*nodecpp::Buffer r_buff(0x200);
-				for (;;)
-				{
-					co_await socket->a_read( r_buff, 2 );
-					co_await onDataServerSocket_(socket, r_buff);
-				}*/
 				CO_RETURN;
 			}
 
@@ -114,6 +108,7 @@ namespace nodecpp
 
 		using CtrlServerT = MasterServer;
 		nodecpp::safememory::owning_ptr<CtrlServerT> ctrlServer; // TODO: this might be a temporary solution
+		nodecpp::safememory::owning_ptr<SlaveSocket> slaveSocket; // TODO: this might be a temporary solution
 
 		friend void preinitMasterThreadClusterObject();
 		friend void preinitSlaveThreadClusterObject(size_t);
@@ -132,11 +127,16 @@ namespace nodecpp
 				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MasterSocket::onData>();
 				ctrlServer = nodecpp::net::createServer<CtrlServerT, MasterSocket>();
 				ctrlServer->listen(21000, "127.0.0.1", 500);
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Master thread Cluster is ready");
 			}
 			else
 			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Slave thread # {} Cluster is about to setup connection to Master", thisThreadWorker.id());
 				nodecpp::net::SocketBase::addHandler<SlaveSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &SlaveSocket::onConnect>();
 				nodecpp::net::SocketBase::addHandler<SlaveSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &SlaveSocket::onData>();
+
+				slaveSocket = nodecpp::net::createSocket<SlaveSocket>();
+				slaveSocket->connect(21000, "127.0.0.1");
 			}
 		}
 	public:
