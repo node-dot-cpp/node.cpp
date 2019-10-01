@@ -64,6 +64,7 @@ namespace nodecpp
 	extern void postinitThreadClusterObject();
 	class Cluster
 	{
+	public:
 		class MasterSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<Cluster>
 		{
 		public:
@@ -94,7 +95,6 @@ namespace nodecpp
 		{
 			nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MasterSocket> socket) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering ctrl server: onConnection()!");
-				//srv.unref();
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 
 				CO_RETURN;
@@ -102,6 +102,31 @@ namespace nodecpp
 
 		};
 
+		class AgentServer : public nodecpp::net::ServerSocket<Cluster>
+		{
+			nodecpp::handler_ret_type onListening() { 
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onListening()!");
+
+				CO_RETURN;
+			}
+			nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MasterSocket> socket) { 
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
+
+				CO_RETURN;
+			}
+			nodecpp::handler_ret_type onError() { 
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onListening()!");
+
+				CO_RETURN;
+			}
+			nodecpp::handler_ret_type onEnd(bool hasError) { 
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onListening()!");
+
+				CO_RETURN;
+			}
+		};
+	private:
 		Worker thisThreadWorker;
 		std::vector<Worker> workers_;
 		uint64_t coreCtr = 0; // for: thread ID generation at master; requestID generation at Slave
