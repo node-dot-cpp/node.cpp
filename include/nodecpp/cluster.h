@@ -104,6 +104,32 @@ namespace nodecpp
 
 		class AgentServer : public nodecpp::net::ServerSocket<Cluster>
 		{
+		public:
+			nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
+		public:
+			class DataForCommandProcessing {
+			public:
+				size_t index;
+				bool refed = false;
+				short fdEvents = 0;
+				//SOCKET osSocket = INVALID_SOCKET;
+				unsigned long long osSocket = 0;
+
+				enum State { Unused, Listening, BeingClosed, Closed }; // TODO: revise!
+				State state = State::Unused;
+
+				DataForCommandProcessing() {}
+				DataForCommandProcessing(const DataForCommandProcessing& other) = delete;
+				DataForCommandProcessing& operator=(const DataForCommandProcessing& other) = delete;
+
+				DataForCommandProcessing(DataForCommandProcessing&& other) = default;
+				DataForCommandProcessing& operator=(DataForCommandProcessing&& other) = default;
+
+				net::Address localAddress;
+			};
+			DataForCommandProcessing dataForCommandProcessing;
+
+		public:
 			nodecpp::handler_ret_type onListening() { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onListening()!");
 
@@ -125,7 +151,36 @@ namespace nodecpp
 
 				CO_RETURN;
 			}
+
+		public:
+			void registerServer();
+
+		public:
+			AgentServer();
+			virtual ~AgentServer() {
+				reportBeingDestructed();
+			}
+
+			void internalCleanupBeforeClosing()
+			{
+				//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getSockCount() == 0 ); 
+				dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
+				dataForCommandProcessing.index = 0;
+				forceReleasingAllCoroHandles();
+			}
+
+			const net::Address& address() const { return dataForCommandProcessing.localAddress; }
+			void close();
+
+			bool listening() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Listening; }
+			void ref();
+			void unref();
+			void reportBeingDestructed();
+
+			void listen(uint16_t port, const char* ip, int backlog);
+
 		};
+
 	private:
 		Worker thisThreadWorker;
 		std::vector<Worker> workers_;

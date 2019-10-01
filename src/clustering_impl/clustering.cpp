@@ -30,6 +30,7 @@
 
 #include "clustering_common.h"
 #include "../../include/nodecpp/cluster.h"
+#include "../../src/infrastructure.h"
 #include <thread>
 
 extern void workerThreadMain( void* pdata );
@@ -79,6 +80,12 @@ namespace nodecpp
 	{
 		// TODO: ...
 	}
+
+	void Cluster::AgentServer::registerServer() { 
+		nodecpp::safememory::soft_ptr<Cluster::AgentServer> myPtr = myThis.getSoftPtr<Cluster::AgentServer>(this);
+		::registerAgentServer(/*node, */myPtr, -1); 
+	}
+
 }
 
 #endif // NODECPP_ENABLE_CLUSTERING

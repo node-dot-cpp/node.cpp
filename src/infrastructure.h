@@ -351,6 +351,12 @@ void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 	return netServerManagerBase->appAddServer(/*node, */t, typeId);
 }
 
+inline
+void registerAgentServer(/*NodeBase* node, */soft_ptr<Cluster::AgentServer> t, int typeId)
+{
+	return netServerManagerBase->appAddServer(/*node, */t, typeId);
+}
+
 extern thread_local TimeoutManager* timeoutManager;
 extern thread_local EvQueue* inmediateQueue;
 

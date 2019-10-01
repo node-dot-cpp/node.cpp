@@ -923,6 +923,15 @@ public:
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addServerEntry(/*node, */ptr, typeId);
 	}
+	void appAddAgentServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId) { //TODO:CLUSTERING alt impl
+		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
+		if (!s)
+		{
+			throw Error();
+		}
+		ptr->dataForCommandProcessing.osSocket = s.release();
+		addServerEntry(/*node, */ptr, typeId);
+	}
 	void appListen(soft_ptr<net::ServerBase> ptr, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Ip4 myIp = Ip4::parse(ip);
 		Port myPort = Port::fromHost(port);

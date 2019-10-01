@@ -908,3 +908,8 @@ void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememor
 {
 	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
 }
+
+void NetServerManagerBase::addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+{
+	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
+}
