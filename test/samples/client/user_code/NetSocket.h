@@ -73,7 +73,7 @@ public:
 			nodecpp::Buffer r_buff(0x200);
 			try
 			{
-				co_await socket->a_read(r_buff);
+				co_await socket->a_read(r_buff, (uint8_t)recvReplies | 1);
 			}
 			catch (...)
 			{
@@ -162,7 +162,7 @@ public:
 			nodecpp::Buffer r_buff(0x200);
 			try
 			{
-				co_await socket->a_read(r_buff);
+				co_await socket->a_read(r_buff, (uint8_t)recvReplies | 1);
 			}
 			catch (...)
 			{
@@ -235,7 +235,6 @@ public:
 		Buffer buf(2);
 		buf.writeInt8( 2, 0 );
 		buf.writeInt8( 1, 1 );
-		socket->a_write(buf);
 		try
 		{
 			co_await socket->a_write(buf);
@@ -258,7 +257,7 @@ public:
 			nodecpp::Buffer r_buff(0x200);
 			try
 			{
-				co_await socket->a_read(r_buff);
+				co_await socket->a_read(r_buff, (uint8_t)recvReplies | 1);
 			}
 			catch (...)
 			{
@@ -338,7 +337,6 @@ public:
 			Buffer buf(2);
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
-			a_write(buf);
 			try
 			{
 				co_await a_write(buf);
@@ -359,7 +357,7 @@ public:
 				nodecpp::Buffer r_buff(0x200);
 				try
 				{
-					co_await a_read(r_buff);
+					co_await a_read(r_buff, (uint8_t)recvReplies | 1);
 				}
 				catch (...)
 				{
@@ -446,7 +444,6 @@ public:
 			Buffer buf(2);
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
-			a_write(buf);
 			try
 			{
 				co_await a_write(buf);
@@ -467,7 +464,7 @@ public:
 				nodecpp::Buffer r_buff(0x200);
 				try
 				{
-					co_await a_read(r_buff);
+					co_await a_read(r_buff, (uint8_t)recvReplies | 1);
 				}
 				catch (...)
 				{
