@@ -888,28 +888,12 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
 }
 
-void NetServerManagerBase::appClose(net::ServerBase::DataForCommandProcessing& serverData)
-{
-	size_t id = serverData.index;
-	auto& entry = appGetEntry(id);
-	if (!entry.isUsed())
-	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
-		return;
-	}
-
-	internal_usage_only::internal_close(serverData.osSocket);
-	ioSockets.setSocketClosed( entry.index );
-
-	//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
-}
-
 void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
 {
 	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
 }
 
-void NetServerManagerBase::addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+void NetServerManagerBase::addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId)
 {
-	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
+	ioSockets.addEntry<Cluster::AgentServer>( /*node, */ptr, typeId );
 }

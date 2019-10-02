@@ -102,7 +102,7 @@ namespace nodecpp
 
 		};
 
-		class AgentServer : public nodecpp::net::ServerSocket<Cluster>
+		class AgentServer
 		{
 		public:
 			nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
@@ -156,7 +156,9 @@ namespace nodecpp
 			void registerServer();
 
 		public:
-			AgentServer();
+			AgentServer() {
+				nodecpp::safememory::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
+			}
 			virtual ~AgentServer() {
 				reportBeingDestructed();
 			}
@@ -166,18 +168,17 @@ namespace nodecpp
 				//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getSockCount() == 0 ); 
 				dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
 				dataForCommandProcessing.index = 0;
-				forceReleasingAllCoroHandles();
 			}
 
 			const net::Address& address() const { return dataForCommandProcessing.localAddress; }
-			void close();
-
-			bool listening() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Listening; }
-			void ref();
-			void unref();
-			void reportBeingDestructed();
 
 			void listen(uint16_t port, const char* ip, int backlog);
+			void close();
+			void ref();
+			void unref();
+			bool listening() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Listening; }
+			void reportBeingDestructed();
+
 
 		};
 
