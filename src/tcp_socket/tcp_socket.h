@@ -946,27 +946,28 @@ public:
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addAgentServerEntry(/*node, */ptr, typeId);
 	}
-	void appListen(soft_ptr<net::ServerBase> ptr, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
+	template<class DataForCommandProcessing>
+	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Ip4 myIp = Ip4::parse(ip);
 		Port myPort = Port::fromHost(port);
-		if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, myIp, myPort)) {
+		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, myIp, myPort)) {
 			throw Error();
 		}
-		if (!internal_usage_only::internal_listen_tcp_socket(ptr->dataForCommandProcessing.osSocket, backlog)) {
+		if (!internal_usage_only::internal_listen_tcp_socket(dataForCommandProcessing.osSocket, backlog)) {
 			throw Error();
 		}
-		ptr->dataForCommandProcessing.refed = true;
-		ptr->dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
-		ptr->dataForCommandProcessing.localAddress.port = port;
-		ptr->dataForCommandProcessing.localAddress.family = family;
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.index != 0 );
+		dataForCommandProcessing.refed = true;
+		dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
+		dataForCommandProcessing.localAddress.port = port;
+		dataForCommandProcessing.localAddress.family = family;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dataForCommandProcessing.index != 0 );
 		/*pollfd p;
-		p.fd = ptr->dataForCommandProcessing.osSocket;
+		p.fd = dataForCommandProcessing.osSocket;
 		p.events = POLLIN;*/
-		ioSockets.setAssociated(ptr->dataForCommandProcessing.index/*, p*/);
-		ioSockets.setPollin(ptr->dataForCommandProcessing.index);
-		ioSockets.setRefed(ptr->dataForCommandProcessing.index, true);
-		pendingListenEvents.push_back( ptr->dataForCommandProcessing.index );
+		ioSockets.setAssociated(dataForCommandProcessing.index/*, p*/);
+		ioSockets.setPollin(dataForCommandProcessing.index);
+		ioSockets.setRefed(dataForCommandProcessing.index, true);
+		pendingListenEvents.push_back( dataForCommandProcessing.index );
 	}
 
 	void appRef(size_t id) { appGetEntry(id).getServerSocketData()->refed = true; }

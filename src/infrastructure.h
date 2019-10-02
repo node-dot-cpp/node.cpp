@@ -354,7 +354,7 @@ void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 inline
 void registerAgentServer(/*NodeBase* node, */soft_ptr<Cluster::AgentServer> t, int typeId)
 {
-	return netServerManagerBase->appAddServer(/*node, */t, typeId);
+	return netServerManagerBase->appAddAgentServer(/*node, */t, typeId);
 }
 
 extern thread_local TimeoutManager* timeoutManager;
@@ -424,7 +424,9 @@ class Runnable : public RunnableBase
 				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
 			}
 			// from now on all internal structures are ready to use; let's run their "users"
+#ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
+#endif // NODECPP_ENABLE_CLUSTERING
 printf( "internalRun() [1]\n" );
 			node = make_owning<Node>();
 printf( "internalRun() [2]\n" );

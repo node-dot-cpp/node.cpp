@@ -85,6 +85,11 @@ namespace nodecpp
 		nodecpp::safememory::soft_ptr<Cluster::AgentServer> myPtr = myThis.getSoftPtr<Cluster::AgentServer>(this);
 		::registerAgentServer(/*node, */myPtr, -1); 
 	}
+	void Cluster::AgentServer::listen(uint16_t port, const char* ip, int backlog)
+	{
+		netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
+		dataForCommandProcessing.state = DataForCommandProcessing::State::Listening; // TODO: consider assigning this state together with emitting a respective event instead
+	}
 
 }
 

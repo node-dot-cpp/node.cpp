@@ -87,7 +87,7 @@ int main()
 #endif
 	nodecpp::log::init_log();
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-		f.second->create()->run(1);
+		f.second->create()->run();
 
 	return 0;
 }
