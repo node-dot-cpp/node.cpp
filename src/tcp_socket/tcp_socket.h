@@ -364,7 +364,6 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
 		if ( idx < ourSide.size() )
 		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
 			if ( osSide[idx].fd != INVALID_SOCKET )
 			{
 				osSide[idx].fd = INVALID_SOCKET; 
