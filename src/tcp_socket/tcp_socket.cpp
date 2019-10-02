@@ -754,6 +754,7 @@ bool OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;
 	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
+	buff.set_size( sz );
 
 	return ret == COMMLAYER_RET_OK;
 }

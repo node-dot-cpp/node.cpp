@@ -282,6 +282,7 @@ public:
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
 
+		ioSockets.reworkIfNecessary();
 		while (running)
 		{
 
