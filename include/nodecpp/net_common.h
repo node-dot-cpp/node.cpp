@@ -128,6 +128,11 @@ namespace nodecpp {
 			append( b.begin(), b.size() );
 		}
 
+		void append(const Buffer& b, size_t offset) { // NOTE: may invalidate pointers
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset <= b.size() ); 
+			append( b.begin() + offset, b.size() - offset );
+		}
+
 		void append(const Buffer& b, size_t start, size_t count) { // NOTE: may invalidate pointers
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !b.empty() ); 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, start + count <= b.size() ); 

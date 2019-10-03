@@ -30,6 +30,7 @@
 
 #include "net_common.h"
 #include "server_common.h"
+#include "../../src/clustering_impl/clustering_common.h"
 
 namespace nodecpp
 {
@@ -67,6 +68,10 @@ namespace nodecpp
 	public:
 		class MasterSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<Cluster>
 		{
+			nodecpp::Buffer incompleteRqBuff;
+			size_t processRequest( ClusteringRequestHeader& rh, nodecpp::Buffer& b, size_t offset )
+			{
+			}
 		public:
 			nodecpp::handler_ret_type onAccepted()
 			{
@@ -74,6 +79,41 @@ namespace nodecpp
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
 			{
+				ClusteringRequestHeader currentRH;
+				// Performance NotE: optimization is possible
+				if ( incompleteRqBuff.size() )
+				{
+					incompleteRqBuff.append( b );
+					if ( ClusteringRequestHeader::couldBeDeserialized(incompleteRqBuff) )
+					{
+						size_t pos = currentRH.deserialize( incompleteRqBuff, 0 );
+						if ( pos + currentRH.bodySize <= incompleteRqBuff.size() )
+						{
+							size_t newOffset = processRequest( currentRH, incompleteRqBuff, pos );
+							incompleteRqBuff.trim( newOffset );
+						}
+					}
+				}
+				else
+				{
+					if ( !ClusteringRequestHeader::couldBeDeserialized( b ) )
+					{
+						incompleteRqBuff.append( b );
+					}
+					else
+					{
+						size_t pos = currentRH.deserialize( b, 0 );
+						if ( pos + currentRH.bodySize > b.size() )
+						{
+							incompleteRqBuff.append( b );
+						}
+						else
+						{
+							size_t newOffset = processRequest( currentRH, incompleteRqBuff, pos );
+							incompleteRqBuff.append( b, newOffset );
+						}
+					}
+				}
 				CO_RETURN;
 			}
 		};
@@ -104,6 +144,7 @@ namespace nodecpp
 
 		class AgentServer
 		{
+			friend class Cluster;
 		public:
 			nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
 		public:
@@ -128,6 +169,7 @@ namespace nodecpp
 				net::Address localAddress;
 			};
 			DataForCommandProcessing dataForCommandProcessing;
+			size_t requestID = -1;
 
 		public:
 			nodecpp::handler_ret_type onListening() { 
@@ -183,6 +225,7 @@ namespace nodecpp
 
 
 		};
+		std::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
 
 	private:
 		Worker thisThreadWorker;

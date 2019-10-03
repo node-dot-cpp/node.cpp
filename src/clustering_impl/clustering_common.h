@@ -30,10 +30,28 @@
 #define CLUSTERING_COMMON_H
 
 #include "../../include/nodecpp/common.h"
+#include "../../include/nodecpp/net_common.h"
 
 struct ThreadStartupData
 {
 	size_t assignedThreadID;
+};
+
+// ad-hoc marchalling between Master and Slave threads
+enum class ClusteringRequestType { Listening, Close };
+struct ClusteringRequestHeader
+{
+	size_t bodySize;
+	ClusteringRequestType type;
+	size_t assignedThreadID;
+	size_t requestID;
+	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringRequestHeader ) ); }
+	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringRequestHeader ) <= b.size() ); 
+		memcpy( this, b.begin() + pos, sizeof( ClusteringRequestHeader ) );
+		return pos + sizeof( ClusteringRequestHeader );
+	}
+	static bool couldBeDeserialized( const nodecpp::Buffer& b ) { return b.size() >= sizeof( ClusteringRequestHeader ); }
 };
 
 #endif // CLUSTERING_COMMON_H
