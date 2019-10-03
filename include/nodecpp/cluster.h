@@ -135,19 +135,21 @@ namespace nodecpp
 
 				CO_RETURN;
 			}
-			nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MasterSocket> socket) { 
+			nodecpp::handler_ret_type onConnection(uint64_t socket) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
-
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
+				// TODO: forward to one of related slaves
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onError() { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onListening()!");
+				// TODO: forward to all related slaves
 
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onEnd(bool hasError) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onListening()!");
+				// TODO: forward to all related slaves
 
 				CO_RETURN;
 			}

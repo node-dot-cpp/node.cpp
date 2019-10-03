@@ -485,6 +485,12 @@ public:
 		registerAndAssignSocket(/*node, */ptr, typeId, s);
 	}
 
+	SocketRiia extractSocket(OpaqueSocketData& sdata)
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
+		return sdata.s.release();
+	}
+
 private:
 	void registerAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, SocketRiia& s)
 	{
@@ -1151,11 +1157,10 @@ private:
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 		OpaqueEmitter::ObjectType type = entry.getObjectType();
-		if ( type == OpaqueEmitter::ObjectType::AgentServer )
+		if ( type == OpaqueEmitter::ObjectType::AgentServer ) // Clustering
 		{
-			// TODO: special Clustering treatment
-			// NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, thisThreadID == 0 );
-			// passToWorkerThreadForConsumption(entry.getServerSocketData()->localAddress.ip.getNetwork(), entry.getServerSocketData()->localAddress.port, osd);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
+			SOCKET osSocket = netSocketManagerBase->extractSocket( osd ).release();
 			return;
 		}
 		else
