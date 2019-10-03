@@ -90,6 +90,15 @@ namespace nodecpp
 		netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
 		dataForCommandProcessing.state = DataForCommandProcessing::State::Listening; // TODO: consider assigning this state together with emitting a respective event instead
 	}
+	void Cluster::AgentServer::ref() { netServerManagerBase->appRef(dataForCommandProcessing); }
+	void Cluster::AgentServer::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }
+	void Cluster::AgentServer::reportBeingDestructed() { netServerManagerBase->appReportBeingDestructed(dataForCommandProcessing); }
+
+	void Cluster::AgentServer::close()
+	{
+		netServerManagerBase->appClose(dataForCommandProcessing);
+		dataForCommandProcessing.state = DataForCommandProcessing::State::BeingClosed;
+	}
 
 }
 

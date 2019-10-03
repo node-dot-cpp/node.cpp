@@ -115,9 +115,9 @@ ServerBase::ServerBase() {
 
 void ServerBase::registerServerByID(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId) { ::registerServer(/*node, */t, typeId); }
 
-void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing.index); }
-void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing.index); }
-void ServerBase::reportBeingDestructed() { netServerManagerBase->appReportBeingDestructed(dataForCommandProcessing.index); }
+void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing); }
+void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }
+void ServerBase::reportBeingDestructed() { netServerManagerBase->appReportBeingDestructed(dataForCommandProcessing); }
 
 void ServerBase::close()
 {

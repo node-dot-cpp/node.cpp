@@ -969,12 +969,17 @@ public:
 		pendingListenEvents.push_back( dataForCommandProcessing.index );
 	}
 
-	void appRef(size_t id) { appGetEntry(id).getServerSocketData()->refed = true; }
-	void appUnref(size_t id) { 
-		auto& entry = appGetEntry(id);
-		entry.getServerSocketData()->refed = false; 
+	template<class DataForCommandProcessing>
+	void appRef(DataForCommandProcessing& dataForCommandProcessing) { 
+		dataForCommandProcessing.refed = true;
 	}
-	void appReportBeingDestructed(size_t id) { 
+	template<class DataForCommandProcessing>
+	void appUnref(DataForCommandProcessing& dataForCommandProcessing) { 
+		dataForCommandProcessing.refed = true;
+	}
+	template<class DataForCommandProcessing>
+	void appReportBeingDestructed(DataForCommandProcessing& dataForCommandProcessing) {
+		size_t id = dataForCommandProcessing.index;
 		auto& entry = appGetEntry(id);
 		entry.setUnused(); 
 	}

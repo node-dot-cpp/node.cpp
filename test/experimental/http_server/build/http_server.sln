@@ -10,8 +10,8 @@ Global
 		automated_testing_debug|x86 = automated_testing_debug|x86
 		automated_testing_release|x64 = automated_testing_release|x64
 		automated_testing_release|x86 = automated_testing_release|x86
-		Dbg_with_clustering|x64 = Dbg_with_clustering|x64
-		Dbg_with_clustering|x86 = Dbg_with_clustering|x86
+		dbg_with_clustering|x64 = dbg_with_clustering|x64
+		dbg_with_clustering|x86 = dbg_with_clustering|x86
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		debug-clang|x64 = debug-clang|x64
@@ -28,10 +28,10 @@ Global
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x64.Build.0 = automated_testing_release|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x86.ActiveCfg = automated_testing_release|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x86.Build.0 = automated_testing_release|Win32
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Dbg_with_clustering|x64.ActiveCfg = Dbg_with_clustering|x64
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Dbg_with_clustering|x64.Build.0 = Dbg_with_clustering|x64
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Dbg_with_clustering|x86.ActiveCfg = Dbg_with_clustering|Win32
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Dbg_with_clustering|x86.Build.0 = Dbg_with_clustering|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x64.ActiveCfg = dbg_with_clustering|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x64.Build.0 = dbg_with_clustering|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x86.ActiveCfg = dbg_with_clustering|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x86.Build.0 = dbg_with_clustering|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.ActiveCfg = Debug|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.Build.0 = Debug|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x86.ActiveCfg = Debug|Win32
