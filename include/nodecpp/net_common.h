@@ -53,7 +53,6 @@ namespace nodecpp {
 			}
 			else if (sz > _capacity) {
 				size_t cp = std::max(sz, MIN_BUFFER);
-//				std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
 				std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
 				memcpy(tmp.get(), _data.get(), _size);
 				_capacity = cp;
@@ -90,7 +89,6 @@ namespace nodecpp {
 			assert(_data == nullptr);
 
 			size_t cp = std::max(sz, MIN_BUFFER);
-//			std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
 			std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
 
 			_capacity = cp;
@@ -98,27 +96,6 @@ namespace nodecpp {
 		}
 
 		void append(const void* dt, size_t sz) { // NOTE: may invalidate pointers
-/*			if (_data == nullptr) {
-				reserve(sz);
-				memcpy(end(), dt, sz);
-				_size += sz;
-			}
-			else if (_size + sz <= _capacity) {
-				memcpy(end(), dt, sz);
-				_size += sz;
-			}
-			else {
-				size_t cp = std::max(sz + _size, MIN_BUFFER);
-				std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
-
-
-				memcpy(tmp.get(), _data.get(), _size);
-				memcpy(tmp.get() + _size, dt, sz);
-
-				_size = sz + _size;
-				_capacity = cp;
-				_data = std::move(tmp);
-			}*/
 			ensureCapacity(_size + sz);
 			memcpy(end(), dt, sz);
 			_size += sz;
