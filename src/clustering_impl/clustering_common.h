@@ -38,9 +38,9 @@ struct ThreadStartupData
 };
 
 // ad-hoc marchalling between Master and Slave threads
-enum class ClusteringRequestType { Listening, Close };
 struct ClusteringRequestHeader
 {
+	enum ClusteringRequestType { Listening, Close };
 	size_t bodySize;
 	ClusteringRequestType type;
 	size_t assignedThreadID;

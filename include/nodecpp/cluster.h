@@ -65,12 +65,51 @@ namespace nodecpp
 	extern void postinitThreadClusterObject();
 	class Cluster
 	{
+		bool requestForListening(ClusteringRequestHeader& rh, std::string family)
+		{
+			bool alreadyListening = false;
+			/*for ( auto& server : agentServers )
+				if ( server != nullptr && 
+					server->dataForCommandProcessing.localAddress.port == rh.*/
+		}
+		void serializeListeningRequest( size_t requestID, std::string ip, uint16_t port, std::string family, nodecpp::Buffer b ) {
+			ClusteringRequestHeader h;
+			h.type = ClusteringRequestHeader::ClusteringRequestType::Listening;
+			h.assignedThreadID = thisThreadWorker.id_;
+			h.requestID = requestID;
+			h.bodySize = 4 + 2 + family.size();
+			h.serialize( b );
+
+			uint32_t uip = Ip4::parse( ip.c_str() ).getNetwork();
+			b.append( &uip, 4 );
+			b.append( &port, 2 );
+			b.appendString( family.c_str(), family.size() );
+		}
+		static size_t deserializeListeningRequestBody( nodecpp::net::Address& addr, nodecpp::Buffer b, size_t offset, size_t sz ) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz + offset <= b.size() );
+			addr.ip.fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset) );
+			addr.port = *reinterpret_cast<uint16_t*>(b.begin() + offset + 4);
+			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + 4), sz - 6 );
+			return offset + sz;
+		}
+
 	public:
 		class MasterSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<Cluster>
 		{
 			nodecpp::Buffer incompleteRqBuff;
 			size_t processRequest( ClusteringRequestHeader& rh, nodecpp::Buffer& b, size_t offset )
 			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.bodySize + offset <= b.size() ); 
+				switch ( rh.type )
+				{
+					case ClusteringRequestHeader::ClusteringRequestType::Listening:
+						// TODO: ...
+						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(rh.type) ); 
+						break;
+				}
+				return offset + rh.bodySize;
 			}
 		public:
 			nodecpp::handler_ret_type onAccepted()

@@ -39,13 +39,14 @@ namespace nodecpp {
 		Ip4(const Ip4&) = default;
 		Ip4(Ip4&&) = default;
 		Ip4& operator=(const Ip4&) = default;
-		Ip4& operator=(Ip4&&) = default;
-	
+		Ip4& operator=(Ip4&&) = default;	
 	
 		uint32_t getNetwork() const { return ip; }
 		static Ip4 parse(const char* ip);
 		static Ip4 fromNetwork(uint32_t ip);
 		std::string toStr() const;
+
+		bool operator == ( const Ip4& other ) { return ip == other.ip; }
 	};
 	
 	class Port
