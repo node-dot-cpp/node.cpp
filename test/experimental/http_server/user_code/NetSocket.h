@@ -8,10 +8,17 @@
 #include <nodecpp/socket_type_list.h>
 #include <nodecpp/server_type_list.h>
 #include <nodecpp/http_server.h>
+#ifdef NODECPP_ENABLE_CLUSTERING
+#include <nodecpp/cluster.h>
+#endif // NODECPP_ENABLE_CLUSTERING
 
 using namespace std;
 using namespace nodecpp;
 using namespace fmt;
+
+//#define IMPL_VERSION 1 // main() is a single coro
+#define IMPL_VERSION 12 // main() is a single coro (with clustering)
+//#define IMPL_VERSION 2 // onRequest is a coro
 
 class MySampleTNode : public NodeBase
 {
@@ -50,35 +57,32 @@ public:
 		virtual ~CtrlServer() {}
 	};
 
-	class HttpSock : public nodecpp::net::HttpSocket<MySampleTNode>
-	{
+	using SockTypeServerSocket = nodecpp::net::SocketBase;
+	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
 
-	public:
-		using NodeType = MySampleTNode;
-		friend class MySampleTNode;
+	using ServerType = MyHttpServer;
+	nodecpp::safememory::owning_ptr<ServerType> srv; 
 
-	public:
-		HttpSock() {}
-		HttpSock(MySampleTNode* node) : HttpSocket<MySampleTNode>(node) {}
-		virtual ~HttpSock() {}
-	};
+	using CtrlServerType = CtrlServer;
+	nodecpp::safememory::owning_ptr<CtrlServerType>  srvCtrl;
 
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 	}
 
-
+#if IMPL_VERSION == 1
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
-		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
+//		srv = nodecpp::net::createServer<ServerType, HttpSock>(this);
+		srv = nodecpp::net::createHttpServer<ServerType>();
 		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
-		srv->listen(2000, "127.0.0.1", 5);
+		srv->listen(2000, "127.0.0.1", 5000);
 		srvCtrl->listen(2001, "127.0.0.1", 5);
 
 #ifdef AUTOMATED_TESTING_ONLY
@@ -93,14 +97,14 @@ public:
 #endif
 
 		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
-		nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response;
+		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
 		try { 
 			for(;;) { 
 				co_await srv->a_request(request, response); 
 				Buffer b1(0x1000);
 				co_await request->a_readBody( b1 );
 				++(stats.rqCnt);
-//				request->dbgTrace();
+				request->dbgTrace();
 
 //				simpleProcessing( request, response );
 				yetSimpleProcessing( request, response );
@@ -112,7 +116,111 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type simpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response )
+#elif IMPL_VERSION == 12
+
+	virtual nodecpp::handler_ret_type main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+
+		if ( getCluster().isMaster() )
+		{
+			for ( size_t i=0; i<1; ++i )
+				getCluster().fork();
+		}
+		else
+		{
+			srv = nodecpp::net::createHttpServer<ServerType>();
+			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
+
+			srv->listen(2000, "127.0.0.1", 5000);
+			srvCtrl->listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+			to = std::move( nodecpp::setTimeout(  [this]() { 
+				srv->close();
+				srv->unref();
+				srvCtrl->close();
+				srvCtrl->unref();
+				stopAccepting = true;
+				to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+			}, 3000 ) );
+#endif
+
+			nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
+			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
+			try { 
+				for(;;) { 
+					co_await srv->a_request(request, response); 
+					Buffer b1(0x1000);
+					co_await request->a_readBody( b1 );
+					++(stats.rqCnt);
+					request->dbgTrace();
+
+	//				simpleProcessing( request, response );
+					yetSimpleProcessing( request, response );
+				} 
+			} 
+			catch (...) { // TODO: what?
+			}
+		}
+
+		CO_RETURN;
+	}
+#elif IMPL_VERSION == 2
+	virtual nodecpp::handler_ret_type main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+		nodecpp::net::HttpServerBase::addHttpHandler<ServerType, nodecpp::net::HttpServerBase::Handler::IncomingRequest, &MySampleTNode::onRequest>(this);
+		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+
+//		srv = nodecpp::net::createHttpServer<ServerType, HttpSock>(this);
+//		srv = nodecpp::net::createHttpServer<ServerType, nodecpp::net::IncomingHttpMessageAtServer>(this);
+		srv = nodecpp::net::createHttpServer<ServerType, nodecpp::net::IncomingHttpMessageAtServer>();
+//		srv = nodecpp::net::createHttpServer<ServerType>();
+		srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
+
+		srv->listen(2000, "127.0.0.1", 5000);
+		srvCtrl->listen(2001, "127.0.0.1", 5);
+
+#ifdef AUTOMATED_TESTING_ONLY
+		to = std::move( nodecpp::setTimeout(  [this]() { 
+			srv->close();
+			srv->unref();
+			srvCtrl->close();
+			srvCtrl->unref();
+			stopAccepting = true;
+			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
+		}, 3000 ) );
+#endif
+
+		CO_RETURN;
+	}
+	virtual nodecpp::handler_ret_type onRequest(nodecpp::safememory::soft_ptr<ServerType> server, nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response)
+	{
+//		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
+//		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
+		try { 
+				Buffer b1(0x1000);
+				co_await request->a_readBody( b1 );
+				++(stats.rqCnt);
+				request->dbgTrace();
+
+//				simpleProcessing( request, response );
+				yetSimpleProcessing( request, response );
+		} 
+		catch (...) { // TODO: what?
+		}
+
+		CO_RETURN;
+	}
+#else
+#error
+#endif // IMPL_VERSION
+
+	nodecpp::handler_ret_type simpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response )
 	{
 		// unexpected method
 		if ( !(request->getMethod() == "GET" || request->getMethod() == "HEAD" ) )
@@ -226,7 +334,7 @@ public:
 		}
 	}
 
-	nodecpp::handler_ret_type yetSimpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::OutgoingHttpMessageAtServer> response )
+	nodecpp::handler_ret_type yetSimpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response )
 	{
 		// unexpected method
 		if ( !(request->getMethod() == "GET" || request->getMethod() == "HEAD" ) )
@@ -271,7 +379,7 @@ public:
 			}
 		}
 		response->addHeader( "Content-Length", fmt::format( "{}", b.size() ) );
-//		response->dbgTrace();
+		response->dbgTrace();
 		co_await response->flushHeaders();
 		co_await response->writeBodyPart(b);
 
@@ -299,15 +407,6 @@ public:
 		}
 		CO_RETURN;
 	}
-
-	using SockTypeServerSocket = nodecpp::net::SocketBase;
-	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
-
-	using ServerType = MyHttpServer;
-	nodecpp::safememory::owning_ptr<ServerType> srv; 
-
-	using CtrlServerType = CtrlServer;
-	nodecpp::safememory::owning_ptr<CtrlServerType>  srvCtrl;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;

@@ -40,6 +40,9 @@
     <ClCompile Include="..\..\..\..\src\tcp_socket\tcp_socket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\clustering_impl\clustering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h">
@@ -96,7 +99,19 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\awaitable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\http_server_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\http_server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\http_socket_at_server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\clustering_impl\clustering_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\cluster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

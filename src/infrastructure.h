@@ -236,12 +236,21 @@ public:
 		}
 		else //if(retval)
 		{
-			for ( size_t i=0; i<ioSockets.size(); ++i)
+			int processed = 0;
+			for ( size_t i=0; processed<retval; ++i)
 			{
-				if ( (int64_t)(ioSockets.socketsAt(i + 1)) > 0 )
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, i<ioSockets.size() );
+				short revents = ioSockets.reventsAt( 1 + i );
+#ifdef NODECPP_LINUX
+				if ( revents )
 				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, (int64_t)(ioSockets.socketsAt(i + 1)) > 0, "indeed: {}", (int64_t)(ioSockets.socketsAt(i + 1)) );
+#else
+				if ( revents && (int64_t)(ioSockets.socketsAt(i + 1)) > 0 ) // on Windows WSAPoll() may set revents to a non-zero value despite the socket is invalid
+				{
+#endif
+					++processed;
 					NetSocketEntry& current = ioSockets.at( 1 + i );
-					short revents = ioSockets.reventsAt( 1 + i );
 					switch ( current.emitter.objectType )
 					{
 						case OpaqueEmitter::ObjectType::ClientSocket:
@@ -273,6 +282,7 @@ public:
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
 
+		ioSockets.reworkIfNecessary();
 		while (running)
 		{
 
@@ -310,22 +320,24 @@ public:
 			{
 				netServer.infraClearStores();
 			}
+
+			ioSockets.reworkIfNecessary();
 		}
 	}
 };
 
 inline
-size_t registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
+void registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAcquireSocket(/*node, */t, typeId);
+	netSocketManagerBase->appAcquireSocket(/*node, */t, typeId);
 }
 
 inline
-size_t registerWithInfraAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
+void registerWithInfraAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	return netSocketManagerBase->appAssignSocket(/*node, */t, typeId, sdata);
+	netSocketManagerBase->appAssignSocket(/*node, */t, typeId, sdata);
 }
 
 inline
@@ -338,6 +350,12 @@ inline
 void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 {
 	return netServerManagerBase->appAddServer(/*node, */t, typeId);
+}
+
+inline
+void registerAgentServer(/*NodeBase* node, */soft_ptr<Cluster::AgentServer> t, int typeId)
+{
+	return netServerManagerBase->appAddAgentServer(/*node, */t, typeId);
 }
 
 extern thread_local TimeoutManager* timeoutManager;
@@ -391,7 +409,6 @@ class Runnable : public RunnableBase
 	template<class ClientSocketEmitter, class ServerSocketEmitter>
 	void internalRun()
 	{
-		nodecpp::log::init_log();
 		interceptNewDeleteOperators(true);
 		{
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
@@ -407,6 +424,10 @@ class Runnable : public RunnableBase
 			{
 				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
 			}
+			// from now on all internal structures are ready to use; let's run their "users"
+#ifdef NODECPP_ENABLE_CLUSTERING
+			nodecpp::postinitThreadClusterObject();
+#endif // NODECPP_ENABLE_CLUSTERING
 printf( "internalRun() [1]\n" );
 			node = make_owning<Node>();
 printf( "internalRun() [2]\n" );

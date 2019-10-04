@@ -29,6 +29,7 @@
 #define NET_COMMON_H
 
 #include "common.h"
+#include "ip_and_port.h"
 #include "timers.h"
 #include <map>
 #include <typeinfo>
@@ -52,7 +53,6 @@ namespace nodecpp {
 			}
 			else if (sz > _capacity) {
 				size_t cp = std::max(sz, MIN_BUFFER);
-//				std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
 				std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
 				memcpy(tmp.get(), _data.get(), _size);
 				_capacity = cp;
@@ -89,7 +89,6 @@ namespace nodecpp {
 			assert(_data == nullptr);
 
 			size_t cp = std::max(sz, MIN_BUFFER);
-//			std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
 			std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
 
 			_capacity = cp;
@@ -97,27 +96,6 @@ namespace nodecpp {
 		}
 
 		void append(const void* dt, size_t sz) { // NOTE: may invalidate pointers
-/*			if (_data == nullptr) {
-				reserve(sz);
-				memcpy(end(), dt, sz);
-				_size += sz;
-			}
-			else if (_size + sz <= _capacity) {
-				memcpy(end(), dt, sz);
-				_size += sz;
-			}
-			else {
-				size_t cp = std::max(sz + _size, MIN_BUFFER);
-				std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
-
-
-				memcpy(tmp.get(), _data.get(), _size);
-				memcpy(tmp.get() + _size, dt, sz);
-
-				_size = sz + _size;
-				_capacity = cp;
-				_data = std::move(tmp);
-			}*/
 			ensureCapacity(_size + sz);
 			memcpy(end(), dt, sz);
 			_size += sz;
@@ -125,6 +103,11 @@ namespace nodecpp {
 
 		void append(const Buffer& b) { // NOTE: may invalidate pointers
 			append( b.begin(), b.size() );
+		}
+
+		void append(const Buffer& b, size_t offset) { // NOTE: may invalidate pointers
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset <= b.size() ); 
+			append( b.begin() + offset, b.size() - offset );
 		}
 
 		void append(const Buffer& b, size_t start, size_t count) { // NOTE: may invalidate pointers
@@ -294,6 +277,38 @@ namespace nodecpp {
 		bool empty() const { return begin == end; }
 		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
 
+		// direct access to data
+		struct AvailableDataDescriptor
+		{
+			uint8_t* ptr1;
+			uint8_t* ptr2;
+			size_t sz1;
+			size_t sz2;
+		};
+		void get_available_data(AvailableDataDescriptor& d)
+		{
+			d.ptr1 = begin;
+			if ( begin < end )
+			{
+				d.sz1 = end - begin;
+				d.ptr2 = nullptr;
+				d.sz2 = 0;
+			}
+			else if ( begin > end )
+			{
+				d.sz1 = buff.get() + alloc_size() - begin;
+				d.ptr2 = buff.get();
+				d.sz2 = end - buff.get();
+			}
+			else
+			{
+				d.ptr1 = nullptr;
+				d.sz1 = 0;
+				d.ptr2 = nullptr;
+				d.sz2 = 0;
+			}
+		}
+
 		// writer-related
 		bool append( const uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )
@@ -399,6 +414,40 @@ namespace nodecpp {
 				}
 			}
 		}
+		void skip_data( size_t bytes2skip ) // "read" without reading
+		{
+			if ( begin <= end )
+			{
+				size_t diff = (size_t)(end - begin);
+				size_t sz2skip = bytes2skip >= diff ? diff : bytes2skip;
+				begin += sz2skip;
+			}
+			else
+			{
+				size_t sz2skip = buff.get() + alloc_size() - begin;
+				if ( sz2skip > bytes2skip )
+				{
+					begin += bytes2skip;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin < buff.get() + alloc_size() );
+				}
+				else if ( sz2skip < bytes2skip )
+				{
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin + sz2skip == buff.get() + alloc_size() );
+					begin = buff.get();
+					size_t sz2skip2 = bytes2skip - sz2skip;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
+					size_t diff = (size_t)(end - begin);
+					if ( sz2skip2 > diff )
+						sz2skip2 = diff;
+					begin += sz2skip2;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
+				}
+				else
+				{
+					begin = buff.get();
+				}
+			}
+		}
 
 		template<class Reader>
 		void read( Reader& reader, size_t& bytesRead, size_t target_sz ) {
@@ -410,7 +459,8 @@ namespace nodecpp {
 			}
 			else
 			{
-				size_t sz2read = buff.get() + alloc_size() - end;
+				uint8_t* endpoint = begin != buff.get() ? buff.get() + alloc_size() : buff.get() + alloc_size() - 1;
+				size_t sz2read = endpoint - end;
 				bool can_continue = reader.read( end, sz2read, bytesRead );
 				end += bytesRead;
 				bool till_end = end == (buff.get() + alloc_size());
@@ -542,7 +592,9 @@ namespace nodecpp {
 		struct Address {
 			uint16_t port;
 			std::string family;
-			std::string address;
+			Ip4 ip;
+
+			bool operator == ( const Address& other ) { return port == other.port && ip == other.ip && family == other.family; }
 		};
 
 //		enum Mode { callable, awaitable };

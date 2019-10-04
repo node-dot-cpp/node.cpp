@@ -32,6 +32,8 @@
 #include "../../include/nodecpp/common.h"
 #include "../../include/nodecpp/socket_common.h"
 #include "../../include/nodecpp/server_common.h"
+#include "../../include/nodecpp/cluster.h"
+#include "../../include/nodecpp/ip_and_port.h"
 #include "../ev_queue.h"
 
 #ifdef _MSC_VER
@@ -53,16 +55,17 @@ namespace nodecpp {
 		using UnderlyingType = void;
 		nodecpp::safememory::soft_ptr<UnderlyingType> ptr;
 	public:
-		enum ObjectType { Undefined, ClientSocket, ServerSocket };
+		enum ObjectType { Undefined, ClientSocket, ServerSocket, AgentServer };
 		ObjectType objectType;
 		int type = -1;
-//		NodeBase* nodePtr = nullptr;
 		OpaqueEmitter() : objectType(ObjectType::Undefined), type(-1) {}
-		OpaqueEmitter( ObjectType ot/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::SocketBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_)/*, nodePtr( node )*/ {}
-		OpaqueEmitter( ObjectType ot/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::ServerBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_)/*, nodePtr( node )*/ {}
+		OpaqueEmitter( ObjectType ot, nodecpp::safememory::soft_ptr<net::SocketBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_) {}
+		OpaqueEmitter( ObjectType ot, nodecpp::safememory::soft_ptr<net::ServerBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_) {}
+		OpaqueEmitter( ObjectType ot, nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_) {}
 		bool isValid() const { return (bool)ptr; }
 		nodecpp::safememory::soft_ptr<net::SocketBase> getClientSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ClientSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::SocketBase>(ptr); }
 		nodecpp::safememory::soft_ptr<net::ServerBase> getServerSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ServerSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::ServerBase>(ptr); }
+		nodecpp::safememory::soft_ptr<Cluster::AgentServer> getAgentServerPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::AgentServer ); return nodecpp::safememory::soft_ptr_static_cast<Cluster::AgentServer>(ptr); }
 	};
 } // namespace nodecpp
 
@@ -108,42 +111,6 @@ public:
 	}
 };
 
-
-class Ip4
-{
-	uint32_t ip = -1;
-	Ip4(uint32_t ip) :ip(ip) {}
-public:
-	Ip4() {}
-	Ip4(const Ip4&) = default;
-	Ip4(Ip4&&) = default;
-	Ip4& operator=(const Ip4&) = default;
-	Ip4& operator=(Ip4&&) = default;
-
-
-	uint32_t getNetwork() const { return ip; }
-	static Ip4 parse(const char* ip);
-	static Ip4 fromNetwork(uint32_t ip);
-	std::string toStr() const { return std::string("TODO"); }
-};
-
-class Port
-{
-	uint16_t port = -1;
-	Port(uint16_t port) :port(port) {}
-public:
-	Port() {}
-	Port(const Port&) = default;
-	Port(Port&&) = default;
-	Port& operator=(const Port&) = default;
-	Port& operator=(Port&&) = default;
-
-	uint16_t getNetwork() const { return port; }
-	static Port fromHost(uint16_t port);
-	static Port fromNetwork(uint16_t port);
-	std::string toStr() const { return std::string("TODO"); }
-
-};
 
 class SocketRiia // moved to .h
 {
@@ -193,7 +160,7 @@ namespace nodecpp
 		SOCKET internal_make_tcp_socket();
 		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self);
 		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port);
-		bool internal_listen_tcp_socket(SOCKET sock);
+		bool internal_listen_tcp_socket(SOCKET sock, int backlog);
 		bool internal_getsockopt_so_error(SOCKET sock);
 		void internal_shutdown_send(SOCKET sock);
 		bool internal_linger_zero_socket(SOCKET sock);
@@ -236,7 +203,7 @@ public:
 	static void appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockData, bool enable);
 	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
-	static std::pair<bool, Buffer> infraGetPacketBytes(Buffer& buff, SOCKET sock);
+	static bool infraGetPacketBytes(Buffer& buff, SOCKET sock);
 	static bool infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz);
 
 	//enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
