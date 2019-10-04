@@ -124,12 +124,14 @@ public:
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
+#ifdef NODECPP_ENABLE_CLUSTERING
 		if ( getCluster().isMaster() )
 		{
 			for ( size_t i=0; i<1; ++i )
 				getCluster().fork();
 		}
 		else
+#endif // NODECPP_ENABLE_CLUSTERING
 		{
 			srv = nodecpp::net::createHttpServer<ServerType>();
 			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
