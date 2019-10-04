@@ -28,6 +28,7 @@
 #include "../include/nodecpp/net_common.h"
 #include "../include/nodecpp/socket_common.h"
 #include "../include/nodecpp/server_common.h"
+#include "../include/nodecpp/http_server.h"
 
 #include "infrastructure.h"
 
@@ -38,6 +39,7 @@ using namespace nodecpp::net;
 
 thread_local nodecpp::net::UserHandlerClassPatterns<nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlersForDataCollecting> nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern;
 thread_local nodecpp::net::UserHandlerClassPatterns<nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlersForDataCollecting> nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern;
+thread_local nodecpp::net::UserHandlerClassPatterns<nodecpp::net::HttpServerBase::DataForHttpCommandProcessing::UserHandlersForDataCollecting> nodecpp::net::HttpServerBase::DataForHttpCommandProcessing::userHandlerClassPattern;
 
 thread_local NodeBase* thisThreadNode = nullptr;
 
@@ -113,23 +115,40 @@ ServerBase::ServerBase() {
 
 void ServerBase::registerServerByID(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId) { ::registerServer(/*node, */t, typeId); }
 
-void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing.index); }
-void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing.index); }
-void ServerBase::reportBeingDestructed() { netServerManagerBase->appReportBeingDestructed(dataForCommandProcessing.index); }
+void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing); }
+void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }
+void ServerBase::reportBeingDestructed() { netServerManagerBase->appReportBeingDestructed(dataForCommandProcessing); }
 
 void ServerBase::close()
 {
 	netServerManagerBase->appClose(dataForCommandProcessing);
+	dataForCommandProcessing.state = DataForCommandProcessing::State::BeingClosed;
+	if ( getSockCount() == 0 )
+		nodecpp::setInmediate( [this]() {
+			if ( getSockCount() == 0 )
+				reportAllAceptedConnectionsEnded();
+			} );
+}
+
+void ServerBase::reportAllAceptedConnectionsEnded()
+{
+	netServerManagerBase->appReportAllAceptedConnectionsEnded(dataForCommandProcessing);
 }
 
 void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
-	netServerManagerBase->appListen(p, ip, port, backlog);
+	netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
+	dataForCommandProcessing.state = DataForCommandProcessing::State::Listening; // TODO: consider assigning this state together with emitting a respective event instead
 }
 
 
-
-
+#ifndef NODECPP_NO_COROUTINES
+nodecpp::handler_ret_type nodecpp::a_timeout(uint32_t ms)
+{
+	co_await ::a_timeout_impl( ms );
+	co_return;
+}
+#endif
 

@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------------
-* Copyright (c) 2018, OLogN Technologies AG
+* Copyright (c) 2019, OLogN Technologies AG
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,51 +25,33 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef TIMERS_H
-#define TIMERS_H
 
-#include "common.h"
-#include <functional>
+#ifndef CLUSTERING_COMMON_H
+#define CLUSTERING_COMMON_H
 
-namespace nodecpp
+#include "../../include/nodecpp/common.h"
+#include "../../include/nodecpp/net_common.h"
+
+struct ThreadStartupData
 {
-	class Timeout
-	{
-		uint64_t id = 0;
-	public:
-		Timeout() {}
-		Timeout(uint64_t id) :id(id) {}
+	size_t assignedThreadID;
+};
 
-		Timeout(const Timeout&) = delete;
-		Timeout& operator=(const Timeout&) = delete;
+// ad-hoc marchalling between Master and Slave threads
+struct ClusteringRequestHeader
+{
+	enum ClusteringRequestType { Listening, Close };
+	size_t bodySize;
+	ClusteringRequestType type;
+	size_t assignedThreadID;
+	size_t requestID;
+	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringRequestHeader ) ); }
+	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringRequestHeader ) <= b.size() ); 
+		memcpy( this, b.begin() + pos, sizeof( ClusteringRequestHeader ) );
+		return pos + sizeof( ClusteringRequestHeader );
+	}
+	static bool couldBeDeserialized( const nodecpp::Buffer& b ) { return b.size() >= sizeof( ClusteringRequestHeader ); }
+};
 
-		Timeout(Timeout&& other) :id(other.id) { other.id = 0; }
-		Timeout& operator=(Timeout&& other) { std::swap(this->id, other.id); return *this; };
-
-		~Timeout() {}
-
-		uint64_t getId() const { return id; }
-
-//		void refresh();
-	};
-
-
-	Timeout setTimeout(std::function<void()> cb, int32_t ms);
-#ifndef NODECPP_NO_COROUTINES
-	Timeout setTimeoutForAction(awaitable_handle_t h, int32_t ms);
-#endif // NODECPP_NO_COROUTINES
-
-	void clearTimeout(const Timeout& to);
-	void refreshTimeout(Timeout& to);
-
-	namespace time
-	{
-		size_t now();
-	} // namespace time
-
-	void setInmediate(std::function<void()> cb);
-} // namespace nodecpp
-
-
-
-#endif //TIMERS_H
+#endif // CLUSTERING_COMMON_H

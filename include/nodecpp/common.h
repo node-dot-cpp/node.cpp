@@ -42,6 +42,11 @@
 #define NODECPP_UNUSED_VAR 
 #endif
 
+#include <stdint.h>
+namespace nodecpp {
+	constexpr uint64_t module_id = 4;
+} // namespace ::nodecpp
+
 /*#include <foundation.h>
 #include <nodecpp_assert.h>
 #include <iibmalloc.h>*/
@@ -63,10 +68,6 @@
 //#include "assert.h"
 #include "mallocator.h"
 
-namespace nodecpp {
-	constexpr uint64_t module_id = 4;
-} // namespace ::nodecpp
-
 using namespace ::nodecpp::safememory;
 
 template<class T>
@@ -79,6 +80,29 @@ namespace nodecpp
 #else
 	using handler_ret_type = void;
 #endif // NODECPP_NO_COROUTINES
+
+/*	struct awaitable_handle_data
+	{
+#ifndef NODECPP_NO_COROUTINES
+		using handler_fn_type = std::experimental::coroutine_handle<>;
+		handler_fn_type h = nullptr;
+#else
+		using handler_fn_type = void (*)();
+		handler_fn_type h = nullptr;
+#endif
+		bool is_exception = false;
+		std::exception exception; // TODO: consider possibility of switching to nodecpp::error
+	};*/
+#ifndef NODECPP_NO_COROUTINES
+	using awaitable_handle_t = std::experimental::coroutine_handle<>;
+#else
+	using awaitable_handle_t = void (*)();
+#endif
+
+#ifndef NODECPP_NO_COROUTINES
+	handler_ret_type a_timeout(uint32_t ms);
+#endif
+
 }
 
 class NodeBase

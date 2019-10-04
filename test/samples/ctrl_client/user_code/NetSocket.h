@@ -5,7 +5,6 @@
 
 #include <nodecpp/common.h>
 #include <nodecpp/socket_type_list.h>
-#include <nodecpp/socket_t_base.h>
 
 
 using namespace nodecpp;
@@ -50,57 +49,70 @@ public:
 
 		size_t recvSize = 0;
 		size_t recvReplies = 0;
-		size_t sentSize = 0;
-		std::unique_ptr<uint8_t> ptr;
-		size_t size = 64;// * 1024;
-		bool letOnDrain = false;
 
 	public:
 		using NodeType = MySampleTNode;
 
 	private:
-//		Buffer buf;
+		Buffer sendBuff;
 		int extraData;
 
 	public:
 		MySocketOne() {
-			ptr.reset(static_cast<uint8_t*>(malloc(size)));
+			sendBuff.reserve( 2 );
+			sendBuff.set_size( 2 );
 		}
 		virtual ~MySocketOne() {}
 
 		int* getExtra() { return &extraData; }
 
-		void onWhateverConnect() 
+		nodecpp::handler_ret_type onWhateverConnect() 
 		{
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverConnect(), extra = {}", *(getExtra()) );
 
-			uint8_t* buff = ptr.get();
-			buff[0] = 2;
-			buff[1] = 1;
-			write(buff, 2);
+			sendBuff.begin()[0] = 2;
+			sendBuff.begin()[1] = 1;
+			write(sendBuff);
+
+			CO_RETURN;
 		}
-		void onWhateverData(nodecpp::Buffer& buffer)
+		nodecpp::handler_ret_type onWhateverData(nodecpp::Buffer& buffer)
 		{
 			if ( buffer.size() < sizeof( Stats ) )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
+			{
+				if ( dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::LocalEnded && buffer.size() == 10 )
+				{
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   server finaly says: {}", (char*)(buffer.begin()) );
+					CO_RETURN;
+				}
+				else
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
+			}
 			else
 				printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
 		
+			++recvReplies;
+
 #ifdef AUTOMATED_TESTING_ONLY
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-			// test just once
-			end();
-			unref();
+			if ( recvReplies > 3 )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				// test just once
+				end();
+				unref();
+				CO_RETURN;
+			}
+			co_await nodecpp::a_timeout(1000);
+#else
+			getchar();
 #endif
 
-			getchar();
-
-			++recvReplies;
 			recvSize += buffer.size();
-			uint8_t* buff = ptr.get();
-			buff[0] = 2;
-			buff[1] = (uint8_t)recvReplies | 1;
-			write(buff, 2);
+			sendBuff.begin()[0] = 2;
+			sendBuff.begin()[1] = (uint8_t)recvReplies | 1;
+			write(sendBuff);
+
+			CO_RETURN;
 		}
 	};
 

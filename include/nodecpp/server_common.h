@@ -38,6 +38,7 @@ namespace nodecpp {
 		{
 		public:
 			using NodeType = void;
+			using DataParentType = void;
 
 		public:
 			nodecpp::safememory::soft_this_ptr<ServerBase> myThis;
@@ -50,6 +51,10 @@ namespace nodecpp {
 				//SOCKET osSocket = INVALID_SOCKET;
 				unsigned long long osSocket = 0;
 
+				enum State { Unused, Listening, BeingClosed, Closed }; // TODO: revise!
+				State state = State::Unused;
+
+
 				DataForCommandProcessing() {}
 				DataForCommandProcessing(const DataForCommandProcessing& other) = delete;
 				DataForCommandProcessing& operator=(const DataForCommandProcessing& other) = delete;
@@ -59,12 +64,14 @@ namespace nodecpp {
 
 				Address localAddress;
 
-				awaitable_handle_data ahd_listen;
-				struct awaitable_connection_handle_data : public awaitable_handle_data
+				awaitable_handle_t ahd_listen = nullptr;
+				struct awaitable_connection_handle_data
 				{
+					awaitable_handle_t h = nullptr;
 					soft_ptr<SocketBase> sock;
 				};
 				awaitable_connection_handle_data ahd_connection;
+				awaitable_handle_t ahd_close = nullptr;
 
 				struct UserHandlersCommon
 				{
@@ -258,7 +265,7 @@ namespace nodecpp {
 //			uint16_t localPort = 0;
 
 //			size_t id = 0;
-			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
+//			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
 
 		//protected:
 		public:
@@ -288,12 +295,19 @@ namespace nodecpp {
 				socketList.clear();
 				reportBeingDestructed();
 			}
-			void setAcceptedSocketCreationRoutine(acceptedSocketCreationRoutineType socketCreationCB) { 	acceptedSocketCreationRoutine = std::move( socketCreationCB ); }
+			void setAcceptedSocketCreationRoutine(acceptedSocketCreationRoutineType socketCreationCB) { acceptedSocketCreationRoutine = std::move( socketCreationCB ); }
+			void internalCleanupBeforeClosing()
+			{
+				NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getSockCount() == 0 ); 
+				dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
+				dataForCommandProcessing.index = 0;
+				forceReleasingAllCoroHandles();
+			}
 
 			const Address& address() const { return dataForCommandProcessing.localAddress; }
 			void close();
 
-			bool listening() const { return state == LISTENING; }
+			bool listening() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Listening; }
 			void ref();
 			void unref();
 			void reportBeingDestructed();
@@ -301,13 +315,30 @@ namespace nodecpp {
 			void listen(uint16_t port, const char* ip, int backlog);
 
 #ifndef NODECPP_NO_COROUTINES
+			void forceReleasingAllCoroHandles()
+			{
+				if ( dataForCommandProcessing.ahd_listen != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_listen;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_listen = nullptr;
+					hr();
+				}
+				if ( dataForCommandProcessing.ahd_connection.h != nullptr )
+				{
+					auto hr = dataForCommandProcessing.ahd_connection.h;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					dataForCommandProcessing.ahd_connection.h = nullptr;
+					hr();
+				}
+			}
+
 
 			auto a_listen(uint16_t port, const char* ip, int backlog) { 
 
 				struct listen_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
-
-					std::experimental::coroutine_handle<> who_is_awaiting;
 
 					listen_awaiter(ServerBase& server_) : server( server_ ) {}
 
@@ -321,16 +352,15 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						server.dataForCommandProcessing.ahd_listen.h = who_is_awaiting;
+						nodecpp::setNoException(awaiting);
+						server.dataForCommandProcessing.ahd_listen = awaiting;
+						myawaiting = awaiting;
 					}
 
 					auto await_resume() {
-						if ( server.dataForCommandProcessing.ahd_listen.is_exception )
-						{
-							server.dataForCommandProcessing.ahd_listen.is_exception = false; // now we will throw it and that's it
-							throw server.dataForCommandProcessing.ahd_listen.exception;
-						}
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
 					}
 				};
 				listen( port, ip, backlog );
@@ -341,11 +371,9 @@ namespace nodecpp {
 			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket) { 
 
 				struct connection_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
 					nodecpp::safememory::soft_ptr<SocketT>& socket;
-
-
-					std::experimental::coroutine_handle<> who_is_awaiting;
 
 					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_) : server( server_ ), socket( socket_ ) {}
 
@@ -359,16 +387,15 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						who_is_awaiting = awaiting;
-						server.dataForCommandProcessing.ahd_connection.h = who_is_awaiting;
+						nodecpp::setNoException(awaiting);
+						server.dataForCommandProcessing.ahd_connection.h = awaiting;
+						myawaiting = awaiting;
 					}
 
 					auto await_resume() {
-						if ( server.dataForCommandProcessing.ahd_connection.is_exception )
-						{
-							server.dataForCommandProcessing.ahd_connection.is_exception = false; // now we will throw it and that's it
-							throw server.dataForCommandProcessing.ahd_connection.exception;
-						}
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
 						if constexpr ( std::is_same<SocketT, SocketBase>::value )
 							socket = server.dataForCommandProcessing.ahd_connection.sock;
 						else
@@ -378,23 +405,158 @@ namespace nodecpp {
 				return connection_awaiter(*this, socket);
 			}
 
+			template<class SocketT>
+			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket, uint32_t period) { 
+
+				struct connection_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					ServerBase& server;
+					nodecpp::safememory::soft_ptr<SocketT>& socket;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_, uint32_t period_) : server( server_ ), socket( socket_ ), period( period_ ) {}
+
+					connection_awaiter(const connection_awaiter &) = delete;
+					connection_awaiter &operator = (const connection_awaiter &) = delete;
+
+					~connection_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						server.dataForCommandProcessing.ahd_connection.h = awaiting;
+						myawaiting = awaiting;
+						/*to = std::move( nodecpp::setTimeout( [this](){
+								auto h = server.dataForCommandProcessing.ahd_connection.h;
+								server.dataForCommandProcessing.ahd_connection.h = nullptr;
+								server.dataForCommandProcessing.ahd_connection.is_exception = true;
+								server.dataForCommandProcessing.ahd_connection.exception = std::exception(); // TODO: switch to our exceptions ASAP!
+								h();
+							}, 
+							period ) );*/
+						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_connection), period );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+						if constexpr ( std::is_same<SocketT, SocketBase>::value )
+							socket = server.dataForCommandProcessing.ahd_connection.sock;
+						else
+							socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+					}
+				};
+				return connection_awaiter(*this, socket, period);
+			}
+
+			template<class SocketT>
+			auto a_close() { 
+
+				struct close_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					ServerBase& server;
+
+					close_awaiter(ServerBase& server_) : server( server_ ) {}
+
+					close_awaiter(const close_awaiter &) = delete;
+					close_awaiter &operator = (const close_awaiter &) = delete;
+
+					~close_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						server.dataForCommandProcessing.ahd_close = awaiting;
+						myawaiting = awaiting;
+					}
+
+					auto await_resume() {
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+					}
+				};
+				close();
+				return close_awaiter(*this);
+			}
+
+			template<class SocketT>
+			auto a_close(uint32_t period) { 
+
+				struct close_awaiter {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					ServerBase& server;
+					uint32_t period;
+					nodecpp::Timeout to;
+
+					close_awaiter(ServerBase& server_, uint32_t period_) : server( server_ ), period( period_ ) {}
+
+					close_awaiter(const close_awaiter &) = delete;
+					close_awaiter &operator = (const close_awaiter &) = delete;
+
+					~close_awaiter() {}
+
+					bool await_ready() {
+						return false;
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						myawaiting = awaiting;
+						server.dataForCommandProcessing.ahd_close = awaiting;
+						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period );
+					}
+
+					auto await_resume() {
+						nodecpp::clearTimeout( to );
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						if ( nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+					}
+				};
+				close();
+				return close_awaiter(*this, period);
+			}
+
+#else
+			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
 
 			protected:
 				MultiOwner<SocketBase> socketList;
 		public:
 			soft_ptr<SocketBase> makeSocket(OpaqueSocketData& sdata) { 
-//				owning_ptr<SocketBase> sock_ = nodecpp::net::createSocket<SocketBase>(sdata);
 				owning_ptr<SocketBase> sock_;
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, acceptedSocketCreationRoutine != nullptr);
 				sock_ = acceptedSocketCreationRoutine( sdata );
+				nodecpp::safememory::soft_ptr<ServerBase> myPtr = myThis.getSoftPtr<ServerBase>(this);
+				sock_->myServerSocket = myPtr;
 				soft_ptr<SocketBase> retSock( sock_ );
-				this->socketList.add( std::move(sock_) );
+				socketList.add( std::move(sock_) );
 				return retSock;
-			}		
+			}	
+		private:
+			friend class SocketBase;
+			void reportAllAceptedConnectionsEnded();
 			void removeSocket( soft_ptr<SocketBase> sock ) {
-				this->socketList.removeAndDelete( sock );
+				socketList.removeAndDelete( sock );
+				if ( dataForCommandProcessing.state == DataForCommandProcessing::State::BeingClosed && socketList.getCount() == 0 )
+				{
+					//dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
+					//nodecpp::setInmediate( [this]() {} );
+					reportAllAceptedConnectionsEnded();
+				}
 			}
+		public:
 			size_t getSockCount() {return this->socketList.getCount();}
 
 			/////////////////////////////////////////////////////////////////
@@ -416,9 +578,8 @@ namespace nodecpp {
 
 		public:
 			void emitClose(bool hadError) {
-				state = CLOSED;
+//				state = CLOSED;
 				//id = 0;
-				dataForCommandProcessing.index = 0;
 				eClose.emit(hadError);
 			}
 
@@ -430,7 +591,7 @@ namespace nodecpp {
 				//this->id = id;
 				this->dataForCommandProcessing.index = id;
 				this->dataForCommandProcessing.localAddress = std::move(addr);
-				state = LISTENING;
+//				state = LISTENING;
 				eListening.emit(id, addr);
 			}
 
@@ -559,39 +720,99 @@ namespace nodecpp {
 			}
 		};
 
+		inline
+		void SocketBase::onFinalCleanup()
+		{ 
+			forceReleasingAllCoroHandles();
+			if ( myServerSocket != nullptr ) 
+			{
+				nodecpp::safememory::soft_ptr<SocketBase> myPtr = myThis.getSoftPtr<SocketBase>(this);
+				myServerSocket->removeSocket(myPtr);
+			}
+		}
+
+		template<class DataParentT>
+		class ServerSocket : public ServerBase, public ::nodecpp::DataParent<DataParentT>
+		{
+		public:
+			using DataParentType = DataParentT;
+			ServerSocket<DataParentT>() {};
+			ServerSocket<DataParentT>(DataParentT* dataParent ) : ServerBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~ServerSocket<DataParentT>() {}
+		};
+
+		template<>
+		class ServerSocket<void> : public ServerBase
+		{
+		public:
+			using DataParentType = void;
+			ServerSocket() {};
+			virtual ~ServerSocket() {}
+		};
 
 		template<class ServerT, class SocketT, class ... Types>
 		static
 		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
 			static_assert( std::is_base_of< ServerBase, ServerT >::value );
-			nodecpp::safememory::owning_ptr<ServerT> ret = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
+			nodecpp::safememory::owning_ptr<ServerT> retServer = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
 			if constexpr ( !std::is_same<typename ServerT::NodeType, void>::value )
 			{
 				static_assert( std::is_base_of< NodeBase, typename ServerT::NodeType >::value );
-				ret->template registerServer<typename ServerT::NodeType, ServerT>(ret);
+				retServer->template registerServer<typename ServerT::NodeType, ServerT>(retServer);
 			}
 			else
 			{
-				ret->registerServer(ret);
+				retServer->registerServer(retServer);
 			}
-			ret->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
-					nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
-					if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
-					{
-						static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-						int id = -1;
-						if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
-							id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
-						ret->registerMeByIDAndAssignSocket(sdata, id);
-					}
-					else
-					{
-						ret->registerMeByIDAndAssignSocket(sdata, -1);
-					}
-					return ret;
-				} );
-			ret->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*ret));
-			return ret;
+			if constexpr ( std::is_same< typename ServerT::DataParentType, void >::value )
+			{
+				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
+						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
+						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
+						{
+							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
+							int id = -1;
+							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
+								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
+							ret->registerMeByIDAndAssignSocket(sdata, id);
+						}
+						else
+						{
+							ret->registerMeByIDAndAssignSocket(sdata, -1);
+						}
+						return ret;
+					} );
+			}
+			else
+			{
+				auto myDataParent = retServer->getDataParent();
+				retServer->setAcceptedSocketCreationRoutine( [myDataParent](OpaqueSocketData& sdata) {
+						nodecpp::safememory::owning_ptr<SocketT> retSock;
+						if constexpr ( std::is_base_of< NodeBase, typename ServerT::DataParentType >::value )
+						{
+							retSock = nodecpp::safememory::make_owning<SocketT>(myDataParent);
+						}
+						else
+						{
+							retSock = nodecpp::safememory::make_owning<SocketT>();
+						}
+						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
+						{
+							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
+							int id = -1;
+							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
+								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
+							retSock->registerMeByIDAndAssignSocket(sdata, id);
+						}
+						else
+						{
+							retSock->registerMeByIDAndAssignSocket(sdata, -1);
+						}
+						return retSock;
+					} );
+			}
+			retServer->dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<ServerT>(), &(*retServer));
+			return retServer;
 		}
 
 		template<class ServerT, class ... Types>

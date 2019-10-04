@@ -17,6 +17,14 @@
       <Configuration>automated_testing_release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="dbg_with_clustering|Win32">
+      <Configuration>dbg_with_clustering</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="dbg_with_clustering|x64">
+      <Configuration>dbg_with_clustering</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="debug-clang|Win32">
       <Configuration>debug-clang</Configuration>
       <Platform>Win32</Platform>
@@ -28,14 +36,6 @@
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="release-clang|Win32">
-      <Configuration>release-clang</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="release-clang|x64">
-      <Configuration>release-clang</Configuration>
-      <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -64,6 +64,12 @@
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -83,13 +89,6 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -98,6 +97,12 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
@@ -122,13 +127,6 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>llvm</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -144,6 +142,9 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -153,13 +154,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'" Label="PropertySheets">
@@ -171,14 +172,15 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -194,6 +196,10 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
@@ -206,10 +212,6 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
@@ -218,19 +220,28 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <PropertyGroup Label="LLVM" Condition="'$(Configuration)|$(Platform)'=='release-clang|x64'">
-    <ClangClAdditionalOptions>
-    </ClangClAdditionalOptions>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <AdditionalOptions>/await %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -298,6 +309,23 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NODECPP_ENABLE_CLUSTERING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <AdditionalOptions>/await %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -333,27 +361,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalOptions>/await %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -416,28 +423,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|x64'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalOptions>-Xclang -fcoroutines-ts -stdlib=libc++ -lc++experimental  -Xclang -O3 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -468,6 +453,7 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc_windows.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\page_allocator_windows.cpp" />
+    <ClCompile Include="..\..\..\..\src\clustering_impl\clustering.cpp" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\..\src\net.cpp" />
@@ -476,9 +462,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\awaitable.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\cluster.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\error.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\event.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\http_socket_at_server.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\http_server.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\http_server_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h" />
@@ -488,6 +478,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\trace.h" />
+    <ClInclude Include="..\..\..\..\src\clustering_impl\clustering_common.h" />
     <ClInclude Include="..\..\..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />

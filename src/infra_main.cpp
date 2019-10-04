@@ -78,14 +78,64 @@ void registerFactory( const char* name, RunnableFactoryBase* factory )
 	NodeFactoryMap::getInstance().registerFactory( name, factory );
 }
 
+#ifndef NODECPP_ENABLE_CLUSTERING
+
 int main()
 {
 #ifdef NODECPP_USE_IIBMALLOC
-		g_AllocManager.initialize();
-//		g_AllocManager.enable();
+	g_AllocManager.initialize();
 #endif
+	nodecpp::log::init_log();
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
 
 	return 0;
 }
+
+#else
+
+#include "clustering_impl/clustering_common.h"
+
+namespace nodecpp {
+extern void preinitMasterThreadClusterObject();
+extern void preinitSlaveThreadClusterObject(size_t id);
+}
+
+void workerThreadMain( void* pdata )
+{
+	ThreadStartupData* startupData = reinterpret_cast<ThreadStartupData*>(pdata);
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData->assignedThreadID != 0 ); 
+	size_t threadId = startupData->assignedThreadID;
+	// TODO: copy the rest of data, if any
+	delete [] pdata; // do it yet before initializing g_AllocManager
+#ifdef NODECPP_USE_IIBMALLOC
+	g_AllocManager.initialize();
+#endif
+	nodecpp::log::init_log();
+	nodecpp::preinitSlaveThreadClusterObject( threadId );
+	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("starting Worker thread with threadID = {}", threadId );
+	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
+		f.second->create()->run();
+}
+
+int main( int argc, char *argv[] )
+{
+#ifdef NODECPP_USE_IIBMALLOC
+	g_AllocManager.initialize();
+#endif
+	nodecpp::log::init_log();
+	size_t coreCnt = 1;
+	if ( argc > 1 )
+	{
+		if ( strncmp( argv[1], "numcores=", 9 ) == 0 )
+			coreCnt = atol(argv[1] + 9);
+	}
+	nodecpp::preinitMasterThreadClusterObject();
+	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
+		f.second->create()->run();
+
+	return 0;
+}
+
+#endif // NODECPP_ENABLE_CLUSTERING

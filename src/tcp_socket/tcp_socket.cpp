@@ -78,7 +78,7 @@ using namespace std;
 /////////////////////////////////////////////     COMMUNICATION     ///////////////////////////////////////////
 
 
-const int tcpListenBacklogSize = 3;
+//const int tcpListenBacklogSize = 6000;
 static bool netInitialize();
 
 static bool netInitialized = netInitialize();
@@ -107,6 +107,7 @@ inline int getSockError()
 
 bool netInitialize()
 {
+	nodecpp::log::init_log(); // just make sure
 #ifdef _MSC_VER
 	// do Windows magic
 	WSADATA wsaData;
@@ -306,9 +307,10 @@ namespace nodecpp
 			return internal_bind_socket(sock, sa);
 		}
 
-		bool internal_listen_tcp_socket(SOCKET sock)
+		bool internal_listen_tcp_socket(SOCKET sock, int backlog)
 		{
-			int res = listen(sock, tcpListenBacklogSize);
+//			int res = listen(sock, tcpListenBacklogSize);
+			int res = listen(sock, backlog);
 			if (0 != res) {
 				int error = getSockError();
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("listen() on sock {} failed; error {}", sock, error);
@@ -344,7 +346,7 @@ namespace nodecpp
 			if (INVALID_SOCKET == outSock)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() on sock {} failed; error {}", error);
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() on sock {} failed; error {}", sock, error);
 
 				return INVALID_SOCKET;
 			}
@@ -500,6 +502,12 @@ Ip4 Ip4::fromNetwork(uint32_t ip)
 	return Ip4(ip);
 }
 
+std::string Ip4::toStr() const { 
+	uint32_t hn = ntohl( ip ); 
+	return fmt::format("{}.{}.{}.{}", hn >> 24, (hn >> 16) & 0xFF, (hn >> 8) & 0xFF, hn & 0xFF );
+}
+
+
 
 /* static */
 Port Port::fromHost(uint16_t port)
@@ -513,12 +521,20 @@ Port Port::fromNetwork(uint16_t port)
 	return Port(port);
 }
 
+std::string Port::toStr() const
+{ 
+	return fmt::format("{}", ntohs( port ) );
+}
+
+
 //thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 thread_local NetSocketManagerBase* netSocketManagerBase;
 //thread_local int typeIndexOfSocketO = -1;
 //thread_local int typeIndexOfSocketL = -1;
 #ifndef NET_CLIENT_ONLY
 thread_local NetServerManagerBase* netServerManagerBase;
+thread_local TimeoutManager* timeoutManager;
+thread_local EvQueue* inmediateQueue;
 #endif
 
 
@@ -680,13 +696,12 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 		throw Error();
 	}
 
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !sockData.ahd_write.is_exception ); // should not be set yet
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sockData.ahd_write.h == nullptr || !nodecpp::isException(sockData.ahd_write.h) ); // should not be set yet
 
 	if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding || sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("StreamSocket {} already ended", sockData.index);
-		sockData.ahd_write.is_exception = true;
-		sockData.ahd_write.exception = std::exception(); // TODO: switch to nodecpp exceptions ASAP!
+//		nodecpp::setException(sockData.ahd_write.h, std::exception()); // TODO: switch to our exceptions ASAP!
 //		errorCloseSocket(sockData, storeError(Error()));
 		Error e;
 		OSLayer::errorCloseSocket(sockData, e);
@@ -699,8 +714,7 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 		uint8_t res = internal_usage_only::internal_send_packet(buff.begin(), buff.size(), sockData.osSocket, sentSize);
 		if (res == COMMLAYER_RET_FAILED)
 		{
-			sockData.ahd_write.is_exception = true;
-			sockData.ahd_write.exception = std::exception(); // TODO: switch to nodecpp exceptions ASAP!
+//			nodecpp::setException(sockData.ahd_write.h, std::exception()); // TODO: switch to our exceptions ASAP!
 //			errorCloseSocket(sockData, storeError(Error()));
 			Error e;
 			OSLayer::errorCloseSocket(sockData, e);
@@ -734,21 +748,15 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 	}
 }
 
-std::pair<bool, Buffer> OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
+bool OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
 	size_t sz = 0;
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;
 	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
+	buff.set_size( sz );
 
-	if (ret != COMMLAYER_RET_OK)
-		return make_pair(false, Buffer());
-
-	Buffer res(sz);
-	res.append(buff.begin(), sz);
-	buff.clear();
-
-	return make_pair(true, std::move(res));
+	return ret == COMMLAYER_RET_OK;
 }
 
 bool OSLayer::infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz)
@@ -881,23 +889,12 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
 }
 
-void NetServerManagerBase::appClose(net::ServerBase::DataForCommandProcessing& serverData)
+void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
 {
-	size_t id = serverData.index;
-	auto& entry = appGetEntry(id);
-	if (!entry.isUsed())
-	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
-		return;
-	}
-
-	internal_usage_only::internal_close(serverData.osSocket);
-	ioSockets.setSocketClosed( entry.index );
-
-	pendingCloseEvents.emplace_back(entry.index, false);
+	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
 }
 
-size_t NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+void NetServerManagerBase::addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId)
 {
-	return ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
+	ioSockets.addEntry<Cluster::AgentServer>( /*node, */ptr, typeId );
 }

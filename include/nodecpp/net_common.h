@@ -29,6 +29,8 @@
 #define NET_COMMON_H
 
 #include "common.h"
+#include "ip_and_port.h"
+#include "timers.h"
 #include <map>
 #include <typeinfo>
 #include <typeindex>
@@ -51,7 +53,6 @@ namespace nodecpp {
 			}
 			else if (sz > _capacity) {
 				size_t cp = std::max(sz, MIN_BUFFER);
-//				std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
 				std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
 				memcpy(tmp.get(), _data.get(), _size);
 				_capacity = cp;
@@ -88,7 +89,6 @@ namespace nodecpp {
 			assert(_data == nullptr);
 
 			size_t cp = std::max(sz, MIN_BUFFER);
-//			std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
 			std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
 
 			_capacity = cp;
@@ -96,35 +96,29 @@ namespace nodecpp {
 		}
 
 		void append(const void* dt, size_t sz) { // NOTE: may invalidate pointers
-/*			if (_data == nullptr) {
-				reserve(sz);
-				memcpy(end(), dt, sz);
-				_size += sz;
-			}
-			else if (_size + sz <= _capacity) {
-				memcpy(end(), dt, sz);
-				_size += sz;
-			}
-			else {
-				size_t cp = std::max(sz + _size, MIN_BUFFER);
-				std::unique_ptr<uint8_t[]> tmp(static_cast<uint8_t*>(malloc(cp)));
-
-
-				memcpy(tmp.get(), _data.get(), _size);
-				memcpy(tmp.get() + _size, dt, sz);
-
-				_size = sz + _size;
-				_capacity = cp;
-				_data = std::move(tmp);
-			}*/
 			ensureCapacity(_size + sz);
 			memcpy(end(), dt, sz);
 			_size += sz;
 		}
 
+		void append(const Buffer& b) { // NOTE: may invalidate pointers
+			append( b.begin(), b.size() );
+		}
+
+		void append(const Buffer& b, size_t offset) { // NOTE: may invalidate pointers
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset <= b.size() ); 
+			append( b.begin() + offset, b.size() - offset );
+		}
+
+		void append(const Buffer& b, size_t start, size_t count) { // NOTE: may invalidate pointers
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !b.empty() ); 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, start + count <= b.size() ); 
+			append( b.begin() + start, count );
+		}
+
 		void trim(size_t sz) { // NOTE: keeps pointers
 			assert(sz <= _size);
-			assert(_data != nullptr);
+			assert(_data != nullptr || (_size == 0 && sz == 0) );
 			_size -= sz;
 		}
 
@@ -197,17 +191,17 @@ namespace nodecpp {
 			if ( _size < offset + 4 )
 				_size = offset + 4;
 		}
-		uint32_t readUInt8(size_t offset) {
+		uint32_t readUInt8(size_t offset) const {
 			assert( offset + 1 <= _size );
 			return *(begin() + offset);
 		}
-		uint32_t readUInt32BE(size_t offset) {
+		uint32_t readUInt32BE(size_t offset) const {
 			assert( false ); // TODO: implement
 			return 0;
 		}
-		uint8_t readUInt32LE(size_t offset) {
+		uint8_t readUInt32LE(size_t offset) const {
 			assert( offset + 4 <= _size );
-			return *reinterpret_cast<uint32_t*>(begin() + offset);
+			return *reinterpret_cast<const uint32_t*>(begin() + offset);
 		}
 	};
 
@@ -283,6 +277,38 @@ namespace nodecpp {
 		bool empty() const { return begin == end; }
 		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
 
+		// direct access to data
+		struct AvailableDataDescriptor
+		{
+			uint8_t* ptr1;
+			uint8_t* ptr2;
+			size_t sz1;
+			size_t sz2;
+		};
+		void get_available_data(AvailableDataDescriptor& d)
+		{
+			d.ptr1 = begin;
+			if ( begin < end )
+			{
+				d.sz1 = end - begin;
+				d.ptr2 = nullptr;
+				d.sz2 = 0;
+			}
+			else if ( begin > end )
+			{
+				d.sz1 = buff.get() + alloc_size() - begin;
+				d.ptr2 = buff.get();
+				d.sz2 = end - buff.get();
+			}
+			else
+			{
+				d.ptr1 = nullptr;
+				d.sz1 = 0;
+				d.ptr2 = nullptr;
+				d.sz2 = 0;
+			}
+		}
+
 		// writer-related
 		bool append( const uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )
@@ -345,36 +371,79 @@ namespace nodecpp {
 			return true;
 		}*/
 		void get_ready_data( Buffer& b ) {
+			get_ready_data( b, b.capacity() );
+		}
+		void get_ready_data( Buffer& b, size_t bytes2read ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.size() == 0 );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, bytes2read <= b.capacity(), "indeed: {} vs. {}", bytes2read, b.capacity() );
+
 			if ( begin <= end )
 			{
-				size_t sz2copy = b.capacity() >= end - begin ? end - begin : b.capacity();
+				size_t diff = (size_t)(end - begin);
+				size_t sz2copy = bytes2read >= diff ? diff : bytes2read;
 				b.append( begin, sz2copy );
 				begin += sz2copy;
 			}
 			else
 			{
 				size_t sz2copy = buff.get() + alloc_size() - begin;
-				if ( sz2copy > b.capacity() )
+				if ( sz2copy > bytes2read )
 				{
-					b.append( begin, b.capacity() );
-					begin += b.capacity();
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, begin < buff.get() + alloc_size() );
+					b.append( begin, bytes2read );
+					begin += bytes2read;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin < buff.get() + alloc_size() );
 				}
-				else if ( sz2copy < b.capacity() )
+				else if ( sz2copy < bytes2read )
 				{
 					b.append( begin, sz2copy );
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, begin + sz2copy == buff.get() + alloc_size() );
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin + sz2copy == buff.get() + alloc_size() );
 					begin = buff.get();
-					size_t sz2copy2 = b.capacity() - sz2copy;
-					if ( sz2copy2 > end - begin )
-						sz2copy2 = end - begin;
+					size_t sz2copy2 = bytes2read - sz2copy;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
+					size_t diff = (size_t)(end - begin);
+					if ( sz2copy2 > diff )
+						sz2copy2 = diff;
 					b.append( begin, sz2copy2 );
 					begin += sz2copy2;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
 				}
 				else
 				{
 					b.append( begin, sz2copy );
+					begin = buff.get();
+				}
+			}
+		}
+		void skip_data( size_t bytes2skip ) // "read" without reading
+		{
+			if ( begin <= end )
+			{
+				size_t diff = (size_t)(end - begin);
+				size_t sz2skip = bytes2skip >= diff ? diff : bytes2skip;
+				begin += sz2skip;
+			}
+			else
+			{
+				size_t sz2skip = buff.get() + alloc_size() - begin;
+				if ( sz2skip > bytes2skip )
+				{
+					begin += bytes2skip;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin < buff.get() + alloc_size() );
+				}
+				else if ( sz2skip < bytes2skip )
+				{
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin + sz2skip == buff.get() + alloc_size() );
+					begin = buff.get();
+					size_t sz2skip2 = bytes2skip - sz2skip;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
+					size_t diff = (size_t)(end - begin);
+					if ( sz2skip2 > diff )
+						sz2skip2 = diff;
+					begin += sz2skip2;
+					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
+				}
+				else
+				{
 					begin = buff.get();
 				}
 			}
@@ -390,7 +459,8 @@ namespace nodecpp {
 			}
 			else
 			{
-				size_t sz2read = buff.get() + alloc_size() - end;
+				uint8_t* endpoint = begin != buff.get() ? buff.get() + alloc_size() : buff.get() + alloc_size() - 1;
+				size_t sz2read = endpoint - end;
 				bool can_continue = reader.read( end, sz2read, bytesRead );
 				end += bytesRead;
 				bool till_end = end == (buff.get() + alloc_size());
@@ -399,7 +469,7 @@ namespace nodecpp {
 				if (!can_continue || !till_end )
 					return;
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, end == buff.get() );
-				if ( buff.get() + alloc_size() - begin >= target_sz )
+				if ( buff.get() + alloc_size() >= begin + target_sz )
 					return;
 				if ( begin - end > 1 )
 				{
@@ -522,22 +592,12 @@ namespace nodecpp {
 		struct Address {
 			uint16_t port;
 			std::string family;
-			std::string address;
+			Ip4 ip;
+
+			bool operator == ( const Address& other ) { return port == other.port && ip == other.ip && family == other.family; }
 		};
 
 //		enum Mode { callable, awaitable };
-
-		struct awaitable_handle_data
-		{
-#ifndef NODECPP_NO_COROUTINES
-			std::experimental::coroutine_handle<> h = nullptr;
-#else
-			using handler_fn_type = void (*)();
-			handler_fn_type h = nullptr;
-#endif
-			bool is_exception = false;
-			std::exception exception; // TODO: consider possibility of switching to nodecpp::error
-		};
 
 		template<class ObjectT, auto memberFunc>
 		struct HandlerData
@@ -706,9 +766,13 @@ namespace nodecpp {
 		class UserHandlerClassPatterns
 		{
 			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>>;
+#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+			MapType _patterns;
+			MapType& patterns() { return _patterns; }
+#else
 			uint8_t mapbytes[sizeof(MapType)];
-//			MapType patterns;
 			MapType& patterns() { return *reinterpret_cast<MapType*>(mapbytes); }
+#endif
 			std::pair<UserHandlerType, bool>& getPattern( std::type_index idx )
 			{
 				auto pattern = patterns().find( idx );
@@ -721,6 +785,7 @@ namespace nodecpp {
 				}
 			}
 		public:
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			void init()
 			{
 				new(&(patterns()))MapType();
@@ -729,6 +794,7 @@ namespace nodecpp {
 			{
 				patterns().~MapType();
 			}
+#endif
 			template<class UserClass>
 			UserHandlerType& getPatternForUpdate()
 			{
@@ -751,6 +817,16 @@ namespace nodecpp {
 			}
 		};
 	} //namespace net
+
+	template<class DataParentT>
+	class DataParent
+	{
+		DataParentT* parent = nullptr;
+	public:
+		DataParent() {}
+		DataParent(DataParentT* parent_) { parent = parent_; }
+		DataParentT* getDataParent() { return parent; }
+	};
 
 } //namespace nodecpp
 

@@ -25,41 +25,47 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef SOCKET_T_BASE_H
-#define SOCKET_T_BASE_H
-
-#include <stdio.h>
-#include "template_common.h"
-#include "socket_common.h"
-#include "../../src/tcp_socket/tcp_socket_base.h"
+#ifndef IP_AND_PORT_H
+#define IP_AND_PORT_H
 
 namespace nodecpp {
-
-	namespace net {
-
-		//class SocketBase; // forward declaration
-
-		class ServerBase; // forward declaration
-
-	} // namespace net
-
-
-	class OpaqueEmitter
+	
+	class Ip4
 	{
-		using UnderlyingType = void;
-		nodecpp::safememory::soft_ptr<UnderlyingType> ptr;
+		uint32_t ip = -1;
+		Ip4(uint32_t ip) :ip(ip) {}
 	public:
-		enum ObjectType { Undefined, ClientSocket, ServerSocket };
-		ObjectType objectType;
-		int type = -1;
-//		NodeBase* nodePtr = nullptr;
-		OpaqueEmitter() : objectType(ObjectType::Undefined), type(-1) {}
-		OpaqueEmitter( ObjectType ot/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::SocketBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_)/*, nodePtr( node )*/ {}
-		OpaqueEmitter( ObjectType ot/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::ServerBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_)/*, nodePtr( node )*/ {}
-		bool isValid() const { return (bool)ptr; }
-		nodecpp::safememory::soft_ptr<net::SocketBase> getClientSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ClientSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::SocketBase>(ptr); }
-		nodecpp::safememory::soft_ptr<net::ServerBase> getServerSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ServerSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::ServerBase>(ptr); }
+		Ip4() {}
+		Ip4(const Ip4&) = default;
+		Ip4(Ip4&&) = default;
+		Ip4& operator=(const Ip4&) = default;
+		Ip4& operator=(Ip4&&) = default;	
+	
+		uint32_t getNetwork() const { return ip; }
+		static Ip4 parse(const char* ip);
+		static Ip4 fromNetwork(uint32_t ip);
+		std::string toStr() const;
+
+		bool operator == ( const Ip4& other ) { return ip == other.ip; }
 	};
+	
+	class Port
+	{
+		uint16_t port = -1;
+		Port(uint16_t port) :port(port) {}
+	public:
+		Port() {}
+		Port(const Port&) = default;
+		Port(Port&&) = default;
+		Port& operator=(const Port&) = default;
+		Port& operator=(Port&&) = default;
+	
+		uint16_t getNetwork() const { return port; }
+		static Port fromHost(uint16_t port);
+		static Port fromNetwork(uint16_t port);
+		std::string toStr() const;
+	};
+
 } // namespace nodecpp
 
-#endif // SOCKET_T_BASE_H
+#endif //IP_AND_PORT_H

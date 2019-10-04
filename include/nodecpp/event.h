@@ -58,7 +58,7 @@ namespace nodecpp
 
 		struct Data
 		{
-			using callback = std::function<void(Buffer&)>;
+			using callback = std::function<void(const Buffer&)>;
 			static constexpr const char* name = "data";
 		};
 		static constexpr Data data = Data();
@@ -113,7 +113,7 @@ namespace nodecpp
 		public:
 			virtual void onClose(bool hadError) {}
 			virtual void onConnect() {}
-			virtual void onData(Buffer& buffer) {}
+			virtual void onData(const Buffer& buffer) {}
 			virtual void onDrain() {}
 			virtual void onEnd() {}
 			virtual void onAccepted() {}

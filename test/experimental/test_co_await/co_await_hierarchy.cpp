@@ -32,21 +32,24 @@
 #include <stdio.h>
 #include <string>
 
+struct ret_str
+{
+//	int  NODECPP_ALIGNED( 32 ) dummy;
+	std::string /*NODECPP_ALIGNED( 32 )*/ str;
+	int  /*NODECPP_ALIGNED( 32 )*/ dummy1;
+};
+
 
 struct handler_context
 {
 	bool used = false;
 	std::experimental::coroutine_handle<> awaiting = nullptr;
 	std::string data;
-	bool is_exception = false;
-	std::exception exception;
 };
 
 struct read_result
 {
 	std::string data;
-	bool is_exception;
-	std::exception exception;
 };
 
 static constexpr size_t max_h_count = 4;
@@ -59,8 +62,6 @@ bool is_data(size_t idx) { return g_callbacks[idx].data.size() != 0 ; }
 read_result read_data(size_t idx) { 
 	read_result ret; 
 	ret.data = std::move( g_callbacks[idx].data ); 
-	ret.is_exception = g_callbacks[idx].is_exception; 
-	ret.exception = std::move( g_callbacks[idx].exception ); 
 	return ret;
 } // returns immediately
 
@@ -73,6 +74,7 @@ public:
 
 		struct read_data_awaiter {
 			int myIdx;
+			std::experimental::coroutine_handle<> ah = nullptr;
 
 			read_data_awaiter(int myIdx_) {
 				myIdx = myIdx_;
@@ -89,13 +91,18 @@ public:
 			}
 
 			void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+				ah = awaiting;
+//				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address());
+//				h.promise().edata.is_exception = false;
+				nodecpp::setNoException(awaiting);
 				set_read_awaiting_handle( myIdx, awaiting );
 			}
 
 			auto await_resume() {
+//				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(ah.address());
 				read_result r = read_data(myIdx);
-				if ( r.is_exception )
-					throw r.exception;
+				if ( nodecpp::isException(ah) )
+					throw nodecpp::getException(ah);
 				return r.data;
 			}
 		};
@@ -116,6 +123,7 @@ class page_processor
 	data_reader reader;
 
 	nodecpp::awaitable<std::string> complete_block_1()
+//	nodecpp::awaitable<ret_str> complete_block_1()
 	{
 		std::string accumulated;
 		while ( accumulated.size() < 3 ) // jus some sample condition
@@ -136,20 +144,28 @@ class page_processor
 
 		accumulated += '\n';
 		co_return accumulated;
+/*		ret_str r;
+		r.str = accumulated;
+		co_return r;*/
 	}
 
 protected:
 	nodecpp::awaitable<std::string> complete_page_1()
+//	nodecpp::awaitable<ret_str> complete_page_1()
 	{
 		int ctr = 0;
 		std::string accumulated;
 		while ( ctr < 2 ) // an artificial sample condition
 		{
+//			accumulated += (co_await complete_block_1()).str;
 			accumulated += co_await complete_block_1();
 			++ctr;
 		}
 
 		co_return accumulated;
+/*		ret_str r;
+		r.str = accumulated;
+		co_return r;*/
 	}
 
 public:
@@ -171,6 +187,7 @@ public:
 			try
 			{
 				auto page = co_await complete_page_1();
+//				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %d HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
 			}
@@ -191,6 +208,7 @@ public:
 			try
 			{
 				auto page = co_await complete_page_1();
+//				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
 			}
@@ -213,6 +231,7 @@ public:
 			try
 			{
 				auto page = co_await complete_page_1();
+//				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
 			}
@@ -237,6 +256,7 @@ public:
 			try
 			{
 				auto page = co_await complete_page_1();
+//				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %d HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
 			}
@@ -257,6 +277,7 @@ public:
 			try
 			{
 				auto page = co_await complete_page_1();
+//				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
 			}
@@ -279,6 +300,7 @@ public:
 			try
 			{
 				auto page = co_await complete_page_1();
+//				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type B\n%s", ctr, page.c_str() );
 			}
@@ -318,7 +340,6 @@ void processing_loop_2()
 			getchar(); // take '\n' out of stream
 			printf( "   --> got \'%c\' (continuing)\n", ch );
 			g_callbacks[ch - '1'].data.push_back( ch );
-			g_callbacks[ch - '1'].is_exception = false;
 			if ( g_callbacks[ch - '1'].awaiting != nullptr )
 			{
 				auto tmp = g_callbacks[ch - '1'].awaiting;
@@ -332,11 +353,11 @@ void processing_loop_2()
 		{
 			getchar(); // take '\n' out of stream
 			printf( "   --> got \'%c\' (continuing)\n", ch );
-			g_callbacks[ch - 'a'].exception = std::exception();
-			g_callbacks[ch - 'a'].is_exception = true;
 			if ( g_callbacks[ch - 'a'].awaiting != nullptr )
 			{
 				auto tmp = g_callbacks[ch - 'a'].awaiting;
+				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(tmp.address());
+				nodecpp::setException(tmp, std::exception());
 				g_callbacks[ch - 'a'].awaiting = nullptr;
 				tmp();
 			}
@@ -420,12 +441,13 @@ nodecpp::awaitable<void> processing_loop_core_5(P& p)
 
 void processing_loop()
 { 
+	printf( "sizeof(srd::string) = %zd\n", sizeof(std::string) );
 	nodecpp::safememory::interceptNewDeleteOperators(true);
 	{
 		Processors p;
 //		/*auto core =*/ processing_loop_core_3(p);
-//		processing_loop_core_4(p);
-		processing_loop_core_5<Processors, int>(p);
+		processing_loop_core_4(p);
+//		processing_loop_core_5<Processors, int>(p);
 
 		for (;;)
 		{
@@ -437,7 +459,6 @@ void processing_loop()
 				getchar(); // take '\n' out of stream
 				printf( "   --> got \'%c\' (continuing)\n", ch );
 				g_callbacks[ch - '1'].data.push_back( ch );
-				g_callbacks[ch - '1'].is_exception = false;
 				if ( g_callbacks[ch - '1'].awaiting != nullptr )
 				{
 					auto tmp = g_callbacks[ch - '1'].awaiting;
@@ -451,11 +472,11 @@ void processing_loop()
 			{
 				getchar(); // take '\n' out of stream
 				printf( "   --> got \'%c\' (continuing)\n", ch );
-				g_callbacks[ch - 'a'].exception = std::exception();
-				g_callbacks[ch - 'a'].is_exception = true;
 				if ( g_callbacks[ch - 'a'].awaiting != nullptr )
 				{
 					auto tmp = g_callbacks[ch - 'a'].awaiting;
+					std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(tmp.address());
+					nodecpp::setException(tmp, std::exception());
 					g_callbacks[ch - 'a'].awaiting = nullptr;
 					tmp();
 				}
