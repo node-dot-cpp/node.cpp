@@ -19,6 +19,7 @@ if (cluster.isMaster) {
   // Workers can share any TCP connection
   // In this case it is an HTTP server
   http.createServer(function(request, response) {
+    response.writeHead(200, {"Content-Type":"text/xml"});
     var urlObj = url.parse(request.url, true);
     var value = urlObj.query["value"];
     if (value == ''){
