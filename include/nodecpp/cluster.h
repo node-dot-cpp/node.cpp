@@ -65,52 +65,70 @@ namespace nodecpp
 	extern void postinitThreadClusterObject();
 	class Cluster
 	{
-		bool requestForListening(ClusteringRequestHeader& rh, std::string family)
-		{
-			bool alreadyListening = false;
-			/*for ( auto& server : agentServers )
-				if ( server != nullptr && 
-					server->dataForCommandProcessing.localAddress.port == rh.*/
-		}
-		void serializeListeningRequest( size_t requestID, std::string ip, uint16_t port, std::string family, nodecpp::Buffer b ) {
+		void serializeListeningRequest( size_t requestID, std::string ip, uint16_t port, int backlog, std::string family, nodecpp::Buffer b ) {
 			ClusteringRequestHeader h;
 			h.type = ClusteringRequestHeader::ClusteringRequestType::Listening;
 			h.assignedThreadID = thisThreadWorker.id_;
 			h.requestID = requestID;
-			h.bodySize = 4 + 2 + family.size();
+			h.bodySize = 4 + 2 + sizeof(int) + family.size();
 			h.serialize( b );
 
 			uint32_t uip = Ip4::parse( ip.c_str() ).getNetwork();
 			b.append( &uip, 4 );
 			b.append( &port, 2 );
+			b.append( &backlog, sizeof(int) );
 			b.appendString( family.c_str(), family.size() );
 		}
-		static size_t deserializeListeningRequestBody( nodecpp::net::Address& addr, nodecpp::Buffer b, size_t offset, size_t sz ) {
+		static size_t deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::Buffer& b, size_t offset, size_t sz ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz + offset <= b.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > 6 + sizeof(int) );
 			addr.ip.fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset) );
 			addr.port = *reinterpret_cast<uint16_t*>(b.begin() + offset + 4);
-			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + 4), sz - 6 );
+			backlog = *reinterpret_cast<int*>(b.begin() + offset + 6);
+			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + 6 + sizeof(int)), sz - 6 - sizeof(int) );
 			return offset + sz;
+		}
+		void notifyWorkerAboutNewConnection()
+		{
 		}
 
 	public:
 		class MasterSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<Cluster>
 		{
 			nodecpp::Buffer incompleteRqBuff;
-			size_t processRequest( ClusteringRequestHeader& rh, nodecpp::Buffer& b, size_t offset )
+
+			nodecpp::handler_ret_type processRequest( ClusteringRequestHeader& rh, nodecpp::Buffer& b, size_t offset )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.bodySize + offset <= b.size() ); 
 				switch ( rh.type )
 				{
 					case ClusteringRequestHeader::ClusteringRequestType::Listening:
-						// TODO: ...
+					{
+						nodecpp::net::Address addr;
+						int backlog;
+						deserializeListeningRequestBody( addr, backlog, b, offset, rh.bodySize );
+						bool already = getDataParent()->requestForListening( rh, addr, backlog );
+						if ( already )
+						{
+							// TODO: prepare and send response
+							ClusteringRequestHeader rhReply;
+							rhReply.assignedThreadID = rh.assignedThreadID;
+							rhReply.requestID = rh.requestID;
+							rh.bodySize = 0;
+							rhReply.type = ClusteringRequestHeader::ClusteringRequestType::Listening;
+							nodecpp::Buffer reply;
+							rhReply.serialize( reply );
+							write( reply );
+						}
 						break;
+					}
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(rh.type) ); 
 						break;
 				}
-				return offset + rh.bodySize;
+				CO_RETURN;
 			}
+
 		public:
 			nodecpp::handler_ret_type onAccepted()
 			{
@@ -128,8 +146,8 @@ namespace nodecpp
 						size_t pos = currentRH.deserialize( incompleteRqBuff, 0 );
 						if ( pos + currentRH.bodySize <= incompleteRqBuff.size() )
 						{
-							size_t newOffset = processRequest( currentRH, incompleteRqBuff, pos );
-							incompleteRqBuff.trim( newOffset );
+							co_await processRequest( currentRH, incompleteRqBuff, pos );
+							incompleteRqBuff.trim( pos + currentRH.bodySize );
 						}
 					}
 				}
@@ -148,8 +166,8 @@ namespace nodecpp
 						}
 						else
 						{
-							size_t newOffset = processRequest( currentRH, incompleteRqBuff, pos );
-							incompleteRqBuff.append( b, newOffset );
+							co_await processRequest( currentRH, incompleteRqBuff, pos );
+							incompleteRqBuff.append( b, pos + currentRH.bodySize );
 						}
 					}
 				}
@@ -184,6 +202,7 @@ namespace nodecpp
 		class AgentServer
 		{
 			friend class Cluster;
+			Cluster& myCluster;
 		public:
 			nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
 		public:
@@ -220,6 +239,7 @@ namespace nodecpp
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
 				// TODO: forward to one of related slaves
+				myCluster.notifyWorkerAboutNewConnection();
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onError() { 
@@ -239,7 +259,7 @@ namespace nodecpp
 			void registerServer();
 
 		public:
-			AgentServer() {
+			AgentServer(Cluster& myCluster_) : myCluster( myCluster_ ) {
 				nodecpp::safememory::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
 			}
 			virtual ~AgentServer() {
@@ -265,6 +285,34 @@ namespace nodecpp
 
 		};
 		std::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
+
+		nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
+			nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>(*this);
+			nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
+			newServer->registerServer();
+			for ( size_t i=0; i<agentServers.size(); ++i )
+				if ( agentServers[i] == nullptr )
+				{
+					agentServers[i] = std::move( newServer );
+					return ret;
+				}
+			agentServers.push_back( std::move( newServer ) );
+			return ret;
+		}
+
+		bool requestForListening(ClusteringRequestHeader& rh, nodecpp::net::Address address, int backlog)
+		{
+			bool alreadyListening = false;
+			for ( auto& server : agentServers )
+				if ( server != nullptr && 
+					server->dataForCommandProcessing.localAddress == address &&
+					server->requestID == rh.requestID )
+					return true;
+			nodecpp::safememory::soft_ptr<AgentServer> server = createAgentServer();
+			server->requestID = rh.requestID;
+			// TODO: add request to server list of Slaves
+			server->listen( address.port, address.ip.toStr().c_str(), backlog );
+		}
 
 	private:
 		Worker thisThreadWorker;
