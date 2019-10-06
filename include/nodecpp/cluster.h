@@ -95,6 +95,10 @@ namespace nodecpp
 	public:
 		class MasterSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<Cluster>
 		{
+		public:
+			nodecpp::safememory::soft_this_ptr<MasterSocket> myThis;
+
+		private:
 			nodecpp::Buffer incompleteRqBuff;
 
 			nodecpp::handler_ret_type processRequest( ClusteringRequestHeader& rh, nodecpp::Buffer& b, size_t offset )
@@ -107,7 +111,8 @@ namespace nodecpp
 						nodecpp::net::Address addr;
 						int backlog;
 						deserializeListeningRequestBody( addr, backlog, b, offset, rh.bodySize );
-						bool already = getDataParent()->requestForListening( rh, addr, backlog );
+						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
+						bool already = getDataParent()->requestForListening( me, rh, addr, backlog );
 						if ( already )
 						{
 							// TODO: prepare and send response
@@ -203,6 +208,7 @@ namespace nodecpp
 		{
 			friend class Cluster;
 			Cluster& myCluster;
+			std::vector<nodecpp::safememory::soft_ptr<MasterSocket>> socketsToSlaves;
 		public:
 			nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
 		public:
@@ -300,17 +306,20 @@ namespace nodecpp
 			return ret;
 		}
 
-		bool requestForListening(ClusteringRequestHeader& rh, nodecpp::net::Address address, int backlog)
+		bool requestForListening(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringRequestHeader& rh, nodecpp::net::Address address, int backlog)
 		{
 			bool alreadyListening = false;
 			for ( auto& server : agentServers )
 				if ( server != nullptr && 
 					server->dataForCommandProcessing.localAddress == address &&
 					server->requestID == rh.requestID )
-					return true;
+				{
+					server->socketsToSlaves.push_back( requestingSocket );
+					return server->listening();
+				}
 			nodecpp::safememory::soft_ptr<AgentServer> server = createAgentServer();
 			server->requestID = rh.requestID;
-			// TODO: add request to server list of Slaves
+			server->socketsToSlaves.push_back( requestingSocket );
 			server->listen( address.port, address.ip.toStr().c_str(), backlog );
 		}
 
