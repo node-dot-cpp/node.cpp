@@ -65,9 +65,12 @@ namespace nodecpp
 	extern void postinitThreadClusterObject();
 	class Cluster
 	{
+	public:
+		static constexpr size_t InvalidThreadID = (size_t)(-1);
+	private:
 		void serializeListeningRequest( size_t requestID, std::string ip, uint16_t port, int backlog, std::string family, nodecpp::Buffer b ) {
 			ClusteringRequestHeader h;
-			h.type = ClusteringRequestHeader::ClusteringRequestType::Listening;
+			h.type = ClusteringRequestHeader::ClusteringMsgType::Listening;
 			h.assignedThreadID = thisThreadWorker.id_;
 			h.requestID = requestID;
 			h.bodySize = 4 + 2 + sizeof(int) + family.size();
@@ -92,6 +95,7 @@ namespace nodecpp
 		{
 		}
 
+
 	public:
 		class MasterSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<Cluster>
 		{
@@ -100,13 +104,26 @@ namespace nodecpp
 
 		private:
 			nodecpp::Buffer incompleteRqBuff;
+			size_t assignedThreadID;
+
+			nodecpp::handler_ret_type sendListeningEv( size_t requestID )
+			{
+				ClusteringRequestHeader rhReply;
+				rhReply.assignedThreadID = assignedThreadID;
+				rhReply.requestID = requestID;
+				rhReply.bodySize = 0;
+				rhReply.type = ClusteringRequestHeader::ClusteringMsgType::Listening;
+				nodecpp::Buffer reply;
+				rhReply.serialize( reply );
+				write( reply );
+			}
 
 			nodecpp::handler_ret_type processRequest( ClusteringRequestHeader& rh, nodecpp::Buffer& b, size_t offset )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.bodySize + offset <= b.size() ); 
 				switch ( rh.type )
 				{
-					case ClusteringRequestHeader::ClusteringRequestType::Listening:
+					case ClusteringRequestHeader::ClusteringMsgType::Listening:
 					{
 						nodecpp::net::Address addr;
 						int backlog;
@@ -114,17 +131,15 @@ namespace nodecpp
 						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
 						bool already = getDataParent()->requestForListening( me, rh, addr, backlog );
 						if ( already )
-						{
-							// TODO: prepare and send response
-							ClusteringRequestHeader rhReply;
-							rhReply.assignedThreadID = rh.assignedThreadID;
-							rhReply.requestID = rh.requestID;
-							rh.bodySize = 0;
-							rhReply.type = ClusteringRequestHeader::ClusteringRequestType::Listening;
-							nodecpp::Buffer reply;
-							rhReply.serialize( reply );
-							write( reply );
-						}
+							sendListeningEv( rh.requestID );
+						break;
+					}
+					case ClusteringRequestHeader::ClusteringMsgType::Started:
+					{
+						nodecpp::net::Address addr;
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID == Cluster::InvalidThreadID, "indeed: {}", assignedThreadID ); 
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.assignedThreadID != Cluster::InvalidThreadID ); 
+						assignedThreadID = rh.assignedThreadID;
 						break;
 					}
 					default:

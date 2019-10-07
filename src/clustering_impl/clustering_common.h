@@ -40,9 +40,9 @@ struct ThreadStartupData
 // ad-hoc marchalling between Master and Slave threads
 struct ClusteringRequestHeader
 {
-	enum ClusteringRequestType { Listening, Close };
+	enum ClusteringMsgType { Started, Listening, Close };
 	size_t bodySize;
-	ClusteringRequestType type;
+	ClusteringMsgType type;
 	size_t assignedThreadID;
 	size_t requestID;
 	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringRequestHeader ) ); }
