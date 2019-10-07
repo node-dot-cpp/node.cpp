@@ -69,8 +69,8 @@ namespace nodecpp
 		static constexpr size_t InvalidThreadID = (size_t)(-1);
 	private:
 		void serializeListeningRequest( size_t requestID, std::string ip, uint16_t port, int backlog, std::string family, nodecpp::Buffer b ) {
-			ClusteringRequestHeader h;
-			h.type = ClusteringRequestHeader::ClusteringMsgType::ServerListening;
+			ClusteringMsgHeader h;
+			h.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
 			h.assignedThreadID = thisThreadWorker.id_;
 			h.requestID = requestID;
 			h.bodySize = 4 + 2 + sizeof(int) + family.size();
@@ -108,8 +108,8 @@ namespace nodecpp
 
 			nodecpp::handler_ret_type sendListeningEv( size_t requestID )
 			{
-				ClusteringRequestHeader rhReply;
-				rhReply.type = ClusteringRequestHeader::ClusteringMsgType::ServerListening;
+				ClusteringMsgHeader rhReply;
+				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
 				rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = requestID;
 				rhReply.bodySize = 0;
@@ -120,8 +120,8 @@ namespace nodecpp
 
 			nodecpp::handler_ret_type sendConnAcceptedEv( size_t requestID )
 			{
-				ClusteringRequestHeader rhReply;
-				rhReply.type = ClusteringRequestHeader::ClusteringMsgType::ConnAccepted;
+				ClusteringMsgHeader rhReply;
+				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ConnAccepted;
 				rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = requestID;
 				rhReply.bodySize = 0;
@@ -130,32 +130,32 @@ namespace nodecpp
 				write( reply );
 			}
 
-			nodecpp::handler_ret_type processRequest( ClusteringRequestHeader& rh, nodecpp::Buffer& b, size_t offset )
+			nodecpp::handler_ret_type processRequest( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.bodySize + offset <= b.size() ); 
-				switch ( rh.type )
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size() ); 
+				switch ( mh.type )
 				{
-					case ClusteringRequestHeader::ClusteringMsgType::ThreadStarted:
+					case ClusteringMsgHeader::ClusteringMsgType::ThreadStarted:
 					{
 						nodecpp::net::Address addr;
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID == Cluster::InvalidThreadID, "indeed: {}", assignedThreadID ); 
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.assignedThreadID != Cluster::InvalidThreadID ); 
-						assignedThreadID = rh.assignedThreadID;
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID != Cluster::InvalidThreadID ); 
+						assignedThreadID = mh.assignedThreadID;
 						break;
 					}
-					case ClusteringRequestHeader::ClusteringMsgType::ServerListening:
+					case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
 					{
 						nodecpp::net::Address addr;
 						int backlog;
-						deserializeListeningRequestBody( addr, backlog, b, offset, rh.bodySize );
+						deserializeListeningRequestBody( addr, backlog, b, offset, mh.bodySize );
 						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-						bool already = getDataParent()->requestForListening( me, rh, addr, backlog );
+						bool already = getDataParent()->requestForListening( me, mh, addr, backlog );
 						if ( already )
-							sendListeningEv( rh.requestID );
+							sendListeningEv( mh.requestID );
 						break;
 					}
 					default:
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(rh.type) ); 
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
 						break;
 				}
 				CO_RETURN;
@@ -168,38 +168,38 @@ namespace nodecpp
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
 			{
-				ClusteringRequestHeader currentRH;
+				ClusteringMsgHeader currentMH;
 				// Performance NotE: optimization is possible
 				if ( incompleteRqBuff.size() )
 				{
 					incompleteRqBuff.append( b );
-					if ( ClusteringRequestHeader::couldBeDeserialized(incompleteRqBuff) )
+					if ( ClusteringMsgHeader::couldBeDeserialized(incompleteRqBuff) )
 					{
-						size_t pos = currentRH.deserialize( incompleteRqBuff, 0 );
-						if ( pos + currentRH.bodySize <= incompleteRqBuff.size() )
+						size_t pos = currentMH.deserialize( incompleteRqBuff, 0 );
+						if ( pos + currentMH.bodySize <= incompleteRqBuff.size() )
 						{
-							co_await processRequest( currentRH, incompleteRqBuff, pos );
-							incompleteRqBuff.trim( pos + currentRH.bodySize );
+							co_await processRequest( currentMH, incompleteRqBuff, pos );
+							incompleteRqBuff.trim( pos + currentMH.bodySize );
 						}
 					}
 				}
 				else
 				{
-					if ( !ClusteringRequestHeader::couldBeDeserialized( b ) )
+					if ( !ClusteringMsgHeader::couldBeDeserialized( b ) )
 					{
 						incompleteRqBuff.append( b );
 					}
 					else
 					{
-						size_t pos = currentRH.deserialize( b, 0 );
-						if ( pos + currentRH.bodySize > b.size() )
+						size_t pos = currentMH.deserialize( b, 0 );
+						if ( pos + currentMH.bodySize > b.size() )
 						{
 							incompleteRqBuff.append( b );
 						}
 						else
 						{
-							co_await processRequest( currentRH, incompleteRqBuff, pos );
-							incompleteRqBuff.append( b, pos + currentRH.bodySize );
+							co_await processRequest( currentMH, incompleteRqBuff, pos );
+							incompleteRqBuff.append( b, pos + currentMH.bodySize );
 						}
 					}
 				}
@@ -215,11 +215,34 @@ namespace nodecpp
 			nodecpp::Buffer incompleteRespBuff;
 			size_t assignedThreadID;
 
+			nodecpp::handler_ret_type processResponse( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size() ); 
+				switch ( mh.type )
+				{
+					case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
+					{
+						// TODO: ...
+						break;
+					}
+					case ClusteringMsgHeader::ClusteringMsgType::ConnAccepted:
+					{
+						// TODO: ...
+						break;
+					}
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
+						break;
+				}
+				CO_RETURN;
+			}
+
 		public:
 			nodecpp::handler_ret_type onConnect()
 			{
-				ClusteringRequestHeader rhReply;
-				rhReply.type = ClusteringRequestHeader::ClusteringMsgType::ServerListening;
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID != Cluster::InvalidThreadID ); 
+				ClusteringMsgHeader rhReply;
+				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ThreadStarted;
 				rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = 0;
 				rhReply.bodySize = 0;
@@ -230,6 +253,41 @@ namespace nodecpp
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
 			{
+				ClusteringMsgHeader currentMH;
+				// Performance NotE: optimization is possible
+				if ( incompleteRespBuff.size() )
+				{
+					incompleteRespBuff.append( b );
+					if ( ClusteringMsgHeader::couldBeDeserialized(incompleteRespBuff) )
+					{
+						size_t pos = currentMH.deserialize( incompleteRespBuff, 0 );
+						if ( pos + currentMH.bodySize <= incompleteRespBuff.size() )
+						{
+							co_await processResponse( currentMH, incompleteRespBuff, pos );
+							incompleteRespBuff.trim( pos + currentMH.bodySize );
+						}
+					}
+				}
+				else
+				{
+					if ( !ClusteringMsgHeader::couldBeDeserialized( b ) )
+					{
+						incompleteRespBuff.append( b );
+					}
+					else
+					{
+						size_t pos = currentMH.deserialize( b, 0 );
+						if ( pos + currentMH.bodySize > b.size() )
+						{
+							incompleteRespBuff.append( b );
+						}
+						else
+						{
+							co_await processResponse( currentMH, incompleteRespBuff, pos );
+							incompleteRespBuff.append( b, pos + currentMH.bodySize );
+						}
+					}
+				}
 				CO_RETURN;
 			}
 		};
@@ -347,19 +405,19 @@ namespace nodecpp
 			return ret;
 		}
 
-		bool requestForListening(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringRequestHeader& rh, nodecpp::net::Address address, int backlog)
+		bool requestForListening(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringMsgHeader& mh, nodecpp::net::Address address, int backlog)
 		{
 			bool alreadyListening = false;
 			for ( auto& server : agentServers )
 				if ( server != nullptr && 
 					server->dataForCommandProcessing.localAddress == address &&
-					server->requestID == rh.requestID )
+					server->requestID == mh.requestID )
 				{
 					server->socketsToSlaves.push_back( requestingSocket );
 					return server->listening();
 				}
 			nodecpp::safememory::soft_ptr<AgentServer> server = createAgentServer();
-			server->requestID = rh.requestID;
+			server->requestID = mh.requestID;
 			server->socketsToSlaves.push_back( requestingSocket );
 			server->listen( address.port, address.ip.toStr().c_str(), backlog );
 		}

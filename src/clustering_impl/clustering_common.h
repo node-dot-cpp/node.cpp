@@ -38,20 +38,20 @@ struct ThreadStartupData
 };
 
 // ad-hoc marchalling between Master and Slave threads
-struct ClusteringRequestHeader
+struct ClusteringMsgHeader
 {
 	enum ClusteringMsgType { ThreadStarted, ServerListening, ServerClose, ConnAccepted };
 	size_t bodySize;
 	ClusteringMsgType type;
 	size_t assignedThreadID;
 	size_t requestID;
-	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringRequestHeader ) ); }
+	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringMsgHeader ) ); }
 	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringRequestHeader ) <= b.size() ); 
-		memcpy( this, b.begin() + pos, sizeof( ClusteringRequestHeader ) );
-		return pos + sizeof( ClusteringRequestHeader );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringMsgHeader ) <= b.size() ); 
+		memcpy( this, b.begin() + pos, sizeof( ClusteringMsgHeader ) );
+		return pos + sizeof( ClusteringMsgHeader );
 	}
-	static bool couldBeDeserialized( const nodecpp::Buffer& b ) { return b.size() >= sizeof( ClusteringRequestHeader ); }
+	static bool couldBeDeserialized( const nodecpp::Buffer& b ) { return b.size() >= sizeof( ClusteringMsgHeader ); }
 };
 
 #endif // CLUSTERING_COMMON_H
