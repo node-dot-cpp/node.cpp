@@ -40,7 +40,7 @@ struct ThreadStartupData
 // ad-hoc marchalling between Master and Slave threads
 struct ClusteringRequestHeader
 {
-	enum ClusteringMsgType { Started, Listening, Close };
+	enum ClusteringMsgType { ThreadStarted, ServerListening, ServerClose, ConnAccepted };
 	size_t bodySize;
 	ClusteringMsgType type;
 	size_t assignedThreadID;

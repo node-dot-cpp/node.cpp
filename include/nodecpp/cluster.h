@@ -70,7 +70,7 @@ namespace nodecpp
 	private:
 		void serializeListeningRequest( size_t requestID, std::string ip, uint16_t port, int backlog, std::string family, nodecpp::Buffer b ) {
 			ClusteringRequestHeader h;
-			h.type = ClusteringRequestHeader::ClusteringMsgType::Listening;
+			h.type = ClusteringRequestHeader::ClusteringMsgType::ServerListening;
 			h.assignedThreadID = thisThreadWorker.id_;
 			h.requestID = requestID;
 			h.bodySize = 4 + 2 + sizeof(int) + family.size();
@@ -109,10 +109,22 @@ namespace nodecpp
 			nodecpp::handler_ret_type sendListeningEv( size_t requestID )
 			{
 				ClusteringRequestHeader rhReply;
+				rhReply.type = ClusteringRequestHeader::ClusteringMsgType::ServerListening;
 				rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = requestID;
 				rhReply.bodySize = 0;
-				rhReply.type = ClusteringRequestHeader::ClusteringMsgType::Listening;
+				nodecpp::Buffer reply;
+				rhReply.serialize( reply );
+				write( reply );
+			}
+
+			nodecpp::handler_ret_type sendConnAcceptedEv( size_t requestID )
+			{
+				ClusteringRequestHeader rhReply;
+				rhReply.type = ClusteringRequestHeader::ClusteringMsgType::ConnAccepted;
+				rhReply.assignedThreadID = assignedThreadID;
+				rhReply.requestID = requestID;
+				rhReply.bodySize = 0;
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
 				write( reply );
@@ -123,7 +135,15 @@ namespace nodecpp
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.bodySize + offset <= b.size() ); 
 				switch ( rh.type )
 				{
-					case ClusteringRequestHeader::ClusteringMsgType::Listening:
+					case ClusteringRequestHeader::ClusteringMsgType::ThreadStarted:
+					{
+						nodecpp::net::Address addr;
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID == Cluster::InvalidThreadID, "indeed: {}", assignedThreadID ); 
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.assignedThreadID != Cluster::InvalidThreadID ); 
+						assignedThreadID = rh.assignedThreadID;
+						break;
+					}
+					case ClusteringRequestHeader::ClusteringMsgType::ServerListening:
 					{
 						nodecpp::net::Address addr;
 						int backlog;
@@ -132,14 +152,6 @@ namespace nodecpp
 						bool already = getDataParent()->requestForListening( me, rh, addr, backlog );
 						if ( already )
 							sendListeningEv( rh.requestID );
-						break;
-					}
-					case ClusteringRequestHeader::ClusteringMsgType::Started:
-					{
-						nodecpp::net::Address addr;
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID == Cluster::InvalidThreadID, "indeed: {}", assignedThreadID ); 
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rh.assignedThreadID != Cluster::InvalidThreadID ); 
-						assignedThreadID = rh.assignedThreadID;
 						break;
 					}
 					default:
@@ -197,9 +209,23 @@ namespace nodecpp
 
 		class SlaveSocket : public nodecpp::net::SocketBase
 		{
+			friend class Cluster;
+
+		private:
+			nodecpp::Buffer incompleteRespBuff;
+			size_t assignedThreadID;
+
 		public:
 			nodecpp::handler_ret_type onConnect()
 			{
+				ClusteringRequestHeader rhReply;
+				rhReply.type = ClusteringRequestHeader::ClusteringMsgType::ServerListening;
+				rhReply.assignedThreadID = assignedThreadID;
+				rhReply.requestID = 0;
+				rhReply.bodySize = 0;
+				nodecpp::Buffer reply;
+				rhReply.serialize( reply );
+				co_await a_write( reply );
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
@@ -373,6 +399,7 @@ namespace nodecpp
 				nodecpp::net::SocketBase::addHandler<SlaveSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &SlaveSocket::onData>();
 
 				slaveSocket = nodecpp::net::createSocket<SlaveSocket>();
+				slaveSocket->assignedThreadID = thisThreadWorker.id_;
 				slaveSocket->connect(21000, "127.0.0.1");
 			}
 		}
