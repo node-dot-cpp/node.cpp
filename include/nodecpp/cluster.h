@@ -115,7 +115,8 @@ namespace nodecpp
 				rhReply.bodySize = 0;
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
-				write( reply );
+				co_await a_write( reply );
+				CO_RETURN;
 			}
 
 			nodecpp::handler_ret_type sendConnAcceptedEv( size_t requestID )
@@ -127,7 +128,8 @@ namespace nodecpp
 				rhReply.bodySize = 0;
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
-				write( reply );
+				co_await a_write( reply );
+				CO_RETURN;
 			}
 
 			nodecpp::handler_ret_type processRequest( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
@@ -420,6 +422,7 @@ namespace nodecpp
 			server->requestID = mh.requestID;
 			server->socketsToSlaves.push_back( requestingSocket );
 			server->listen( address.port, address.ip.toStr().c_str(), backlog );
+			return false;
 		}
 
 	private:
