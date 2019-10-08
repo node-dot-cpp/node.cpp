@@ -110,6 +110,7 @@ class NetSockets
 	std::vector<NetSocketEntry> ourSideAccum;
 #ifdef NODECPP_ENABLE_CLUSTERING
 	std::vector<NetSocketEntry> slaveServers;
+	static constexpr size_t SlaveServerEntryMinIndex = (MAXSIZE_T>>1)+1;
 #endif // NODECPP_ENABLE_CLUSTERING
 	std::vector<pollfd> osSide;
 	std::vector<pollfd> osSideAccum;
@@ -256,6 +257,16 @@ public:
 		return;
 	}
 #ifdef NODECPP_ENABLE_CLUSTERING
+	NetSocketEntry& slaveServerAt(size_t idx) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= SlaveServerEntryMinIndex ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < SlaveServerEntryMinIndex + slaveServers.size() ); 
+		return slaveServers.at(idx - SlaveServerEntryMinIndex);
+	}
+	const NetSocketEntry& slaveServerAt(size_t idx) const {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= SlaveServerEntryMinIndex ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < SlaveServerEntryMinIndex + slaveServers.size() ); 
+		return slaveServers.at(idx - SlaveServerEntryMinIndex);
+	}
 	template<class SocketType>
 	void addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, getCluster().isWorker() );
@@ -263,7 +274,7 @@ public:
 		{
 			if (!slaveServers[i].isUsed())
 			{
-				NetSocketEntry entry(i/*, node*/, ptr, typeId);
+				NetSocketEntry entry(SlaveServerEntryMinIndex + i/*, node*/, ptr, typeId);
 				slaveServers[i] = std::move(entry);
 //				++usedCount;
 				return;
@@ -271,7 +282,7 @@ public:
 		}
 
 		size_t ix = slaveServers.size();
-		slaveServers.emplace_back(ix/*, node*/, ptr, typeId);
+		slaveServers.emplace_back(SlaveServerEntryMinIndex + ix/*, node*/, ptr, typeId);
 //		++usedCount;
 		return;
 	}
@@ -982,7 +993,7 @@ public:
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 #ifdef NODECPP_ENABLE_CLUSTERING
-	void appAddAgentServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId) { //TODO:CLUSTERING alt impl
+	void appAddAgentServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
@@ -996,6 +1007,13 @@ public:
 	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Ip4 myIp = Ip4::parse(ip);
 		Port myPort = Port::fromHost(port);
+#ifdef NODECPP_ENABLE_CLUSTERING
+		if ( getCluster().isWorker() )
+		{
+			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, myIp, myPort, family, backlog );
+			return;
+		}
+#endif // NODECPP_ENABLE_CLUSTERING
 		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, myIp, myPort)) {
 			throw Error();
 		}

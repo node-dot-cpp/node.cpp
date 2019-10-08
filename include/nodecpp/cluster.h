@@ -68,17 +68,18 @@ namespace nodecpp
 	public:
 		static constexpr size_t InvalidThreadID = (size_t)(-1);
 	private:
-		void serializeListeningRequest( size_t requestID, std::string ip, uint16_t port, int backlog, std::string family, nodecpp::Buffer b ) {
+		static void serializeListeningRequest( size_t threadID, size_t requestID, Ip4 ip, Port port, int backlog, std::string family, nodecpp::Buffer& b ) {
 			ClusteringMsgHeader h;
 			h.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
-			h.assignedThreadID = thisThreadWorker.id_;
+			h.assignedThreadID = threadID;
 			h.requestID = requestID;
 			h.bodySize = 4 + 2 + sizeof(int) + family.size();
 			h.serialize( b );
 
-			uint32_t uip = Ip4::parse( ip.c_str() ).getNetwork();
+			uint32_t uip = ip.getNetwork();
+			uint16_t uport = port.getNetwork();
 			b.append( &uip, 4 );
-			b.append( &port, 2 );
+			b.append( &uport, 2 );
 			b.append( &backlog, sizeof(int) );
 			b.appendString( family.c_str(), family.size() );
 		}
@@ -151,7 +152,7 @@ namespace nodecpp
 						int backlog;
 						deserializeListeningRequestBody( addr, backlog, b, offset, mh.bodySize );
 						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-						bool already = getDataParent()->requestForListening( me, mh, addr, backlog );
+						bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, addr, backlog );
 						if ( already )
 							sendListeningEv( mh.requestID );
 						break;
@@ -216,6 +217,18 @@ namespace nodecpp
 		private:
 			nodecpp::Buffer incompleteRespBuff;
 			size_t assignedThreadID;
+			size_t requestIdBase = 0;
+			Buffer requestsBeforeConnection;
+
+			nodecpp::handler_ret_type sendListeningRequest( Ip4 ip, Port port, std::string family, int backlog)
+			{
+				Buffer b;
+				Cluster::serializeListeningRequest( assignedThreadID, ++requestIdBase, ip, port, backlog, family, b );
+				if ( connecting() )
+					requestsBeforeConnection.append( b );
+				else
+					co_await a_write( b );
+			}
 
 			nodecpp::handler_ret_type processResponse( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
 			{
@@ -251,6 +264,8 @@ namespace nodecpp
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
 				co_await a_write( reply );
+				co_await a_write( requestsBeforeConnection );
+				requestsBeforeConnection.clear();
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
@@ -407,8 +422,9 @@ namespace nodecpp
 			return ret;
 		}
 
-		bool requestForListening(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringMsgHeader& mh, nodecpp::net::Address address, int backlog)
+		bool processRequestForListeningAtMaster(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringMsgHeader& mh, nodecpp::net::Address address, int backlog)
 		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isMaster() );
 			bool alreadyListening = false;
 			for ( auto& server : agentServers )
 				if ( server != nullptr && 
@@ -423,6 +439,13 @@ namespace nodecpp
 			server->socketsToSlaves.push_back( requestingSocket );
 			server->listen( address.port, address.ip.toStr().c_str(), backlog );
 			return false;
+		}
+
+		void acceptRequestForListeningAtSlave(size_t entryIndex, Ip4 ip, Port port, std::string family, int backlog)
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isWorker() );
+			Buffer b;
+			slaveSocket->sendListeningRequest( ip, port, family, backlog );
 		}
 
 	private:

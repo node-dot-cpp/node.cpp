@@ -420,8 +420,6 @@ namespace nodecpp {
 			size_t _bytesRead = 0;
 			size_t _bytesWritten = 0;
 
-			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
-
 			SocketBase() {}
 
 			SocketBase(const SocketBase&) = delete;
@@ -431,7 +429,7 @@ namespace nodecpp {
 			SocketBase& operator=(SocketBase&&) = default;
 
 			virtual ~SocketBase() {
-				if (state == CONNECTING || state == CONNECTED) destroy();
+				if ( dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting || dataForCommandProcessing.state == DataForCommandProcessing::State::Connected ) destroy();
 				unref(); /*or assert that is must already be unrefed*/
 				reportBeingDestructed(); 
 			}
@@ -444,9 +442,9 @@ namespace nodecpp {
 			size_t bytesRead() const { return _bytesRead; }
 			size_t bytesWritten() const { return _bytesWritten; }
 
-			bool connecting() const { return state == CONNECTING; }
+			bool connecting() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting; }
 			void destroy();
-			bool destroyed() const { return state == DESTROYED; };
+			bool destroyed() const { return !(dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting || dataForCommandProcessing.state == DataForCommandProcessing::State::Connected); };
 			void end();
 			const std::string& localAddress() const { return _local.ip.toStr(); }
 			uint16_t localPort() const { return _local.port; }
@@ -805,7 +803,6 @@ namespace nodecpp {
 
 		public:
 			void emitClose(bool hadError) {
-				state = DESTROYED;
 				unref();
 				//this->dataForCommandProcessing.id = 0;
 				//handler may release, put virtual onClose first.
@@ -814,12 +811,10 @@ namespace nodecpp {
 
 			// not in node.js
 			void emitAccepted() {
-				state = CONNECTED;
 				eAccepted.emit();
 			}
 
 			void emitConnect() {
-				state = CONNECTED;
 				eConnect.emit();
 			}
 
@@ -837,7 +832,6 @@ namespace nodecpp {
 			}
 
 			void emitError(Error& err) {
-				state = DESTROYED;
 				//this->dataForCommandProcessing.id = 0;
 				eError.emit(err);
 			}
