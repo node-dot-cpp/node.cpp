@@ -352,11 +352,13 @@ void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
 	return netServerManagerBase->appAddServer(/*node, */t, typeId);
 }
 
+#ifdef NODECPP_ENABLE_CLUSTERING
 inline
 void registerAgentServer(/*NodeBase* node, */soft_ptr<Cluster::AgentServer> t, int typeId)
 {
 	return netServerManagerBase->appAddAgentServer(/*node, */t, typeId);
 }
+#endif // NODECPP_ENABLE_CLUSTERING
 
 extern thread_local TimeoutManager* timeoutManager;
 extern thread_local EvQueue* inmediateQueue;

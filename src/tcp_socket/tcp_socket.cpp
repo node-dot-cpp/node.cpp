@@ -894,7 +894,14 @@ void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememor
 	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
 }
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+void NetServerManagerBase::addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+{
+	ioSockets.addSlaveServerEntry<net::ServerBase>( /*node, */ptr, typeId );
+}
+
 void NetServerManagerBase::addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId)
 {
 	ioSockets.addEntry<Cluster::AgentServer>( /*node, */ptr, typeId );
 }
+#endif // NODECPP_ENABLE_CLUSTERING

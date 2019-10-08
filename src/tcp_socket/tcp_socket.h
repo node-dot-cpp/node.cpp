@@ -108,6 +108,9 @@ class NetSockets
 {
 	std::vector<NetSocketEntry> ourSide;
 	std::vector<NetSocketEntry> ourSideAccum;
+#ifdef NODECPP_ENABLE_CLUSTERING
+	std::vector<NetSocketEntry> slaveServers;
+#endif // NODECPP_ENABLE_CLUSTERING
 	std::vector<pollfd> osSide;
 	std::vector<pollfd> osSideAccum;
 	size_t associatedCount = 0;
@@ -252,6 +255,27 @@ public:
 
 		return;
 	}
+#ifdef NODECPP_ENABLE_CLUSTERING
+	template<class SocketType>
+	void addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, getCluster().isWorker() );
+		for (size_t i = 0; i != slaveServers.size(); ++i) // skip ourSide[0]
+		{
+			if (!slaveServers[i].isUsed())
+			{
+				NetSocketEntry entry(i/*, node*/, ptr, typeId);
+				slaveServers[i] = std::move(entry);
+//				++usedCount;
+				return;
+			}
+		}
+
+		size_t ix = slaveServers.size();
+		slaveServers.emplace_back(ix/*, node*/, ptr, typeId);
+//		++usedCount;
+		return;
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
 	void reworkIfNecessary()
 	{
 		if ( ourSideAccum.size() )
@@ -934,6 +958,7 @@ public:
 		pendingCloseEvents.emplace_back(id, false);
 	}
 	void appAddServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) { //TODO:CLUSTERING alt impl
+#ifndef NODECPP_ENABLE_CLUSTERING
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
@@ -941,7 +966,22 @@ public:
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addServerEntry(/*node, */ptr, typeId);
+#else
+		if ( getCluster().isMaster() )
+		{
+			SocketRiia s(internal_usage_only::internal_make_tcp_socket());
+			if (!s)
+			{
+				throw Error();
+			}
+			ptr->dataForCommandProcessing.osSocket = s.release();
+			addServerEntry(/*node, */ptr, typeId);
+		}
+		else
+			addSlaveServerEntry(/*node, */ptr, typeId);
+#endif // NODECPP_ENABLE_CLUSTERING
 	}
+#ifdef NODECPP_ENABLE_CLUSTERING
 	void appAddAgentServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId) { //TODO:CLUSTERING alt impl
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
@@ -951,6 +991,7 @@ public:
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addAgentServerEntry(/*node, */ptr, typeId);
 	}
+#endif // NODECPP_ENABLE_CLUSTERING
 	template<class DataForCommandProcessing>
 	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Ip4 myIp = Ip4::parse(ip);
@@ -1007,7 +1048,10 @@ public:
 
 protected:
 	void addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
 	void addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId);
+#endif // NODECPP_ENABLE_CLUSTERING
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };
