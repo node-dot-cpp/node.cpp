@@ -241,29 +241,7 @@ namespace nodecpp
 					co_await a_write( b );
 			}
 
-			nodecpp::handler_ret_type processResponse( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
-			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size() ); 
-				switch ( mh.type )
-				{
-					case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
-					{
-						// TODO: ...
-						break;
-					}
-					case ClusteringMsgHeader::ClusteringMsgType::ConnAccepted:
-					{
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) + sizeof(uint64_t) <= b.size() ); 
-						uint64_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);
-						uint64_t socket = *reinterpret_cast<uint64_t*>(b.begin() + offset + sizeof(size_t));
-						break;
-					}
-					default:
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
-						break;
-				}
-				CO_RETURN;
-			}
+			nodecpp::handler_ret_type processResponse( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset );
 
 		public:
 			nodecpp::handler_ret_type onConnect()

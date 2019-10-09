@@ -273,6 +273,10 @@ public:
 					}
 				}
 			}
+#ifdef NODECPP_ENABLE_CLUSTERING
+			if ( getCluster().isWorker() )
+				netServer.template infraEmitAcceptedSocketEventsReceivedfromMaster<Node>();
+#endif // NODECPP_ENABLE_CLUSTERING
 			return true;
 		}
 	}

@@ -31,6 +31,7 @@
 #include "clustering_common.h"
 #include "../../include/nodecpp/cluster.h"
 #include "../../src/infrastructure.h"
+#include "../../src/tcp_socket/tcp_socket.h"
 #include <thread>
 
 extern void workerThreadMain( void* pdata );
@@ -100,6 +101,31 @@ namespace nodecpp
 		dataForCommandProcessing.state = DataForCommandProcessing::State::BeingClosed;
 	}
 
+
+	nodecpp::handler_ret_type Cluster::SlaveSocket::processResponse( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size() ); 
+		switch ( mh.type )
+		{
+			case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
+			{
+				// TODO: ...
+				break;
+			}
+			case ClusteringMsgHeader::ClusteringMsgType::ConnAccepted:
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) + sizeof(uint64_t) <= b.size() ); 
+				size_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);
+				uint64_t socket = *reinterpret_cast<uint64_t*>(b.begin() + offset + sizeof(size_t));
+				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket );
+				break;
+			}
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
+				break;
+		}
+		CO_RETURN;
+	}
 }
 
 #endif // NODECPP_ENABLE_CLUSTERING

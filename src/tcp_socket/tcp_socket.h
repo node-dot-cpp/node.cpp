@@ -520,11 +520,13 @@ public:
 		registerAndAssignSocket(/*node, */ptr, typeId, s);
 	}
 
-	SocketRiia extractSocket(OpaqueSocketData& sdata)
+	static SocketRiia extractSocket(OpaqueSocketData& sdata)
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
 		return sdata.s.release();
 	}
+
+	static OpaqueSocketData createOpaqueSocketData( SOCKET socket ) { return OpaqueSocketData( socket ); }
 
 private:
 	void registerAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, SocketRiia& s)
@@ -933,6 +935,11 @@ protected:
 	std::vector<Error> errorStore;
 	std::vector<size_t> pendingListenEvents;
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+	std::vector<std::pair<size_t, SOCKET>> acceptedSockets;
+	std::vector<size_t> receivedListeningEvs;
+#endif // NODECPP_ENABLE_CLUSTERING
+
 	std::string family = "IPv4";
 
 public:
@@ -1063,6 +1070,11 @@ public:
 	// to help with 'poll'
 	//size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
+
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void addAcceptedSocket( size_t serverIdx, SOCKET socket ) {	NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); acceptedSockets.push_back(std::make_pair(serverIdx, socket)); }
+	void addListeningServerEv( size_t serverIdx ) { NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); receivedListeningEvs.push_back(serverIdx); }
+#endif // NODECPP_ENABLE_CLUSTERING
 
 protected:
 	void addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
@@ -1206,7 +1218,19 @@ public:
 		}
 	}
 
-#ifndef NODECPP_ENABLE_CLUSTERING
+#ifdef NODECPP_ENABLE_CLUSTERING
+	template<class Node>
+	void infraEmitAcceptedSocketEventsReceivedfromMaster()
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
+		for ( auto& info : acceptedSockets )
+		{
+			auto& entry = ioSockets.slaveServerAt( info.first );
+			OpaqueSocketData osd = NetSocketManagerBase::createOpaqueSocketData( info.second );
+			consumeAcceptedSocket<Node>(entry, osd);
+		}
+		acceptedSockets.clear();
+	}
 #endif // NODECPP_ENABLE_CLUSTERING
 
 private:
