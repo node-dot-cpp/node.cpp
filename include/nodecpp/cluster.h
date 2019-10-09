@@ -60,13 +60,17 @@ namespace nodecpp
 		void disconnect();
 	};
 
+
 	extern void preinitMasterThreadClusterObject();
 	extern void preinitSlaveThreadClusterObject( size_t id);
 	extern void postinitThreadClusterObject();
+
+
 	class Cluster
 	{
 	public:
 		static constexpr size_t InvalidThreadID = (size_t)(-1);
+
 	private:
 		static void serializeListeningRequest( size_t threadID, size_t requestID, size_t entryIndex, Ip4 ip, Port port, int backlog, std::string family, nodecpp::Buffer& b ) {
 			ClusteringMsgHeader h;
@@ -122,15 +126,19 @@ namespace nodecpp
 				CO_RETURN;
 			}
 
-			nodecpp::handler_ret_type sendConnAcceptedEv( size_t requestID )
+			nodecpp::handler_ret_type sendConnAcceptedEv( size_t internalID, size_t requestID, uint64_t socket )
 			{
 				ClusteringMsgHeader rhReply;
 				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ConnAccepted;
 				rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = requestID;
-				rhReply.bodySize = 0;
+				rhReply.bodySize = sizeof(internalID) + sizeof(socket);
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
+				size_t internalID_ = internalID;
+				uint64_t socket_ = socket;
+				reply.append( &internalID_, sizeof(internalID) );
+				reply.append( &socket_, sizeof(socket) );
 				co_await a_write( reply );
 				CO_RETURN;
 			}
@@ -245,7 +253,9 @@ namespace nodecpp
 					}
 					case ClusteringMsgHeader::ClusteringMsgType::ConnAccepted:
 					{
-						// TODO: ...
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) + sizeof(uint64_t) <= b.size() ); 
+						uint64_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);
+						uint64_t socket = *reinterpret_cast<uint64_t*>(b.begin() + offset + sizeof(size_t));
 						break;
 					}
 					default:
@@ -369,6 +379,7 @@ namespace nodecpp
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
 				// TODO: forward to one of related slaves
+//				socketsToSlaves[0].socket
 				myCluster.notifyWorkerAboutNewConnection();
 				CO_RETURN;
 			}
