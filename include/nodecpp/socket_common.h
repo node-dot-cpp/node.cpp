@@ -42,6 +42,7 @@ namespace nodecpp {
 		{
 		public:
 			using NodeType = void;
+			using DataParentType = void;
 
 		public:
 			nodecpp::safememory::soft_this_ptr<SocketBase> myThis;
@@ -997,6 +998,25 @@ namespace nodecpp {
 				else assert(false);
 			}
 
+		};
+
+		template<class DataParentT>
+		class Socket : public SocketBase, public ::nodecpp::DataParent<DataParentT>
+		{
+		public:
+			using DataParentType = DataParentT;
+			Socket<DataParentT>() {};
+			Socket<DataParentT>(DataParentT* dataParent ) : SocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~Socket<DataParentT>() {}
+		};
+
+		template<>
+		class Socket<void> : public SocketBase
+		{
+		public:
+			using DataParentType = void;
+			Socket() {};
+			virtual ~Socket() {}
 		};
 
 		/*template<class T, class ... Types>
