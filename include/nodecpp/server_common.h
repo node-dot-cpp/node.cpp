@@ -768,6 +768,7 @@ namespace nodecpp {
 			{
 				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
 						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
+						ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
 						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
 						{
 							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
@@ -796,6 +797,7 @@ namespace nodecpp {
 						{
 							retSock = nodecpp::safememory::make_owning<SocketT>();
 						}
+						retSock->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*retSock));
 						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
 						{
 							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );

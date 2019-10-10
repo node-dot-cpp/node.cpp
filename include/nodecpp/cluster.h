@@ -98,20 +98,19 @@ namespace nodecpp
 			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + sizeof(size_t) + 6 + sizeof(int)), sz - sizeof(size_t) - 6 - sizeof(int) );
 			return offset + sz;
 		}
-		void notifyWorkerAboutNewConnection()
-		{
-		}
 
 
 	public:
+		class AgentServer;
 		class MasterSocket : public nodecpp::net::SocketBase, public ::nodecpp::DataParent<Cluster>
 		{
+			friend class AgentServer;
 		public:
 			nodecpp::safememory::soft_this_ptr<MasterSocket> myThis;
 
 		private:
 			nodecpp::Buffer incompleteRqBuff;
-			size_t assignedThreadID;
+			size_t assignedThreadID = Cluster::InvalidThreadID;
 
 			nodecpp::handler_ret_type sendListeningEv( size_t requestID )
 			{
@@ -145,7 +144,8 @@ namespace nodecpp
 
 			nodecpp::handler_ret_type processRequest( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size() ); 
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} processRequest(): request type {}", assignedThreadID, (size_t)(mh.type) );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size(), "{} + {} vs. {}", mh.bodySize, offset, b.size() ); 
 				switch ( mh.type )
 				{
 					case ClusteringMsgHeader::ClusteringMsgType::ThreadStarted:
@@ -178,10 +178,12 @@ namespace nodecpp
 		public:
 			nodecpp::handler_ret_type onAccepted()
 			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket onAccepted()" );
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
 			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} onData({})", assignedThreadID, b.size() );
 				ClusteringMsgHeader currentMH;
 				// Performance NotE: optimization is possible
 				if ( incompleteRqBuff.size() )
@@ -212,7 +214,7 @@ namespace nodecpp
 						}
 						else
 						{
-							co_await processRequest( currentMH, incompleteRqBuff, pos );
+							co_await processRequest( currentMH, b, pos );
 							incompleteRqBuff.append( b, pos + currentMH.bodySize );
 						}
 					}
@@ -246,6 +248,7 @@ namespace nodecpp
 		public:
 			nodecpp::handler_ret_type onConnect()
 			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "onConnect() to Master at thread {}", assignedThreadID );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID != Cluster::InvalidThreadID ); 
 				ClusteringMsgHeader rhReply;
 				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ThreadStarted;
@@ -255,8 +258,12 @@ namespace nodecpp
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
 				co_await a_write( reply );
-				co_await a_write( requestsBeforeConnection );
-				requestsBeforeConnection.clear();
+				if ( requestsBeforeConnection.size() )
+				{
+					co_await a_write( requestsBeforeConnection );
+					requestsBeforeConnection.clear();
+				}
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "onConnect() to Master at thread {}: ini data sent", assignedThreadID );
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
@@ -302,13 +309,19 @@ namespace nodecpp
 
 		class MasterServer : public nodecpp::net::ServerSocket<Cluster>
 		{
-			nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MasterSocket> socket) { 
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering ctrl server: onConnection()!");
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
-
+		public:
+			nodecpp::handler_ret_type onListening(size_t id, nodecpp::net::Address addr) { 
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering ctrl server: onListening()!");
 				CO_RETURN;
 			}
 
+			nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) { 
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering ctrl server: onConnection()!");
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
+				soft_ptr<MasterSocket> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MasterSocket>(socket);
+
+				CO_RETURN;
+			}
 		};
 
 		class AgentServer
@@ -356,9 +369,8 @@ namespace nodecpp
 			nodecpp::handler_ret_type onConnection(uint64_t socket) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
-				// TODO: forward to one of related slaves
-//				socketsToSlaves[0].socket
-				myCluster.notifyWorkerAboutNewConnection();
+				// TODO: selection between Slaves
+				socketsToSlaves[0].socket->sendConnAcceptedEv( socketsToSlaves[0].entryIndex, requestID, socket );
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onError() { 
@@ -470,6 +482,8 @@ namespace nodecpp
 		void postinit() { 
 			if ( isMaster() )
 			{
+				nodecpp::net::ServerBase::addHandler<MasterServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MasterServer::onConnection>();
+				nodecpp::net::ServerBase::addHandler<MasterServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MasterServer::onListening>();
 				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Accepted, &MasterSocket::onAccepted>();
 				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MasterSocket::onData>();
 				ctrlServer = nodecpp::net::createServer<CtrlServerT, MasterSocket>();

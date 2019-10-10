@@ -1240,7 +1240,7 @@ public:
 	template<class Node>
 	void infraEmitAcceptedSocketEventsReceivedfromMaster()
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isWorker() );
 		for ( auto& info : acceptedSockets )
 		{
 			auto& entry = ioSockets.slaveServerAt( info.first );
@@ -1265,6 +1265,7 @@ private:
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
 			SOCKET osSocket = netSocketManagerBase->extractSocket( osd ).release();
+			entry.getAgentServer()->onConnection( osSocket );
 			return;
 		}
 		else
