@@ -144,7 +144,7 @@ namespace nodecpp
 
 			nodecpp::handler_ret_type processRequest( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} processRequest(): request type {}", assignedThreadID, (size_t)(mh.type) );
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} processRequest(): request type {}", mh.assignedThreadID, (size_t)(mh.type) );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size(), "{} + {} vs. {}", mh.bodySize, offset, b.size() ); 
 				switch ( mh.type )
 				{
@@ -183,41 +183,45 @@ namespace nodecpp
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} onData({})", assignedThreadID, b.size() );
+				if ( assignedThreadID != Cluster::InvalidThreadID )
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} onData({})", assignedThreadID, b.size() );
+				else
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread ??? onData({})", b.size() );
 				ClusteringMsgHeader currentMH;
 				// Performance NotE: optimization is possible
+				size_t pos = 0;
 				if ( incompleteRqBuff.size() )
 				{
 					incompleteRqBuff.append( b );
-					if ( ClusteringMsgHeader::couldBeDeserialized(incompleteRqBuff) )
+					while ( ClusteringMsgHeader::couldBeDeserialized(incompleteRqBuff, pos) )
 					{
-						size_t pos = currentMH.deserialize( incompleteRqBuff, 0 );
-						if ( pos + currentMH.bodySize <= incompleteRqBuff.size() )
+						size_t tmppos = currentMH.deserialize( incompleteRqBuff, pos );
+						if ( tmppos + currentMH.bodySize <= incompleteRqBuff.size() )
 						{
 							co_await processRequest( currentMH, incompleteRqBuff, pos );
-							incompleteRqBuff.trim( pos + currentMH.bodySize );
+							pos = tmppos + currentMH.bodySize;
 						}
+						else
+							break;
 					}
+					if ( incompleteRqBuff.size() > pos )
+						incompleteRqBuff.popFront( pos );
 				}
 				else
 				{
-					if ( !ClusteringMsgHeader::couldBeDeserialized( b ) )
+					while ( ClusteringMsgHeader::couldBeDeserialized( b, pos ) )
 					{
-						incompleteRqBuff.append( b );
-					}
-					else
-					{
-						size_t pos = currentMH.deserialize( b, 0 );
-						if ( pos + currentMH.bodySize > b.size() )
+						size_t tmppos = currentMH.deserialize( b, pos );
+						if ( tmppos + currentMH.bodySize <= b.size() )
 						{
-							incompleteRqBuff.append( b );
+							co_await processRequest( currentMH, b, tmppos );
+							pos = tmppos + currentMH.bodySize;
 						}
 						else
-						{
-							co_await processRequest( currentMH, b, pos );
-							incompleteRqBuff.append( b, pos + currentMH.bodySize );
-						}
+							break;
 					}
+					if ( b.size() > pos )
+						incompleteRqBuff.append( b, pos );
 				}
 				CO_RETURN;
 			}
@@ -268,40 +272,43 @@ namespace nodecpp
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
 			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} onData({})", assignedThreadID, b.size() );
 				ClusteringMsgHeader currentMH;
 				// Performance NotE: optimization is possible
+				size_t pos = 0;
 				if ( incompleteRespBuff.size() )
 				{
 					incompleteRespBuff.append( b );
-					if ( ClusteringMsgHeader::couldBeDeserialized(incompleteRespBuff) )
+					while ( ClusteringMsgHeader::couldBeDeserialized(incompleteRespBuff, pos) )
 					{
-						size_t pos = currentMH.deserialize( incompleteRespBuff, 0 );
-						if ( pos + currentMH.bodySize <= incompleteRespBuff.size() )
+						size_t tmppos = currentMH.deserialize( incompleteRespBuff, pos );
+						if ( tmppos + currentMH.bodySize <= incompleteRespBuff.size() )
 						{
 							co_await processResponse( currentMH, incompleteRespBuff, pos );
-							incompleteRespBuff.trim( pos + currentMH.bodySize );
+							pos = tmppos + currentMH.bodySize;
 						}
+						else
+							break;
 					}
+					if ( incompleteRespBuff.size() > pos )
+						incompleteRespBuff.popFront( pos );
 				}
 				else
 				{
-					if ( !ClusteringMsgHeader::couldBeDeserialized( b ) )
+					while ( ClusteringMsgHeader::couldBeDeserialized( b ) )
 					{
-						incompleteRespBuff.append( b );
-					}
-					else
-					{
-						size_t pos = currentMH.deserialize( b, 0 );
-						if ( pos + currentMH.bodySize > b.size() )
+						size_t tmppos = currentMH.deserialize( b, pos );
+						if ( tmppos + currentMH.bodySize <= b.size() )
 						{
-							incompleteRespBuff.append( b );
+							co_await processResponse( currentMH, incompleteRespBuff, tmppos );
+							incompleteRespBuff.append( b, pos + currentMH.bodySize );
+							pos = tmppos + currentMH.bodySize;
 						}
 						else
-						{
-							co_await processResponse( currentMH, incompleteRespBuff, pos );
-							incompleteRespBuff.append( b, pos + currentMH.bodySize );
-						}
+							break;
 					}
+					if ( b.size() > pos )
+						incompleteRespBuff.append( b, pos );
 				}
 				CO_RETURN;
 			}

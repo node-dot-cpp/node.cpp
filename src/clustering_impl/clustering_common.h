@@ -51,7 +51,7 @@ struct ClusteringMsgHeader
 		memcpy( this, b.begin() + pos, sizeof( ClusteringMsgHeader ) );
 		return pos + sizeof( ClusteringMsgHeader );
 	}
-	static bool couldBeDeserialized( const nodecpp::Buffer& b ) { return b.size() >= sizeof( ClusteringMsgHeader ); }
+	static bool couldBeDeserialized( const nodecpp::Buffer& b, size_t pos = 0 ) { return b.size() >= pos + sizeof( ClusteringMsgHeader ); }
 };
 
 #endif // CLUSTERING_COMMON_H
