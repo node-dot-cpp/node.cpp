@@ -117,7 +117,7 @@ class NetSockets
 	std::vector<NetSocketEntry> ourSideAccum;
 #ifdef NODECPP_ENABLE_CLUSTERING
 	std::vector<NetSocketEntry> slaveServers;
-	static constexpr size_t SlaveServerEntryMinIndex = (MAXSIZE_T>>1)+1;
+	static constexpr size_t SlaveServerEntryMinIndex = (((size_t)~((size_t)0))>>1)+1;
 #endif // NODECPP_ENABLE_CLUSTERING
 	std::vector<pollfd> osSide;
 	std::vector<pollfd> osSideAccum;

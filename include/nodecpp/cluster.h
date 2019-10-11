@@ -344,7 +344,7 @@ namespace nodecpp
 		class AgentServer
 		{
 			friend class Cluster;
-			Cluster& myCluster;
+//			Cluster& myCluster;
 			struct SlaveServerData
 			{
 				size_t entryIndex;
@@ -411,7 +411,7 @@ namespace nodecpp
 			void registerServer();
 
 		public:
-			AgentServer(Cluster& myCluster_) : myCluster( myCluster_ ) {
+			AgentServer(Cluster& myCluster_) /*: myCluster( myCluster_ )*/ {
 				nodecpp::safememory::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
 			}
 			virtual ~AgentServer() {

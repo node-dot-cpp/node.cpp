@@ -447,11 +447,11 @@ namespace nodecpp {
 			void destroy();
 			bool destroyed() const { return !(dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting || dataForCommandProcessing.state == DataForCommandProcessing::State::Connected); };
 			void end();
-			const std::string& localAddress() const { return _local.ip.toStr(); }
+			std::string localAddress() const { return _local.ip.toStr(); }
 			uint16_t localPort() const { return _local.port; }
 
 
-			const std::string& remoteAddress() const { return _remote.ip.toStr(); }
+			std::string remoteAddress() const { return _remote.ip.toStr(); }
 			const std::string& remoteFamily() const { return _remote.family; }
 			uint16_t remotePort() const { return _remote.port; }
 

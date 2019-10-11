@@ -108,7 +108,7 @@ void workerThreadMain( void* pdata )
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData->assignedThreadID != 0 ); 
 	size_t threadId = startupData->assignedThreadID;
 	// TODO: copy the rest of data, if any
-	delete [] pdata; // do it yet before initializing g_AllocManager
+	delete startupData; // do it yet before initializing g_AllocManager
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
