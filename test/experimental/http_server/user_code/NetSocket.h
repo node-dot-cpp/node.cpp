@@ -127,7 +127,7 @@ public:
 #ifdef NODECPP_ENABLE_CLUSTERING
 		if ( getCluster().isMaster() )
 		{
-			for ( size_t i=0; i<1; ++i )
+			for ( size_t i=0; i<2; ++i )
 				getCluster().fork();
 		}
 		else

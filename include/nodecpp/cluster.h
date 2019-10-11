@@ -95,7 +95,7 @@ namespace nodecpp
 			addr.ip = Ip4::fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset + sizeof(size_t)) );
 			addr.port = *reinterpret_cast<uint16_t*>(b.begin() + offset + sizeof(size_t) + 4);
 			backlog = *reinterpret_cast<int*>(b.begin() + offset + sizeof(size_t) + 6);
-			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + sizeof(size_t) + 6 + sizeof(int)), sz - sizeof(size_t) - 6 - sizeof(int) );
+			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + sizeof(size_t) + 6 + sizeof(int)) );
 			return offset + sz;
 		}
 
@@ -375,6 +375,7 @@ namespace nodecpp
 				net::Address localAddress;
 			};
 			DataForCommandProcessing dataForCommandProcessing;
+			size_t nextStep = 0;
 			size_t requestID = -1;
 
 		public:
@@ -386,8 +387,11 @@ namespace nodecpp
 			nodecpp::handler_ret_type onConnection(uint64_t socket) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socketsToSlaves.size() != 0 ); 
 				// TODO: selection between Slaves
-				socketsToSlaves[0].socket->sendConnAcceptedEv( socketsToSlaves[0].entryIndex, requestID, socket );
+				nextStep = nextStep % socketsToSlaves.size();
+				socketsToSlaves[nextStep].socket->sendConnAcceptedEv( socketsToSlaves[nextStep].entryIndex, requestID, socket );
+				++nextStep;
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onError() { 
