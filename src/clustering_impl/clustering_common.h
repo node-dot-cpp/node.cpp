@@ -47,7 +47,7 @@ struct ClusteringMsgHeader
 	size_t requestID;
 	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringMsgHeader ) ); }
 	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringMsgHeader ) <= b.size() ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringMsgHeader ) <= b.size(), "indeed: {} + {} vs. {}", pos, sizeof( ClusteringMsgHeader ), b.size() ); 
 		memcpy( this, b.begin() + pos, sizeof( ClusteringMsgHeader ) );
 		return pos + sizeof( ClusteringMsgHeader );
 	}

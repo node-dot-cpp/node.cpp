@@ -78,7 +78,7 @@ namespace nodecpp
 			h.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
 			h.assignedThreadID = threadID;
 			h.requestID = requestID;
-			h.bodySize = sizeof(size_t) + 4 + 2 + sizeof(int) + family.size();
+			h.bodySize = sizeof(size_t) + 4 + 2 + sizeof(int) + family.size() + 1;
 			h.serialize( b );
 
 			uint32_t uip = ip.getNetwork();
@@ -303,13 +303,12 @@ namespace nodecpp
 				}
 				else
 				{
-					while ( ClusteringMsgHeader::couldBeDeserialized( b ) )
+					while ( ClusteringMsgHeader::couldBeDeserialized( b, pos ) )
 					{
 						size_t tmppos = currentMH.deserialize( b, pos );
 						if ( tmppos + currentMH.bodySize <= b.size() )
 						{
-							co_await processResponse( currentMH, incompleteRespBuff, tmppos );
-							incompleteRespBuff.append( b, pos + currentMH.bodySize );
+							co_await processResponse( currentMH, b, tmppos );
 							pos = tmppos + currentMH.bodySize;
 						}
 						else

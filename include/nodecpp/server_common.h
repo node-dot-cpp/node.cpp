@@ -789,7 +789,7 @@ namespace nodecpp {
 				auto myDataParent = retServer->getDataParent();
 				retServer->setAcceptedSocketCreationRoutine( [myDataParent](OpaqueSocketData& sdata) {
 						nodecpp::safememory::owning_ptr<SocketT> retSock;
-						if constexpr ( std::is_base_of< NodeBase, typename ServerT::DataParentType >::value || std::is_same<typename SocketT::DataParentType, typename ServerT::DataParentType >::value )
+						if constexpr ( std::is_same<typename SocketT::DataParentType, typename ServerT::DataParentType >::value )
 						{
 							retSock = nodecpp::safememory::make_owning<SocketT>(myDataParent);
 						}

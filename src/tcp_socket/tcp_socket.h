@@ -1024,7 +1024,7 @@ public:
 #ifdef NODECPP_ENABLE_CLUSTERING
 		if ( getCluster().isWorker() )
 		{
-			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, myIp, myPort, family, backlog );
+			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, myIp, port, family, backlog );
 			return;
 		}
 #endif // NODECPP_ENABLE_CLUSTERING
@@ -1189,24 +1189,34 @@ public:
 					auto& entry = ioSockets.at(current);
 					if (entry.isUsed())
 					{
-						auto hr = entry.getServerSocketData()->ahd_listen;
-						if ( hr != nullptr )
+#ifdef NODECPP_ENABLE_CLUSTERING
+						if ( entry.getObjectType() == OpaqueEmitter::ObjectType::AgentServer )
 						{
-							entry.getServerSocketData()->ahd_listen = nullptr;
-							hr();
+							NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isMaster() ); 
+							entry.getAgentServer()->onListening();
 						}
 						else
+#endif // NODECPP_ENABLE_CLUSTERING
 						{
-							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
-							entry.getServerSocket()->emitListening(current, entry.getServerSocketData()->localAddress);
-							if constexpr ( !std::is_same<EmitterType, void>::value )
+							auto hr = entry.getServerSocketData()->ahd_listen;
+							if ( hr != nullptr )
 							{
-								if ( EmitterType::template isListeningEmitter<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress) )
-									EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+								entry.getServerSocketData()->ahd_listen = nullptr;
+								hr();
 							}
-							if (entry.getServerSocketData()->isListenEventHandler() )
-								entry.getServerSocketData()->handleListenEvent(entry.getServerSocket(), current, entry.getServerSocketData()->localAddress);
-							// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+							else
+							{
+								//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+								entry.getServerSocket()->emitListening(current, entry.getServerSocketData()->localAddress);
+								if constexpr ( !std::is_same<EmitterType, void>::value )
+								{
+									if ( EmitterType::template isListeningEmitter<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress) )
+										EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+								}
+								if (entry.getServerSocketData()->isListenEventHandler() )
+									entry.getServerSocketData()->handleListenEvent(entry.getServerSocket(), current, entry.getServerSocketData()->localAddress);
+								// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+							}
 						}
 					}
 				}
@@ -1256,21 +1266,29 @@ private:
 	void infraProcessAcceptEvent(NetSocketEntry& entry) //TODO:CLUSTERING alt impl
 	{
 		OpaqueSocketData osd( false );
-		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
-			return;
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 		OpaqueEmitter::ObjectType type = entry.getObjectType();
 		if ( type == OpaqueEmitter::ObjectType::AgentServer ) // Clustering
 		{
+			if ( !netSocketManagerBase->getAcceptedSockData(entry.getAgentServerData()->osSocket, osd) )
+				return;
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
 			SOCKET osSocket = netSocketManagerBase->extractSocket( osd ).release();
 			entry.getAgentServer()->onConnection( osSocket );
 			return;
 		}
 		else
-#endif // NODECPP_ENABLE_CLUSTERING
+		{
+			if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
+				return;
 			consumeAcceptedSocket<Node>(entry, osd);
+		}
+#else
+		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
+			return;
+		consumeAcceptedSocket<Node>(entry, osd);
+#endif // NODECPP_ENABLE_CLUSTERING
 	}
 
 

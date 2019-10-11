@@ -257,6 +257,7 @@ public:
 							netSocket.template infraCheckPollFdSet<Node>(current, revents);
 							break;
 						case OpaqueEmitter::ObjectType::ServerSocket:
+						case OpaqueEmitter::ObjectType::AgentServer:
 							if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 							{
 								netServer.template infraCheckPollFdSet<Node>(current, revents);
