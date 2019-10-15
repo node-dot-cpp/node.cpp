@@ -124,6 +124,9 @@ bool netInitialize()
 }
 
 
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local size_t waitTime;
+#endif // USE_TEMP_PERF_CTRS
 namespace nodecpp
 {
 	namespace internal_usage_only
@@ -390,7 +393,13 @@ namespace nodecpp
 		uint8_t internal_send_packet(const uint8_t* data, size_t size, SOCKET sock, size_t& sentSize)
 		{
 			const char* ptr = reinterpret_cast<const char*>(data); //windows uses char*, linux void*
+#ifdef USE_TEMP_PERF_CTRS
+size_t now1 = infraGetCurrentTime();
 			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
+waitTime += infraGetCurrentTime() - now1;
+#else
+			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
+#endif // USE_TEMP_PERF_CTRS
 
 			if (bytes_sent < 0)
 			{

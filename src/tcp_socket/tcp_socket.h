@@ -680,7 +680,15 @@ public:
 						entry.getClientSocketData()->handleCloseEvent(entry.getClientSocket(), err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local size_t sessionCreationtime;
+extern uint64_t infraGetCurrentTime();
+size_t now = infraGetCurrentTime();
 					entry.getClientSocket()->onFinalCleanup();
+sessionCreationtime += infraGetCurrentTime() - now;
+#else
+					entry.getClientSocket()->onFinalCleanup();
+#endif // USE_TEMP_PERF_CTRS
 				}
 				entry = NetSocketEntry(current.first); 
 			}
@@ -1297,7 +1305,17 @@ private:
 	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd)
 	{
 //		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local int sessionCnt;
+extern thread_local size_t sessionCreationtime;
+extern uint64_t infraGetCurrentTime();
+++sessionCnt;
+size_t now = infraGetCurrentTime();
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+sessionCreationtime += infraGetCurrentTime() - now;
+#else
+		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+#endif // USE_TEMP_PERF_CTRS
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
 

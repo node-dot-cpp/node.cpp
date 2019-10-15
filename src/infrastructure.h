@@ -204,7 +204,14 @@ public:
 #endif
 */
 		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local size_t waitTime;
+size_t now1 = infraGetCurrentTime();
 		auto ret = ioSockets.wait( timeoutToUse );
+waitTime += infraGetCurrentTime() - now1;
+#else
+		auto ret = ioSockets.wait( timeoutToUse );
+#endif
 
 		if ( !ret.first )
 		{
@@ -236,6 +243,23 @@ public:
 		}
 		else //if(retval)
 		{
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local int pollCnt;
+extern thread_local int pollRetCnt;	
+extern thread_local int pollRetMax;	
+extern thread_local int sessionCnt;
+extern thread_local size_t sessionCreationtime;
+extern thread_local size_t waitTime;
+++pollCnt;
+pollRetCnt += retval;
+if ( pollRetMax < retval ) pollRetMax = retval;
+if ( (pollCnt &0xFFFF) == 0 )
+#ifdef NODECPP_ENABLE_CLUSTERING
+printf( "[thread %zd] pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd, sessionCnt = %d, sessionCreationtime = %zd, waitTime = %zd\n", getCluster().isMaster() ? 0 : getCluster().worker().id(), pollCnt, pollRetCnt, pollRetMax, ioSockets.size(), sessionCnt, sessionCreationtime, waitTime );
+#else
+printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd, sessionCnt = %d, sessionCreationtime = %zd, waitTime = %zd\n", pollCnt, pollRetCnt, pollRetMax, ioSockets.size(), sessionCnt, sessionCreationtime, waitTime );
+#endif // NODECPP_ENABLE_CLUSTERING
+#endif // USE_TEMP_PERF_CTRS
 			int processed = 0;
 			for ( size_t i=0; processed<retval; ++i)
 			{
