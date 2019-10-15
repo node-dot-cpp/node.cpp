@@ -185,15 +185,15 @@ namespace nodecpp
 		public:
 			nodecpp::handler_ret_type onAccepted()
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket onAccepted()" );
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket onAccepted()" );
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
 			{
-				if ( assignedThreadID != Cluster::InvalidThreadID )
+				/*if ( assignedThreadID != Cluster::InvalidThreadID )
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} onData({})", assignedThreadID, b.size() );
 				else
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread ??? onData({})", b.size() );
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread ??? onData({})", b.size() );*/
 				ClusteringMsgHeader currentMH;
 				// Performance NotE: optimization is possible
 				size_t pos = 0;
@@ -259,7 +259,7 @@ namespace nodecpp
 		public:
 			nodecpp::handler_ret_type onConnect()
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "onConnect() to Master at thread {}", assignedThreadID );
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "onConnect() to Master at thread {}", assignedThreadID );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID != Cluster::InvalidThreadID ); 
 				ClusteringMsgHeader rhReply;
 				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ThreadStarted;
@@ -269,18 +269,18 @@ namespace nodecpp
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
 				co_await a_write( reply );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "onConnect() to Master at thread {}: ini data sent, size: {}", assignedThreadID, reply.size() );
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "onConnect() to Master at thread {}: ini data sent, size: {}", assignedThreadID, reply.size() );
 				if ( requestsBeforeConnection.size() )
 				{
 					co_await a_write( requestsBeforeConnection );
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "onConnect() to Master at thread {}: additional data sent, size: {}", assignedThreadID, requestsBeforeConnection.size() );
+//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "onConnect() to Master at thread {}: additional data sent, size: {}", assignedThreadID, requestsBeforeConnection.size() );
 					requestsBeforeConnection.clear();
 				}
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onData( nodecpp::Buffer& b)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} onData({})", assignedThreadID, b.size() );
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket to thread {} onData({})", assignedThreadID, b.size() );
 				ClusteringMsgHeader currentMH;
 				// Performance NotE: optimization is possible
 				size_t pos = 0;
@@ -333,7 +333,7 @@ namespace nodecpp
 			}
 
 			nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket) { 
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering ctrl server: onConnection()!");
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering ctrl server: onConnection()!");
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 				soft_ptr<MasterSocket> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MasterSocket>(socket);
 
@@ -385,7 +385,7 @@ namespace nodecpp
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onConnection(uint64_t socket) { 
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
+//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socketsToSlaves.size() != 0 ); 
 				// TODO: selection between Slaves
@@ -395,13 +395,13 @@ namespace nodecpp
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onError() { 
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onListening()!");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onError()!");
 				// TODO: forward to all related slaves
 
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onEnd(bool hasError) { 
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onListening()!");
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onEnd({})!", hasError);
 				// TODO: forward to all related slaves
 
 				CO_RETURN;
