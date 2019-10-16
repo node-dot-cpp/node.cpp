@@ -1201,12 +1201,14 @@ public:
 #ifdef NODECPP_ENABLE_CLUSTERING
 						if ( entry.getObjectType() == OpaqueEmitter::ObjectType::AgentServer )
 						{
+							entry.getAgentServerData()->state = nodecpp::Cluster::AgentServer::DataForCommandProcessing::State::Listening;
 							NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isMaster() ); 
 							entry.getAgentServer()->onListening();
 						}
 						else
 #endif // NODECPP_ENABLE_CLUSTERING
 						{
+							entry.getServerSocketData()->state = nodecpp::net::ServerBase::DataForCommandProcessing::State::Listening;
 							auto hr = entry.getServerSocketData()->ahd_listen;
 							if ( hr != nullptr )
 							{

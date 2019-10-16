@@ -140,7 +140,6 @@ void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
-	dataForCommandProcessing.state = DataForCommandProcessing::State::Listening; // TODO: consider assigning this state together with emitting a respective event instead
 }
 
 
