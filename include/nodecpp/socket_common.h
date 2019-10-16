@@ -60,6 +60,9 @@ namespace nodecpp {
 				state = Uninitialized;
 				size_t index = 0;
 
+				Address _local;
+				Address _remote;
+
 				struct awaitable_read_handle_data
 				{
 					awaitable_handle_t h = nullptr;
@@ -413,8 +416,6 @@ namespace nodecpp {
 			}
 
 		public:
-			Address _local;
-			Address _remote;
 			//std::string _remoteAddress;
 			//std::string _remoteFamily;
 			//uint16_t _remotePort = 0;
@@ -437,7 +438,7 @@ namespace nodecpp {
 
 		public:
 
-			const Address& address() const { return _local; }
+			const Address& address() const { return dataForCommandProcessing._local; }
 
 			size_t bufferSize() const { return dataForCommandProcessing.writeBuffer.used_size(); }
 			size_t bytesRead() const { return _bytesRead; }
@@ -447,13 +448,13 @@ namespace nodecpp {
 			void destroy();
 			bool destroyed() const { return !(dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting || dataForCommandProcessing.state == DataForCommandProcessing::State::Connected); };
 			void end();
-			std::string localAddress() const { return _local.ip.toStr(); }
-			uint16_t localPort() const { return _local.port; }
+			std::string localAddress() const { return dataForCommandProcessing._local.ip.toStr(); }
+			uint16_t localPort() const { return dataForCommandProcessing._local.port; }
 
 
-			std::string remoteAddress() const { return _remote.ip.toStr(); }
-			const std::string& remoteFamily() const { return _remote.family; }
-			uint16_t remotePort() const { return _remote.port; }
+			std::string remoteAddress() const { return dataForCommandProcessing._remote.ip.toStr(); }
+			const std::string& remoteFamily() const { return dataForCommandProcessing._remote.family; }
+			uint16_t remotePort() const { return dataForCommandProcessing._remote.port; }
 
 			void ref();
 			void unref();

@@ -1033,6 +1033,9 @@ public:
 #ifdef NODECPP_ENABLE_CLUSTERING
 		if ( getCluster().isWorker() )
 		{
+			dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
+			dataForCommandProcessing.localAddress.port = port;
+			dataForCommandProcessing.localAddress.family = family;
 			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, myIp, port, family, backlog );
 			return;
 		}

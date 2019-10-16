@@ -540,6 +540,7 @@ namespace nodecpp {
 				sock_ = acceptedSocketCreationRoutine( sdata );
 				nodecpp::safememory::soft_ptr<ServerBase> myPtr = myThis.getSoftPtr<ServerBase>(this);
 				sock_->myServerSocket = myPtr;
+				sock_->dataForCommandProcessing._local = dataForCommandProcessing.localAddress;
 				soft_ptr<SocketBase> retSock( sock_ );
 				socketList.add( std::move(sock_) );
 				return retSock;
