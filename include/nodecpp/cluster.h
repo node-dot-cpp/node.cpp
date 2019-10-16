@@ -130,19 +130,23 @@ namespace nodecpp
 				CO_RETURN;
 			}
 
-			nodecpp::handler_ret_type sendConnAcceptedEv( size_t internalID, size_t requestID, uint64_t socket )
+			nodecpp::handler_ret_type sendConnAcceptedEv( size_t internalID, size_t requestID, uint64_t socket, Ip4& remoteIp, Port& remotePort )
 			{
 				ClusteringMsgHeader rhReply;
 				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ConnAccepted;
 				rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = requestID;
-				rhReply.bodySize = sizeof(internalID) + sizeof(socket);
+				rhReply.bodySize = sizeof(internalID) + sizeof(socket) + 4 + 2;
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
 				size_t internalID_ = internalID;
 				uint64_t socket_ = socket;
+				uint32_t uip = remoteIp.getNetwork();
+				uint16_t uport = remotePort.getNetwork();
 				reply.append( &internalID_, sizeof(internalID) );
 				reply.append( &socket_, sizeof(socket) );
+				reply.append( &uip, sizeof(uip) );
+				reply.append( &uport, sizeof(uport) );
 				co_await a_write( reply );
 				CO_RETURN;
 			}
@@ -384,13 +388,13 @@ namespace nodecpp
 
 				CO_RETURN;
 			}
-			nodecpp::handler_ret_type onConnection(uint64_t socket) { 
+			nodecpp::handler_ret_type onConnection(uint64_t socket, Ip4& remoteIp, Port& remotePort) { 
 //				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socketsToSlaves.size() != 0 ); 
 				// TODO: selection between Slaves
 				nextStep = nextStep % socketsToSlaves.size();
-				socketsToSlaves[nextStep].socket->sendConnAcceptedEv( socketsToSlaves[nextStep].entryIndex, requestID, socket );
+				socketsToSlaves[nextStep].socket->sendConnAcceptedEv( socketsToSlaves[nextStep].entryIndex, requestID, socket, remoteIp, remotePort );
 				++nextStep;
 				CO_RETURN;
 			}

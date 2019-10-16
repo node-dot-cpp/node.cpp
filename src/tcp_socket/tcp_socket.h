@@ -560,11 +560,8 @@ public:
 	}
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
 	bool appWrite2(net::SocketBase::DataForCommandProcessing& sockData, Buffer& b );
-	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
+	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd, Ip4& remoteIp, Port& remotePort )
 	{
-		Ip4 remoteIp;
-		Port remotePort;
-
 		SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, s));
 		if (newSock.get() == INVALID_SOCKET)
 			return false;
@@ -952,7 +949,14 @@ protected:
 	std::vector<size_t> pendingListenEvents;
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-	std::vector<std::pair<size_t, SOCKET>> acceptedSockets;
+	struct AcceptedSocketData
+	{
+		size_t idx;
+		SOCKET socket;
+		Ip4 remoteIp;
+		Port remotePort;
+	};
+	std::vector<AcceptedSocketData> acceptedSockets;
 	std::vector<size_t> receivedListeningEvs;
 #endif // NODECPP_ENABLE_CLUSTERING
 
@@ -1102,8 +1106,14 @@ public:
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-	void addAcceptedSocket( size_t serverIdx, SOCKET socket ) {	NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); acceptedSockets.push_back(std::make_pair(serverIdx, socket)); }
-	void addListeningServerEv( size_t serverIdx ) { NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); receivedListeningEvs.push_back(serverIdx); }
+	void addAcceptedSocket( size_t serverIdx, SOCKET socket, Ip4 remoteIp, Port remotePort ) {	
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); 
+		acceptedSockets.push_back(AcceptedSocketData({serverIdx, socket, remoteIp, remotePort})); 
+	}
+	void addListeningServerEv( size_t serverIdx ) { 
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); 
+		receivedListeningEvs.push_back(serverIdx);
+	}
 #endif // NODECPP_ENABLE_CLUSTERING
 
 protected:
@@ -1267,9 +1277,9 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isWorker() );
 		for ( auto& info : acceptedSockets )
 		{
-			auto& entry = ioSockets.slaveServerAt( info.first );
-			OpaqueSocketData osd = NetSocketManagerBase::createOpaqueSocketData( info.second );
-			consumeAcceptedSocket<Node>(entry, osd);
+			auto& entry = ioSockets.slaveServerAt( info.idx );
+			OpaqueSocketData osd = NetSocketManagerBase::createOpaqueSocketData( info.socket );
+			consumeAcceptedSocket<Node>(entry, osd, info.remoteIp, info.remotePort);
 		}
 		acceptedSockets.clear();
 	}
@@ -1283,31 +1293,33 @@ private:
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 		OpaqueEmitter::ObjectType type = entry.getObjectType();
+		Ip4 remoteIp;
+		Port remotePort;
 		if ( type == OpaqueEmitter::ObjectType::AgentServer ) // Clustering
 		{
-			if ( !netSocketManagerBase->getAcceptedSockData(entry.getAgentServerData()->osSocket, osd) )
+			if ( !netSocketManagerBase->getAcceptedSockData(entry.getAgentServerData()->osSocket, osd, remoteIp, remotePort) )
 				return;
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
 			SOCKET osSocket = netSocketManagerBase->extractSocket( osd ).release();
-			entry.getAgentServer()->onConnection( osSocket );
+			entry.getAgentServer()->onConnection( osSocket, remoteIp, remotePort );
 			return;
 		}
 		else
 		{
-			if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
+			if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
 				return;
-			consumeAcceptedSocket<Node>(entry, osd);
+			consumeAcceptedSocket<Node>(entry, osd, remoteIp, remotePort);
 		}
 #else
-		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
+		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
 			return;
-		consumeAcceptedSocket<Node>(entry, osd);
+		consumeAcceptedSocket<Node>(entry, osd, remoteIp, remotePort);
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 
 
 	template<class Node>
-	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd)
+	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd, Ip4 remoteIp, Port remotePort)
 	{
 //		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
 #ifdef USE_TEMP_PERF_CTRS
@@ -1323,6 +1335,8 @@ sessionCreationtime += infraGetCurrentTime() - now;
 #endif // USE_TEMP_PERF_CTRS
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
+		ptr->dataForCommandProcessing._remote.ip = remoteIp;
+		ptr->dataForCommandProcessing._remote.port = remotePort.getHost();
 
 		auto hr = entry.getServerSocketData()->ahd_connection.h;
 		if ( hr )

@@ -116,8 +116,10 @@ namespace nodecpp
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) + sizeof(uint64_t) <= b.size() ); 
 				size_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);
-				uint64_t socket = *reinterpret_cast<uint64_t*>(b.begin() + offset + sizeof(size_t));
-				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket );
+				uint64_t socket = *reinterpret_cast<uint64_t*>(b.begin() + offset + sizeof(serverIdx));
+				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset + sizeof(serverIdx) + sizeof(socket)) );
+				Port remotePort = Port::fromNetwork( *reinterpret_cast<uint16_t*>(b.begin() + offset + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );
+				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
 			default:

@@ -535,6 +535,11 @@ std::string Port::toStr() const
 	return fmt::format("{}", ntohs( port ) );
 }
 
+uint16_t Port::getHost() const
+{
+	return ntohs(port);
+}
+
 
 //thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 thread_local NetSocketManagerBase* netSocketManagerBase;

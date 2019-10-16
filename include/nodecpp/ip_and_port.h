@@ -61,6 +61,7 @@ namespace nodecpp {
 		Port& operator=(Port&&) = default;
 	
 		uint16_t getNetwork() const { return port; }
+		uint16_t getHost() const;
 		static Port fromHost(uint16_t port);
 		static Port fromNetwork(uint16_t port);
 		std::string toStr() const;
