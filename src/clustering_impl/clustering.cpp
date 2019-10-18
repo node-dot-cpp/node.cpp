@@ -45,9 +45,9 @@ namespace nodecpp
 		cluster.preinitMaster();
 	}
 
-	void preinitSlaveThreadClusterObject(size_t id)
+	void preinitSlaveThreadClusterObject(ThreadStartupData& startupData)
 	{
-		cluster.preinitSlave( id );
+		cluster.preinitSlave( startupData );
 	}
 
 	void postinitThreadClusterObject()
@@ -65,6 +65,7 @@ namespace nodecpp
 		bool newDelInterceptionState = interceptNewDeleteOperators(false);
 		ThreadStartupData* startupData = new ThreadStartupData;
 		startupData->assignedThreadID = worker.id_;
+		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
 		interceptNewDeleteOperators(newDelInterceptionState);
 		// run worker thread
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("about to start Worker thread with threadID = {}...", worker.id_ );

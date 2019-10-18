@@ -40,6 +40,7 @@ namespace nodecpp
 		static constexpr size_t invalidID = (size_t)(-1);
 		friend class Cluster;
 		size_t id_ = invalidID;
+		uint16_t portToMaster = 0;
 		Worker() {}
 		void setID( size_t id ) { 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, id_ == invalidID, "indeed: id_ = {}", id_ ); 
@@ -495,14 +496,15 @@ namespace nodecpp
 		nodecpp::safememory::owning_ptr<SlaveSocket> slaveSocket; // TODO: this might be a temporary solution
 
 		friend void preinitMasterThreadClusterObject();
-		friend void preinitSlaveThreadClusterObject(size_t);
+		friend void preinitSlaveThreadClusterObject(ThreadStartupData& startupData);
 		friend void postinitThreadClusterObject();
 
 		void preinitMaster() { 
 			thisThreadWorker.id_ = 0; 
 		}
-		void preinitSlave(size_t threadID) { 
-			thisThreadWorker.id_ = threadID; 
+		void preinitSlave(ThreadStartupData& startupData) { 
+			thisThreadWorker.id_ = startupData.assignedThreadID;
+			thisThreadWorker.portToMaster = startupData.commPort;
 		}
 		void postinit() { 
 			if ( isMaster() )
@@ -512,8 +514,14 @@ namespace nodecpp
 				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Accepted, &MasterSocket::onAccepted>();
 				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MasterSocket::onData>();
 				ctrlServer = nodecpp::net::createServer<CtrlServerT, MasterSocket>(this);
-				ctrlServer->listen(21000, "127.0.0.1", 500);
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Master thread Cluster is ready");
+				uint16_t portBase = 50000;
+				constexpr uint16_t portMax = 0xFFFF;
+				for ( ; portBase<portMax; ++portBase )
+				{
+					try { ctrlServer->listen(portBase, "127.0.0.1", 64); break; } catch(...) {}
+				}
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, portBase<portMax ); // TODO: way of error reporting
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Master thread Cluster is ready and listens clients on port {}", portBase );
 			}
 			else
 			{
@@ -523,7 +531,7 @@ namespace nodecpp
 
 				slaveSocket = nodecpp::net::createSocket<SlaveSocket>();
 				slaveSocket->assignedThreadID = thisThreadWorker.id_;
-				slaveSocket->connect(21000, "127.0.0.1");
+				slaveSocket->connect(thisThreadWorker.portToMaster, "127.0.0.1");
 			}
 		}
 	public:

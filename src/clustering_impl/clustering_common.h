@@ -35,6 +35,7 @@
 struct ThreadStartupData
 {
 	size_t assignedThreadID;
+	uint16_t commPort;
 };
 
 // ad-hoc marchalling between Master and Slave threads
