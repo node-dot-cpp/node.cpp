@@ -55,10 +55,20 @@ namespace nodecpp
 
 
 	Timeout setTimeout(std::function<void()> cb, int32_t ms);
+#ifndef NODECPP_NO_COROUTINES
+	Timeout setTimeoutForAction(awaitable_handle_t h, int32_t ms);
+#endif // NODECPP_NO_COROUTINES
+
 	void clearTimeout(const Timeout& to);
+	void refreshTimeout(Timeout& to);
+
+	namespace time
+	{
+		size_t now();
+	} // namespace time
 
 	void setInmediate(std::function<void()> cb);
-}
+} // namespace nodecpp
 
 
 

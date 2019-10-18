@@ -5,7 +5,6 @@
 
 #include <nodecpp/common.h>
 #include <nodecpp/socket_type_list.h>
-#include <nodecpp/socket_t_base.h>
 
 
 using namespace nodecpp;
@@ -13,10 +12,12 @@ using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
-//#define IMPL_VERSION 3 // onConnect is a coro
+//#define IMPL_VERSION 21 // main() is a single coro with non-default socket class
+#define IMPL_VERSION 3 // onConnect is a coro (onConnect is added via addHandler<...>(...))
 //#define IMPL_VERSION 4 // registering handlers (per class)
 //#define IMPL_VERSION 5 // registering handlers (per class, template-based)
-#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
+//#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
+//#define IMPL_VERSION 7 // lambda-based
 #else
 #define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 #endif // NODECPP_NO_COROUTINES
@@ -27,10 +28,6 @@ using namespace fmt;
 
 class MySampleTNode : public NodeBase
 {
-	size_t recvSize = 0;
-	size_t recvReplies = 0;
-	Buffer buf;
-
 	using SocketIdType = int;
 
 public:
@@ -41,11 +38,103 @@ public:
 
 #if IMPL_VERSION == 2
 
+	size_t recvSize = 0;
+	size_t recvReplies = 0;
+	Buffer buf;
+
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
-		clientSock = nodecpp::safememory::make_owning<ClientSockType>(this);
+		clientSock = nodecpp::net::createSocket();
+
+		try
+		{
+			co_await clientSock->a_connect(2000, "127.0.0.1");
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( 1, 1 );
+			co_await clientSock->a_write(buf);
+			// TODO: address failure
+			co_await doWhateverWithIncomingData(clientSock);
+		}
+		catch (...)
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("processing on socket failed. Exiting...");
+		}
+		CO_RETURN;
+	}
+
+	using ClientSockType = nodecpp::net::SocketBase;
+
+	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	{
+		for (;;)
+		{
+			nodecpp::Buffer r_buff(0x200);
+			try
+			{
+				co_await socket->a_read(r_buff, (uint8_t)recvReplies | 1);
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting...");
+				break;
+			}
+			++recvReplies;
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				socket->end();
+				socket->unref();
+				break;
+			}
+#endif
+			if ( ( recvReplies & 0xFFF ) == 0 )
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+			recvSize += r_buff.size();
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+			try
+			{
+				co_await socket->a_write(buf);
+			}
+			catch (...)
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed). Exiting...");
+				break;
+			}
+			// TODO: address failure
+		}
+		CO_RETURN;
+	}
+
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
+
+#elif IMPL_VERSION == 21
+
+	size_t recvSize = 0;
+	size_t recvReplies = 0;
+	Buffer buf;
+
+	class MySocketOne : public nodecpp::net::SocketBase
+	{
+		int extraData;
+
+	public:
+		MySocketOne() {}
+		virtual ~MySocketOne() {}
+
+		int* getExtra() { return &extraData; }
+	};
+
+	virtual nodecpp::handler_ret_type main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		nodecpp::a_timeout(1000);
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   ...after timeout" );
+
+		clientSock = nodecpp::net::createSocket<ClientSockType>();
 		*( clientSock->getExtra() ) = 17;
 
 		try
@@ -64,17 +153,16 @@ public:
 		CO_RETURN;
 	}
 
-	using ClientSockType = nodecpp::net::SocketN<MySampleTNode,SocketIdType
-	>;
+	using ClientSockType = MySocketOne;
 
-	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<ClientSockType> socket)
 	{
 		for (;;)
 		{
 			nodecpp::Buffer r_buff(0x200);
 			try
 			{
-				co_await socket->a_read(r_buff);
+				co_await socket->a_read(r_buff, (uint8_t)recvReplies | 1);
 			}
 			catch (...)
 			{
@@ -86,8 +174,9 @@ public:
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
-				end();
-				unref();
+				socket->end();
+				socket->unref();
+				break;
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
@@ -109,9 +198,13 @@ public:
 		CO_RETURN;
 	}
 
-	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
 
 #elif IMPL_VERSION == 3
+
+	size_t recvSize = 0;
+	size_t recvReplies = 0;
+	Buffer buf;
 
 	class MySocketOne : public nodecpp::net::SocketBase
 	{
@@ -142,7 +235,6 @@ public:
 		Buffer buf(2);
 		buf.writeInt8( 2, 0 );
 		buf.writeInt8( 1, 1 );
-		socket->a_write(buf);
 		try
 		{
 			co_await socket->a_write(buf);
@@ -165,7 +257,7 @@ public:
 			nodecpp::Buffer r_buff(0x200);
 			try
 			{
-				co_await socket->a_read(r_buff);
+				co_await socket->a_read(r_buff, (uint8_t)recvReplies | 1);
 			}
 			catch (...)
 			{
@@ -179,6 +271,7 @@ public:
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 				socket->end();
 				socket->unref();
+				break;
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
@@ -244,7 +337,6 @@ public:
 			Buffer buf(2);
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
-			a_write(buf);
 			try
 			{
 				co_await a_write(buf);
@@ -265,7 +357,7 @@ public:
 				nodecpp::Buffer r_buff(0x200);
 				try
 				{
-					co_await a_read(r_buff);
+					co_await a_read(r_buff, (uint8_t)recvReplies | 1);
 				}
 				catch (...)
 				{
@@ -279,6 +371,7 @@ public:
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 					end();
 					unref();
+					break;
 				}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
@@ -351,7 +444,6 @@ public:
 			Buffer buf(2);
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
-			a_write(buf);
 			try
 			{
 				co_await a_write(buf);
@@ -372,7 +464,7 @@ public:
 				nodecpp::Buffer r_buff(0x200);
 				try
 				{
-					co_await a_read(r_buff);
+					co_await a_read(r_buff, (uint8_t)recvReplies | 1);
 				}
 				catch (...)
 				{
@@ -386,6 +478,7 @@ public:
 					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
 					end();
 					unref();
+					break;
 				}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
@@ -418,8 +511,8 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
 
 
-
 #elif IMPL_VERSION == 6
+
 	virtual nodecpp::handler_ret_type main()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
@@ -485,6 +578,57 @@ public:
 	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect>, nodecpp::net::OnDataT<clientData> > >;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
+
+#elif IMPL_VERSION == 7
+
+	size_t recvSize = 0;
+	size_t recvReplies = 0;
+	Buffer buf;
+
+	using ClientSockType = nodecpp::net::SocketBase;
+	nodecpp::Timeout to;
+
+	virtual nodecpp::awaitable<void> main()
+	{
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+
+		clientSock = nodecpp::net::createSocket();
+
+		to = std::move( nodecpp::setTimeout( [this]() { 
+			printf( "   !!!TIMER!!!\n" );
+			nodecpp::refreshTimeout(to);
+		}, 1000) );
+
+		clientSock->on(event::connect, [this]() { 
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( 1, 1 );
+			clientSock->write(buf);
+		});
+
+		clientSock->on(event::data, [this](const Buffer& buffer) { 
+			++recvReplies;
+#ifdef AUTOMATED_TESTING_ONLY
+			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+			{
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				clientSock->end();
+				clientSock->unref();
+			}
+#endif
+			if ( ( recvReplies & 0xFFF ) == 0 )
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
+			recvSize += buffer.size();
+			buf.writeInt8( 2, 0 );
+			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+			clientSock->write(buf);
+		});
+
+		clientSock->connect(2000, "127.0.0.1");
+		
+		co_return;
+	}
+
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
 
 #else
 #error

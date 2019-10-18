@@ -28,15 +28,15 @@
 #ifndef NODECPP_AWAITABLE_H
 #define NODECPP_AWAITABLE_H
 
-#if !((defined NODECPP_CLANG) || (defined NODECPP_MSVC))
-#define NODECPP_NO_COROUTINES
-#endif
-
 #include <foundation.h>
 
 #ifndef NODECPP_NO_COROUTINES
 
+#if (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG)
+#include <coroutine.h>
+#else
 #include <experimental/coroutine>
+#endif
 
 #define CO_RETURN co_return
 
@@ -44,7 +44,7 @@ namespace nodecpp {
 
 class placeholder_for_void_ret_type
 {
-	bool dummy = false;
+//	bool dummy = false;
 public:
 	placeholder_for_void_ret_type() {}
 	placeholder_for_void_ret_type(const placeholder_for_void_ret_type&) {}
@@ -65,14 +65,32 @@ struct void_type_converter<void>
 	using type = placeholder_for_void_ret_type;
 };
 
+struct CoroEData
+{
+	bool is_exception = false;
+	std::exception exception;
+};
+
 struct promise_type_struct_base {
+	CoroEData edata;
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
 
+	static constexpr size_t valueAlignmentSize = alignof(std::max_align_t);
+	static constexpr size_t valueMemSizeBase = std::max( alignof( std::max_align_t ), 
+		( sizeof( std::string ) / alignof(std::max_align_t) ) * alignof(std::max_align_t) + std::min( (size_t)1, sizeof( std::string ) % alignof(std::max_align_t)) * alignof(std::max_align_t) );
+	static_assert( valueMemSizeBase % alignof(std::max_align_t) == 0 );
+	static constexpr size_t valueMemSizeItems = valueMemSizeBase / sizeof(std::max_align_t) + std::min( (size_t)1, valueMemSizeBase % sizeof(std::max_align_t));
+	std::max_align_t retValueMem[valueMemSizeItems];
+	static constexpr size_t valueMemSize = sizeof( retValueMem );
+	static_assert( valueMemSize >= sizeof( std::string ) );
+
 	promise_type_struct_base() {}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
 	promise_type_struct_base &operator = (const promise_type_struct_base &) = delete;
+	promise_type_struct_base(promise_type_struct_base &&) = delete;
+	promise_type_struct_base &operator = (promise_type_struct_base &&) = delete;
 	~promise_type_struct_base() {}
 
     auto initial_suspend() {
@@ -98,17 +116,36 @@ template<typename T> struct awaitable; // forward declaration
 
 template<class T>
 struct promise_type_struct : public promise_type_struct_base {
-    T value;
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
+	static constexpr bool fitsToMem = sizeof(T) <= promise_type_struct_base::valueMemSize || valueAlignmentSize < alignof( T );
 
-	promise_type_struct() : promise_type_struct_base() {}
+	T& getValue() { 
+		if constexpr ( fitsToMem )
+			return *reinterpret_cast<T*>(this->retValueMem); 
+		else
+			return **reinterpret_cast<T**>(this->retValueMem); 
+	}
+
+	promise_type_struct() : promise_type_struct_base() {
+		if constexpr ( fitsToMem )
+			new(this->retValueMem)T();
+		else
+			*reinterpret_cast<T**>(this->retValueMem) = new T;
+	}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
-	~promise_type_struct() {}
+	promise_type_struct(promise_type_struct &&) = delete;
+	promise_type_struct &operator = (promise_type_struct &&) = delete;
+	~promise_type_struct() {
+		if constexpr ( fitsToMem )
+			getValue().~T();
+		else
+			delete *reinterpret_cast<T**>(this->retValueMem);
+	}
 
     auto get_return_object();
     auto return_value(T v) {
-        value = v;
+		getValue() = v;
 		is_value = true;
         return std::experimental::suspend_never{};
     }
@@ -120,6 +157,8 @@ struct promise_type_struct<void> : public promise_type_struct_base {
 	promise_type_struct() : promise_type_struct_base() {}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
+	promise_type_struct(promise_type_struct &&) = delete;
+	promise_type_struct &operator = (promise_type_struct &&) = delete;
 	~promise_type_struct() {}
 
     auto get_return_object();
@@ -130,8 +169,40 @@ struct promise_type_struct<void> : public promise_type_struct_base {
 };
 
 
+inline
+void setNoException(std::experimental::coroutine_handle<> awaiting) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	edata.is_exception = false;
+}
+
+inline
+void setException(std::experimental::coroutine_handle<> awaiting, std::exception e) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	edata.is_exception = true;
+	edata.exception = e;
+}
+
+inline
+bool isException(std::experimental::coroutine_handle<> awaiting) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	return edata.is_exception;
+}
+
+inline
+std::exception& getException(std::experimental::coroutine_handle<> awaiting) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	return edata.exception;
+}
+
+
 template<typename T>
 struct awaitable  {
+	static_assert( sizeof(promise_type_struct<T>) == sizeof(promise_type_struct<void>) );
+#ifdef NODECPP_MSVC
+	// well, clang refuses considering casts as const_expr, and msvc agrees...
+	static_assert( &((reinterpret_cast<promise_type_struct<T>*>((void*)(0x100000)))->edata) == &((reinterpret_cast<promise_type_struct<void>*>((void*)(0x100000)))->edata) );
+#endif
+
 	using promise_type = promise_type_struct<T>;
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
 	handle_type coro = nullptr;
@@ -154,16 +225,15 @@ struct awaitable  {
 	
 	~awaitable() {}
 
-    typename void_type_converter<T>::type get() {
+	typename void_type_converter<T>::type get() {
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
-			return coro.promise().value;
-    }
+			return coro.promise().getValue();
+	}
 
 	bool await_ready() noexcept { 
         return coro.promise().is_value;
-//		return false;
 	}
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
 		if ( coro )
@@ -179,7 +249,7 @@ struct awaitable  {
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
-			return coro.promise().value;
+			return coro.promise().getValue();
 	}
 
 };
@@ -211,6 +281,11 @@ auto wait_for_all( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std:
 #define CO_RETURN return
 
 namespace nodecpp {
+
+inline void setNoException(void (*)()) {}
+inline void setException(void (*)(), std::exception) {}
+inline bool isException(void (*)()) { return false; }
+inline std::exception getException(void (*)()) { return std::exception(); }
 
 template<class T>
 struct awaitable

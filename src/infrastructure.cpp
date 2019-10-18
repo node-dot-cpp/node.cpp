@@ -82,35 +82,6 @@ void TimeoutManager::appClearTimeout(TimeoutEntry& entry)
 }
 
 
-nodecpp::Timeout TimeoutManager::appSetTimeout(std::function<void()> cb, int32_t ms)
-{
-	if (ms == 0)
-		ms = 1;
-	else if (ms < 0)
-		ms = std::numeric_limits<int32_t>::max();
-
-	uint64_t id = ++lastId;
-
-	TimeoutEntry entry;
-	entry.id = id;
-	entry.cb = std::move(cb);
-	entry.delay = ms * 1000;
-
-	auto res = timers.insert(std::make_pair(id, std::move(entry)));
-	if (res.second)
-	{
-		appSetTimeout(res.first->second);
-
-		return Timeout(id);
-	}
-	else
-	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Failed to insert Timeout {}", id);
-		return Timeout(0);
-	}
-
-}
-
 void TimeoutManager::appClearTimeout(const nodecpp::Timeout& to)
 {
 	uint64_t id = to.getId();
@@ -152,6 +123,7 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	auto itBegin = nextTimeouts.begin();
 	auto itEnd = nextTimeouts.upper_bound(now);
 	auto it = itBegin;
+	std::vector<TimeoutEntryHandlerData> handlers; // TODO: this approach could potentially be generalized
 	while (it != itEnd)
 	{
 		auto it2 = timers.find(it->second);
@@ -161,7 +133,8 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 		
 		it2->second.active = false;
 			
-		evs.add(it2->second.cb);
+//		evs.add(it2->second.cb);
+		handlers.push_back( it2->second );
 
 		if (it2->second.handleDestroyed)
 			timers.erase(it2);
@@ -170,6 +143,24 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	}
 
 	nextTimeouts.erase(itBegin, itEnd);
+
+	for ( auto h : handlers )
+	{
+		if ( h.cb != nullptr )
+			h.cb();
+//		else if ( h.h )
+//			h.h();
+		else if ( h.h != nullptr )
+		{
+			auto hr = h.h;
+			if ( h.setExceptionWhenDone )
+			{
+				nodecpp::setException(h.h, std::exception()); // TODO: switch to our exceptions ASAP!
+			}
+			h.h = nullptr;
+			hr();
+		}
+	}
 }
 
 
@@ -185,3 +176,63 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 	 	else
 	         return INT_MAX;
 }
+
+namespace nodecpp {
+	nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
+	{
+		return timeoutManager->appSetTimeout(cb, ms);
+	}
+
+#ifndef NODECPP_NO_COROUTINES
+	nodecpp::Timeout setTimeoutForAction(awaitable_handle_t h, int32_t ms)
+	{
+		return timeoutManager->appSetTimeoutForAction(h, ms);
+	}
+#endif // NODECPP_NO_COROUTINES
+
+	void refreshTimeout(Timeout& to)
+	{
+		return timeoutManager->appRefresh(to.getId());
+	}
+
+	void clearTimeout(const Timeout& to)
+	{
+		return timeoutManager->appClearTimeout(to.getId());
+	}
+
+	void setInmediate(std::function<void()> cb)
+	{
+		inmediateQueue->add(std::move(cb));
+	}
+
+	namespace time
+	{
+		size_t now()
+		{
+#if defined NODECPP_MSVC || ( (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG) )
+#ifdef NODECPP_X64
+			return GetTickCount64();
+#else
+			return GetTickCount();
+#endif // NODECPP_X86 or NODECPP_X64
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (size_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
+#else
+#error not implemented for this compiler
+#endif
+		}
+	} // namespace time
+
+} // namespace nodecpp
+
+
+#ifdef USE_TEMP_PERF_CTRS
+thread_local int pollCnt = 0;
+thread_local int pollRetCnt = 0;
+thread_local int pollRetMax = 0;
+thread_local int sessionCnt = 0;
+thread_local size_t sessionCreationtime = 0;
+thread_local size_t waitTime = 0;
+#endif // USE_TEMP_PERF_CTRS
