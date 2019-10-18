@@ -131,7 +131,7 @@ public:
 			auto argv = getArgv();
 			for ( size_t i=1; i<argv.size(); ++i )
 			{
-				if ( argv[i] == "numcores=" )
+				if ( argv[i].size() > 9 && argv[i].substr(0,9) == "numcores=" )
 					coreCnt = atol(argv[i].c_str() + 9);
 			}
 
