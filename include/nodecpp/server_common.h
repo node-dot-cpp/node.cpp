@@ -540,6 +540,7 @@ namespace nodecpp {
 				sock_ = acceptedSocketCreationRoutine( sdata );
 				nodecpp::safememory::soft_ptr<ServerBase> myPtr = myThis.getSoftPtr<ServerBase>(this);
 				sock_->myServerSocket = myPtr;
+				sock_->dataForCommandProcessing._local = dataForCommandProcessing.localAddress;
 				soft_ptr<SocketBase> retSock( sock_ );
 				socketList.add( std::move(sock_) );
 				return retSock;
@@ -768,6 +769,7 @@ namespace nodecpp {
 			{
 				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
 						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
+						ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
 						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
 						{
 							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
@@ -788,7 +790,7 @@ namespace nodecpp {
 				auto myDataParent = retServer->getDataParent();
 				retServer->setAcceptedSocketCreationRoutine( [myDataParent](OpaqueSocketData& sdata) {
 						nodecpp::safememory::owning_ptr<SocketT> retSock;
-						if constexpr ( std::is_base_of< NodeBase, typename ServerT::DataParentType >::value )
+						if constexpr ( std::is_same<typename SocketT::DataParentType, typename ServerT::DataParentType >::value )
 						{
 							retSock = nodecpp::safememory::make_owning<SocketT>(myDataParent);
 						}
@@ -796,6 +798,7 @@ namespace nodecpp {
 						{
 							retSock = nodecpp::safememory::make_owning<SocketT>();
 						}
+						retSock->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*retSock));
 						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
 						{
 							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );

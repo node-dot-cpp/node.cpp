@@ -46,7 +46,14 @@ public:
 
 	NetSocketEntry(size_t index) : state(State::Unused), index(index) {}
 	NetSocketEntry(size_t index/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ClientSocket/*, node*/, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
-	NetSocketEntry(size_t index/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket/*, node*/, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket/*, node*/, ptr, type) {
+		ptr->dataForCommandProcessing.index = index;
+#ifndef NODECPP_ENABLE_CLUSTERING
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
+#else
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, getCluster().isWorker() || ptr->dataForCommandProcessing.osSocket > 0 );
+#endif // NODECPP_ENABLE_CLUSTERING
+	}
 	NetSocketEntry(size_t index/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::AgentServer/*, node*/, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
@@ -108,6 +115,10 @@ class NetSockets
 {
 	std::vector<NetSocketEntry> ourSide;
 	std::vector<NetSocketEntry> ourSideAccum;
+#ifdef NODECPP_ENABLE_CLUSTERING
+	std::vector<NetSocketEntry> slaveServers;
+	static constexpr size_t SlaveServerEntryMinIndex = (((size_t)~((size_t)0))>>1)+1;
+#endif // NODECPP_ENABLE_CLUSTERING
 	std::vector<pollfd> osSide;
 	std::vector<pollfd> osSideAccum;
 	size_t associatedCount = 0;
@@ -252,6 +263,37 @@ public:
 
 		return;
 	}
+#ifdef NODECPP_ENABLE_CLUSTERING
+	NetSocketEntry& slaveServerAt(size_t idx) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= SlaveServerEntryMinIndex ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < SlaveServerEntryMinIndex + slaveServers.size() ); 
+		return slaveServers.at(idx - SlaveServerEntryMinIndex);
+	}
+	const NetSocketEntry& slaveServerAt(size_t idx) const {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= SlaveServerEntryMinIndex ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < SlaveServerEntryMinIndex + slaveServers.size() ); 
+		return slaveServers.at(idx - SlaveServerEntryMinIndex);
+	}
+	template<class SocketType>
+	void addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<SocketType> ptr, int typeId) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, getCluster().isWorker() );
+		for (size_t i = 0; i != slaveServers.size(); ++i) // skip ourSide[0]
+		{
+			if (!slaveServers[i].isUsed())
+			{
+				NetSocketEntry entry(SlaveServerEntryMinIndex + i/*, node*/, ptr, typeId);
+				slaveServers[i] = std::move(entry);
+//				++usedCount;
+				return;
+			}
+		}
+
+		size_t ix = slaveServers.size();
+		slaveServers.emplace_back(SlaveServerEntryMinIndex + ix/*, node*/, ptr, typeId);
+//		++usedCount;
+		return;
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
 	void reworkIfNecessary()
 	{
 		if ( ourSideAccum.size() )
@@ -485,11 +527,13 @@ public:
 		registerAndAssignSocket(/*node, */ptr, typeId, s);
 	}
 
-	SocketRiia extractSocket(OpaqueSocketData& sdata)
+	static SocketRiia extractSocket(OpaqueSocketData& sdata)
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
 		return sdata.s.release();
 	}
+
+	static OpaqueSocketData createOpaqueSocketData( SOCKET socket ) { return OpaqueSocketData( socket ); }
 
 private:
 	void registerAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> ptr, int typeId, SocketRiia& s)
@@ -516,11 +560,8 @@ public:
 	}
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
 	bool appWrite2(net::SocketBase::DataForCommandProcessing& sockData, Buffer& b );
-	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd )
+	bool getAcceptedSockData(SOCKET s, OpaqueSocketData& osd, Ip4& remoteIp, Port& remotePort )
 	{
-		Ip4 remoteIp;
-		Port remotePort;
-
 		SocketRiia newSock(internal_usage_only::internal_tcp_accept(remoteIp, remotePort, s));
 		if (newSock.get() == INVALID_SOCKET)
 			return false;
@@ -636,7 +677,15 @@ public:
 						entry.getClientSocketData()->handleCloseEvent(entry.getClientSocket(), err);
 					if (entry.isUsed())
 						entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closed;
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local size_t sessionCreationtime;
+extern uint64_t infraGetCurrentTime();
+size_t now = infraGetCurrentTime();
 					entry.getClientSocket()->onFinalCleanup();
+sessionCreationtime += infraGetCurrentTime() - now;
+#else
+					entry.getClientSocket()->onFinalCleanup();
+#endif // USE_TEMP_PERF_CTRS
 				}
 				entry = NetSocketEntry(current.first); 
 			}
@@ -691,7 +740,7 @@ public:
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getClientSocketData()->osSocket);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getClientSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getClientSocketData()->osSocket);
 			//errorCloseSocket(current, storeError(Error()));
 			Error e;
@@ -717,13 +766,13 @@ public:
 			}
 			else if ((revents & POLLHUP) != 0)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLHUP event at {}", current.getClientSocketData()->osSocket);
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLHUP event at {}", current.getClientSocketData()->osSocket);
 				infraProcessRemoteEnded<Node>(current/*, evs*/);
 			}
 				
 			if ((revents & POLLOUT) != 0)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLOUT event at {}", current.getClientSocketData()->osSocket);
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLOUT event at {}", current.getClientSocketData()->osSocket);
 				infraProcessWriteEvent<Node>(current/*, evs*/);
 			}
 		}
@@ -818,6 +867,7 @@ private:
 				}
 				else
 				{
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("infraProcessRemoteEnded() leads to internal_shutdown_send()...");
 					internal_usage_only::internal_shutdown_send(entry.getClientSocketData()->osSocket);
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::LocalEnded;
 					closeSocket(entry);
@@ -898,6 +948,18 @@ protected:
 	std::vector<Error> errorStore;
 	std::vector<size_t> pendingListenEvents;
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+	struct AcceptedSocketData
+	{
+		size_t idx;
+		SOCKET socket;
+		Ip4 remoteIp;
+		Port remotePort;
+	};
+	std::vector<AcceptedSocketData> acceptedSockets;
+	std::vector<size_t> receivedListeningEvs;
+#endif // NODECPP_ENABLE_CLUSTERING
+
 	std::string family = "IPv4";
 
 public:
@@ -934,6 +996,7 @@ public:
 		pendingCloseEvents.emplace_back(id, false);
 	}
 	void appAddServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId) { //TODO:CLUSTERING alt impl
+#ifndef NODECPP_ENABLE_CLUSTERING
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
@@ -941,8 +1004,23 @@ public:
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addServerEntry(/*node, */ptr, typeId);
+#else
+		if ( getCluster().isMaster() )
+		{
+			SocketRiia s(internal_usage_only::internal_make_tcp_socket());
+			if (!s)
+			{
+				throw Error();
+			}
+			ptr->dataForCommandProcessing.osSocket = s.release();
+			addServerEntry(/*node, */ptr, typeId);
+		}
+		else
+			addSlaveServerEntry(/*node, */ptr, typeId);
+#endif // NODECPP_ENABLE_CLUSTERING
 	}
-	void appAddAgentServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId) { //TODO:CLUSTERING alt impl
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void appAddAgentServer(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
@@ -951,10 +1029,21 @@ public:
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addAgentServerEntry(/*node, */ptr, typeId);
 	}
+#endif // NODECPP_ENABLE_CLUSTERING
 	template<class DataForCommandProcessing>
 	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Ip4 myIp = Ip4::parse(ip);
 		Port myPort = Port::fromHost(port);
+#ifdef NODECPP_ENABLE_CLUSTERING
+		if ( getCluster().isWorker() )
+		{
+			dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
+			dataForCommandProcessing.localAddress.port = port;
+			dataForCommandProcessing.localAddress.family = family;
+			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, myIp, port, family, backlog );
+			return;
+		}
+#endif // NODECPP_ENABLE_CLUSTERING
 		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, myIp, myPort)) {
 			throw Error();
 		}
@@ -986,10 +1075,21 @@ public:
 	template<class DataForCommandProcessing>
 	void appReportBeingDestructed(DataForCommandProcessing& dataForCommandProcessing) {
 		size_t id = dataForCommandProcessing.index;
+#ifndef NODECPP_ENABLE_CLUSTERING
 		auto& entry = appGetEntry(id);
-		entry.setUnused(); 
+#else
+		if ( getCluster().isMaster() )
+		{
+			auto& entry = appGetEntry(id);
+			entry.setUnused(); 
+		}
+		else
+		{
+			auto& entry = ioSockets.slaveServerAt(id);
+			entry.setUnused(); 
+		}
+#endif
 	}
-
 
 	//TODO quick workaround until definitive life managment is in place
 	Error& infraStoreError(Error err) {
@@ -1005,9 +1105,23 @@ public:
 	//size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
 	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void addAcceptedSocket( size_t serverIdx, SOCKET socket, Ip4 remoteIp, Port remotePort ) {	
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); 
+		acceptedSockets.push_back(AcceptedSocketData({serverIdx, socket, remoteIp, remotePort})); 
+	}
+	void addListeningServerEv( size_t serverIdx ) { 
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); 
+		receivedListeningEvs.push_back(serverIdx);
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
+
 protected:
 	void addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId);
 	void addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId);
+#endif // NODECPP_ENABLE_CLUSTERING
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
 };
@@ -1097,24 +1211,36 @@ public:
 					auto& entry = ioSockets.at(current);
 					if (entry.isUsed())
 					{
-						auto hr = entry.getServerSocketData()->ahd_listen;
-						if ( hr != nullptr )
+#ifdef NODECPP_ENABLE_CLUSTERING
+						if ( entry.getObjectType() == OpaqueEmitter::ObjectType::AgentServer )
 						{
-							entry.getServerSocketData()->ahd_listen = nullptr;
-							hr();
+							entry.getAgentServerData()->state = nodecpp::Cluster::AgentServer::DataForCommandProcessing::State::Listening;
+							NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isMaster() ); 
+							entry.getAgentServer()->onListening();
 						}
 						else
+#endif // NODECPP_ENABLE_CLUSTERING
 						{
-							//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
-							entry.getServerSocket()->emitListening(current, entry.getServerSocketData()->localAddress);
-							if constexpr ( !std::is_same<EmitterType, void>::value )
+							entry.getServerSocketData()->state = nodecpp::net::ServerBase::DataForCommandProcessing::State::Listening;
+							auto hr = entry.getServerSocketData()->ahd_listen;
+							if ( hr != nullptr )
 							{
-								if ( EmitterType::template isListeningEmitter<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress) )
-									EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+								entry.getServerSocketData()->ahd_listen = nullptr;
+								hr();
 							}
-							if (entry.getServerSocketData()->isListenEventHandler() )
-								entry.getServerSocketData()->handleListenEvent(entry.getServerSocket(), current, entry.getServerSocketData()->localAddress);
-							// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+							else
+							{
+								//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+								entry.getServerSocket()->emitListening(current, entry.getServerSocketData()->localAddress);
+								if constexpr ( !std::is_same<EmitterType, void>::value )
+								{
+									if ( EmitterType::template isListeningEmitter<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress) )
+										EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
+								}
+								if (entry.getServerSocketData()->isListenEventHandler() )
+									entry.getServerSocketData()->handleListenEvent(entry.getServerSocket(), current, entry.getServerSocketData()->localAddress);
+								// TODO: what should we do with this event, if, at present, nobody is willing to process it?
+							}
 						}
 					}
 				}
@@ -1127,13 +1253,13 @@ public:
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getServerSocketData()->osSocket);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
 			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
 		}
 		else if ((revents & POLLIN) != 0)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", current.getServerSocketData()->osSocket);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", current.getServerSocketData()->osSocket);
 			infraProcessAcceptEvent<Node>(current/*, evs*/);
 		}
 		else if (revents != 0)
@@ -1144,7 +1270,19 @@ public:
 		}
 	}
 
-#ifndef NODECPP_ENABLE_CLUSTERING
+#ifdef NODECPP_ENABLE_CLUSTERING
+	template<class Node>
+	void infraEmitAcceptedSocketEventsReceivedfromMaster()
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isWorker() );
+		for ( auto& info : acceptedSockets )
+		{
+			auto& entry = ioSockets.slaveServerAt( info.idx );
+			OpaqueSocketData osd = NetSocketManagerBase::createOpaqueSocketData( info.socket );
+			consumeAcceptedSocket<Node>(entry, osd, info.remoteIp, info.remotePort);
+		}
+		acceptedSockets.clear();
+	}
 #endif // NODECPP_ENABLE_CLUSTERING
 
 private:
@@ -1152,30 +1290,53 @@ private:
 	void infraProcessAcceptEvent(NetSocketEntry& entry) //TODO:CLUSTERING alt impl
 	{
 		OpaqueSocketData osd( false );
-		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd) )
-			return;
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 		OpaqueEmitter::ObjectType type = entry.getObjectType();
+		Ip4 remoteIp;
+		Port remotePort;
 		if ( type == OpaqueEmitter::ObjectType::AgentServer ) // Clustering
 		{
+			if ( !netSocketManagerBase->getAcceptedSockData(entry.getAgentServerData()->osSocket, osd, remoteIp, remotePort) )
+				return;
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
 			SOCKET osSocket = netSocketManagerBase->extractSocket( osd ).release();
+			entry.getAgentServer()->onConnection( osSocket, remoteIp, remotePort );
 			return;
 		}
 		else
+		{
+			if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
+				return;
+			consumeAcceptedSocket<Node>(entry, osd, remoteIp, remotePort);
+		}
+#else
+		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
+			return;
+		consumeAcceptedSocket<Node>(entry, osd, remoteIp, remotePort);
 #endif // NODECPP_ENABLE_CLUSTERING
-			consumeAcceptedSocket<Node>(entry, osd);
 	}
 
 
 	template<class Node>
-	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd)
+	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd, Ip4 remoteIp, Port remotePort)
 	{
 //		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local int sessionCnt;
+extern thread_local size_t sessionCreationtime;
+extern uint64_t infraGetCurrentTime();
+++sessionCnt;
+size_t now = infraGetCurrentTime();
 		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+sessionCreationtime += infraGetCurrentTime() - now;
+#else
+		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+#endif // USE_TEMP_PERF_CTRS
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
+		ptr->dataForCommandProcessing._remote.ip = remoteIp;
+		ptr->dataForCommandProcessing._remote.port = remotePort.getHost();
 
 		auto hr = entry.getServerSocketData()->ahd_connection.h;
 		if ( hr )

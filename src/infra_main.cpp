@@ -78,10 +78,16 @@ void registerFactory( const char* name, RunnableFactoryBase* factory )
 	NodeFactoryMap::getInstance().registerFactory( name, factory );
 }
 
+std::vector<std::string>* argv = 0;
+
 #ifndef NODECPP_ENABLE_CLUSTERING
 
-int main()
+int main( int argc, char *argv_[] )
 {
+	argv = new std::vector<std::string>();
+	for ( int i=0; i<argc; ++i )
+		argv->push_back( argv_[i] );
+
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
@@ -108,7 +114,7 @@ void workerThreadMain( void* pdata )
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData->assignedThreadID != 0 ); 
 	size_t threadId = startupData->assignedThreadID;
 	// TODO: copy the rest of data, if any
-	delete [] pdata; // do it yet before initializing g_AllocManager
+	delete startupData; // do it yet before initializing g_AllocManager
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
@@ -119,21 +125,22 @@ void workerThreadMain( void* pdata )
 		f.second->create()->run();
 }
 
-int main( int argc, char *argv[] )
+int main( int argc, char *argv_[] )
 {
+	argv = new std::vector<std::string>();
+	for ( int i=0; i<argc; ++i )
+		argv->push_back( argv_[i] );
+
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
 	nodecpp::log::init_log();
-	size_t coreCnt = 1;
-	if ( argc > 1 )
-	{
-		if ( strncmp( argv[1], "numcores=", 9 ) == 0 )
-			coreCnt = atol(argv[1] + 9);
-	}
 	nodecpp::preinitMasterThreadClusterObject();
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
+
+	interceptNewDeleteOperators(false);
+	delete argv;
 
 	return 0;
 }

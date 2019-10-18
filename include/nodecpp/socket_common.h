@@ -42,6 +42,7 @@ namespace nodecpp {
 		{
 		public:
 			using NodeType = void;
+			using DataParentType = void;
 
 		public:
 			nodecpp::safememory::soft_this_ptr<SocketBase> myThis;
@@ -58,6 +59,9 @@ namespace nodecpp {
 				enum State { Uninitialized, Connecting, Connected, LocalEnding, LocalEnded, Closing, ErrorClosing, Closed }
 				state = Uninitialized;
 				size_t index = 0;
+
+				Address _local;
+				Address _remote;
 
 				struct awaitable_read_handle_data
 				{
@@ -412,15 +416,11 @@ namespace nodecpp {
 			}
 
 		public:
-			Address _local;
-			Address _remote;
 			//std::string _remoteAddress;
 			//std::string _remoteFamily;
 			//uint16_t _remotePort = 0;
 			size_t _bytesRead = 0;
 			size_t _bytesWritten = 0;
-
-			enum State { UNINITIALIZED = 0, CONNECTING, CONNECTED, DESTROYED } state = UNINITIALIZED;
 
 			SocketBase() {}
 
@@ -431,30 +431,30 @@ namespace nodecpp {
 			SocketBase& operator=(SocketBase&&) = default;
 
 			virtual ~SocketBase() {
-				if (state == CONNECTING || state == CONNECTED) destroy();
+				if ( dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting || dataForCommandProcessing.state == DataForCommandProcessing::State::Connected ) destroy();
 				unref(); /*or assert that is must already be unrefed*/
 				reportBeingDestructed(); 
 			}
 
 		public:
 
-			const Address& address() const { return _local; }
+			const Address& address() const { return dataForCommandProcessing._local; }
 
 			size_t bufferSize() const { return dataForCommandProcessing.writeBuffer.used_size(); }
 			size_t bytesRead() const { return _bytesRead; }
 			size_t bytesWritten() const { return _bytesWritten; }
 
-			bool connecting() const { return state == CONNECTING; }
+			bool connecting() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting; }
 			void destroy();
-			bool destroyed() const { return state == DESTROYED; };
+			bool destroyed() const { return !(dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting || dataForCommandProcessing.state == DataForCommandProcessing::State::Connected); };
 			void end();
-			const std::string& localAddress() const { return _local.ip.toStr(); }
-			uint16_t localPort() const { return _local.port; }
+			std::string localAddress() const { return dataForCommandProcessing._local.ip.toStr(); }
+			uint16_t localPort() const { return dataForCommandProcessing._local.port; }
 
 
-			const std::string& remoteAddress() const { return _remote.ip.toStr(); }
-			const std::string& remoteFamily() const { return _remote.family; }
-			uint16_t remotePort() const { return _remote.port; }
+			std::string remoteAddress() const { return dataForCommandProcessing._remote.ip.toStr(); }
+			const std::string& remoteFamily() const { return dataForCommandProcessing._remote.family; }
+			uint16_t remotePort() const { return dataForCommandProcessing._remote.port; }
 
 			void ref();
 			void unref();
@@ -805,7 +805,6 @@ namespace nodecpp {
 
 		public:
 			void emitClose(bool hadError) {
-				state = DESTROYED;
 				unref();
 				//this->dataForCommandProcessing.id = 0;
 				//handler may release, put virtual onClose first.
@@ -814,12 +813,10 @@ namespace nodecpp {
 
 			// not in node.js
 			void emitAccepted() {
-				state = CONNECTED;
 				eAccepted.emit();
 			}
 
 			void emitConnect() {
-				state = CONNECTED;
 				eConnect.emit();
 			}
 
@@ -837,7 +834,6 @@ namespace nodecpp {
 			}
 
 			void emitError(Error& err) {
-				state = DESTROYED;
 				//this->dataForCommandProcessing.id = 0;
 				eError.emit(err);
 			}
@@ -1003,6 +999,25 @@ namespace nodecpp {
 				else assert(false);
 			}
 
+		};
+
+		template<class DataParentT>
+		class Socket : public SocketBase, public ::nodecpp::DataParent<DataParentT>
+		{
+		public:
+			using DataParentType = DataParentT;
+			Socket<DataParentT>() {};
+			Socket<DataParentT>(DataParentT* dataParent ) : SocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~Socket<DataParentT>() {}
+		};
+
+		template<>
+		class Socket<void> : public SocketBase
+		{
+		public:
+			using DataParentType = void;
+			Socket() {};
+			virtual ~Socket() {}
 		};
 
 		/*template<class T, class ... Types>

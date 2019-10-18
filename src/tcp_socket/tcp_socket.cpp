@@ -124,13 +124,16 @@ bool netInitialize()
 }
 
 
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local size_t waitTime;
+#endif // USE_TEMP_PERF_CTRS
 namespace nodecpp
 {
 	namespace internal_usage_only
 	{
 		void internal_close(SOCKET sock)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_close() on sock {}", sock);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_close() on sock {}", sock);
 			CLOSE_SOCKET(sock);
 		}
 
@@ -142,13 +145,13 @@ namespace nodecpp
 			int how = SHUT_WR;
 		#endif
 
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_shutdown_send() on sock {}", sock);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_shutdown_send() on sock {}", sock);
 
 			int res = shutdown(sock, how);
 			if (0 != res)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("shutdown on sock {} failed; error {}", sock, error);
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("shutdown on sock {} failed; error {}", sock, error);
 			}
 		}
 
@@ -337,7 +340,7 @@ namespace nodecpp
 
 		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_tcp_accept() on sock {}", sock);
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_tcp_accept() on sock {}", sock);
 			struct ::sockaddr_in sa;
 			socklen_t sz = sizeof(struct ::sockaddr_in);
 			memset(&sa, 0, sz);
@@ -346,7 +349,7 @@ namespace nodecpp
 			if (INVALID_SOCKET == outSock)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() on sock {} failed; error {}", sock, error);
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() on sock {} failed; error {}", sock, error);
 
 				return INVALID_SOCKET;
 			}
@@ -354,7 +357,7 @@ namespace nodecpp
 	
 			ip = Ip4::fromNetwork(sa.sin_addr.s_addr);
 			port = Port::fromNetwork(sa.sin_port);
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() new sock {} from {}:{}", outSock, ip.toStr(), port.toStr());
+//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() new sock {} from {}:{}", outSock, ip.toStr(), port.toStr());
 
 			if (!internal_async_socket(outSock))
 			{
@@ -373,13 +376,13 @@ namespace nodecpp
 			if (err != 0)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("getsockopt() SO_ERROR on sock {} failed; error {}", sock, error);
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("getsockopt() SO_ERROR on sock {} failed; error {}", sock, error);
 				return false;
 			}
 
 			if (result != 0)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("getsockopt() SO_ERROR on sock {} error {}", sock, result);
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("getsockopt() SO_ERROR on sock {} error {}", sock, result);
 				return false;
 			}
 
@@ -390,7 +393,13 @@ namespace nodecpp
 		uint8_t internal_send_packet(const uint8_t* data, size_t size, SOCKET sock, size_t& sentSize)
 		{
 			const char* ptr = reinterpret_cast<const char*>(data); //windows uses char*, linux void*
+#ifdef USE_TEMP_PERF_CTRS
+size_t now1 = infraGetCurrentTime();
 			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
+waitTime += infraGetCurrentTime() - now1;
+#else
+			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
+#endif // USE_TEMP_PERF_CTRS
 
 			if (bytes_sent < 0)
 			{
@@ -398,13 +407,13 @@ namespace nodecpp
 				int error = getSockError();
 				if (isErrorWouldBlock(error))
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} PENDING", sock, size, sentSize);
+//!!//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} PENDING", sock, size);
 
 					return COMMLAYER_RET_PENDING;
 				}
 				else
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} ERROR {}", sock, size, error);
+//!!//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} ERROR {}", sock, size, error);
 					return COMMLAYER_RET_FAILED;
 				}
 			}
@@ -524,6 +533,11 @@ Port Port::fromNetwork(uint16_t port)
 std::string Port::toStr() const
 { 
 	return fmt::format("{}", ntohs( port ) );
+}
+
+uint16_t Port::getHost() const
+{
+	return ntohs(port);
 }
 
 
@@ -841,6 +855,7 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 				//updateEventMaskOnWriteBufferStatusChanged( sockData.index, true );
 				if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
 				{
+//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("_infraProcessWriteEvent() leads to internal_shutdown_send()...");
 					internal_usage_only::internal_shutdown_send(sockData.osSocket);
 					//current.pendingLocalEnd = false;
 					//current.localEnded = true;
@@ -894,7 +909,14 @@ void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememor
 	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
 }
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+void NetServerManagerBase::addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+{
+	ioSockets.addSlaveServerEntry<net::ServerBase>( /*node, */ptr, typeId );
+}
+
 void NetServerManagerBase::addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId)
 {
 	ioSockets.addEntry<Cluster::AgentServer>( /*node, */ptr, typeId );
 }
+#endif // NODECPP_ENABLE_CLUSTERING

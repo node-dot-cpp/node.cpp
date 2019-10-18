@@ -226,3 +226,13 @@ namespace nodecpp {
 	} // namespace time
 
 } // namespace nodecpp
+
+
+#ifdef USE_TEMP_PERF_CTRS
+thread_local int pollCnt = 0;
+thread_local int pollRetCnt = 0;
+thread_local int pollRetMax = 0;
+thread_local int sessionCnt = 0;
+thread_local size_t sessionCreationtime = 0;
+thread_local size_t waitTime = 0;
+#endif // USE_TEMP_PERF_CTRS
