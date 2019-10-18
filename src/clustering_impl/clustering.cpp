@@ -89,7 +89,6 @@ namespace nodecpp
 	void Cluster::AgentServer::listen(uint16_t port, const char* ip, int backlog)
 	{
 		netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
-		dataForCommandProcessing.state = DataForCommandProcessing::State::Listening; // TODO: consider assigning this state together with emitting a respective event instead
 	}
 	void Cluster::AgentServer::ref() { netServerManagerBase->appRef(dataForCommandProcessing); }
 	void Cluster::AgentServer::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }
