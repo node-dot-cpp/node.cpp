@@ -459,14 +459,9 @@ class Runnable : public RunnableBase
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
 #endif // NODECPP_ENABLE_CLUSTERING
-printf( "internalRun() [1]\n" );
 			node = make_owning<Node>();
-printf( "internalRun() [2]\n" );
 			thisThreadNode = &(*node);
-printf( "internalRun() [3], thisThreadNode = %zd\n", (size_t)thisThreadNode );
 			node->main();
-printf( "internalRun() [4]\n" );
-printf( "calling infra.template runInfraLoop2\n" );
 			infra.template runInfraLoop2<Node>();
 			node = nullptr;
 
