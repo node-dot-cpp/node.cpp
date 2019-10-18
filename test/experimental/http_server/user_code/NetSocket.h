@@ -104,7 +104,7 @@ public:
 				Buffer b1(0x1000);
 				co_await request->a_readBody( b1 );
 				++(stats.rqCnt);
-				request->dbgTrace();
+//				request->dbgTrace();
 
 //				simpleProcessing( request, response );
 				yetSimpleProcessing( request, response );
@@ -166,7 +166,7 @@ public:
 					Buffer b1(0x1000);
 					co_await request->a_readBody( b1 );
 					++(stats.rqCnt);
-					request->dbgTrace();
+//					request->dbgTrace();
 
 	//				simpleProcessing( request, response );
 					yetSimpleProcessing( request, response );
@@ -216,7 +216,7 @@ public:
 				Buffer b1(0x1000);
 				co_await request->a_readBody( b1 );
 				++(stats.rqCnt);
-				request->dbgTrace();
+//				request->dbgTrace();
 
 //				simpleProcessing( request, response );
 				yetSimpleProcessing( request, response );
@@ -238,7 +238,7 @@ public:
 			response->setStatus( "HTTP/1.1 405 Method Not Allowed" );
 			response->addHeader( "Connection", "close" );
 			response->addHeader( "Content-Length", "0" );
-			response->dbgTrace();
+//			response->dbgTrace();
 			co_await response->flushHeaders();
 			CO_RETURN;
 		}
@@ -291,7 +291,7 @@ public:
 //				response->addHeader( "Connection", "close" );
 			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()) );
 
-			response->dbgTrace();
+//			response->dbgTrace();
 			co_await response->flushHeaders();
 			Buffer b;
 			b.append( replyHtml.c_str(), replyHtml.size() );
@@ -306,7 +306,7 @@ public:
 			response->addHeader( "Content-Type", "text/html" );
 			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()) );
 
-			response->dbgTrace();
+//			response->dbgTrace();
 			co_await response->flushHeaders();
 			Buffer b;
 			b.append( replyHtml.c_str(), replyHtml.size() );
@@ -352,7 +352,7 @@ public:
 			response->setStatus( "HTTP/1.1 405 Method Not Allowed" );
 			response->addHeader( "Connection", "close" );
 			response->addHeader( "Content-Length", "0" );
-			response->dbgTrace();
+//			response->dbgTrace();
 			co_await response->flushHeaders();
 			CO_RETURN;
 		}
@@ -389,7 +389,7 @@ public:
 			}
 		}
 		response->addHeader( "Content-Length", fmt::format( "{}", b.size() ) );
-		response->dbgTrace();
+//		response->dbgTrace();
 		co_await response->flushHeaders();
 		co_await response->writeBodyPart(b);
 
