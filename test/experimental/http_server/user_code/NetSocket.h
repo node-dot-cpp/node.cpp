@@ -127,7 +127,15 @@ public:
 #ifdef NODECPP_ENABLE_CLUSTERING
 		if ( getCluster().isMaster() )
 		{
-			for ( size_t i=0; i<2; ++i )
+			size_t coreCnt = 1;
+			auto argv = getArgv();
+			for ( size_t i=1; i<argv.size(); ++i )
+			{
+				if ( argv[i] == "numcores=" )
+					coreCnt = atol(argv[i].c_str() + 9);
+			}
+
+			for ( size_t i=0; i<coreCnt; ++i )
 				getCluster().fork();
 		}
 		else

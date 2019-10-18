@@ -159,6 +159,9 @@ public:
 /*template<class RunnableT,class Infra>
 thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;*/
 
+extern std::vector<std::string>* argv;
+inline const std::vector<std::string>& getArgv() { return *argv; }
+
 
 
 #endif //COMMON_H
