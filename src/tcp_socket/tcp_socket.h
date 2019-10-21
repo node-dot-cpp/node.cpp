@@ -1047,6 +1047,12 @@ public:
 		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, myIp, myPort)) {
 			throw Error();
 		}
+		if ( port == 0 )
+		{
+			port = internal_usage_only::internal_port_of_tcp_socket(dataForCommandProcessing.osSocket);
+			if ( port == 0 )
+				throw Error();
+		}
 		if (!internal_usage_only::internal_listen_tcp_socket(dataForCommandProcessing.osSocket, backlog)) {
 			throw Error();
 		}

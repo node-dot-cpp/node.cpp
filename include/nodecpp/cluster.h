@@ -514,14 +514,8 @@ namespace nodecpp
 				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Accepted, &MasterSocket::onAccepted>();
 				nodecpp::net::SocketBase::addHandler<MasterSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MasterSocket::onData>();
 				ctrlServer = nodecpp::net::createServer<CtrlServerT, MasterSocket>(this);
-				uint16_t portBase = 50000;
-				constexpr uint16_t portMax = 0xFFFF;
-				for ( ; portBase<portMax; ++portBase )
-				{
-					try { ctrlServer->listen(portBase, "127.0.0.1", 64); break; } catch(...) {}
-				}
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, portBase<portMax ); // TODO: way of error reporting
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Master thread Cluster is ready and listens clients on port {}", portBase );
+				ctrlServer->listen(0, "127.0.0.1", 64);
+				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Master thread Cluster is ready and listens clients on port {}", ctrlServer->dataForCommandProcessing.localAddress.port );
 			}
 			else
 			{
