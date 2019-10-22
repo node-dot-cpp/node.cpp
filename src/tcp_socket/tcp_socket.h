@@ -973,6 +973,7 @@ public:
 	template<class DataForCommandProcessing>
 	void appClose(DataForCommandProcessing& serverData) {
 		size_t id = serverData.index;
+#ifndef NODECPP_ENABLE_CLUSTERING
 		auto& entry = appGetEntry(id);
 		if (!entry.isUsed())
 		{
@@ -984,6 +985,22 @@ public:
 		ioSockets.setSocketClosed( entry.index );
 
 		//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
+#else
+		auto& entry = getCluster().isMaster() ? appGetEntry(id) : ioSockets.slaveServerAt(id);
+		if (!entry.isUsed())
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
+			return;
+		}
+		if ( getCluster().isMaster() )
+		{
+			internal_usage_only::internal_close(serverData.osSocket);
+			ioSockets.setSocketClosed( entry.index );
+			//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
+		}
+		else
+			getCluster().acceptRequestForServerCloseAtSlave(id);
+#endif // NODECPP_ENABLE_CLUSTERING
 	}
 	void appReportAllAceptedConnectionsEnded(net::ServerBase::DataForCommandProcessing& serverData) {
 		size_t id = serverData.index;

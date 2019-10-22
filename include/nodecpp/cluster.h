@@ -99,12 +99,24 @@ namespace nodecpp
 			return offset + sz;
 		}
 
+		static void serializeServerCloseRequest( size_t threadID, size_t requestID, size_t entryIndex, nodecpp::Buffer& b ) {
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Slave id = {}: serializing ServerCloseRequest request for entryIndex = {:x}", threadID, entryIndex );
+			ClusteringMsgHeader h;
+			h.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
+			h.assignedThreadID = threadID;
+			h.requestID = requestID;
+			h.entryIdx = entryIndex;
+			h.bodySize = 0;
+			h.serialize( b );
+		}
+
 
 	public:
 		class AgentServer;
 		class MasterSocket : public nodecpp::net::Socket<Cluster>
 		{
 			friend class AgentServer;
+			friend class Cluster;
 		public:
 			nodecpp::safememory::soft_this_ptr<MasterSocket> myThis;
 
@@ -166,10 +178,10 @@ namespace nodecpp
 				CO_RETURN;
 			}
 
-			nodecpp::handler_ret_type sendServerCloseEv( size_t entryIdx, size_t requestID, bool hasError )
+			nodecpp::handler_ret_type sendServerCloseNotification( size_t entryIdx, size_t requestID, bool hasError )
 			{
 				ClusteringMsgHeader rhReply;
-				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerClose;
+				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification;
 				rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = requestID;
 				rhReply.entryIdx = entryIdx;
@@ -203,15 +215,15 @@ namespace nodecpp
 						deserializeListeningRequestBody( addr, backlog, b, offset, mh.bodySize );
 						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerListening({}) request (for thread id: {}). Addr = {}:{}, backlog = {}, entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, addr.ip.toStr(), addr.port, backlog, mh.entryIdx );
 						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-						bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, mh.entryIdx, addr, backlog );
+						bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, addr, backlog );
 						if ( already )
 							sendListeningEv( mh.requestID );
 						break;
 					}
-					case ClusteringMsgHeader::ClusteringMsgType::ServerClose:
+					case ClusteringMsgHeader::ClusteringMsgType::ServerCloseRequest:
 					{
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
-						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerClose({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, mh.entryIdx );
+						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, mh.entryIdx );
 						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
 						/*bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, entryIndex, addr, backlog );
 						if ( already )
@@ -291,6 +303,16 @@ namespace nodecpp
 			{
 				Buffer b;
 				Cluster::serializeListeningRequest( assignedThreadID, ++requestIdBase, entryIndex, ip, port, backlog, family, b );
+				if ( connecting() )
+					requestsBeforeConnection.append( b );
+				else
+					co_await a_write( b );
+			}
+
+			nodecpp::handler_ret_type sendServerCloseRequest( size_t entryIndex )
+			{
+				Buffer b;
+				Cluster::serializeServerCloseRequest( assignedThreadID, ++requestIdBase, entryIndex, b );
 				if ( connecting() )
 					requestsBeforeConnection.append( b );
 				else
@@ -446,8 +468,6 @@ namespace nodecpp
 			}
 			nodecpp::handler_ret_type onEnd(bool hasError) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onEnd({})!", hasError);
-				for ( auto& slaveData : socketsToSlaves )
-					slaveData.socket->sendServerCloseEv( socketsToSlaves[nextStep].entryIndex, requestID, hasError );
 
 				CO_RETURN;
 			}
@@ -497,10 +517,11 @@ namespace nodecpp
 			return ret;
 		}
 
-		bool processRequestForListeningAtMaster(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringMsgHeader& mh, size_t entryIndex, nodecpp::net::Address address, int backlog)
+		bool processRequestForListeningAtMaster(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringMsgHeader& mh, nodecpp::net::Address address, int backlog)
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isMaster() );
 			bool alreadyListening = false;
+			size_t entryIndex = mh.entryIdx;
 			AgentServer::SlaveServerData slaveData;
 			slaveData.entryIndex = entryIndex;
 			slaveData.socket = requestingSocket;
@@ -525,11 +546,47 @@ namespace nodecpp
 			return false;
 		}
 
+		void processRequestForServerCloseAtMaster(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringMsgHeader& mh, size_t entryIndex)
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isMaster() );
+			bool alreadyListening = false;
+			AgentServer::SlaveServerData slaveData;
+			slaveData.entryIndex = entryIndex;
+			slaveData.socket = requestingSocket;
+			nodecpp::safememory::soft_ptr<AgentServer> agent;
+			for ( auto& server : agentServers )
+			{
+				if ( server != nullptr && 
+					server->requestID == mh.requestID )
+				{
+					for ( auto& slave : server->socketsToSlaves )
+						if ( slave.entryIndex == entryIndex )
+						{
+							agent = server;
+							break;
+						}
+				}
+				if ( agent != nullptr )
+					break;
+			}
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, agent != nullptr );
+			agent->close();
+			for ( auto& slave : agent->socketsToSlaves )
+				slave.socket->sendServerCloseNotification( slave.entryIndex, agent->requestID, false );
+		}
+
 		void acceptRequestForListeningAtSlave(size_t entryIndex, Ip4 ip, uint16_t port, std::string family, int backlog)
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isWorker() );
 			Buffer b;
 			slaveSocket->sendListeningRequest( entryIndex, ip, port, family, backlog );
+		}
+
+		void acceptRequestForServerCloseAtSlave(size_t entryIndex)
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isWorker() );
+			Buffer b;
+			slaveSocket->sendServerCloseRequest( entryIndex );
 		}
 
 	private:
