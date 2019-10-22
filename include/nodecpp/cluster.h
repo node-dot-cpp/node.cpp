@@ -99,6 +99,12 @@ namespace nodecpp
 			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + sizeof(size_t) + 6 + sizeof(int)) );
 			return offset + sz;
 		}
+		static size_t deserializeServerEndRequestBody( size_t& entryIndex, nodecpp::Buffer& b, size_t offset, size_t sz ) {
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz + offset <= b.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > sizeof(size_t) );
+			entryIndex = *reinterpret_cast<size_t*>(b.begin() + offset);
+			return offset + sz;
+		}
 
 
 	public:
@@ -152,6 +158,37 @@ namespace nodecpp
 				CO_RETURN;
 			}
 
+			nodecpp::handler_ret_type sendServerErrorEv( size_t internalID, size_t requestID, Error e )
+			{
+				ClusteringMsgHeader rhReply;
+				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerError;
+				rhReply.assignedThreadID = assignedThreadID;
+				rhReply.requestID = requestID;
+				rhReply.bodySize = sizeof(internalID); // TODO: be ready to pass more data
+				nodecpp::Buffer reply;
+				rhReply.serialize( reply );
+				size_t internalID_ = internalID;
+				reply.append( &internalID_, sizeof(internalID) );
+				co_await a_write( reply );
+				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type sendServerEndEv( size_t internalID, size_t requestID, bool hasError )
+			{
+				ClusteringMsgHeader rhReply;
+				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerEnd;
+				rhReply.assignedThreadID = assignedThreadID;
+				rhReply.requestID = requestID;
+				rhReply.bodySize = sizeof(internalID) + 1;
+				nodecpp::Buffer reply;
+				rhReply.serialize( reply );
+				size_t internalID_ = internalID;
+				reply.append( &internalID_, sizeof(internalID) );
+				reply.appendUint8( hasError ? 1 : 0 );
+				co_await a_write( reply );
+				CO_RETURN;
+			}
+
 			nodecpp::handler_ret_type processRequest( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size(), "{} + {} vs. {}", mh.bodySize, offset, b.size() ); 
@@ -178,6 +215,18 @@ namespace nodecpp
 						bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, entryIndex, addr, backlog );
 						if ( already )
 							sendListeningEv( mh.requestID );
+						break;
+					}
+					case ClusteringMsgHeader::ClusteringMsgType::ServerEnd:
+					{
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
+						size_t entryIndex;
+						deserializeServerEndRequestBody( entryIndex, b, offset, mh.bodySize );
+						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerEnd({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, entryIndex );
+						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
+						/*bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, entryIndex, addr, backlog );
+						if ( already )
+							sendListeningEv( mh.requestID );*/
 						break;
 					}
 					default:
@@ -393,21 +442,23 @@ namespace nodecpp
 //				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onConnection()!");
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socketsToSlaves.size() != 0 ); 
-				// TODO: selection between Slaves
+				// TODO: consider alternative ways selection between Slaves
 				nextStep = nextStep % socketsToSlaves.size();
 				socketsToSlaves[nextStep].socket->sendConnAcceptedEv( socketsToSlaves[nextStep].entryIndex, requestID, socket, remoteIp, remotePort );
 				++nextStep;
 				CO_RETURN;
 			}
-			nodecpp::handler_ret_type onError() { 
+			nodecpp::handler_ret_type onError( nodecpp::Error& e ) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onError()!");
-				// TODO: forward to all related slaves
+				for ( auto& slaveData : socketsToSlaves )
+					slaveData.socket->sendServerErrorEv( socketsToSlaves[nextStep].entryIndex, requestID, e );
 
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onEnd(bool hasError) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onEnd({})!", hasError);
-				// TODO: forward to all related slaves
+				for ( auto& slaveData : socketsToSlaves )
+					slaveData.socket->sendServerEndEv( socketsToSlaves[nextStep].entryIndex, requestID, hasError );
 
 				CO_RETURN;
 			}
@@ -465,6 +516,9 @@ namespace nodecpp
 			slaveData.entryIndex = entryIndex;
 			slaveData.socket = requestingSocket;
 			for ( auto& server : agentServers )
+			{
+				if ( server != nullptr )
+					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "processRequestForListeningAtMaster(): comparing to Addr {}:{}, and RequestID {}", server->dataForCommandProcessing.localAddress.ip.toStr(), server->dataForCommandProcessing.localAddress.port, server->requestID );
 				if ( server != nullptr && 
 					server->dataForCommandProcessing.localAddress == address &&
 					server->requestID == mh.requestID )
@@ -472,10 +526,13 @@ namespace nodecpp
 					server->socketsToSlaves.push_back( slaveData );
 					return server->listening();
 				}
+			}
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "processRequestForListeningAtMaster() for thread id: {} Addr {}:{}, requestID {}, and entryIndex = {:x} requires actually creating a new Agent server (curr num of Agent servers: {})", mh.assignedThreadID, address.ip.toStr(), address.port, mh.requestID, entryIndex, agentServers.size() );
 			nodecpp::safememory::soft_ptr<AgentServer> server = createAgentServer();
 			server->requestID = mh.requestID;
 			server->socketsToSlaves.push_back( slaveData );
 			server->listen( address.port, address.ip.toStr().c_str(), backlog );
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "processRequestForListeningAtMaster(): new Agent Server for Addr {}:{}, and RequestID {}", server->dataForCommandProcessing.localAddress.ip.toStr(), server->dataForCommandProcessing.localAddress.port, server->requestID );
 			return false;
 		}
 

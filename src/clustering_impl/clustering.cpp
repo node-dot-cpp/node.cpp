@@ -122,6 +122,22 @@ namespace nodecpp
 				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
+			case ClusteringMsgHeader::ClusteringMsgType::ServerError:
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) <= b.size() ); 
+				size_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);
+//				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				break;
+			}
+			case ClusteringMsgHeader::ClusteringMsgType::ServerEnd:
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) + 1 <= b.size() ); 
+				size_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);
+				bool hasError = b.readUInt8( offset + sizeof(size_t) ) != 0;
+				// TODO: propagate to a right server
+				//netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				break;
+			}
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
 				break;
