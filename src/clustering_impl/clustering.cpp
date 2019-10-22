@@ -129,7 +129,7 @@ namespace nodecpp
 //				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
-			case ClusteringMsgHeader::ClusteringMsgType::ServerEnd:
+			case ClusteringMsgHeader::ClusteringMsgType::ServerClose:
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) + 1 <= b.size() ); 
 				size_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);

@@ -79,30 +79,23 @@ namespace nodecpp
 			h.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
 			h.assignedThreadID = threadID;
 			h.requestID = requestID;
-			h.bodySize = sizeof(size_t) + 4 + 2 + sizeof(int) + family.size() + 1;
+			h.entryIdx = entryIndex;
+			h.bodySize = 4 + 2 + sizeof(int) + family.size() + 1;
 			h.serialize( b );
 
 			uint32_t uip = ip.getNetwork();
-			b.append( &entryIndex, sizeof(size_t) );
 			b.append( &uip, 4 );
 			b.append( &port, 2 );
 			b.append( &backlog, sizeof(int) );
 			b.appendString( family.c_str(), family.size() );
 		}
-		static size_t deserializeListeningRequestBody( size_t& entryIndex, nodecpp::net::Address& addr, int& backlog, nodecpp::Buffer& b, size_t offset, size_t sz ) {
+		static size_t deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::Buffer& b, size_t offset, size_t sz ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz + offset <= b.size() );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > sizeof(size_t) + 4 + 2 + sizeof(int) );
-			entryIndex = *reinterpret_cast<size_t*>(b.begin() + offset);
-			addr.ip = Ip4::fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset + sizeof(size_t)) );
-			addr.port = *reinterpret_cast<uint16_t*>(b.begin() + offset + sizeof(size_t) + 4);
-			backlog = *reinterpret_cast<int*>(b.begin() + offset + sizeof(size_t) + 6);
-			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + sizeof(size_t) + 6 + sizeof(int)) );
-			return offset + sz;
-		}
-		static size_t deserializeServerEndRequestBody( size_t& entryIndex, nodecpp::Buffer& b, size_t offset, size_t sz ) {
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz + offset <= b.size() );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > sizeof(size_t) );
-			entryIndex = *reinterpret_cast<size_t*>(b.begin() + offset);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > 4 + 2 + sizeof(int) );
+			addr.ip = Ip4::fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset) );
+			addr.port = *reinterpret_cast<uint16_t*>(b.begin() + offset + 4);
+			backlog = *reinterpret_cast<int*>(b.begin() + offset + 6);
+			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + 6 + sizeof(int)) );
 			return offset + sz;
 		}
 
@@ -173,17 +166,16 @@ namespace nodecpp
 				CO_RETURN;
 			}
 
-			nodecpp::handler_ret_type sendServerEndEv( size_t internalID, size_t requestID, bool hasError )
+			nodecpp::handler_ret_type sendServerCloseEv( size_t entryIdx, size_t requestID, bool hasError )
 			{
 				ClusteringMsgHeader rhReply;
-				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerEnd;
+				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerClose;
 				rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = requestID;
-				rhReply.bodySize = sizeof(internalID) + 1;
+				rhReply.entryIdx = entryIdx;
+				rhReply.bodySize = 1;
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
-				size_t internalID_ = internalID;
-				reply.append( &internalID_, sizeof(internalID) );
 				reply.appendUint8( hasError ? 1 : 0 );
 				co_await a_write( reply );
 				CO_RETURN;
@@ -208,21 +200,18 @@ namespace nodecpp
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
 						nodecpp::net::Address addr;
 						int backlog;
-						size_t entryIndex;
-						deserializeListeningRequestBody( entryIndex, addr, backlog, b, offset, mh.bodySize );
-						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerListening({}) request (for thread id: {}). Addr = {}:{}, backlog = {}, entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, addr.ip.toStr(), addr.port, backlog, entryIndex );
+						deserializeListeningRequestBody( addr, backlog, b, offset, mh.bodySize );
+						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerListening({}) request (for thread id: {}). Addr = {}:{}, backlog = {}, entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, addr.ip.toStr(), addr.port, backlog, mh.entryIdx );
 						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-						bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, entryIndex, addr, backlog );
+						bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, mh.entryIdx, addr, backlog );
 						if ( already )
 							sendListeningEv( mh.requestID );
 						break;
 					}
-					case ClusteringMsgHeader::ClusteringMsgType::ServerEnd:
+					case ClusteringMsgHeader::ClusteringMsgType::ServerClose:
 					{
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
-						size_t entryIndex;
-						deserializeServerEndRequestBody( entryIndex, b, offset, mh.bodySize );
-						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerEnd({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, entryIndex );
+						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerClose({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, mh.entryIdx );
 						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
 						/*bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, entryIndex, addr, backlog );
 						if ( already )
@@ -458,7 +447,7 @@ namespace nodecpp
 			nodecpp::handler_ret_type onEnd(bool hasError) { 
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("clustering Agent server: onEnd({})!", hasError);
 				for ( auto& slaveData : socketsToSlaves )
-					slaveData.socket->sendServerEndEv( socketsToSlaves[nextStep].entryIndex, requestID, hasError );
+					slaveData.socket->sendServerCloseEv( socketsToSlaves[nextStep].entryIndex, requestID, hasError );
 
 				CO_RETURN;
 			}

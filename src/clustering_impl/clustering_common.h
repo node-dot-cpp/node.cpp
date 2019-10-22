@@ -41,11 +41,12 @@ struct ThreadStartupData
 // ad-hoc marchalling between Master and Slave threads
 struct ClusteringMsgHeader
 {
-	enum ClusteringMsgType { ThreadStarted, ServerListening, ConnAccepted, ServerError, ServerEnd };
+	enum ClusteringMsgType { ThreadStarted, ServerListening, ConnAccepted, ServerError, ServerClose };
 	size_t bodySize;
 	ClusteringMsgType type;
 	size_t assignedThreadID;
 	size_t requestID;
+	size_t entryIdx;
 	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringMsgHeader ) ); }
 	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringMsgHeader ) <= b.size(), "indeed: {} + {} vs. {}", pos, sizeof( ClusteringMsgHeader ), b.size() ); 
