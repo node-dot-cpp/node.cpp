@@ -441,7 +441,7 @@ namespace nodecpp {
 								h();
 							}, 
 							period ) );*/
-						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_connection), period );
+						to = nodecpp::setTimeoutForAction( server.dataForCommandProcessing.ahd_connection.h, period );
 					}
 
 					auto await_resume() {
