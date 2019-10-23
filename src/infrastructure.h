@@ -275,26 +275,29 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 #endif
 					++processed;
 					NetSocketEntry& current = ioSockets.at( 1 + i );
-					switch ( current.emitter.objectType )
+					if ( current.state != NetSocketEntry::State::SockClosed )
 					{
-						case OpaqueEmitter::ObjectType::ClientSocket:
-							netSocket.template infraCheckPollFdSet<Node>(current, revents);
-							break;
-						case OpaqueEmitter::ObjectType::ServerSocket:
-						case OpaqueEmitter::ObjectType::AgentServer:
-							if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-							{
-								netServer.template infraCheckPollFdSet<Node>(current, revents);
+						switch ( current.emitter.objectType )
+						{
+							case OpaqueEmitter::ObjectType::ClientSocket:
+								netSocket.template infraCheckPollFdSet<Node>(current, revents);
 								break;
-							}
-							else
-							{
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+							case OpaqueEmitter::ObjectType::ServerSocket:
+							case OpaqueEmitter::ObjectType::AgentServer:
+								if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+								{
+									netServer.template infraCheckPollFdSet<Node>(current, revents);
+									break;
+								}
+								else
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+									break;
+								}
+							default:
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
 								break;
-							}
-						default:
-							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
-							break;
+						}
 					}
 				}
 			}

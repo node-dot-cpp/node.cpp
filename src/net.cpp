@@ -124,10 +124,7 @@ void ServerBase::closingProcedure()
 	netServerManagerBase->appClose(dataForCommandProcessing);
 	dataForCommandProcessing.state = DataForCommandProcessing::State::BeingClosed;
 	if ( getSockCount() == 0 )
-		nodecpp::setInmediate( [this]() {
-			if ( getSockCount() == 0 )
-				reportAllAceptedConnectionsEnded();
-			} );
+		reportAllAceptedConnectionsEnded(); // posts close event
 }
 
 void ServerBase::close() {

@@ -303,8 +303,8 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getSockCount() == 0 ); 
 				dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
-				dataForCommandProcessing.index = 0;
 				forceReleasingAllCoroHandles();
+//				dataForCommandProcessing.index = 0;
 			}
 
 			const Address& address() const { return dataForCommandProcessing.localAddress; }
@@ -554,11 +554,7 @@ namespace nodecpp {
 			void removeSocket( soft_ptr<SocketBase> sock ) {
 				socketList.removeAndDelete( sock );
 				if ( dataForCommandProcessing.state == DataForCommandProcessing::State::BeingClosed && socketList.getCount() == 0 )
-				{
-					//dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
-					//nodecpp::setInmediate( [this]() {} );
-					reportAllAceptedConnectionsEnded();
-				}
+					reportAllAceptedConnectionsEnded(); // posts close event
 			}
 
 			void closingProcedure();

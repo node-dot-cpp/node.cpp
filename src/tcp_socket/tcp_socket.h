@@ -456,6 +456,10 @@ public:
 		NetSocketEntry& entry = slaveServerAt(idx);
 		entry.setSocketClosed();
 	}
+	void setSlaveServerUnused( size_t idx ) {
+		NetSocketEntry& entry = slaveServerAt(idx);
+		entry.setUnused();
+	}
 #endif // NODECPP_ENABLE_CLUSTERING
 	std::pair<pollfd*, size_t> getPollfd() { 
 		return osSide.size() > 1 ? ( associatedCount > 0 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ) ) : std::make_pair( nullptr, 0 ); 
@@ -1108,18 +1112,12 @@ public:
 	void appReportBeingDestructed(DataForCommandProcessing& dataForCommandProcessing) {
 		size_t id = dataForCommandProcessing.index;
 #ifndef NODECPP_ENABLE_CLUSTERING
-		auto& entry = appGetEntry(id);
+		ioSockets.setUnused(id); 
 #else
 		if ( getCluster().isMaster() )
-		{
-			auto& entry = appGetEntry(id);
-			entry.setUnused(); 
-		}
+			ioSockets.setUnused(id); 
 		else
-		{
-			auto& entry = ioSockets.slaveServerAt(id);
-			entry.setUnused(); 
-		}
+			ioSockets.setSlaveserverUnused(id); 
 #endif
 	}
 
