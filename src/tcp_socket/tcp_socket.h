@@ -1333,10 +1333,10 @@ private:
 	{
 		OpaqueSocketData osd( false );
 
-#ifdef NODECPP_ENABLE_CLUSTERING
-		OpaqueEmitter::ObjectType type = entry.getObjectType();
 		Ip4 remoteIp;
 		Port remotePort;
+#ifdef NODECPP_ENABLE_CLUSTERING
+		OpaqueEmitter::ObjectType type = entry.getObjectType();
 		if ( type == OpaqueEmitter::ObjectType::AgentServer ) // Clustering
 		{
 			if ( !netSocketManagerBase->getAcceptedSockData(entry.getAgentServerData()->osSocket, osd, remoteIp, remotePort) )
