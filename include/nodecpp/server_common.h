@@ -32,10 +32,13 @@
 
 namespace nodecpp {
 
+	class Cluster;
+
 	namespace net {
 
 		class ServerBase
 		{
+			friend class Cluster;
 		public:
 			using NodeType = void;
 			using DataParentType = void;
@@ -557,6 +560,11 @@ namespace nodecpp {
 					reportAllAceptedConnectionsEnded();
 				}
 			}
+
+			void closingProcedure();
+#ifdef NODECPP_ENABLE_CLUSTERING
+			void closeByWorkingCluster() {closingProcedure();}
+#endif // NODECPP_ENABLE_CLUSTERING
 		public:
 			size_t getSockCount() {return this->socketList.getCount();}
 

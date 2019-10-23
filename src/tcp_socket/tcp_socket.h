@@ -451,6 +451,12 @@ public:
 			ourSideAccum[idx].setSocketClosed();
 		}
 	}
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void setSlaveSocketClosed( size_t idx ) {
+		NetSocketEntry& entry = slaveServerAt(idx);
+		entry.setSocketClosed();
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
 	std::pair<pollfd*, size_t> getPollfd() { 
 		return osSide.size() > 1 ? ( associatedCount > 0 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ) ) : std::make_pair( nullptr, 0 ); 
 	}
@@ -940,6 +946,7 @@ private:
 class NetServerManagerBase
 {
 	friend class OSLayer;
+	friend class Cluster;
 protected:
 	//mb: ioSockets[0] is always reserved and invalid.
 	NetSockets& ioSockets; // TODO: improve
@@ -999,7 +1006,9 @@ public:
 			//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
 		}
 		else
-			getCluster().acceptRequestForServerCloseAtSlave(id);
+		{
+			ioSockets.setSlaveSocketClosed(id);
+		}
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 	void appReportAllAceptedConnectionsEnded(net::ServerBase::DataForCommandProcessing& serverData) {
@@ -1147,6 +1156,16 @@ protected:
 #endif // NODECPP_ENABLE_CLUSTERING
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
+#ifdef NODECPP_ENABLE_CLUSTERING
+	NetSocketEntry& appGetSlaveServerEntry(size_t id) { 
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); 
+		return ioSockets.slaveServerAt(id);
+	}
+	const NetSocketEntry& appGetSlaveServerEntry(size_t id) const {
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); 
+		return ioSockets.slaveServerAt(id);
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
 };
 
 extern thread_local NetServerManagerBase* netServerManagerBase;

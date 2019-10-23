@@ -134,8 +134,8 @@ namespace nodecpp
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + 1 <= b.size() ); 
 				size_t serverIdx = mh.entryIdx;
 				bool hasError = b.readUInt8( offset + sizeof(size_t) ) != 0;
-				// TODO: propagate to a right server
-				//netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( serverIdx );
+				entry.getServerSocket()->closeByWorkingCluster();
 				break;
 			}
 			default:

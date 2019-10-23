@@ -225,9 +225,7 @@ namespace nodecpp
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
 						nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), mh.assignedThreadID, mh.entryIdx );
 						nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-						/*bool already = getDataParent()->processRequestForListeningAtMaster( me, mh, entryIndex, addr, backlog );
-						if ( already )
-							sendListeningEv( mh.requestID );*/
+						getDataParent()->processRequestForServerCloseAtMaster( me, mh );
 						break;
 					}
 					default:
@@ -546,12 +544,12 @@ namespace nodecpp
 			return false;
 		}
 
-		void processRequestForServerCloseAtMaster(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringMsgHeader& mh, size_t entryIndex)
+		void processRequestForServerCloseAtMaster(nodecpp::safememory::soft_ptr<MasterSocket> requestingSocket, ClusteringMsgHeader& mh)
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isMaster() );
 			bool alreadyListening = false;
 			AgentServer::SlaveServerData slaveData;
-			slaveData.entryIndex = entryIndex;
+			slaveData.entryIndex = mh.entryIdx;
 			slaveData.socket = requestingSocket;
 			nodecpp::safememory::soft_ptr<AgentServer> agent;
 			for ( auto& server : agentServers )
@@ -560,7 +558,7 @@ namespace nodecpp
 					server->requestID == mh.requestID )
 				{
 					for ( auto& slave : server->socketsToSlaves )
-						if ( slave.entryIndex == entryIndex )
+						if ( slave.entryIndex == mh.entryIdx )
 						{
 							agent = server;
 							break;

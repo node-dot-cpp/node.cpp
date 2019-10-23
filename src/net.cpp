@@ -119,7 +119,7 @@ void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing);
 void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }
 void ServerBase::reportBeingDestructed() { netServerManagerBase->appReportBeingDestructed(dataForCommandProcessing); }
 
-void ServerBase::close()
+void ServerBase::closingProcedure()
 {
 	netServerManagerBase->appClose(dataForCommandProcessing);
 	dataForCommandProcessing.state = DataForCommandProcessing::State::BeingClosed;
@@ -128,6 +128,14 @@ void ServerBase::close()
 			if ( getSockCount() == 0 )
 				reportAllAceptedConnectionsEnded();
 			} );
+}
+
+void ServerBase::close() {
+#ifndef NODECPP_ENABLE_CLUSTERING
+	closingProcedure();
+#else
+	getCluster().acceptRequestForServerCloseAtSlave(dataForCommandProcessing.index);
+#endif // NODECPP_ENABLE_CLUSTERING
 }
 
 void ServerBase::reportAllAceptedConnectionsEnded()
