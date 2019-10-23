@@ -780,7 +780,9 @@ namespace nodecpp {
 					return pattern->second;
 				else
 				{
+					interceptNewDeleteOperators(false);
 					auto ins = patterns().insert( make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
+					interceptNewDeleteOperators(true);
 					return ins.first->second;
 				}
 			}
