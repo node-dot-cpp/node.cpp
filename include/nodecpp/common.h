@@ -164,4 +164,8 @@ inline const std::vector<std::string>& getArgv() { return *argv; }
 
 
 
+namespace nodecpp::safememory {
+	template<class T>
+	using stdallocator =  std::allocator<T>;
+} // nodecpp::safememory
 #endif //COMMON_H

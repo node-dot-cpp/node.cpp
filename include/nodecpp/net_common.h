@@ -614,7 +614,7 @@ namespace nodecpp {
 				FnT handler = nullptr;
 				void *object = nullptr;
 			};
-			std::vector<HandlerInstance> handlers;
+			std::vector<HandlerInstance, nodecpp::safememory::stdallocator<HandlerInstance>> handlers;
 
 			bool willHandle() { return handlers.size(); }
 			void from(const UserDefHandlersBase<FnT>& patternUH, void* defaultObjPtr)
@@ -765,7 +765,8 @@ namespace nodecpp {
 		template<class UserHandlerType>
 		class UserHandlerClassPatterns
 		{
-			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>>;
+//			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>>;
+			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>, std::less<std::type_index>, nodecpp::safememory::stdallocator<std::pair<const std::type_index, std::pair<UserHandlerType, bool>>>>;
 #ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			MapType _patterns;
 			MapType& patterns() { return _patterns; }
@@ -780,9 +781,9 @@ namespace nodecpp {
 					return pattern->second;
 				else
 				{
-					interceptNewDeleteOperators(false);
+//					interceptNewDeleteOperators(false);
 					auto ins = patterns().insert( make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
-					interceptNewDeleteOperators(true);
+//					interceptNewDeleteOperators(true);
 					return ins.first->second;
 				}
 			}

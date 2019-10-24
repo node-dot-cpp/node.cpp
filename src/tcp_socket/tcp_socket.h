@@ -211,7 +211,7 @@ public:
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
 			idx -= ourSide.capacity();
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size(), "{} vs. {}", idx, ourSideAccum.size() );
 			return osSideAccum.at(idx).fd;
 		}
 	}

@@ -275,7 +275,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 #endif
 					++processed;
 					NetSocketEntry& current = ioSockets.at( 1 + i );
-					if ( current.state != NetSocketEntry::State::SockClosed )
+					if ( current.isAssociated() )
 					{
 						switch ( current.emitter.objectType )
 						{
