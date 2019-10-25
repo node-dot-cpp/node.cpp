@@ -573,7 +573,7 @@ namespace nodecpp {
 			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
 			EventEmitterSupportingListeners<event::Error, ServerListener, &ServerListener::onError> eError;
 
-			std::vector<nodecpp::safememory::owning_ptr<ServerListener>> ownedListeners;
+			nodecpp::vector<nodecpp::safememory::owning_ptr<ServerListener>> ownedListeners;
 #else
 			EventEmitter<event::Close> eClose;
 			EventEmitter<event::Connection> eConnection;

@@ -544,7 +544,7 @@ namespace nodecpp {
 	template <class ItemT>
 	class MultiOwner
 	{
-		std::vector<owning_ptr<ItemT>> items;
+		nodecpp::vector<owning_ptr<ItemT>> items;
 		size_t cnt;
 	public:
 		soft_ptr<ItemT> add(owning_ptr<ItemT>&& item)
@@ -614,7 +614,8 @@ namespace nodecpp {
 				FnT handler = nullptr;
 				void *object = nullptr;
 			};
-			std::vector<HandlerInstance, nodecpp::safememory::stdallocator<HandlerInstance>> handlers;
+//			std::vector<HandlerInstance, nodecpp::safememory::stdallocator<HandlerInstance>> handlers;
+			std::vector<HandlerInstance> handlers;
 
 			bool willHandle() { return handlers.size(); }
 			void from(const UserDefHandlersBase<FnT>& patternUH, void* defaultObjPtr)
@@ -635,12 +636,13 @@ namespace nodecpp {
 				FnT handler = nullptr;
 				void *object = nullptr;
 			};
+			using HandlerInstanceVectorT = nodecpp::vector<HandlerInstance>;
 			enum Type { uninitialized, zero, one, two, many };
 			Type type = Type::uninitialized;
 			static constexpr size_t fixed_size = 2;
-			uint8_t basebytes[ sizeof( std::vector<HandlerInstance> ) > sizeof( HandlerInstance ) * fixed_size ? sizeof( std::vector<HandlerInstance> ) : sizeof( HandlerInstance ) * fixed_size ];
+			uint8_t basebytes[ sizeof( HandlerInstanceVectorT ) > sizeof( HandlerInstance ) * fixed_size ? sizeof( HandlerInstanceVectorT ) : sizeof( HandlerInstance ) * fixed_size ];
 			HandlerInstance* handlers_a() { return reinterpret_cast<HandlerInstance*>(basebytes); }
-			std::vector<HandlerInstance>& handlers_v() { return *reinterpret_cast<std::vector<HandlerInstance>*>(basebytes); }
+			HandlerInstanceVectorT& handlers_v() { return *reinterpret_cast<HandlerInstanceVectorT*>(basebytes); }
 
 
 			bool willHandle() { 
@@ -676,7 +678,7 @@ namespace nodecpp {
 				{
 					static_assert( fixed_size <= 2 );
 					type = Type::many;
-					new(basebytes)std::vector<HandlerInstance>();
+					new(basebytes)HandlerInstanceVectorT();
 					handlers_v().resize( patternUH.handlers.size() );
 					for (size_t i = 0; i < handlers_v().size(); ++i)
 					{
@@ -713,7 +715,7 @@ namespace nodecpp {
 			}
 			~UserDefHandlersWithOptimizedStorage() {
 				if ( type == Type::many ) {
-					using myvectort = std::vector<HandlerInstance>;
+					using myvectort = HandlerInstanceVectorT;
 					handlers_v().~myvectort();
 				}
 			}
@@ -766,7 +768,8 @@ namespace nodecpp {
 		class UserHandlerClassPatterns
 		{
 //			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>>;
-			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>, std::less<std::type_index>, nodecpp::safememory::stdallocator<std::pair<const std::type_index, std::pair<UserHandlerType, bool>>>>;
+//			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>, std::less<std::type_index>, nodecpp::safememory::stdallocator<std::pair<const std::type_index, std::pair<UserHandlerType, bool>>>>;
+			using MapType = nodecpp::map<std::type_index, std::pair<UserHandlerType, bool>>;
 #ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			MapType _patterns;
 			MapType& patterns() { return _patterns; }

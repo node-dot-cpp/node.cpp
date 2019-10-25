@@ -37,7 +37,7 @@
 
 class EvQueue
 {
-	std::vector<std::function<void()>> evQueue;
+	nodecpp::vector<std::function<void()>> evQueue;
 
 	static constexpr bool DBG_SYNC = false;//for easier debug only
 public:

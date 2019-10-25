@@ -123,7 +123,7 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	auto itBegin = nextTimeouts.begin();
 	auto itEnd = nextTimeouts.upper_bound(now);
 	auto it = itBegin;
-	std::vector<TimeoutEntryHandlerData> handlers; // TODO: this approach could potentially be generalized
+	nodecpp::vector<TimeoutEntryHandlerData> handlers; // TODO: this approach could potentially be generalized
 	while (it != itEnd)
 	{
 		auto it2 = timers.find(it->second);

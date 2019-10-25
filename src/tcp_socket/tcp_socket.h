@@ -113,10 +113,11 @@ public:
 
 class NetSockets
 {
-	std::vector<NetSocketEntry> ourSide;
-	std::vector<NetSocketEntry> ourSideAccum;
+	using NetSocketEntryVectorT = nodecpp::vector<NetSocketEntry>;
+	NetSocketEntryVectorT ourSide;
+	NetSocketEntryVectorT ourSideAccum;
 #ifdef NODECPP_ENABLE_CLUSTERING
-	std::vector<NetSocketEntry> slaveServers;
+	nodecpp::vector<NetSocketEntry> slaveServers;
 	static constexpr size_t SlaveServerEntryMinIndex = (((size_t)~((size_t)0))>>1)+1;
 #endif // NODECPP_ENABLE_CLUSTERING
 	std::vector<pollfd> osSide;
@@ -130,7 +131,7 @@ class NetSockets
 	void makeCompactIfNecessary() {
 		if ( ourSide.size() <= compactionMinSize || usedCount < ourSide.size() / 2 )
 			return;
-		std::vector<NetSocketEntry> ourSideNew;
+		NetSocketEntryVectorT ourSideNew;
 		std::vector<pollfd> osSideNew;
 		ourSideNew.reserve(capacity_); 
 		osSideNew.reserve(capacity_);
@@ -487,8 +488,8 @@ public:
 
 protected:
 	NetSockets& ioSockets; // TODO: improve
-	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
-	std::vector<size_t> pendingAcceptedEvents;
+	nodecpp::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+	nodecpp::vector<size_t> pendingAcceptedEvents;
 
 public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
@@ -954,10 +955,10 @@ class NetServerManagerBase
 protected:
 	//mb: ioSockets[0] is always reserved and invalid.
 	NetSockets& ioSockets; // TODO: improve
-	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
+	nodecpp::vector<std::pair<size_t, bool>> pendingCloseEvents;
 	PendingEvQueue pendingEvents;
-	std::vector<Error> errorStore;
-	std::vector<size_t> pendingListenEvents;
+	nodecpp::vector<Error> errorStore;
+	nodecpp::vector<size_t> pendingListenEvents;
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 	struct AcceptedSocketData
@@ -967,8 +968,8 @@ protected:
 		Ip4 remoteIp;
 		Port remotePort;
 	};
-	std::vector<AcceptedSocketData> acceptedSockets;
-	std::vector<size_t> receivedListeningEvs;
+	nodecpp::vector<AcceptedSocketData> acceptedSockets;
+	nodecpp::vector<size_t> receivedListeningEvs;
 #endif // NODECPP_ENABLE_CLUSTERING
 
 	std::string family = "IPv4";
@@ -1243,7 +1244,7 @@ public:
 	{
 		while ( pendingListenEvents.size() )
 		{
-			std::vector<size_t> currentPendingListenEvents = std::move( pendingListenEvents );
+			nodecpp::vector<size_t> currentPendingListenEvents = std::move( pendingListenEvents );
 			for (auto& current : currentPendingListenEvents)
 			{
 				if (ioSockets.isValidId(current))
