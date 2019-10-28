@@ -1118,7 +1118,7 @@ public:
 		if ( getCluster().isMaster() )
 			ioSockets.setUnused(id); 
 		else
-			ioSockets.setSlaveserverUnused(id); 
+			ioSockets.setSlaveServerUnused(id); 
 #endif
 	}
 
