@@ -548,10 +548,7 @@ namespace nodecpp {
 		size_t cnt;
 	public:
 		soft_ptr<ItemT> add(owning_ptr<ItemT>&& item)
-//		void add(owning_ptr<ItemT>&& item)
 		{
-			//ItemT* item = new ItemT(sdata);
-			//owning_ptr<ItemT> p1 = make_owning<ItemT>(sdata);
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item );
 			for ( size_t idx=0; idx<items.size(); ++idx )
 				if ( !items[idx] )
@@ -614,7 +611,6 @@ namespace nodecpp {
 				FnT handler = nullptr;
 				void *object = nullptr;
 			};
-//			std::vector<HandlerInstance, nodecpp::safememory::stdallocator<HandlerInstance>> handlers;
 			std::vector<HandlerInstance> handlers;
 
 			bool willHandle() { return handlers.size(); }
@@ -767,8 +763,6 @@ namespace nodecpp {
 		template<class UserHandlerType>
 		class UserHandlerClassPatterns
 		{
-//			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>>;
-//			using MapType = std::map<std::type_index, std::pair<UserHandlerType, bool>, std::less<std::type_index>, nodecpp::safememory::stdallocator<std::pair<const std::type_index, std::pair<UserHandlerType, bool>>>>;
 			using MapType = nodecpp::map<std::type_index, std::pair<UserHandlerType, bool>>;
 #ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			MapType _patterns;
@@ -784,9 +778,7 @@ namespace nodecpp {
 					return pattern->second;
 				else
 				{
-//					interceptNewDeleteOperators(false);
 					auto ins = patterns().insert( make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
-//					interceptNewDeleteOperators(true);
 					return ins.first->second;
 				}
 			}
