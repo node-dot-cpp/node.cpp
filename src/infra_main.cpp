@@ -104,23 +104,22 @@ int main( int argc, char *argv_[] )
 
 namespace nodecpp {
 extern void preinitMasterThreadClusterObject();
-extern void preinitSlaveThreadClusterObject(size_t id);
+extern void preinitSlaveThreadClusterObject(ThreadStartupData& startupData);
 }
 
 void workerThreadMain( void* pdata )
 {
-	ThreadStartupData* startupData = reinterpret_cast<ThreadStartupData*>(pdata);
+	ThreadStartupData* sd = reinterpret_cast<ThreadStartupData*>(pdata);
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData->assignedThreadID != 0 ); 
-	size_t threadId = startupData->assignedThreadID;
-	// TODO: copy the rest of data, if any
-	delete startupData; // do it yet before initializing g_AllocManager
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->assignedThreadID != 0 ); 
+	ThreadStartupData startupData = *sd;
+	delete sd; // do it yet before initializing g_AllocManager
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
 	nodecpp::log::init_log();
-	nodecpp::preinitSlaveThreadClusterObject( threadId );
-	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("starting Worker thread with threadID = {}", threadId );
+	nodecpp::preinitSlaveThreadClusterObject( startupData );
+	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("starting Worker thread with threadID = {}", startupData.assignedThreadID );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
 }

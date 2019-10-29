@@ -113,10 +113,11 @@ public:
 
 class NetSockets
 {
-	std::vector<NetSocketEntry> ourSide;
-	std::vector<NetSocketEntry> ourSideAccum;
+	using NetSocketEntryVectorT = nodecpp::vector<NetSocketEntry>;
+	NetSocketEntryVectorT ourSide;
+	NetSocketEntryVectorT ourSideAccum;
 #ifdef NODECPP_ENABLE_CLUSTERING
-	std::vector<NetSocketEntry> slaveServers;
+	nodecpp::vector<NetSocketEntry> slaveServers;
 	static constexpr size_t SlaveServerEntryMinIndex = (((size_t)~((size_t)0))>>1)+1;
 #endif // NODECPP_ENABLE_CLUSTERING
 	std::vector<pollfd> osSide;
@@ -130,7 +131,7 @@ class NetSockets
 	void makeCompactIfNecessary() {
 		if ( ourSide.size() <= compactionMinSize || usedCount < ourSide.size() / 2 )
 			return;
-		std::vector<NetSocketEntry> ourSideNew;
+		NetSocketEntryVectorT ourSideNew;
 		std::vector<pollfd> osSideNew;
 		ourSideNew.reserve(capacity_); 
 		osSideNew.reserve(capacity_);
@@ -211,7 +212,7 @@ public:
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
 			idx -= ourSide.capacity();
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size(), "{} vs. {}", idx, ourSideAccum.size() );
 			return osSideAccum.at(idx).fd;
 		}
 	}
@@ -451,6 +452,16 @@ public:
 			ourSideAccum[idx].setSocketClosed();
 		}
 	}
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void setSlaveSocketClosed( size_t idx ) {
+		NetSocketEntry& entry = slaveServerAt(idx);
+		entry.setSocketClosed();
+	}
+	void setSlaveServerUnused( size_t idx ) {
+		NetSocketEntry& entry = slaveServerAt(idx);
+		entry.setUnused();
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
 	std::pair<pollfd*, size_t> getPollfd() { 
 		return osSide.size() > 1 ? ( associatedCount > 0 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ) ) : std::make_pair( nullptr, 0 ); 
 	}
@@ -477,8 +488,8 @@ public:
 
 protected:
 	NetSockets& ioSockets; // TODO: improve
-	std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
-	std::vector<size_t> pendingAcceptedEvents;
+	nodecpp::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+	nodecpp::vector<size_t> pendingAcceptedEvents;
 
 public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
@@ -940,13 +951,14 @@ private:
 class NetServerManagerBase
 {
 	friend class OSLayer;
+	friend class Cluster;
 protected:
 	//mb: ioSockets[0] is always reserved and invalid.
 	NetSockets& ioSockets; // TODO: improve
-	std::vector<std::pair<size_t, bool>> pendingCloseEvents;
+	nodecpp::vector<std::pair<size_t, bool>> pendingCloseEvents;
 	PendingEvQueue pendingEvents;
-	std::vector<Error> errorStore;
-	std::vector<size_t> pendingListenEvents;
+	nodecpp::vector<Error> errorStore;
+	nodecpp::vector<size_t> pendingListenEvents;
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 	struct AcceptedSocketData
@@ -956,8 +968,8 @@ protected:
 		Ip4 remoteIp;
 		Port remotePort;
 	};
-	std::vector<AcceptedSocketData> acceptedSockets;
-	std::vector<size_t> receivedListeningEvs;
+	nodecpp::vector<AcceptedSocketData> acceptedSockets;
+	nodecpp::vector<size_t> receivedListeningEvs;
 #endif // NODECPP_ENABLE_CLUSTERING
 
 	std::string family = "IPv4";
@@ -973,6 +985,7 @@ public:
 	template<class DataForCommandProcessing>
 	void appClose(DataForCommandProcessing& serverData) {
 		size_t id = serverData.index;
+#ifndef NODECPP_ENABLE_CLUSTERING
 		auto& entry = appGetEntry(id);
 		if (!entry.isUsed())
 		{
@@ -984,6 +997,24 @@ public:
 		ioSockets.setSocketClosed( entry.index );
 
 		//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
+#else
+		auto& entry = getCluster().isMaster() ? appGetEntry(id) : ioSockets.slaveServerAt(id);
+		if (!entry.isUsed())
+		{
+			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
+			return;
+		}
+		if ( getCluster().isMaster() )
+		{
+			internal_usage_only::internal_close(serverData.osSocket);
+			ioSockets.setSocketClosed( entry.index );
+			//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
+		}
+		else
+		{
+			ioSockets.setSlaveSocketClosed(id);
+		}
+#endif // NODECPP_ENABLE_CLUSTERING
 	}
 	void appReportAllAceptedConnectionsEnded(net::ServerBase::DataForCommandProcessing& serverData) {
 		size_t id = serverData.index;
@@ -1047,6 +1078,12 @@ public:
 		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, myIp, myPort)) {
 			throw Error();
 		}
+		if ( port == 0 )
+		{
+			port = internal_usage_only::internal_port_of_tcp_socket(dataForCommandProcessing.osSocket);
+			if ( port == 0 )
+				throw Error();
+		}
 		if (!internal_usage_only::internal_listen_tcp_socket(dataForCommandProcessing.osSocket, backlog)) {
 			throw Error();
 		}
@@ -1076,18 +1113,12 @@ public:
 	void appReportBeingDestructed(DataForCommandProcessing& dataForCommandProcessing) {
 		size_t id = dataForCommandProcessing.index;
 #ifndef NODECPP_ENABLE_CLUSTERING
-		auto& entry = appGetEntry(id);
+		ioSockets.setUnused(id); 
 #else
 		if ( getCluster().isMaster() )
-		{
-			auto& entry = appGetEntry(id);
-			entry.setUnused(); 
-		}
+			ioSockets.setUnused(id); 
 		else
-		{
-			auto& entry = ioSockets.slaveServerAt(id);
-			entry.setUnused(); 
-		}
+			ioSockets.setSlaveServerUnused(id); 
 #endif
 	}
 
@@ -1124,6 +1155,16 @@ protected:
 #endif // NODECPP_ENABLE_CLUSTERING
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
+#ifdef NODECPP_ENABLE_CLUSTERING
+	NetSocketEntry& appGetSlaveServerEntry(size_t id) { 
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); 
+		return ioSockets.slaveServerAt(id);
+	}
+	const NetSocketEntry& appGetSlaveServerEntry(size_t id) const {
+		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getCluster().isWorker() ); 
+		return ioSockets.slaveServerAt(id);
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
 };
 
 extern thread_local NetServerManagerBase* netServerManagerBase;
@@ -1203,7 +1244,7 @@ public:
 	{
 		while ( pendingListenEvents.size() )
 		{
-			std::vector<size_t> currentPendingListenEvents = std::move( pendingListenEvents );
+			nodecpp::vector<size_t> currentPendingListenEvents = std::move( pendingListenEvents );
 			for (auto& current : currentPendingListenEvents)
 			{
 				if (ioSockets.isValidId(current))
@@ -1291,10 +1332,10 @@ private:
 	{
 		OpaqueSocketData osd( false );
 
-#ifdef NODECPP_ENABLE_CLUSTERING
-		OpaqueEmitter::ObjectType type = entry.getObjectType();
 		Ip4 remoteIp;
 		Port remotePort;
+#ifdef NODECPP_ENABLE_CLUSTERING
+		OpaqueEmitter::ObjectType type = entry.getObjectType();
 		if ( type == OpaqueEmitter::ObjectType::AgentServer ) // Clustering
 		{
 			if ( !netSocketManagerBase->getAcceptedSockData(entry.getAgentServerData()->osSocket, osd, remoteIp, remotePort) )

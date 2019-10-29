@@ -45,9 +45,9 @@ namespace nodecpp
 		cluster.preinitMaster();
 	}
 
-	void preinitSlaveThreadClusterObject(size_t id)
+	void preinitSlaveThreadClusterObject(ThreadStartupData& startupData)
 	{
-		cluster.preinitSlave( id );
+		cluster.preinitSlave( startupData );
 	}
 
 	void postinitThreadClusterObject()
@@ -65,6 +65,7 @@ namespace nodecpp
 		bool newDelInterceptionState = interceptNewDeleteOperators(false);
 		ThreadStartupData* startupData = new ThreadStartupData;
 		startupData->assignedThreadID = worker.id_;
+		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
 		interceptNewDeleteOperators(newDelInterceptionState);
 		// run worker thread
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("about to start Worker thread with threadID = {}...", worker.id_ );
@@ -89,7 +90,6 @@ namespace nodecpp
 	void Cluster::AgentServer::listen(uint16_t port, const char* ip, int backlog)
 	{
 		netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
-		dataForCommandProcessing.state = DataForCommandProcessing::State::Listening; // TODO: consider assigning this state together with emitting a respective event instead
 	}
 	void Cluster::AgentServer::ref() { netServerManagerBase->appRef(dataForCommandProcessing); }
 	void Cluster::AgentServer::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }
@@ -120,6 +120,22 @@ namespace nodecpp
 				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset + sizeof(serverIdx) + sizeof(socket)) );
 				Port remotePort = Port::fromNetwork( *reinterpret_cast<uint16_t*>(b.begin() + offset + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );
 				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				break;
+			}
+			case ClusteringMsgHeader::ClusteringMsgType::ServerError:
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) <= b.size() ); 
+				size_t serverIdx = mh.entryIdx;
+//				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				break;
+			}
+			case ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification:
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + 1 <= b.size() ); 
+				size_t serverIdx = mh.entryIdx;
+				bool hasError = b.readUInt8( offset + sizeof(size_t) ) != 0;
+				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( serverIdx );
+				entry.getServerSocket()->closeByWorkingCluster();
 				break;
 			}
 			default:

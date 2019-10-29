@@ -144,7 +144,7 @@ namespace nodecpp
 	template<class EV>
 	class EventEmitter
 	{
-		std::vector<std::pair<bool, typename EV::callback>> callbacks;
+		nodecpp::vector<std::pair<bool, typename EV::callback>> callbacks;
 	public:
 		void on(typename EV::callback cb) {
 			callbacks.emplace_back(false,cb);
@@ -171,7 +171,7 @@ namespace nodecpp
 		template<class... ARGS>
 		void emit(ARGS... args) {
 
-			std::vector<std::pair<bool, typename EV::callback>> other;
+			nodecpp::vector<std::pair<bool, typename EV::callback>> other;
 			
 			//first make a copy of handlers
 			for (auto& current : callbacks) {
@@ -200,7 +200,7 @@ namespace nodecpp
 			Element(bool once_, typename EV::callback cb_) : once(once_), isLambda(true), cb(cb_) {}
 			Element(bool once_, nodecpp::safememory::soft_ptr<ListenerT> listener_) : once(once_), isLambda(false), listener(std::move(listener_)) {}
 		};
-		std::vector<Element> callbacks;
+		nodecpp::vector<Element> callbacks;
 	public:
 		void on(typename EV::callback cb) {
 			callbacks.emplace_back(false,cb);
@@ -244,7 +244,7 @@ namespace nodecpp
 		template<class... ARGS>
 		void emit(ARGS... args) {
 
-			std::vector<Element> other;
+			nodecpp::vector<Element> other;
 			
 			//first make a copy of handlers
 			for (auto& current : callbacks) {
