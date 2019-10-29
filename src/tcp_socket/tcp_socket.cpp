@@ -310,6 +310,15 @@ namespace nodecpp
 			return internal_bind_socket(sock, sa);
 		}
 
+		uint16_t internal_port_of_tcp_socket(SOCKET sock)
+		{
+			struct ::sockaddr_in sa;
+			memset(&sa, 0, sizeof(struct ::sockaddr_in));
+			socklen_t addrlen = sizeof(struct ::sockaddr_in);
+			int ret = getsockname( sock, (struct sockaddr *)(&sa), &addrlen);
+			return ret == -1 ? 0 : ntohs(sa.sin_port);
+		}
+
 		bool internal_listen_tcp_socket(SOCKET sock, int backlog)
 		{
 //			int res = listen(sock, tcpListenBacklogSize);

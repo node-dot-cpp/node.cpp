@@ -32,10 +32,13 @@
 
 namespace nodecpp {
 
+	class Cluster;
+
 	namespace net {
 
 		class ServerBase
 		{
+			friend class Cluster;
 		public:
 			using NodeType = void;
 			using DataParentType = void;
@@ -300,8 +303,8 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, getSockCount() == 0 ); 
 				dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
-				dataForCommandProcessing.index = 0;
 				forceReleasingAllCoroHandles();
+//				dataForCommandProcessing.index = 0;
 			}
 
 			const Address& address() const { return dataForCommandProcessing.localAddress; }
@@ -438,7 +441,7 @@ namespace nodecpp {
 								h();
 							}, 
 							period ) );*/
-						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_connection), period );
+						to = nodecpp::setTimeoutForAction( server.dataForCommandProcessing.ahd_connection.h, period );
 					}
 
 					auto await_resume() {
@@ -551,12 +554,13 @@ namespace nodecpp {
 			void removeSocket( soft_ptr<SocketBase> sock ) {
 				socketList.removeAndDelete( sock );
 				if ( dataForCommandProcessing.state == DataForCommandProcessing::State::BeingClosed && socketList.getCount() == 0 )
-				{
-					//dataForCommandProcessing.state = DataForCommandProcessing::State::Closed;
-					//nodecpp::setInmediate( [this]() {} );
-					reportAllAceptedConnectionsEnded();
-				}
+					reportAllAceptedConnectionsEnded(); // posts close event
 			}
+
+			void closingProcedure();
+#ifdef NODECPP_ENABLE_CLUSTERING
+			void closeByWorkingCluster() {closingProcedure();}
+#endif // NODECPP_ENABLE_CLUSTERING
 		public:
 			size_t getSockCount() {return this->socketList.getCount();}
 
@@ -569,7 +573,7 @@ namespace nodecpp {
 			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
 			EventEmitterSupportingListeners<event::Error, ServerListener, &ServerListener::onError> eError;
 
-			std::vector<nodecpp::safememory::owning_ptr<ServerListener>> ownedListeners;
+			nodecpp::vector<nodecpp::safememory::owning_ptr<ServerListener>> ownedListeners;
 #else
 			EventEmitter<event::Close> eClose;
 			EventEmitter<event::Connection> eConnection;

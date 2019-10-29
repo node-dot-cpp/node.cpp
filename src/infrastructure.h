@@ -275,26 +275,29 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 #endif
 					++processed;
 					NetSocketEntry& current = ioSockets.at( 1 + i );
-					switch ( current.emitter.objectType )
+					if ( current.isAssociated() )
 					{
-						case OpaqueEmitter::ObjectType::ClientSocket:
-							netSocket.template infraCheckPollFdSet<Node>(current, revents);
-							break;
-						case OpaqueEmitter::ObjectType::ServerSocket:
-						case OpaqueEmitter::ObjectType::AgentServer:
-							if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-							{
-								netServer.template infraCheckPollFdSet<Node>(current, revents);
+						switch ( current.emitter.objectType )
+						{
+							case OpaqueEmitter::ObjectType::ClientSocket:
+								netSocket.template infraCheckPollFdSet<Node>(current, revents);
 								break;
-							}
-							else
-							{
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+							case OpaqueEmitter::ObjectType::ServerSocket:
+							case OpaqueEmitter::ObjectType::AgentServer:
+								if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
+								{
+									netServer.template infraCheckPollFdSet<Node>(current, revents);
+									break;
+								}
+								else
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
+									break;
+								}
+							default:
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
 								break;
-							}
-						default:
-							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
-							break;
+						}
 					}
 				}
 			}
@@ -459,14 +462,9 @@ class Runnable : public RunnableBase
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
 #endif // NODECPP_ENABLE_CLUSTERING
-printf( "internalRun() [1]\n" );
 			node = make_owning<Node>();
-printf( "internalRun() [2]\n" );
 			thisThreadNode = &(*node);
-printf( "internalRun() [3], thisThreadNode = %zd\n", (size_t)thisThreadNode );
 			node->main();
-printf( "internalRun() [4]\n" );
-printf( "calling infra.template runInfraLoop2\n" );
 			infra.template runInfraLoop2<Node>();
 			node = nullptr;
 

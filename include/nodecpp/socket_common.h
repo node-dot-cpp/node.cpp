@@ -801,7 +801,7 @@ namespace nodecpp {
 			class EventEmitterSupportingListeners<event::Error, SocketListener, &SocketListener::onError> eError;
 			class EventEmitterSupportingListeners<event::Accepted, SocketListener, &SocketListener::onAccepted> eAccepted;
 
-			std::vector<nodecpp::safememory::owning_ptr<SocketListener>> ownedListeners;
+			nodecpp::vector<nodecpp::safememory::owning_ptr<SocketListener>> ownedListeners;
 
 		public:
 			void emitClose(bool hadError) {
