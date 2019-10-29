@@ -52,8 +52,12 @@ namespace nodecpp {
 
 			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
 
-			nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
-			nodecpp::safememory::owning_ptr<HttpServerResponse> response;
+			struct RRPair
+			{
+				nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
+				nodecpp::safememory::owning_ptr<HttpServerResponse> response;
+			};
+			RRPair rrPair;
 			awaitable_handle_t ahd_continueGetting = nullptr;
 
 #ifndef NODECPP_NO_COROUTINES
@@ -210,10 +214,10 @@ namespace nodecpp {
 				for(;;)
 				{
 //printf( "about to get (next) request\n" );
-					co_await getRequest( *request );
+					co_await getRequest( *(rrPair.request) );
 					auto cg = a_continueGetting();
 
-					nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( request, response );
+					nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
 //					co_await cg;
 				}
 				CO_RETURN;
@@ -520,7 +524,7 @@ namespace nodecpp {
 					sock->proceedToNext();
 				}
 //printf( "request has been sent\n" );
-sock->request->clear();
+sock->rrPair.request->clear();
 				if ( connStatus != ConnStatus::keep_alive )
 				{
 //printf( "socket has been ended\n" );
@@ -562,10 +566,10 @@ sock->proceedToNext();
 
 		inline
 		HttpSocketBase::HttpSocketBase() {
-			request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
-			request->sock = myThis.getSoftPtr<HttpSocketBase>(this);
-			response = nodecpp::safememory::make_owning<HttpServerResponse>();
-			response->sock = myThis.getSoftPtr<HttpSocketBase>(this);
+			rrPair.request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
+			rrPair.request->sock = myThis.getSoftPtr<HttpSocketBase>(this);
+			rrPair.response = nodecpp::safememory::make_owning<HttpServerResponse>();
+			rrPair.response->sock = myThis.getSoftPtr<HttpSocketBase>(this);
 			run(); // TODO: think about proper time for this call
 		}
 
