@@ -399,6 +399,7 @@ public:
 //		response->dbgTrace();
 		co_await response->flushHeaders();
 		co_await response->writeBodyPart(b);
+		co_await response->end();
 
 		CO_RETURN;
 	}

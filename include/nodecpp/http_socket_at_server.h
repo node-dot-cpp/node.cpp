@@ -560,8 +560,13 @@ namespace nodecpp {
 					clear();
 					sock->proceedToNext();
 				}
-//printf( "request has been sent\n" );
-sock->rrPair.request->clear();
+				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type end()
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
+				myRequest->clear();
 				if ( connStatus != ConnStatus::keep_alive )
 				{
 //printf( "socket has been ended\n" );
@@ -571,7 +576,7 @@ sock->rrPair.request->clear();
 				}
 //				else
 					clear();
-sock->proceedToNext();
+				sock->proceedToNext();
 //printf( "getting next request has been allowed\n" );
 				CO_RETURN;
 			}
