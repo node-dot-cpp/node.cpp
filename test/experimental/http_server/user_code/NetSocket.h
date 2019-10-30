@@ -319,6 +319,7 @@ public:
 			b.append( replyHtml.c_str(), replyHtml.size() );
 			co_await response->writeBodyPart(b);
 		}
+		co_await response->end();
 
 		// TODO: co_await for msg body, if any
 		// TODO: form and send response
@@ -361,6 +362,7 @@ public:
 			response->addHeader( "Content-Length", "0" );
 //			response->dbgTrace();
 			co_await response->flushHeaders();
+			co_await response->end();
 			CO_RETURN;
 		}
 

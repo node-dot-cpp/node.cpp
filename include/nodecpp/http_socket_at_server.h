@@ -574,8 +574,8 @@ namespace nodecpp {
 					clear();
 					CO_RETURN;
 				}
-//				else
-					clear();
+
+				clear();
 				sock->proceedToNext();
 //printf( "getting next request has been allowed\n" );
 				CO_RETURN;
