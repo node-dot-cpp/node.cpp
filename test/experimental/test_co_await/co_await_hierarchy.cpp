@@ -101,7 +101,7 @@ public:
 			auto await_resume() {
 //				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(ah.address());
 				read_result r = read_data(myIdx);
-				if ( nodecpp::isException(ah) )
+				if ( ah != nullptr && nodecpp::isException(ah) )
 					throw nodecpp::getException(ah);
 				return r.data;
 			}
