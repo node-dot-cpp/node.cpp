@@ -29,12 +29,12 @@
 #ifndef TCP_SOCKET_BASE_H
 #define TCP_SOCKET_BASE_H
 
-#include "../../include/nodecpp/common.h"
-#include "../../include/nodecpp/socket_common.h"
-#include "../../include/nodecpp/server_common.h"
-#include "../../include/nodecpp/cluster.h"
-#include "../../include/nodecpp/ip_and_port.h"
-#include "../ev_queue.h"
+#include "nodecpp/common.h"
+#include "nodecpp/socket_common.h"
+#include "nodecpp/server_common.h"
+#include "nodecpp/cluster.h"
+#include "nodecpp/ip_and_port.h"
+#include "ev_queue.h"
 
 #ifdef _MSC_VER
 #include <winsock2.h>
