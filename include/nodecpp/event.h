@@ -94,7 +94,7 @@ namespace nodecpp
 
 		struct Connection
 		{
-			using callback = std::function<void(soft_ptr<net::SocketBase>[[nodecpp::owned_by_this]])>;
+			using callback = std::function<void(soft_ptr<net::SocketBase>)>;
 			static constexpr const char* name = "connection";
 		};
 		static constexpr Connection connection = Connection();
