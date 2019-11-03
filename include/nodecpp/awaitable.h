@@ -85,8 +85,9 @@ struct promise_type_struct_base {
 	std::max_align_t retValueMem[valueMemSizeItems];
 	static constexpr size_t valueMemSize = sizeof( retValueMem );
 	static_assert( valueMemSize >= sizeof( std::string ) );
+	size_t refCtr = 0;
 
-	promise_type_struct_base() {}
+	promise_type_struct_base() {memset( retValueMem, 0xeb, sizeof(retValueMem));}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
 	promise_type_struct_base &operator = (const promise_type_struct_base &) = delete;
 	promise_type_struct_base(promise_type_struct_base &&) = delete;
@@ -98,6 +99,7 @@ struct promise_type_struct_base {
         return std::experimental::suspend_never{};
     }
 	auto final_suspend() {
+printf( "promise_type_struct_base::final_suspend(), this = 0x%zx [2], refCtr = %zd\n", (size_t)(this), refCtr );
 		if ( hr )
 		{
 			auto tmph = hr;
@@ -105,9 +107,11 @@ struct promise_type_struct_base {
 			tmph();
 		}
 //			return std::experimental::suspend_always{};
-		return std::experimental::suspend_never{};
+//		return std::experimental::suspend_never{};
+		return std::experimental::suspend_if{refCtr != 0};
     }
 	void unhandled_exception() {
+printf( "promise_type_struct_base::unhandled_exception(), this = 0x%zx [2]\n", (size_t)(this));
 		e_pending = std::current_exception();
     }
 };
@@ -119,14 +123,14 @@ struct promise_type_struct : public promise_type_struct_base {
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
 	static constexpr bool fitsToMem = sizeof(T) <= promise_type_struct_base::valueMemSize || valueAlignmentSize < alignof( T );
 
-	T& getValue() { 
+	T& getValue() { printf( "promise_type_struct::getValue(), this = 0x%zx [2]\n", (size_t)(this));
 		if constexpr ( fitsToMem )
 			return *reinterpret_cast<T*>(this->retValueMem); 
 		else
 			return **reinterpret_cast<T**>(this->retValueMem); 
 	}
 
-	promise_type_struct() : promise_type_struct_base() {
+	promise_type_struct() : promise_type_struct_base() {printf( "promise_type_struct(), this = 0x%zx [2]\n", (size_t)(this));
 		if constexpr ( fitsToMem )
 			new(this->retValueMem)T();
 		else
@@ -136,7 +140,7 @@ struct promise_type_struct : public promise_type_struct_base {
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
 	promise_type_struct(promise_type_struct &&) = delete;
 	promise_type_struct &operator = (promise_type_struct &&) = delete;
-	~promise_type_struct() {
+	~promise_type_struct() {printf( "~promise_type_struct(), this = 0x%zx [2]\n", (size_t)(this));
 		if constexpr ( fitsToMem )
 			getValue().~T();
 		else
@@ -154,15 +158,16 @@ struct promise_type_struct : public promise_type_struct_base {
 template<>
 struct promise_type_struct<void> : public promise_type_struct_base {
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<void>>;
-	promise_type_struct() : promise_type_struct_base() {}
+	promise_type_struct() : promise_type_struct_base() {printf( "promise_type_struct(), this = 0x%zx\n", (size_t)(this));}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
 	promise_type_struct(promise_type_struct &&) = delete;
 	promise_type_struct &operator = (promise_type_struct &&) = delete;
-	~promise_type_struct() {}
+	~promise_type_struct() {printf( "~promise_type_struct(), this = 0x%zx\n", (size_t)(this));}
 
     auto get_return_object();
 	auto return_void(void) {
+printf( "promise_type_struct::return_void(), this = 0x%zx\n", (size_t)(this));
 		is_value = true;
         return std::experimental::suspend_never{};
     }
@@ -171,12 +176,14 @@ struct promise_type_struct<void> : public promise_type_struct_base {
 
 inline
 void setNoException(std::experimental::coroutine_handle<> awaiting) {
+	printf( "setNoException(), awaiting = 0x%zx[3]\n", (size_t)(awaiting.address()));
 	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
 	edata.is_exception = false;
 }
 
 inline
 void setException(std::experimental::coroutine_handle<> awaiting, std::exception e) {
+	printf( "setException(), awaiting = 0x%zx[3]\n", (size_t)(awaiting.address()));
 	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
 	edata.is_exception = true;
 	edata.exception = e;
@@ -184,12 +191,14 @@ void setException(std::experimental::coroutine_handle<> awaiting, std::exception
 
 inline
 bool isException(std::experimental::coroutine_handle<> awaiting) {
+	printf( "isException(), awaiting = 0x%zx[3]\n", (size_t)(awaiting.address()));
 	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
 	return edata.is_exception;
 }
 
 inline
 std::exception& getException(std::experimental::coroutine_handle<> awaiting) {
+	printf( "getException(), awaiting = 0x%zx[3]\n", (size_t)(awaiting.address()));
 	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
 	return edata.exception;
 }
@@ -208,24 +217,87 @@ struct awaitable  {
 	handle_type coro = nullptr;
 	using value_type = T;
 
-	awaitable()  {}
-	awaitable(handle_type h) : coro(h) {}
+	std::experimental::coroutine_handle<void> hh = nullptr;
+
+	awaitable()  {printf( "awaitable(), this = 0x%zx\n", (size_t)(this));}
+	awaitable(handle_type h) : coro(h) { 
+		++(coro.promise().refCtr);
+		printf( "awaitable(), this = 0x%zx, coro = 0x%zx[2]\n", (size_t)(this), (size_t)(coro.address()) - 0x70 ); hh = coro.promise().hr; 
+	}
 
     awaitable(const awaitable &) = delete;
 	awaitable &operator = (const awaitable &) = delete;
 
 	awaitable(awaitable &&s) : coro(s.coro) {
 		s.coro = nullptr;
+		printf( "awaitable(), this = 0x%zx, coro = 0x%zx, from awaitable = 0x%zx[3]\n", (size_t)(this)), (size_t)(coro.address(), &s);
 	}
 	awaitable &operator = (awaitable &&s) {
 		coro = s.coro;
 		s.coro = nullptr;
+		printf( "awaitable(), this = 0x%zx, coro = 0x%zx, from awaitable = 0x%zx[3]\n", (size_t)(this)), (size_t)(coro.address(), &s);
 		return *this;
 	}   
 	
-	~awaitable() {}
+	~awaitable() {
+		if ( coro != nullptr )
+		{
+			printf( "~awaitable(), this = 0x%zx, refCtr = %zd\n", (size_t)(this), coro.promise().refCtr);
+				if ( coro.done() )
+				{
+					printf( "    ~awaitable(): destroying coro 0x%zx\n", (size_t)(coro.address()) - 0x70 );
+					coro.destroy();
+				}
+				else // not yet ready or is necessary for anybody else - 
+				{
+					printf( "    ~awaitable(): dereferencing coro 0x%zx\n", (size_t)(coro.address()) - 0x70 );
+					--(coro.promise().refCtr);
+				}
+		}
+		else
+			printf( "~awaitable(), this = 0x%zx\n", (size_t)(this) );
+		/*if ( coro && coro.promise().hr && coro.promise().hr.done() )
+		{
+			printf( "    ~awaitable(), this = 0x%zx, coro = 0x%zx - about to destroy\n", (size_t)(this), (size_t)(coro.address()) );
+			coro.promise().hr.destroy();
+		}*/
+//		if ( hh != nullptr )
+//			hh.destroy();
+//		if ( hth != nullptr )
+//			hth.resume();
+		if ( coro )
+		{
+//			coro.promise().~promise_type_struct<T>();
+		}
+	}
+
+	class resumer
+	{
+		std::experimental::coroutine_handle<promise_type>& h;
+	public:
+		resumer( std::experimental::coroutine_handle<promise_type>& h_ ) : h( h_ ) {}
+		~resumer() { 
+			if ( h != nullptr )
+			{
+				if ( h.done() )
+				{
+					printf( "~resumer(), h.address() = 0x%zx\n", (size_t)(h.address()));
+					std::experimental::coroutine_handle<promise_type> htmp = h;
+					h = nullptr;
+					htmp.destroy();
+				}
+				else // not yet ready or is necessary for anybody else - 
+				{
+					handle_type coro( h );
+					--(coro.promise().refCtr);
+					h = nullptr;
+				}
+			}
+		}
+	};
 
 	typename void_type_converter<T>::type get() {
+		printf( "get(), this = 0x%zx\n", (size_t)(this));
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
@@ -233,13 +305,18 @@ struct awaitable  {
 	}
 
 	bool await_ready() noexcept { 
+		printf( "await_ready(), this = 0x%zx\n", (size_t)(this));
         return coro.promise().is_value;
 	}
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
+		printf( "await_suspend(), this = 0x%zx, coro? %s\n", (size_t)(this), coro == nullptr ? "NO" : "Yes" );
 		if ( coro )
 			coro.promise().hr = h_;
+		printf( "    await_suspend() -- done\n" );
 	}
 	typename void_type_converter<T>::type await_resume() { 
+		printf( "await_resume(), this = 0x%zx\n", (size_t)(this));
+		resumer r( coro );
 		if ( coro.promise().e_pending != nullptr )
 		{
 			std::exception_ptr ex = coro.promise().e_pending;
@@ -256,12 +333,15 @@ struct awaitable  {
 
 inline
 auto promise_type_struct<void>::get_return_object() {
+		printf( "promise_type_struct<void>::get_return_object(), this = 0x%zx\n", (size_t)(this));
 		auto h = handle_type::from_promise(*this);
 		return awaitable<void>{h};
 }
 
 template<class T>
 auto promise_type_struct<T>::get_return_object() {
+		printf( "promise_type_struct<T>::get_return_object(), this = 0x%zx\n", (size_t)(this));
+		printf( "await_resume(), this = 0x%zx\n", (size_t)(this));
 		auto h = handle_type::from_promise(*this);
 		return awaitable<T>{h};
 }
