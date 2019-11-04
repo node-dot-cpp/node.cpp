@@ -105,7 +105,7 @@ function(make_dz_files OUT_VAR LIST1 LIST2)
 
 		add_custom_command(
 		    OUTPUT  ${DZ_NAME}
-		    COMMAND nodecpp-instrument ${EACH} -- -fcoroutines-ts -fnew-alignment=16 -std=c++17 ${DZ_DEFINES} ${DZ_INCLUDES}
+		    COMMAND nodecpp-instrument ${EACH} -- -fcoroutines-ts -std=c++17 ${DZ_DEFINES} ${DZ_INCLUDES}
 		)
 
 		list(APPEND DZ_FILES ${DZ_NAME})
