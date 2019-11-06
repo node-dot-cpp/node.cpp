@@ -58,7 +58,7 @@ namespace nodecpp {
 				nodecpp::safememory::owning_ptr<HttpServerResponse> response;
 				bool active = false;
 			};
-			RRPair rrPair;
+//			RRPair rrPair;
 
 			template<size_t sizeExp>
 			class RRQueue
@@ -67,22 +67,21 @@ namespace nodecpp {
 				RRPair* cbuff = nullptr;
 				uint64_t head = 0;
 				uint64_t tail = 0;
-				void init( size_t sizeExp_ );
 				size_t idxToStorageIdx(size_t idx ) { return idx & ((((size_t)1)<<sizeExp)-1); }
 				size_t capacity() { return ((size_t)1)<<sizeExp; }
 			public:
 				RRQueue() {}
-				RRQueue( size_t sizeExp_ ) { init( sizeExp_ ); }
 				~RRQueue() { if ( cbuff != nullptr ) delete [] cbuff; }
+				void init( nodecpp::safememory::soft_ptr<HttpSocketBase> );
 				bool canPush() { return head - tail < ((uint64_t)1<<sizeExp); }
-				bool release( nodecpp::safememory::soft_ptr<HttpMessageBase> rrbase )
+				bool release( size_t idx )
 				{
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rrbase->idx >= tail, "{} vs. {}", rrbase->idx, tail );
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rrbase->idx < head, "{} vs. {}", rrbase->idx, head );
-					size_t storageIdx = idxToStorageIdx( rrbase->idx );
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= tail, "{} vs. {}", idx, tail );
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < head, "{} vs. {}", idx, head );
+					size_t storageIdx = idxToStorageIdx( idx );
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, storageIdx < capacity(), "{} vs. {}", storageIdx, capacity() );
 					cbuff[storageIdx].active = false;
-					if ( rrbase->idx == tail )
+					if ( idx == tail )
 					{
 						do { ++tail; }
 						while ( tail < head && !cbuff[idxToStorageIdx(tail)].active );
@@ -91,9 +90,16 @@ namespace nodecpp {
 				}
 				RRPair& getHead() {
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, canPush() );
-					return cbuff[idxToStorageIdx(head++)];
+					auto& ret = cbuff[idxToStorageIdx(head)];
+					ret.active = true;
+					ret.request->idx = head;
+					ret.response->idx = head;
+					++head;
+					return ret;
 				}
 			};
+			RRQueue<0> rrQueue;
+			bool release( size_t idx ) { return rrQueue.release( idx ); }
 
 			awaitable_handle_t ahd_continueGetting = nullptr;
 
@@ -125,7 +131,6 @@ namespace nodecpp {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
 						if ( nodecpp::isException(myawaiting) )
 							throw nodecpp::getException(myawaiting);
-//printf( "resumed ahd_continueGetting\n" );
 					}
 				};
 				return continue_getting_awaiter(*this);
@@ -138,12 +143,14 @@ namespace nodecpp {
 					SocketBase& socket;
 					CircularByteBuffer::AvailableDataDescriptor& d;
 
-					data_awaiter(SocketBase& socket_, CircularByteBuffer::AvailableDataDescriptor& d_) : socket( socket_ ), d( d_ ) {}
+					data_awaiter(SocketBase& socket_, CircularByteBuffer::AvailableDataDescriptor& d_) : socket( socket_ ), d( d_ ) {
+					}
 
 					data_awaiter(const data_awaiter &) = delete;
 					data_awaiter &operator = (const data_awaiter &) = delete;
 	
-					~data_awaiter() {}
+					~data_awaiter() {
+					}
 
 					bool await_ready() {
 						return socket.dataForCommandProcessing.readBuffer.used_size() != 0;
@@ -250,23 +257,24 @@ namespace nodecpp {
 			{
 				for(;;)
 				{
-//printf( "about to get (next) request\n" );
+					auto& rrPair = rrQueue.getHead();
 					co_await getRequest( *(rrPair.request) );
-					auto cg = a_continueGetting();
 
 					nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
-//					co_await cg;
+					if ( rrQueue.canPush() )
+						continue;
+					auto cg = a_continueGetting();
+					co_await cg;
 				}
 				CO_RETURN;
 			}
 
 			void proceedToNext()
 			{
-				if ( ahd_continueGetting != nullptr )
+				if ( rrQueue.canPush() && ahd_continueGetting != nullptr )
 				{
 					auto hr = ahd_continueGetting;
 					ahd_continueGetting = nullptr;
-//printf( "about to resume ahd_continueGetting\n" );
 					hr();
 				}
 			}
@@ -451,9 +459,11 @@ namespace nodecpp {
 		class HttpServerResponse : protected HttpMessageBase // TODO: candidate for being a part of lib
 		{
 			friend class HttpSocketBase;
+			friend class RRQueue;
 			Buffer headerBuff;
 
 		private:
+			nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> myRequest;
 			typedef std::map<std::string, std::string> header_t;
 			header_t header;
 			size_t contentLength = 0;
@@ -558,6 +568,7 @@ namespace nodecpp {
 				catch(...) {
 					sock->end();
 					clear();
+					sock->release( idx );
 					sock->proceedToNext();
 				}
 				CO_RETURN;
@@ -569,15 +580,14 @@ namespace nodecpp {
 				myRequest->clear();
 				if ( connStatus != ConnStatus::keep_alive )
 				{
-//printf( "socket has been ended\n" );
 					sock->end();
 					clear();
 					CO_RETURN;
 				}
 
 				clear();
+				sock->release( idx );
 				sock->proceedToNext();
-//printf( "getting next request has been allowed\n" );
 				CO_RETURN;
 			}
 #endif // NODECPP_NO_COROUTINES
@@ -608,16 +618,16 @@ namespace nodecpp {
 
 		inline
 		HttpSocketBase::HttpSocketBase() {
-			rrPair.request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
+			rrQueue.init( myThis.getSoftPtr<HttpSocketBase>(this) );
+			/*rrPair.request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
 			rrPair.request->sock = myThis.getSoftPtr<HttpSocketBase>(this);
 			rrPair.response = nodecpp::safememory::make_owning<HttpServerResponse>();
-			rrPair.response->sock = myThis.getSoftPtr<HttpSocketBase>(this);
+			rrPair.response->sock = myThis.getSoftPtr<HttpSocketBase>(this);*/
 			run(); // TODO: think about proper time for this call
 		}
 
 		template<size_t sizeExp>
-		void HttpSocketBase::RRQueue<sizeExp>::init( size_t sizeExp_ ) {
-			sizeExp = sizeExp;
+		void HttpSocketBase::RRQueue<sizeExp>::init( nodecpp::safememory::soft_ptr<HttpSocketBase> socket ) {
 			size_t size = ((size_t)1 << sizeExp);
 			cbuff = new RRPair [size];
 			for ( size_t i=0; i<size; ++i )
@@ -630,6 +640,9 @@ namespace nodecpp {
 				nodecpp::safememory::soft_ptr<HttpServerResponse> tmrsp = (cbuff[i].response);
 				cbuff[i].response->counterpart = nodecpp::safememory::soft_ptr_reinterpret_cast<HttpMessageBase>(tmprq);
 				cbuff[i].request->counterpart = nodecpp::safememory::soft_ptr_reinterpret_cast<HttpMessageBase>(tmrsp);
+				cbuff[i].request->sock = socket;
+				cbuff[i].response->sock = socket;
+				cbuff[i].response->myRequest = cbuff[i].request;
 			}
 		}	
 
