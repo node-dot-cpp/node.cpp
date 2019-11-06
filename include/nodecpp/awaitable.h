@@ -76,16 +76,7 @@ struct awaitable_base {
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
 
-	static constexpr size_t valueAlignmentSize = alignof(std::max_align_t);
-	static constexpr size_t valueMemSizeBase = std::max( alignof( std::max_align_t ), 
-		( sizeof( std::string ) / alignof(std::max_align_t) ) * alignof(std::max_align_t) + std::min( (size_t)1, sizeof( std::string ) % alignof(std::max_align_t)) * alignof(std::max_align_t) );
-	static_assert( valueMemSizeBase % alignof(std::max_align_t) == 0 );
-	static constexpr size_t valueMemSizeItems = valueMemSizeBase / sizeof(std::max_align_t) + std::min( (size_t)1, valueMemSizeBase % sizeof(std::max_align_t));
-	std::max_align_t retValueMem[valueMemSizeItems];
-	static constexpr size_t valueMemSize = sizeof( retValueMem );
-	static_assert( valueMemSize >= sizeof( std::string ) );
-
-	awaitable_base() {memset( retValueMem, 0xeb, sizeof(retValueMem));}
+	awaitable_base() {}
 	awaitable_base(const awaitable_base &) = delete;
 	awaitable_base &operator = (const awaitable_base &) = delete;
 	awaitable_base(awaitable_base &&) = delete;
@@ -257,11 +248,8 @@ struct awaitable : public awaitable_base  {
 	}
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
 		printf( "await_suspend(), this = 0x%zx, coro? %s\n", (size_t)(this), coro == nullptr ? "NO" : "Yes" );
-		if ( coro )
-			coro.promise().hr = h_;
-		else
-			h_();
-		printf( "    await_suspend() -- done\n" );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coroDestroyed ); 
+		coro.promise().hr = h_;
 	}
 	typename void_type_converter<T>::type await_resume() { 
 		printf( "await_resume(), this = 0x%zx\n", (size_t)(this));
