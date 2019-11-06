@@ -101,7 +101,6 @@ struct promise_type_struct_base {
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
 //	bool is_value = false;
-	awaitable_base* myRetObject = nullptr;
 
 	/*static constexpr size_t valueAlignmentSize = alignof(std::max_align_t);
 	static constexpr size_t valueMemSizeBase = std::max( alignof( std::max_align_t ), 
@@ -139,11 +138,6 @@ printf( "promise_type_struct_base::final_suspend(), this = 0x%zx [2]\n", (size_t
 		return std::experimental::suspend_never{};
 //		return std::experimental::suspend_if{refCtr != 0};
     }
-	void unhandled_exception() {
-printf( "promise_type_struct_base::unhandled_exception(), this = 0x%zx [2]\n", (size_t)(this));
-		if ( myRetObject != nullptr )
-			myRetObject->e_pending = std::current_exception();
-    }
 };
 
 template<typename T> struct awaitable; // forward declaration
@@ -153,7 +147,7 @@ struct promise_type_struct : public promise_type_struct_base {
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
 //	static constexpr bool fitsToMem = sizeof(T) <= promise_type_struct_base::valueMemSize || valueAlignmentSize < alignof( T );
 
-//	awaitable<T>* myOwner = nullptr;
+	awaitable<T>* myRetObject = nullptr;
 
 	/*T& getValue() { printf( "promise_type_struct::getValue(), this = 0x%zx [2]\n", (size_t)(this));
 		if constexpr ( fitsToMem )
@@ -172,39 +166,29 @@ struct promise_type_struct : public promise_type_struct_base {
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
 	promise_type_struct(promise_type_struct &&) = delete;
 	promise_type_struct &operator = (promise_type_struct &&) = delete;
-	~promise_type_struct();
+	~promise_type_struct()  {printf( "~promise_type_struct(), this = 0x%zx [2]\n", (size_t)(this));}
 
     auto get_return_object();
-    auto return_value(T v) {
-		if ( myRetObject != nullptr )
-		{
-//			myRetObject->getValue() = v; // TODO: rework and restore
-			myRetObject->is_value = true;
-		}
-        return std::experimental::suspend_never{};
-    }
+    auto return_value(T v);
+	void unhandled_exception();
 };
 
 template<>
 struct promise_type_struct<void> : public promise_type_struct_base {
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<void>>;
 
-//	awaitable<void>* myOwner = nullptr;
+	awaitable<void>* myRetObject = nullptr;
 
 	promise_type_struct() : promise_type_struct_base() {printf( "promise_type_struct<void>(), this = 0x%zx\n", (size_t)(this));}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
 	promise_type_struct(promise_type_struct &&) = delete;
 	promise_type_struct &operator = (promise_type_struct &&) = delete;
-	~promise_type_struct();
+	~promise_type_struct() {printf( "~promise_type_struct<void>(), this = 0x%zx\n", (size_t)(this));}
 
     auto get_return_object();
-	auto return_void(void) {
-printf( "promise_type_struct::return_void(), this = 0x%zx\n", (size_t)(this));
-if ( myRetObject != nullptr )
-		myRetObject->is_value = true;
-        return std::experimental::suspend_never{};
-    }
+	auto return_void(void);
+	void unhandled_exception();
 };
 
 
@@ -409,35 +393,35 @@ auto promise_type_struct<T>::get_return_object() {
 }
 
 template<class T>
-promise_type_struct<T>::~promise_type_struct() {printf( "~promise_type_struct(), this = 0x%zx [2]\n", (size_t)(this));
-	/*if ( myRetObject )
+auto promise_type_struct<T>::return_value(T v) {
+	if ( myRetObject != nullptr )
 	{
-		myRetObject->coroDestroyed = true;
-		myRetObject->is_value = is_value;
-		myRetObject->e_pending = e_pending;
-		e_pending = nullptr;
-		myRetObject->edata = edata;
-		if ( is_value )
-			myRetObject->getValue() = std::move( getValue() );
-		myRetObject->coro = nullptr;
+		myRetObject->getValue() = v; // TODO: rework and restore
+		myRetObject->is_value = true;
 	}
-	if constexpr ( fitsToMem )
-		getValue().~T();
-	else
-		delete *reinterpret_cast<T**>(this->retValueMem);*/
+    return std::experimental::suspend_never{};
+}
+
+template<class T>
+void promise_type_struct<T>::unhandled_exception() {
+printf( "promise_type_struct::unhandled_exception(), this = 0x%zx [2]\n", (size_t)(this));
+	if ( myRetObject != nullptr )
+		myRetObject->e_pending = std::current_exception();
 }
 
 inline
-promise_type_struct<void>::~promise_type_struct() {printf( "~promise_type_struct<void>(), this = 0x%zx\n", (size_t)(this));
-	/*if ( myOwner )
-	{
-		myRetObject->coroDestroyed = true;
-		myRetObject->is_value = is_value;
-		myRetObject->e_pending = e_pending;
-		e_pending = nullptr;
-		myRetObject->edata = edata;
-		myRetObject->coro = nullptr;
-	}*/
+auto promise_type_struct<void>::return_void(void) {
+printf( "promise_type_struct::return_void(), this = 0x%zx\n", (size_t)(this));
+if ( myRetObject != nullptr )
+	myRetObject->is_value = true;
+    return std::experimental::suspend_never{};
+}
+
+inline
+void promise_type_struct<void>::unhandled_exception() {
+printf( "promise_type_struct<void>::unhandled_exception(), this = 0x%zx [2]\n", (size_t)(this));
+	if ( myRetObject != nullptr )
+		myRetObject->e_pending = std::current_exception();
 }
 
 
