@@ -100,21 +100,8 @@ struct promise_type_struct_base {
 	CoroEData edata;
 	std::experimental::coroutine_handle<> hr = nullptr;
 	std::exception_ptr e_pending = nullptr;
-//	bool is_value = false;
 
-	/*static constexpr size_t valueAlignmentSize = alignof(std::max_align_t);
-	static constexpr size_t valueMemSizeBase = std::max( alignof( std::max_align_t ), 
-		( sizeof( std::string ) / alignof(std::max_align_t) ) * alignof(std::max_align_t) + std::min( (size_t)1, sizeof( std::string ) % alignof(std::max_align_t)) * alignof(std::max_align_t) );
-	static_assert( valueMemSizeBase % alignof(std::max_align_t) == 0 );
-	static constexpr size_t valueMemSizeItems = valueMemSizeBase / sizeof(std::max_align_t) + std::min( (size_t)1, valueMemSizeBase % sizeof(std::max_align_t));
-	std::max_align_t retValueMem[valueMemSizeItems];
-	static constexpr size_t valueMemSize = sizeof( retValueMem );
-	static_assert( valueMemSize >= sizeof( std::string ) );
-	size_t refCtr = 0;*/
-
-	promise_type_struct_base() {
-//		memset( retValueMem, 0xeb, sizeof(retValueMem));
-	}
+	promise_type_struct_base() {}
 	promise_type_struct_base(const promise_type_struct_base &) = delete;
 	promise_type_struct_base &operator = (const promise_type_struct_base &) = delete;
 	promise_type_struct_base(promise_type_struct_base &&) = delete;
@@ -145,23 +132,10 @@ template<typename T> struct awaitable; // forward declaration
 template<class T>
 struct promise_type_struct : public promise_type_struct_base {
 	using handle_type = std::experimental::coroutine_handle<promise_type_struct<T>>;
-//	static constexpr bool fitsToMem = sizeof(T) <= promise_type_struct_base::valueMemSize || valueAlignmentSize < alignof( T );
 
 	awaitable<T>* myRetObject = nullptr;
 
-	/*T& getValue() { printf( "promise_type_struct::getValue(), this = 0x%zx [2]\n", (size_t)(this));
-		if constexpr ( fitsToMem )
-			return *reinterpret_cast<T*>(this->retValueMem); 
-		else
-			return **reinterpret_cast<T**>(this->retValueMem); 
-	}*/
-
-	promise_type_struct() : promise_type_struct_base() {printf( "promise_type_struct(), this = 0x%zx [2]\n", (size_t)(this));
-		/*if constexpr ( fitsToMem )
-			new(this->retValueMem)T();
-		else
-			*reinterpret_cast<T**>(this->retValueMem) = new T;*/
-	}
+	promise_type_struct() : promise_type_struct_base() {printf( "promise_type_struct(), this = 0x%zx [2]\n", (size_t)(this));}
 	promise_type_struct(const promise_type_struct &) = delete;
 	promise_type_struct &operator = (const promise_type_struct &) = delete;
 	promise_type_struct(promise_type_struct &&) = delete;
@@ -229,6 +203,7 @@ struct awaitable : public awaitable_base  {
 	// well, clang refuses considering casts as const_expr, and msvc agrees...
 //	static_assert( &((reinterpret_cast<promise_type_struct<T>*>((void*)(0x100000)))->edata) == &((reinterpret_cast<promise_type_struct<void>*>((void*)(0x100000)))->edata) );
 #endif
+	typename void_type_converter<T>::type value;
 
 	using promise_type = promise_type_struct<T>;
 	using handle_type = std::experimental::coroutine_handle<promise_type>;
@@ -240,7 +215,6 @@ struct awaitable : public awaitable_base  {
 
 	awaitable()  {printf( "awaitable(), this = 0x%zx\n", (size_t)(this));}
 	awaitable(handle_type h) : coro(h) { 
-//		++(coro.promise().refCtr);
 		coro.promise().myRetObject = this;
 		printf( "awaitable(), this = 0x%zx, coro = 0x%zx[2]\n", (size_t)(this), (size_t)(coro.address()) - 0x80 ); /*hh = coro.promise().hr; */
 	}
@@ -260,80 +234,33 @@ struct awaitable : public awaitable_base  {
 	}   
 	
 	~awaitable() {
-//		if ( coro != nullptr )
 		if ( !coroDestroyed )
 		{
-//			printf( "~awaitable(), this = 0x%zx, refCtr = %zd\n", (size_t)(this), coro.promise().refCtr);
-//				if ( coro.done() )
-				{
-//					printf( "    ~awaitable(): destroying coro 0x%zx\n", (size_t)(coro.address()) - 0x80 );
-//					coro.destroy();
-				}
-//				else // not yet ready or is necessary for anybody else - 
-				{
-					printf( "    ~awaitable(): dereferencing coro 0x%zx\n", (size_t)(coro.address()) - 0x80 );
-//					--(coro.promise().refCtr);
-					coro.promise().myRetObject = nullptr;
-				}
+			printf( "    ~awaitable(): dereferencing coro 0x%zx\n", (size_t)(coro.address()) - 0x80 );
+			coro.promise().myRetObject = nullptr;
 		}
 		else
 			printf( "~awaitable(), this = 0x%zx\n", (size_t)(this) );
-		/*if ( coro && coro.promise().hr && coro.promise().hr.done() )
-		{
-			printf( "    ~awaitable(), this = 0x%zx, coro = 0x%zx - about to destroy\n", (size_t)(this), (size_t)(coro.address()) );
-			coro.promise().hr.destroy();
-		}*/
-//		if ( hh != nullptr )
-//			hh.destroy();
-//		if ( hth != nullptr )
-//			hth.resume();
-		if ( coro )
-		{
-//			coro.promise().~promise_type_struct<T>();
-		}
 	}
 
-	/*class resumer
-	{
-		std::experimental::coroutine_handle<promise_type>& h;
-	public:
-		resumer( std::experimental::coroutine_handle<promise_type>& h_ ) : h( h_ ) {}
-		~resumer() { 
-			if ( h != nullptr )
-			{
-				if ( h.done() )
-				{
-					printf( "~resumer(), h.address() = 0x%zx\n", (size_t)(h.address()));
-					std::experimental::coroutine_handle<promise_type> htmp = h;
-					h = nullptr;
-					htmp.destroy();
-				}
-				else // not yet ready or is necessary for anybody else - 
-				{
-					handle_type coro( h );
-					--(coro.promise().refCtr);
-					h = nullptr;
-				}
-			}
-		}
-	};*/
+	T& getValue() {
+		if constexpr ( std::is_same<void, T>::value )
+			return placeholder_for_void_ret_type();
+		else
+			return value;
+	}
 
 	typename void_type_converter<T>::type get() {
 		printf( "get(), this = 0x%zx\n", (size_t)(this));
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
-			return this->getValue();
+			return value;
 	}
 
 	bool await_ready() noexcept { 
 		printf( "await_ready(), this = 0x%zx\n", (size_t)(this));
-//		if ( coro )
-		/*if ( !coroDestroyed )
-			return is_value;
-		else*/
-			return is_value;
-		
+		return is_value;		
 	}
 	void await_suspend(std::experimental::coroutine_handle<> h_) noexcept {
 		printf( "await_suspend(), this = 0x%zx, coro? %s\n", (size_t)(this), coro == nullptr ? "NO" : "Yes" );
@@ -345,34 +272,16 @@ struct awaitable : public awaitable_base  {
 	}
 	typename void_type_converter<T>::type await_resume() { 
 		printf( "await_resume(), this = 0x%zx\n", (size_t)(this));
-//		resumer r( coro );
-//		if ( coro != nullptr )
-		/*if ( !coroDestroyed )
+		if ( e_pending != nullptr )
 		{
-			if ( e_pending != nullptr )
-			{
-				std::exception_ptr ex = e_pending;
-				e_pending = nullptr;
-				std::rethrow_exception(ex);
-			}
-			if constexpr ( std::is_same<void, T>::value )
-				return placeholder_for_void_ret_type();
-			else
-				return this->getValue();
+			std::exception_ptr ex = e_pending;
+			e_pending = nullptr;
+			std::rethrow_exception(ex);
 		}
-		else*/
-		{
-			if ( e_pending != nullptr )
-			{
-				std::exception_ptr ex = e_pending;
-				e_pending = nullptr;
-				std::rethrow_exception(ex);
-			}
-			if constexpr ( std::is_same<void, T>::value )
-				return placeholder_for_void_ret_type();
-			else
-				return this->getValue();
-		}
+		if constexpr ( std::is_same<void, T>::value )
+			return placeholder_for_void_ret_type();
+		else
+			return this->getValue();
 	}
 
 };
@@ -396,7 +305,7 @@ template<class T>
 auto promise_type_struct<T>::return_value(T v) {
 	if ( myRetObject != nullptr )
 	{
-		myRetObject->getValue() = v; // TODO: rework and restore
+		myRetObject->getValue() = v;
 		myRetObject->is_value = true;
 	}
     return std::experimental::suspend_never{};
