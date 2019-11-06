@@ -198,11 +198,6 @@ std::exception& getException(std::experimental::coroutine_handle<> awaiting) {
 
 template<typename T>
 struct awaitable : public awaitable_base  {
-	static_assert( sizeof(promise_type_struct<T>) == sizeof(promise_type_struct<void>) );
-#ifdef NODECPP_MSVC
-	// well, clang refuses considering casts as const_expr, and msvc agrees...
-//	static_assert( &((reinterpret_cast<promise_type_struct<T>*>((void*)(0x100000)))->edata) == &((reinterpret_cast<promise_type_struct<void>*>((void*)(0x100000)))->edata) );
-#endif
 	typename void_type_converter<T>::type value;
 
 	using promise_type = promise_type_struct<T>;
@@ -211,12 +206,10 @@ struct awaitable : public awaitable_base  {
 	bool coroDestroyed = false;
 	using value_type = T;
 
-//	std::experimental::coroutine_handle<void> hh = nullptr;
-
 	awaitable()  {printf( "awaitable(), this = 0x%zx\n", (size_t)(this));}
 	awaitable(handle_type h) : coro(h) { 
 		coro.promise().myRetObject = this;
-		printf( "awaitable(), this = 0x%zx, coro = 0x%zx[2]\n", (size_t)(this), (size_t)(coro.address()) - 0x80 ); /*hh = coro.promise().hr; */
+		printf( "awaitable(), this = 0x%zx, coro = 0x%zx[2]\n", (size_t)(this), (size_t)(coro.address()) - 0x80 );
 	}
 
     awaitable(const awaitable &) = delete;
@@ -243,7 +236,7 @@ struct awaitable : public awaitable_base  {
 			printf( "~awaitable(), this = 0x%zx\n", (size_t)(this) );
 	}
 
-	T& getValue() {
+	typename void_type_converter<T>::type& getValue() {
 		if constexpr ( std::is_same<void, T>::value )
 			return placeholder_for_void_ret_type();
 		else
