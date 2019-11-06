@@ -58,12 +58,10 @@ namespace nodecpp {
 				nodecpp::safememory::owning_ptr<HttpServerResponse> response;
 				bool active = false;
 			};
-//			RRPair rrPair;
 
 			template<size_t sizeExp>
 			class RRQueue
 			{
-//				size_t sizeExp = 0;
 				RRPair* cbuff = nullptr;
 				uint64_t head = 0;
 				uint64_t tail = 0;
@@ -619,10 +617,6 @@ namespace nodecpp {
 		inline
 		HttpSocketBase::HttpSocketBase() {
 			rrQueue.init( myThis.getSoftPtr<HttpSocketBase>(this) );
-			/*rrPair.request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
-			rrPair.request->sock = myThis.getSoftPtr<HttpSocketBase>(this);
-			rrPair.response = nodecpp::safememory::make_owning<HttpServerResponse>();
-			rrPair.response->sock = myThis.getSoftPtr<HttpSocketBase>(this);*/
 			run(); // TODO: think about proper time for this call
 		}
 
@@ -633,9 +627,7 @@ namespace nodecpp {
 			for ( size_t i=0; i<size; ++i )
 			{
 				cbuff[i].request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
-				//cbuff[i].request->idx = i;
 				cbuff[i].response = nodecpp::safememory::make_owning<HttpServerResponse>();
-				//cbuff[i].response->idx = i;
 				nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> tmprq = (cbuff[i].request);
 				nodecpp::safememory::soft_ptr<HttpServerResponse> tmrsp = (cbuff[i].response);
 				cbuff[i].response->counterpart = nodecpp::safememory::soft_ptr_reinterpret_cast<HttpMessageBase>(tmprq);
