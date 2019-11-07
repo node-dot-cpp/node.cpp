@@ -802,16 +802,17 @@ private:
 		auto hr = entry.getClientSocketData()->ahd_read.h;
 		if ( hr )
 		{
-			entry.getClientSocketData()->ahd_read.h = nullptr;
 			size_t target_sz = entry.getClientSocketData()->ahd_read.min_bytes;
 			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, target_sz);
 			if ( !read_ok )
 			{
+				entry.getClientSocketData()->ahd_read.h = nullptr;
 				nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 				hr();
 			}
 			else if ( entry.getClientSocketData()->readBuffer.used_size() >= entry.getClientSocketData()->ahd_read.min_bytes )
 			{
+				entry.getClientSocketData()->ahd_read.h = nullptr;
 				hr();
 			}
 		}

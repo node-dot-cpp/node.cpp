@@ -65,10 +65,46 @@ read_result read_data(size_t idx) {
 	return ret;
 } // returns immediately
 
+static int trigger = 0;
+
 class data_reader
 {
 public:
 	int myIdx = -1;
+
+	auto read_data_or_wait_void() { 
+
+		struct read_data_awaiter {
+			int myIdx;
+			std::experimental::coroutine_handle<> ah = nullptr;
+
+			read_data_awaiter(int myIdx_) {
+				myIdx = myIdx_;
+			}
+
+			read_data_awaiter(const read_data_awaiter &) = delete;
+			read_data_awaiter &operator = (const read_data_awaiter &) = delete;
+	
+			~read_data_awaiter() {}
+
+			bool await_ready() {
+				return (trigger++)%3;
+			}
+
+			void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+				ah = awaiting;
+				nodecpp::setNoException(awaiting);
+				set_read_awaiting_handle( myIdx, awaiting );
+			}
+
+			auto await_resume() {
+				if ( ah != nullptr && nodecpp::isException(ah) )
+					throw nodecpp::getException(ah);
+				return;
+			}
+		};
+		return read_data_awaiter(myIdx);
+	}
 
 	auto read_data_or_wait() { 
 
@@ -101,7 +137,7 @@ public:
 			auto await_resume() {
 //				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(ah.address());
 				read_result r = read_data(myIdx);
-				if ( nodecpp::isException(ah) )
+				if ( ah != nullptr && nodecpp::isException(ah) )
 					throw nodecpp::getException(ah);
 				return r.data;
 			}
@@ -121,6 +157,25 @@ public:
 class page_processor
 {
 	data_reader reader;
+
+	nodecpp::awaitable<void> complete_block_void()
+	{
+		size_t accumulated = 0;
+		while ( accumulated < 6 ) // jus some sample condition
+		{
+			try
+			{
+				co_await reader.read_data_or_wait_void();
+				accumulated++;
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at complete_block_1(): %s\n", e.what());
+				throw;
+			}
+		}
+		co_return;
+	}
 
 	nodecpp::awaitable<std::string> complete_block_1()
 //	nodecpp::awaitable<ret_str> complete_block_1()
@@ -150,6 +205,18 @@ class page_processor
 	}
 
 protected:
+	nodecpp::awaitable<void> complete_page_void()
+	{
+		size_t accumulated = 0;
+		while ( accumulated < 2 ) // an artificial sample condition
+		{
+			co_await complete_block_void();
+			accumulated++;
+		}
+		co_return;
+
+	}
+
 	nodecpp::awaitable<std::string> complete_page_1()
 //	nodecpp::awaitable<ret_str> complete_page_1()
 	{
@@ -171,6 +238,10 @@ protected:
 public:
 	page_processor() {}
 	virtual ~page_processor() {}
+
+	virtual nodecpp::awaitable<void> runVoid() = 0;
+	virtual nodecpp::awaitable<void> run1Void(size_t count) = 0;
+	virtual nodecpp::awaitable<size_t> run2Void() = 0;
 
 	virtual nodecpp::awaitable<void> run() = 0;
 	virtual nodecpp::awaitable<void> run1(size_t count) = 0;
@@ -234,6 +305,68 @@ public:
 //				auto page = (co_await complete_page_1()).str;
 				++ctr;
 				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n%s", ctr, page.c_str() );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_A::run(): %s\n", e.what());
+			}
+		}
+
+		printf ( "type A run2( %zd ): about to co_return...\n", count ); 
+		co_return count;
+	}
+
+	virtual nodecpp::awaitable<void> runVoid()
+	{
+		for(int ctr = 0;;)
+		{
+			try
+			{
+				co_await complete_page_void();
+				++ctr;
+				printf( "PAGE %d HAS BEEN PROCESSED with type A\n", ctr );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_A::run(): %s\n", e.what());
+			}
+		}
+
+		co_return;
+	}
+	virtual nodecpp::awaitable<void> run1Void(size_t count)
+	{
+		printf ( "run1( %zd )\n", count ); 
+		for(size_t ctr = 0; ctr<count;)
+		{
+			printf ( "run1(): starting page %zd\n", ctr );
+			try
+			{
+				co_await complete_page_void();
+				++ctr;
+				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n", ctr );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_A::run(): %s\n", e.what());
+			}
+		}
+
+		printf ( "run1( %zd ): about to co_return...\n", count ); 
+		co_return;
+	}
+	virtual nodecpp::awaitable<size_t> run2Void()
+	{
+		size_t count = 2;
+		printf ( "run1( %zd )\n", count ); 
+		for(size_t ctr = 0; ctr<count;)
+		{
+			printf ( "run1(): starting page %zd\n", ctr );
+			try
+			{
+				co_await complete_page_void();
+				++ctr;
+				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n", ctr );
 			}
 			catch (std::exception& e)
 			{
@@ -311,6 +444,68 @@ public:
 		}
 
 		printf ( "type B run2( %zd ): about to co_return...\n", count ); 
+		co_return count;
+	}
+
+	virtual nodecpp::awaitable<void> runVoid()
+	{
+		for(int ctr = 0;;)
+		{
+			try
+			{
+				co_await complete_page_void();
+				++ctr;
+				printf( "PAGE %d HAS BEEN PROCESSED with type A\n", ctr );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_A::run(): %s\n", e.what());
+			}
+		}
+
+		co_return;
+	}
+	virtual nodecpp::awaitable<void> run1Void(size_t count)
+	{
+		printf ( "run1( %zd )\n", count ); 
+		for(size_t ctr = 0; ctr<count;)
+		{
+			printf ( "run1(): starting page %zd\n", ctr );
+			try
+			{
+				co_await complete_page_void();
+				++ctr;
+				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n", ctr );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_A::run(): %s\n", e.what());
+			}
+		}
+
+		printf ( "run1( %zd ): about to co_return...\n", count ); 
+		co_return;
+	}
+	virtual nodecpp::awaitable<size_t> run2Void()
+	{
+		size_t count = 2;
+		printf ( "run1( %zd )\n", count ); 
+		for(size_t ctr = 0; ctr<count;)
+		{
+			printf ( "run1(): starting page %zd\n", ctr );
+			try
+			{
+				co_await complete_page_void();
+				++ctr;
+				printf( "PAGE %zd HAS BEEN PROCESSED with type A\n", ctr );
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at page_processor_A::run(): %s\n", e.what());
+			}
+		}
+
+		printf ( "type A run2( %zd ): about to co_return...\n", count ); 
 		co_return count;
 	}
 };
@@ -430,6 +625,15 @@ nodecpp::awaitable<void> processing_loop_core_4(P& p)
 	co_return;
 }
 
+template<class P>
+nodecpp::awaitable<void> processing_loop_core_4_void(P& p)
+{
+	p.preader_0->runVoid();
+	p.preader_1->run2Void();
+	p.preader_2->run1Void(1);
+	co_return;
+}
+
 template<class P, class ... args>
 nodecpp::awaitable<void> processing_loop_core_5(P& p)
 {
@@ -442,11 +646,12 @@ nodecpp::awaitable<void> processing_loop_core_5(P& p)
 void processing_loop()
 { 
 	printf( "sizeof(srd::string) = %zd\n", sizeof(std::string) );
-	nodecpp::safememory::interceptNewDeleteOperators(true);
+//	nodecpp::safememory::interceptNewDeleteOperators(true);
 	{
 		Processors p;
 //		/*auto core =*/ processing_loop_core_3(p);
-		processing_loop_core_4(p);
+//		processing_loop_core_4(p);
+		processing_loop_core_4_void(p);
 //		processing_loop_core_5<Processors, int>(p);
 
 		for (;;)
@@ -490,5 +695,5 @@ void processing_loop()
 			}
 		}
 	}
-	nodecpp::safememory::interceptNewDeleteOperators(false);
+//	nodecpp::safememory::interceptNewDeleteOperators(false);
 }

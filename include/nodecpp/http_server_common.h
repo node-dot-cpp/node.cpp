@@ -364,6 +364,8 @@ namespace nodecpp {
 
 		protected:
 			nodecpp::safememory::soft_ptr<HttpSocketBase> sock;
+			uint64_t idx = (uint64_t)(-1);
+			nodecpp::safememory::soft_ptr<HttpMessageBase> counterpart;
 
 			static constexpr std::pair<const char *, size_t> MethodNames[] = { 
 				std::make_pair( "GET", sizeof( "GET" ) - 1 ),
