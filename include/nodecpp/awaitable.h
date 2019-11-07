@@ -111,6 +111,9 @@ struct promise_type_struct_base {
 		}
 		return std::experimental::suspend_never{};
     }
+
+	void* operator new  ( std::size_t count ) { printf( "coro: about to allocate %zd bytes\n", count ); return ::nodecpp::safememory::allocate(count); }
+	void operator delete ( void* ptr ) { printf( "coro: about to deallocate\n" ); ::nodecpp::safememory::deallocate(ptr); }
 };
 
 template<typename T> struct awaitable; // forward declaration
