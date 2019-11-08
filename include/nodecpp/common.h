@@ -80,6 +80,33 @@ namespace nodecpp
 
 	template<class Key, class T>
 	using map = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
+
+	template<class Key, class T>
+	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::stdallocator<std::pair<const Key,T>>>;
+
+	using string = ::std::basic_string<char, std::char_traits<char>, nodecpp::safememory::iiballocator<char>>;
+
+	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::safememory::stdallocator<char>>;
+
+	class string_literal
+	{
+		const char* str;
+	public:
+		string_literal() : str( nullptr ) {}
+		string_literal( const char* str_) : str( str_ ) {}
+		string_literal( const string_literal& other ) : str( other.str ) {}
+		string_literal& operator = ( const string_literal& other ) {str = other.str; return *this;}
+		string_literal( string_literal&& other ) : str( other.str ) {}
+		string_literal& operator = ( string_literal&& other ) {str = other.str; return *this;}
+
+		bool operator == ( const string_literal& other ) const { return strcmp( str, other.str ) == 0; }
+		bool operator != ( const string_literal& other ) const { return strcmp( str, other.str ) != 0; }
+
+//		bool operator == ( const char* other ) const { return strcmp( str, other.str ) == 0; }
+//		bool operator != ( const char* other ) const { return strcmp( str, other.str ) != 0; }
+
+		const char* c_str() const { return str; }
+	};
 } // nodecpp
 
 namespace nodecpp
