@@ -588,7 +588,7 @@ namespace nodecpp {
 
 		struct Address {
 			uint16_t port;
-			std::string family;
+			nodecpp::IPFAMILY family;
 			Ip4 ip;
 
 			bool operator == ( const Address& other ) { return port == other.port && ip == other.ip && family == other.family; }

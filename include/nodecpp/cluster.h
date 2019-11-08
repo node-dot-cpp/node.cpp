@@ -73,21 +73,22 @@ namespace nodecpp
 		static constexpr size_t InvalidThreadID = (size_t)(-1);
 
 	private:
-		static void serializeListeningRequest( size_t threadID, size_t requestID, size_t entryIndex, Ip4 ip, uint16_t port, int backlog, std::string family, nodecpp::Buffer& b ) {
+		static void serializeListeningRequest( size_t threadID, size_t requestID, size_t entryIndex, Ip4 ip, uint16_t port, int backlog, IPFAMILY family, nodecpp::Buffer& b ) {
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Slave id = {}: serializing listening request for Addr = {}:{}, backlog = {}, entryIndex = {:x}", threadID, ip.toStr(), port, backlog, entryIndex );
 			ClusteringMsgHeader h;
 			h.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
 			h.assignedThreadID = threadID;
 			h.requestID = requestID;
 			h.entryIdx = entryIndex;
-			h.bodySize = 4 + 2 + sizeof(int) + family.size() + 1;
+			h.bodySize = 4 + 2 + sizeof(int) + 4 + 1;
 			h.serialize( b );
 
 			uint32_t uip = ip.getNetwork();
 			b.append( &uip, 4 );
 			b.append( &port, 2 );
 			b.append( &backlog, sizeof(int) );
-			b.appendString( family.c_str(), family.size() );
+			uint32_t familyNum = (uint32_t)(family.value());
+			b.append( &familyNum, 4 );
 		}
 		static size_t deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::Buffer& b, size_t offset, size_t sz ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz + offset <= b.size() );
@@ -95,7 +96,8 @@ namespace nodecpp
 			addr.ip = Ip4::fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset) );
 			addr.port = *reinterpret_cast<uint16_t*>(b.begin() + offset + 4);
 			backlog = *reinterpret_cast<int*>(b.begin() + offset + 6);
-			addr.family = std::string( reinterpret_cast<char*>(b.begin() + offset + 6 + sizeof(int)) );
+			uint32_t numFamily = *reinterpret_cast<uint32_t*>(b.begin() + offset + 6 + sizeof(int));
+			addr.family.fromNum( numFamily );
 			return offset + sz;
 		}
 
@@ -297,7 +299,7 @@ namespace nodecpp
 			size_t requestIdBase = 0;
 			Buffer requestsBeforeConnection;
 
-			nodecpp::handler_ret_type sendListeningRequest( size_t entryIndex, Ip4 ip, uint16_t port, std::string family, int backlog)
+			nodecpp::handler_ret_type sendListeningRequest( size_t entryIndex, Ip4 ip, uint16_t port, IPFAMILY family, int backlog)
 			{
 				Buffer b;
 				Cluster::serializeListeningRequest( assignedThreadID, ++requestIdBase, entryIndex, ip, port, backlog, family, b );
@@ -573,7 +575,7 @@ namespace nodecpp
 				slave.socket->sendServerCloseNotification( slave.entryIndex, agent->requestID, false );
 		}
 
-		void acceptRequestForListeningAtSlave(size_t entryIndex, Ip4 ip, uint16_t port, std::string family, int backlog)
+		void acceptRequestForListeningAtSlave(size_t entryIndex, Ip4 ip, uint16_t port, IPFAMILY family, int backlog)
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isWorker() );
 			Buffer b;
