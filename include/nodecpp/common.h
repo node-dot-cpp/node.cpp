@@ -78,6 +78,9 @@ namespace nodecpp
 	template<class T>
 	using vector = ::std::vector<T, nodecpp::safememory::iiballocator<T>>;
 
+	template<class T>
+	using stdvector = ::std::vector<T, nodecpp::safememory::stdallocator<T>>;
+
 	template<class Key, class T>
 	using map = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
 
@@ -195,7 +198,7 @@ public:
 /*template<class RunnableT,class Infra>
 thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;*/
 
-extern std::vector<std::string>* argv;
-inline const std::vector<std::string>& getArgv() { return *argv; }
+extern nodecpp::stdvector<nodecpp::stdstring>* argv;
+inline const nodecpp::stdvector<nodecpp::stdstring>& getArgv() { return *argv; }
 
 #endif //COMMON_H

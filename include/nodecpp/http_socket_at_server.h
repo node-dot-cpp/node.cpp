@@ -208,7 +208,7 @@ namespace nodecpp {
 				return data_awaiter(*this, period, d);
 			}
 
-			nodecpp::handler_ret_type readLine(std::string& line)
+			nodecpp::handler_ret_type readLine(nodecpp::string& line)
 			{
 				size_t pos = 0;
 				line.clear();
@@ -223,7 +223,7 @@ namespace nodecpp {
 							dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 							CO_RETURN;
 						}
-					line += std::string( (const char*)(d.ptr1), pos );
+					line += nodecpp::string( (const char*)(d.ptr1), pos );
 					dataForCommandProcessing.readBuffer.skip_data( pos );
 					pos = 0;
 					if ( d.ptr2 && d.sz2 )
@@ -231,11 +231,11 @@ namespace nodecpp {
 						for ( ; pos<d.sz2; ++pos )
 							if ( d.ptr2[pos] == '\n' )
 							{
-								line += std::string( (const char*)(d.ptr2), pos + 1 );
+								line += nodecpp::string( (const char*)(d.ptr2), pos + 1 );
 								dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 								CO_RETURN;
 							}
-						line += std::string( (const char*)(d.ptr2), pos );
+						line += nodecpp::string( (const char*)(d.ptr2), pos );
 						dataForCommandProcessing.readBuffer.skip_data( pos );
 						pos = 0;
 					}
@@ -319,9 +319,9 @@ namespace nodecpp {
 		private:
 			struct Method // so far a struct
 			{
-				std::string name;
-				std::string url;
-				std::string version;
+				nodecpp::string name;
+				nodecpp::string url;
+				nodecpp::string version;
 				void clear() { name.clear(); url.clear(); version.clear(); }
 			};
 			Method method;
@@ -381,11 +381,11 @@ namespace nodecpp {
 #endif // NODECPP_NO_COROUTINES
 
 
-			bool parseMethod( const std::string& line )
+			bool parseMethod( const nodecpp::string& line )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::noinit ); 
 				size_t start = line.find_first_not_of( " \t" );
-				if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
+				if ( start == nodecpp::string::npos || line[start] == '\r' || line[start] == '\n' )
 					return false;
 				bool found = false;
 				// Method name
@@ -416,11 +416,11 @@ namespace nodecpp {
 				return true;
 			}
 
-			bool parseHeaderEntry( const std::string& line )
+			bool parseHeaderEntry( const nodecpp::string& line )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::in_hdr ); 
 				size_t end = line.find_last_not_of(" \t\r\n" );
-				if ( end == std::string::npos )
+				if ( end == nodecpp::string::npos )
 				{
 					if ( !( line.size() == 2 && line[0] == '\r' && line[1] == '\n' ) ) // last empty line
 						return true; // TODO: what should we do with this line of spaces? - just ignore or report a parsing error?
@@ -433,14 +433,14 @@ namespace nodecpp {
 				if ( idx >= end )
 					return false;
 				size_t valStart = line.find_first_not_of( " \t", idx + 1 );
-				std::string key = line.substr( start, idx-start );
+				nodecpp::string key = line.substr( start, idx-start );
 				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
 				return true;
 			}
 
-			const std::string& getMethod() { return method.name; }
-			const std::string& getUrl() { return method.url; }
-			const std::string& getHttpVersion() { return method.version; }
+			const nodecpp::string& getMethod() { return method.name; }
+			const nodecpp::string& getUrl() { return method.url; }
+			const nodecpp::string& getHttpVersion() { return method.version; }
 
 			size_t getContentLength() const { return contentLength; }
 
@@ -462,7 +462,7 @@ namespace nodecpp {
 
 		private:
 			nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> myRequest;
-			typedef std::map<std::string, std::string> header_t;
+			typedef std::map<nodecpp::string, nodecpp::string> header_t;
 			header_t header;
 			size_t contentLength = 0;
 			nodecpp::Buffer body;
@@ -470,7 +470,7 @@ namespace nodecpp {
 			enum WriteStatus { notyet, hdr_flushed, in_body, completed };
 			WriteStatus writeStatus = WriteStatus::notyet;
 
-			std::string replyStatus;
+			nodecpp::string replyStatus;
 			//size_t bodyBytesWritten = 0;
 
 		private:
@@ -513,14 +513,14 @@ namespace nodecpp {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
 			}
 
-			void addHeader( std::string key, std::string value )
+			void addHeader( nodecpp::string key, nodecpp::string value )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: sanitize
 				header.insert( std::make_pair( key, value ) );
 			}
 
-			void setStatus( std::string status ) // temporary stub; TODO: ...
+			void setStatus( nodecpp::string status ) // temporary stub; TODO: ...
 			{
 				replyStatus = status;
 			}
@@ -595,7 +595,7 @@ namespace nodecpp {
 		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
 			bool ready = false;
-			std::string line;
+			nodecpp::string line;
 			co_await readLine(line);
 //			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			if ( !message.parseMethod( line ) )

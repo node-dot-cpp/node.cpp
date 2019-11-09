@@ -415,7 +415,7 @@ namespace nodecpp
 				size_t entryIndex;
 				nodecpp::safememory::soft_ptr<MasterSocket> socket;
 			};
-			std::vector<SlaveServerData> socketsToSlaves;
+			nodecpp::vector<SlaveServerData> socketsToSlaves;
 		public:
 			nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
 		public:
@@ -501,7 +501,7 @@ namespace nodecpp
 
 
 		};
-		std::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
+		nodecpp::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
 
 		nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
 			nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>(*this);
@@ -591,7 +591,7 @@ namespace nodecpp
 
 	private:
 		Worker thisThreadWorker;
-		std::vector<Worker> workers_;
+		nodecpp::vector<Worker> workers_;
 		uint64_t coreCtr = 0; // for: thread ID generation at master; requestID generation at Slave
 
 		using CtrlServerT = MasterServer;
@@ -640,7 +640,7 @@ namespace nodecpp
 
 		bool isMaster() const { return thisThreadWorker.id() == 0; }
 		bool isWorker() const { return thisThreadWorker.id() != 0; }
-		const std::vector<Worker>& workers() const { return workers_; }
+		const nodecpp::vector<Worker>& workers() const { return workers_; }
 		const Worker& worker() const { return thisThreadWorker; }
 
 		Worker& fork();

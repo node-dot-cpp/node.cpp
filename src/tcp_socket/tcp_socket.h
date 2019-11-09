@@ -120,8 +120,8 @@ class NetSockets
 	nodecpp::vector<NetSocketEntry> slaveServers;
 	static constexpr size_t SlaveServerEntryMinIndex = (((size_t)~((size_t)0))>>1)+1;
 #endif // NODECPP_ENABLE_CLUSTERING
-	std::vector<pollfd> osSide;
-	std::vector<pollfd> osSideAccum;
+	nodecpp::vector<pollfd> osSide;
+	nodecpp::vector<pollfd> osSideAccum;
 	size_t associatedCount = 0;
 	size_t usedCount = 0;
 	//mb: xxxSide[0] is always reserved and invalid.
@@ -132,7 +132,7 @@ class NetSockets
 		if ( ourSide.size() <= compactionMinSize || usedCount < ourSide.size() / 2 )
 			return;
 		NetSocketEntryVectorT ourSideNew;
-		std::vector<pollfd> osSideNew;
+		nodecpp::vector<pollfd> osSideNew;
 		ourSideNew.reserve(capacity_); 
 		osSideNew.reserve(capacity_);
 		ourSideNew.emplace_back(0); 
@@ -480,7 +480,7 @@ public:
 class NetSocketManagerBase : protected OSLayer
 {
 	friend class OSLayer;
-//	std::vector<Buffer> bufferStore; // TODO: improve
+//	nodecpp::vector<Buffer> bufferStore; // TODO: improve
 
 public:
 //	int typeIndexOfSocketO = -1;

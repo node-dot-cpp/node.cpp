@@ -187,7 +187,7 @@ bool isNetInitialized();
 	Each method 'kind' must be isolated and can't call the other.
 */
 
-//extern thread_local std::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+//extern thread_local nodecpp::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 
 class OSLayer {
 protected:

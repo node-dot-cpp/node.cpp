@@ -147,7 +147,7 @@ uint64_t infraGetCurrentTime();
 template<class EmitterType, class ServerEmitterType>
 class Infrastructure
 {
-	//std::vector<NetSocketEntry> ioSockets;
+	//nodecpp::vector<NetSocketEntry> ioSockets;
 	NetSockets ioSockets;
 	NetSocketManager<EmitterType> netSocket;
 	NetServerManager<ServerEmitterType> netServer;

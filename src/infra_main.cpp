@@ -78,13 +78,13 @@ void registerFactory( const char* name, RunnableFactoryBase* factory )
 	NodeFactoryMap::getInstance().registerFactory( name, factory );
 }
 
-std::vector<std::string>* argv = 0;
+nodecpp::stdvector<nodecpp::stdstring>* argv = 0;
 
 #ifndef NODECPP_ENABLE_CLUSTERING
 
 int main( int argc, char *argv_[] )
 {
-	argv = new std::vector<std::string>();
+	argv = new nodecpp::stdvector<nodecpp::stdstring>();
 	for ( int i=0; i<argc; ++i )
 		argv->push_back( argv_[i] );
 
@@ -126,7 +126,7 @@ void workerThreadMain( void* pdata )
 
 int main( int argc, char *argv_[] )
 {
-	argv = new std::vector<std::string>();
+	argv = new nodecpp::stdvector<nodecpp::stdstring>();
 	for ( int i=0; i<argc; ++i )
 		argv->push_back( argv_[i] );
 

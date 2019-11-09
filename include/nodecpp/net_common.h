@@ -611,7 +611,7 @@ namespace nodecpp {
 				FnT handler = nullptr;
 				void *object = nullptr;
 			};
-			std::vector<HandlerInstance> handlers;
+			nodecpp::vector<HandlerInstance> handlers;
 
 			bool willHandle() { return handlers.size(); }
 			void from(const UserDefHandlersBase<FnT>& patternUH, void* defaultObjPtr)

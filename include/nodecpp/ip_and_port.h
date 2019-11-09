@@ -46,7 +46,7 @@ namespace nodecpp {
 		uint32_t getNetwork() const { return ip; }
 		static Ip4 parse(const char* ip);
 		static Ip4 fromNetwork(uint32_t ip);
-		std::string toStr() const;
+		nodecpp::string toStr() const;
 
 		bool operator == ( const Ip4& other ) { return ip == other.ip; }
 	};
@@ -66,7 +66,7 @@ namespace nodecpp {
 		uint16_t getHost() const;
 		static Port fromHost(uint16_t port);
 		static Port fromNetwork(uint16_t port);
-		std::string toStr() const;
+		nodecpp::string toStr() const;
 	};
 
 	class IPFAMILY
