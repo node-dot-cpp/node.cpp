@@ -407,7 +407,7 @@ namespace nodecpp {
 				auto cs = header.find( "connection" );
 				if ( cs != header.end() )
 				{
-					nodecpp::string val = cs->second.c_str();
+					nodecpp::string val = cs->second;
 					val = makeLower( val );
 					if ( val == "keep alive" )
 						connStatus = ConnStatus::keep_alive;

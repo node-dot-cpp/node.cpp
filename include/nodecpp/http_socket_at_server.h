@@ -530,13 +530,13 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: add real implementation
-				headerBuff.append( replyStatus.c_str(), replyStatus.size() );
+				headerBuff.appendString( replyStatus );
 				headerBuff.append( "\r\n", 2 );
 				for ( auto h: header )
 				{
-					headerBuff.append( h.first.c_str(), h.first.size() );
+					headerBuff.appendString( h.first );
 					headerBuff.append( ": ", 2 );
-					headerBuff.append( h.second.c_str(), h.second.size() );
+					headerBuff.appendString( h.second );
 					headerBuff.append( "\r\n", 2 );
 				}
 				headerBuff.append( "\r\n", 2 );

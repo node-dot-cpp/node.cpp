@@ -164,7 +164,7 @@ namespace nodecpp {
 			*reinterpret_cast<uint8_t*>(begin() + size() ) = val;
 			return ++_size;
 		}
-		size_t appendString( const char* str, size_t sz ) { // TODO: revision required
+		/*size_t appendString( const char* str, size_t sz ) { // TODO: revision required
 			if ( str )
 			{
 				ensureCapacity(size() + sz + 1);
@@ -173,12 +173,14 @@ namespace nodecpp {
 			}
 			*reinterpret_cast<uint8_t*>(begin() + size() ) = 0;
 			return ++_size;
+		}*/
+		size_t appendString( const nodecpp::string& str ) {
+			append( str.c_str(), str.size() );
+			return _size;
 		}
-		size_t appendString( const nodecpp::string& str ) { // TODO: revision required
-			return appendString( str.c_str(), str.size() );
-		}
-		size_t appendString( nodecpp::string_literal str ) { // TODO: revision required
-			return appendString( str.c_str(), strlen( str.c_str() ) );
+		size_t appendString( nodecpp::string_literal str ) {
+			append( str.c_str(), strlen( str.c_str() ) );
+			return _size;
 		}
 
 		// an attempt to follow node.js buffer-related interface

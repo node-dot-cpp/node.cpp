@@ -301,7 +301,7 @@ public:
 //			response->dbgTrace();
 			co_await response->flushHeaders();
 			Buffer b;
-			b.append( replyHtml.c_str(), replyHtml.size() );
+			b.appendString( replyHtml );
 			co_await response->writeBodyPart(b);
 		}
 		else
@@ -316,7 +316,7 @@ public:
 //			response->dbgTrace();
 			co_await response->flushHeaders();
 			Buffer b;
-			b.append( replyHtml.c_str(), replyHtml.size() );
+			b.appendString( replyHtml );
 			co_await response->writeBodyPart(b);
 		}
 		co_await response->end();
@@ -383,7 +383,7 @@ public:
 			for ( auto entry: queryValues )
 				if ( entry.first == "value" )
 				{
-					b.append( entry.second.c_str(), entry.second.size() );
+					b.appendString( entry.second );
 					b.appendUint8( ',' );
 				}
 			if ( b.size() )
