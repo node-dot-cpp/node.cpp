@@ -145,7 +145,7 @@ public:
 			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
 			auto argv = getArgv();
-			std::string ip = "0.0.0.0";
+			nodecpp::string ip = "0.0.0.0";
 			for ( size_t i=1; i<argv.size(); ++i )
 			{
 				if ( argv[i].size() > 3 && argv[i].substr(0,9) == "ip=" )
@@ -251,10 +251,10 @@ public:
 		}
 
 		bool dataAvailable = false;
-		std::string replyHtml;
+		nodecpp::string replyHtml;
 		if ( request->getUrl() == "/" )
 		{
-			std::string replyHtmlFormat = "<html>\r\n"
+			nodecpp::string replyHtmlFormat = "<html>\r\n"
 				"<body>\r\n"
 				"<h1>HOME</h1>\r\n"
 				"<p>ordinal at server: {}\r\n"
@@ -266,7 +266,7 @@ public:
 		}
 		else if ( request->getUrl() == "/another_page.html" )
 		{
-			std::string replyHtmlFormat = "<html>\r\n"
+			nodecpp::string replyHtmlFormat = "<html>\r\n"
 				"<body>\r\n"
 				"<h1>Another Page</h1>\r\n"
 				"<p>ordinal at server: {}\r\n"
@@ -279,7 +279,7 @@ public:
 		}
 		else // not found (body for 404)
 		{
-			std::string replyHtmlFormat = "<html>\r\n"
+			nodecpp::string replyHtmlFormat = "<html>\r\n"
 				"<body>\r\n"
 				"<h1>404 Not Found</h1>\r\n"
 				"<p>ordinal at server: {}\r\n"
@@ -296,7 +296,7 @@ public:
 			response->addHeader( "Content-Type", "text/html" );
 			response->addHeader( "Connection", "keep-alive" );
 //				response->addHeader( "Connection", "close" );
-			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()) );
+			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()).c_str() );
 
 //			response->dbgTrace();
 			co_await response->flushHeaders();
@@ -311,7 +311,7 @@ public:
 //				response->addHeader( "Connection", "close" );
 //					response->addHeader( "Content-Length", "0" );
 			response->addHeader( "Content-Type", "text/html" );
-			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()) );
+			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()).c_str() );
 
 //			response->dbgTrace();
 			co_await response->flushHeaders();
@@ -326,20 +326,20 @@ public:
 
 		CO_RETURN;
 	}
-	void parseUrlQueryString(const std::string& query, std::vector<std::pair<std::string, std::string>>& queryValues )
+	void parseUrlQueryString(const nodecpp::string& query, nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>>& queryValues )
 	{
 		size_t start = 0;
 
 		for(;;)
 		{
 			size_t endEq = query.find_first_of( "=", start );
-			if ( endEq == std::string::npos )
+			if ( endEq == nodecpp::string::npos )
 			{
 				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), "" ) );
 				break;
 			}
 			size_t endAmp = query.find_first_of( "&", endEq+ 1  );
-			if ( endAmp == std::string::npos )
+			if ( endAmp == nodecpp::string::npos )
 			{
 				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), query.substr( endEq + 1 ) ) );
 				break;
@@ -371,14 +371,14 @@ public:
 		response->setStatus( "HTTP/1.1 200 OK" );
 		response->addHeader( "Content-Type", "text/xml" );
 		Buffer b;
-		if ( start == std::string::npos )
+		if ( start == nodecpp::string::npos )
 		{
 			b.append( "no value specified", sizeof( "undefined" ) - 1 );
 			response->addHeader( "Connection", "close" );
 		}
 		else
 		{
-			std::vector<std::pair<std::string, std::string>> queryValues;
+			nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>> queryValues;
 			parseUrlQueryString(url.substr(start+1), queryValues );
 			for ( auto entry: queryValues )
 				if ( entry.first == "value" )
@@ -397,7 +397,7 @@ public:
 				response->addHeader( "Connection", "close" );
 			}
 		}
-		response->addHeader( "Content-Length", fmt::format( "{}", b.size() ) );
+		response->addHeader( "Content-Length", fmt::format( "{}", b.size() ).c_str() );
 //		response->dbgTrace();
 		co_await response->flushHeaders();
 		co_await response->writeBodyPart(b);

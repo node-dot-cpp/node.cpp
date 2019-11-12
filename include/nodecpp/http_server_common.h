@@ -384,7 +384,7 @@ namespace nodecpp {
 
 			size_t contentLength = 0;
 
-			typedef std::map<std::string, std::string> header_t; // so far good for both directions
+			typedef nodecpp::map<nodecpp::string, nodecpp::string> header_t; // so far good for both directions
 			header_t header;
 
 			// utils
