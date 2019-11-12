@@ -110,6 +110,22 @@ namespace nodecpp
 
 		const char* c_str() const { return str; }
 	};
+
+	template <typename... Args>
+	inline nodecpp::string format(
+		const char* format_str, const Args &... args) {
+		nodecpp::string s;
+	  ::fmt::format_to( std::back_inserter(s), format_str, args... );
+	  return s;
+	}
+
+	template <typename... Args>
+	inline nodecpp::string format(
+		const nodecpp::string& format_str, const Args &... args) {
+		nodecpp::string s;
+	  ::fmt::format_to( std::back_inserter(s), format_str.c_str(), args... );
+	  return s;
+	}
 } // nodecpp
 
 namespace nodecpp

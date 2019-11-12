@@ -174,6 +174,12 @@ namespace nodecpp {
 			*reinterpret_cast<uint8_t*>(begin() + size() ) = 0;
 			return ++_size;
 		}
+		size_t appendString( const nodecpp::string& str ) { // TODO: revision required
+			return appendString( str.c_str(), str.size() );
+		}
+		size_t appendString( nodecpp::string_literal str ) { // TODO: revision required
+			return appendString( str.c_str(), strlen( str.c_str() ) );
+		}
 
 		// an attempt to follow node.js buffer-related interface
 		void writeUInt32LE(uint8_t value, size_t offset) {

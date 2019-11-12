@@ -468,6 +468,8 @@ namespace nodecpp {
 
 		public:
 			void connect(uint16_t port, const char* ip);
+			void connect(uint16_t port, string ip) { connect( port, ip.c_str() ); }
+			void connect(uint16_t port, string_literal ip) { connect( port, ip.c_str() ); };
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 
 			SocketBase& setNoDelay(bool noDelay = true);

@@ -492,7 +492,7 @@ namespace nodecpp
 
 			const net::Address& address() const { return dataForCommandProcessing.localAddress; }
 
-			void listen(uint16_t port, const char* ip, int backlog);
+			void listen(uint16_t port, nodecpp::Ip4 ip, int backlog);
 			void close();
 			void ref();
 			void unref();
@@ -541,7 +541,7 @@ namespace nodecpp
 			nodecpp::safememory::soft_ptr<AgentServer> server = createAgentServer();
 			server->requestID = mh.requestID;
 			server->socketsToSlaves.push_back( slaveData );
-			server->listen( address.port, address.ip.toStr().c_str(), backlog );
+			server->listen( address.port, address.ip, backlog );
 			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "processRequestForListeningAtMaster(): new Agent Server for Addr {}:{}, and RequestID {}", server->dataForCommandProcessing.localAddress.ip.toStr(), server->dataForCommandProcessing.localAddress.port, server->requestID );
 			return false;
 		}

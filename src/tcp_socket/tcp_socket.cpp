@@ -522,7 +522,7 @@ Ip4 Ip4::fromNetwork(uint32_t ip)
 
 nodecpp::string Ip4::toStr() const { 
 	uint32_t hn = ntohl( ip ); 
-	return fmt::format("{}.{}.{}.{}", hn >> 24, (hn >> 16) & 0xFF, (hn >> 8) & 0xFF, hn & 0xFF ).c_str(); // TODO: consider reworking formatting itself
+	return nodecpp::format("{}.{}.{}.{}", hn >> 24, (hn >> 16) & 0xFF, (hn >> 8) & 0xFF, hn & 0xFF );
 }
 
 
@@ -541,7 +541,7 @@ Port Port::fromNetwork(uint16_t port)
 
 nodecpp::string Port::toStr() const
 { 
-	return fmt::format("{}", ntohs( port ) ).c_str(); // TODO: consider reworking formatting itself
+	return nodecpp::format("{}", ntohs( port ) );
 }
 
 uint16_t Port::getHost() const

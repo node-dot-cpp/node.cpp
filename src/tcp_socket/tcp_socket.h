@@ -1063,20 +1063,19 @@ public:
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
 	template<class DataForCommandProcessing>
-	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
-		Ip4 myIp = Ip4::parse(ip);
+	void appListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Port myPort = Port::fromHost(port);
 #ifdef NODECPP_ENABLE_CLUSTERING
 		if ( getCluster().isWorker() )
 		{
-			dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
+			dataForCommandProcessing.localAddress.ip = ip;
 			dataForCommandProcessing.localAddress.port = port;
 			dataForCommandProcessing.localAddress.family = family;
-			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, myIp, port, family, backlog );
+			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, ip, port, family, backlog );
 			return;
 		}
 #endif // NODECPP_ENABLE_CLUSTERING
-		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, myIp, myPort)) {
+		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, ip, myPort)) {
 			throw Error();
 		}
 		if ( port == 0 )
@@ -1089,7 +1088,7 @@ public:
 			throw Error();
 		}
 		dataForCommandProcessing.refed = true;
-		dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
+		dataForCommandProcessing.localAddress.ip = ip;
 		dataForCommandProcessing.localAddress.port = port;
 		dataForCommandProcessing.localAddress.family = family;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dataForCommandProcessing.index != 0 );
@@ -1101,7 +1100,11 @@ public:
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
 		pendingListenEvents.push_back( dataForCommandProcessing.index );
 	}
-
+	template<class DataForCommandProcessing>
+	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
+		Ip4 ip4 = Ip4::parse(ip);
+		appListen<DataForCommandProcessing>(dataForCommandProcessing, ip4, port, backlog);
+	}
 	template<class DataForCommandProcessing>
 	void appRef(DataForCommandProcessing& dataForCommandProcessing) { 
 		dataForCommandProcessing.refed = true;

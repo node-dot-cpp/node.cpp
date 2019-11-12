@@ -151,7 +151,7 @@ public:
 				if ( argv[i].size() > 3 && argv[i].substr(0,9) == "ip=" )
 					ip = argv[i].substr(3);
 			}
-			srv->listen(2000, ip.c_str(), 5000);
+			srv->listen(2000, ip, 5000);
 			srvCtrl->listen(2001, "127.0.0.1", 5);
 
 #ifdef AUTOMATED_TESTING_ONLY
@@ -261,7 +261,7 @@ public:
 				"<p>Please proceed to <a href=\"another_page.html\">another_page.html</a>"
 				"</body>\r\n"
 				"</html>\r\n";
-			replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
+			replyHtml = nodecpp::format( replyHtmlFormat, stats.rqCnt );
 			dataAvailable = true;
 		}
 		else if ( request->getUrl() == "/another_page.html" )
@@ -274,7 +274,7 @@ public:
 				"( or try to access <a href=\"x.html\">inexistent</a> page to (hopefully) see 404 error"
 				"</body>\r\n"
 				"</html>\r\n";
-			replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
+			replyHtml = nodecpp::format( replyHtmlFormat, stats.rqCnt );
 			dataAvailable = true;
 		}
 		else // not found (body for 404)
@@ -286,7 +286,7 @@ public:
 				"<p>Please proceed to <a href=\"/\">HOME</a>"
 				"</body>\r\n"
 				"</html>\r\n";
-			replyHtml = fmt::format( replyHtmlFormat.c_str(), stats.rqCnt );
+			replyHtml = nodecpp::format( replyHtmlFormat, stats.rqCnt );
 			dataAvailable = false;
 		}
 
@@ -296,7 +296,7 @@ public:
 			response->addHeader( "Content-Type", "text/html" );
 			response->addHeader( "Connection", "keep-alive" );
 //				response->addHeader( "Connection", "close" );
-			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()).c_str() );
+			response->addHeader( "Content-Length", nodecpp::format( "{}", replyHtml.size()) );
 
 //			response->dbgTrace();
 			co_await response->flushHeaders();
@@ -311,7 +311,7 @@ public:
 //				response->addHeader( "Connection", "close" );
 //					response->addHeader( "Content-Length", "0" );
 			response->addHeader( "Content-Type", "text/html" );
-			response->addHeader( "Content-Length", fmt::format( "{}", replyHtml.size()).c_str() );
+			response->addHeader( "Content-Length", nodecpp::format( "{}", replyHtml.size()) );
 
 //			response->dbgTrace();
 			co_await response->flushHeaders();
@@ -397,7 +397,7 @@ public:
 				response->addHeader( "Connection", "close" );
 			}
 		}
-		response->addHeader( "Content-Length", fmt::format( "{}", b.size() ).c_str() );
+		response->addHeader( "Content-Length", nodecpp::format( "{}", b.size() ) );
 //		response->dbgTrace();
 		co_await response->flushHeaders();
 		co_await response->writeBodyPart(b);

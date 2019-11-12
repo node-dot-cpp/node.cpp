@@ -316,6 +316,8 @@ namespace nodecpp {
 			void reportBeingDestructed();
 
 			void listen(uint16_t port, const char* ip, int backlog);
+			void listen(uint16_t port, string ip, int backlog) { listen( port, ip.c_str(), backlog ); }
+			void listen(uint16_t port, string_literal ip, int backlog) { listen( port, ip.c_str(), backlog ); };
 
 #ifndef NODECPP_NO_COROUTINES
 			void forceReleasingAllCoroHandles()
