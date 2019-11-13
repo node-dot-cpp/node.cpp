@@ -69,7 +69,13 @@ namespace nodecpp {
 				size_t capacity() { return ((size_t)1)<<sizeExp; }
 			public:
 				RRQueue() {}
-				~RRQueue() { if ( cbuff != nullptr ) delete [] cbuff; }
+				~RRQueue() { 
+					if ( cbuff != nullptr ) {
+						size_t size = ((size_t)1 << sizeExp);
+						nodecpp::dealloc( cbuff, size );
+//						delete [] cbuff; 
+					}
+				}
 				void init( nodecpp::safememory::soft_ptr<HttpSocketBase> );
 				bool canPush() { return head - tail < ((uint64_t)1<<sizeExp); }
 				bool release( size_t idx )
@@ -623,7 +629,8 @@ namespace nodecpp {
 		template<size_t sizeExp>
 		void HttpSocketBase::RRQueue<sizeExp>::init( nodecpp::safememory::soft_ptr<HttpSocketBase> socket ) {
 			size_t size = ((size_t)1 << sizeExp);
-			cbuff = new RRPair [size];
+			cbuff = nodecpp::alloc<RRPair>( size ); // TODO: use nodecpp::a
+			//cbuff = new RRPair [size];
 			for ( size_t i=0; i<size; ++i )
 			{
 				cbuff[i].request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();

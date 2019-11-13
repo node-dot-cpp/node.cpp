@@ -126,6 +126,23 @@ namespace nodecpp
 	  ::fmt::format_to( std::back_inserter(s), format_str.c_str(), args... );
 	  return s;
 	}
+
+	template<class T>
+	T* alloc( size_t count ) {
+		nodecpp::safememory::iiballocator<T> iiball;
+		T* ret = iiball.allocate( count );
+		for ( size_t i=0; i<count; ++i )
+			new (ret + i) T();
+		return ret;
+	}
+
+	template<class T>
+	void dealloc( T* ptr, size_t count ) {
+		nodecpp::safememory::iiballocator<T> iiball;
+		for ( size_t i=0; i<count; ++i )
+			(ptr + i)->~T();
+		iiball.deallocate( ptr, count );
+	}
 } // nodecpp
 
 namespace nodecpp
