@@ -138,10 +138,27 @@ namespace nodecpp
 
 	template<class T>
 	void dealloc( T* ptr, size_t count ) {
-		nodecpp::safememory::iiballocator<T> iiball;
 		for ( size_t i=0; i<count; ++i )
 			(ptr + i)->~T();
+		nodecpp::safememory::iiballocator<T> iiball;
 		iiball.deallocate( ptr, count );
+	}
+
+	template<class T>
+	T* stdalloc( size_t count ) {
+		nodecpp::safememory::stdallocator<T> stdall;
+		T* ret = stdall.allocate( count );
+		for ( size_t i=0; i<count; ++i )
+			new (ret + i) T();
+		return ret;
+	}
+
+	template<class T>
+	void stddealloc( T* ptr, size_t count ) {
+		for ( size_t i=0; i<count; ++i )
+			(ptr + i)->~T();
+		nodecpp::safememory::stdallocator<T> stdall;
+		stdall.deallocate( ptr, count );
 	}
 } // nodecpp
 
@@ -231,7 +248,7 @@ public:
 /*template<class RunnableT,class Infra>
 thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;*/
 
-extern nodecpp::stdvector<nodecpp::stdstring>* argv;
-inline const nodecpp::stdvector<nodecpp::stdstring>& getArgv() { return *argv; }
+extern nodecpp::stdvector<nodecpp::stdstring> argv;
+inline const nodecpp::stdvector<nodecpp::stdstring>& getArgv() { return argv; }
 
 #endif //COMMON_H

@@ -63,7 +63,7 @@ namespace nodecpp
 		// TODO: init new thread, fill worker
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		bool newDelInterceptionState = interceptNewDeleteOperators(false);
-		ThreadStartupData* startupData = new ThreadStartupData;
+		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 		startupData->assignedThreadID = worker.id_;
 		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
 		interceptNewDeleteOperators(newDelInterceptionState);

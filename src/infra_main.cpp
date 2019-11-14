@@ -78,15 +78,14 @@ void registerFactory( const char* name, RunnableFactoryBase* factory )
 	NodeFactoryMap::getInstance().registerFactory( name, factory );
 }
 
-nodecpp::stdvector<nodecpp::stdstring>* argv = 0;
+nodecpp::stdvector<nodecpp::stdstring> argv;
 
 #ifndef NODECPP_ENABLE_CLUSTERING
 
 int main( int argc, char *argv_[] )
 {
-	argv = new nodecpp::stdvector<nodecpp::stdstring>();
 	for ( int i=0; i<argc; ++i )
-		argv->push_back( argv_[i] );
+		argv.push_back( argv_[i] );
 
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
@@ -113,7 +112,7 @@ void workerThreadMain( void* pdata )
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->assignedThreadID != 0 ); 
 	ThreadStartupData startupData = *sd;
-	delete sd; // do it yet before initializing g_AllocManager
+	nodecpp::stddealloc( sd, 1 );
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
@@ -126,9 +125,8 @@ void workerThreadMain( void* pdata )
 
 int main( int argc, char *argv_[] )
 {
-	argv = new nodecpp::stdvector<nodecpp::stdstring>();
 	for ( int i=0; i<argc; ++i )
-		argv->push_back( argv_[i] );
+		argv.push_back( argv_[i] );
 
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
@@ -139,7 +137,6 @@ int main( int argc, char *argv_[] )
 		f.second->create()->run();
 
 	interceptNewDeleteOperators(false);
-	delete argv;
 
 	return 0;
 }
