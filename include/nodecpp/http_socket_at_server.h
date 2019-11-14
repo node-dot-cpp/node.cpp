@@ -73,7 +73,6 @@ namespace nodecpp {
 					if ( cbuff != nullptr ) {
 						size_t size = ((size_t)1 << sizeExp);
 						nodecpp::dealloc( cbuff, size );
-//						delete [] cbuff; 
 					}
 				}
 				void init( nodecpp::safememory::soft_ptr<HttpSocketBase> );
@@ -379,8 +378,8 @@ namespace nodecpp {
 					co_await sock->a_read( b, getContentLength() - bodyBytesRetrieved );
 					bodyBytesRetrieved += b.size();
 				}
-//				if ( bodyBytesRetrieved == getContentLength() )
-//					sock->proceedToNext();
+				if ( bodyBytesRetrieved == getContentLength() )
+					sock->proceedToNext();
 
 				CO_RETURN;
 			}
@@ -549,7 +548,6 @@ namespace nodecpp {
 
 				parseContentLength();
 				parseConnStatus();
-//				co_await sock->a_write( headerBuff );
 				writeStatus = WriteStatus::hdr_flushed;
 				header.clear();
 				CO_RETURN;
@@ -558,7 +556,6 @@ namespace nodecpp {
 			nodecpp::handler_ret_type writeBodyPart(Buffer& b)
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
-				// TODO: add real implementation
 				try {
 					if ( headerBuff.size() )
 					{
@@ -570,6 +567,7 @@ namespace nodecpp {
 						co_await sock->a_write( headerBuff );
 				} 
 				catch(...) {
+					// TODO: revise!!! should we close the socket? what should be done with other pipelined requests (if any)?
 					sock->end();
 					clear();
 					sock->release( idx );
