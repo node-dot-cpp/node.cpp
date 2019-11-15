@@ -127,6 +127,14 @@ namespace nodecpp
 	  return s;
 	}
 
+	template <typename... Args>
+	inline nodecpp::string format(
+		const nodecpp::string_literal& format_str, const Args &... args) {
+		nodecpp::string s;
+	  ::fmt::format_to( std::back_inserter(s), format_str.c_str(), args... );
+	  return s;
+	}
+
 	template<class T>
 	T* alloc( size_t count ) {
 		nodecpp::safememory::iiballocator<T> iiball;
