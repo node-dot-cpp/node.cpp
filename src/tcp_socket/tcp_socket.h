@@ -973,7 +973,7 @@ protected:
 	nodecpp::vector<size_t> receivedListeningEvs;
 #endif // NODECPP_ENABLE_CLUSTERING
 
-	nodecpp::IPFAMILY family = "IPv4";
+	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
 	int typeIndexOfServerO = -1;
@@ -1177,7 +1177,7 @@ extern thread_local NetServerManagerBase* netServerManagerBase;
 template<class EmitterType>
 class NetServerManager : public NetServerManagerBase
 {
-	nodecpp::IPFAMILY family = "IPv4";
+	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
 	NetServerManager(NetSockets& ioSockets) : NetServerManagerBase(ioSockets) {}

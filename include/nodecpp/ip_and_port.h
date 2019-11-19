@@ -78,7 +78,7 @@ namespace nodecpp {
 		IPFAMILY( IPFAMILY::Value family ) { value_ = family; }
 		IPFAMILY( const IPFAMILY& other ) = default;
 		IPFAMILY& operator = ( const IPFAMILY& other ) = default;
-		IPFAMILY& operator = (nodecpp::string_literal family)  { value_ = strncmp( family.c_str(), "ipv4", 4 ) == 0 ? IPFAMILY::IPv4 : ( ( strncmp( family.c_str(), "ipv6", 4 ) == 0 ) ? IPFAMILY::IPv6 : IPFAMILY::Undefined ); }
+		IPFAMILY& operator = (nodecpp::string_literal family)  { value_ = strncmp( family.c_str(), "ipv4", 4 ) == 0 ? IPFAMILY::IPv4 : ( ( strncmp( family.c_str(), "ipv6", 4 ) == 0 ) ? IPFAMILY::IPv6 : IPFAMILY::Undefined ); return *this; }
 		IPFAMILY( IPFAMILY&& other ) = default;
 		IPFAMILY& operator = ( IPFAMILY&& other ) = default;
 

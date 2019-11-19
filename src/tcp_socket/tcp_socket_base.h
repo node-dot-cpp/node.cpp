@@ -191,7 +191,7 @@ bool isNetInitialized();
 
 class OSLayer {
 protected:
-	IPFAMILY family = "IPv4";
+	IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
 	static SocketRiia appAcquireSocket();
