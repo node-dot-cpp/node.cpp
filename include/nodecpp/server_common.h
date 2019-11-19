@@ -38,7 +38,7 @@ namespace nodecpp {
 
 		class ServerBase
 		{
-			friend class Cluster;
+			friend class ::nodecpp::Cluster;
 		public:
 			using NodeType = void;
 			using DataParentType = void;

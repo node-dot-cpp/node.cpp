@@ -114,6 +114,9 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\cluster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\ip_and_port.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
