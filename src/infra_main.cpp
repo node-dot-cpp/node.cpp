@@ -136,8 +136,6 @@ int main( int argc, char *argv_[] )
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
 
-	interceptNewDeleteOperators(false);
-
 	return 0;
 }
 

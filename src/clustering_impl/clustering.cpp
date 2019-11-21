@@ -62,11 +62,9 @@ namespace nodecpp
 		worker.id_ = ++coreCtr; // TODO: assign an actual value
 		// TODO: init new thread, fill worker
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
-		bool newDelInterceptionState = interceptNewDeleteOperators(false);
 		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 		startupData->assignedThreadID = worker.id_;
 		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
-		interceptNewDeleteOperators(newDelInterceptionState);
 		// run worker thread
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("about to start Worker thread with threadID = {}...", worker.id_ );
 		std::thread t1( workerThreadMain, (void*)(startupData) );
