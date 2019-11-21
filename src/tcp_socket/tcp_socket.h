@@ -802,18 +802,36 @@ private:
 		auto hr = entry.getClientSocketData()->ahd_read.h;
 		if ( hr )
 		{
-			size_t target_sz = entry.getClientSocketData()->ahd_read.min_bytes;
-			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, target_sz);
+			size_t required_min_sz = entry.getClientSocketData()->ahd_read.min_bytes;
+			size_t current_sz = entry.getClientSocketData()->readBuffer.used_size();
+			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, required_min_sz);
 			if ( !read_ok )
 			{
 				entry.getClientSocketData()->ahd_read.h = nullptr;
 				nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 				hr();
 			}
-			else if ( entry.getClientSocketData()->readBuffer.used_size() >= entry.getClientSocketData()->ahd_read.min_bytes )
+			else
 			{
-				entry.getClientSocketData()->ahd_read.h = nullptr;
-				hr();
+				size_t total_received_sz = entry.getClientSocketData()->readBuffer.used_size();
+				size_t added_sz = total_received_sz - current_sz;
+				if ( total_received_sz >= required_min_sz )
+				{
+					entry.getClientSocketData()->ahd_read.h = nullptr;
+					hr();
+				}
+				else if ( added_sz == 0 )
+				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, required_min_sz != 0 );
+					entry.getClientSocketData()->ahd_read.h = nullptr;
+					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					hr();
+				}
+				else
+				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, total_received_sz < required_min_sz ); // still accumulating
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, added_sz != 0 ); // still accumulating
+				}
 			}
 		}
 		else
