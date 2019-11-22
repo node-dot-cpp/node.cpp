@@ -69,7 +69,12 @@ namespace nodecpp {
 				size_t capacity() { return ((size_t)1)<<sizeExp; }
 			public:
 				RRQueue() {}
-				~RRQueue() { if ( cbuff != nullptr ) delete [] cbuff; }
+				~RRQueue() { 
+					if ( cbuff != nullptr ) {
+						size_t size = ((size_t)1 << sizeExp);
+						nodecpp::dealloc( cbuff, size );
+					}
+				}
 				void init( nodecpp::safememory::soft_ptr<HttpSocketBase> );
 				bool canPush() { return head - tail < ((uint64_t)1<<sizeExp); }
 				bool release( size_t idx )
@@ -134,14 +139,15 @@ namespace nodecpp {
 				return continue_getting_awaiter(*this);
 			}
 
-			auto a_dataAvailable( CircularByteBuffer::AvailableDataDescriptor& d ) { 
+			auto a_dataAvailable( CircularByteBuffer::AvailableDataDescriptor& d, size_t minBytes = 1 ) { 
 
 				struct data_awaiter {
 					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					CircularByteBuffer::AvailableDataDescriptor& d;
+					size_t minBytes;
 
-					data_awaiter(SocketBase& socket_, CircularByteBuffer::AvailableDataDescriptor& d_) : socket( socket_ ), d( d_ ) {
+					data_awaiter(SocketBase& socket_, CircularByteBuffer::AvailableDataDescriptor& d_, size_t minBytes_) : socket( socket_ ), d( d_ ), minBytes(minBytes_) {
 					}
 
 					data_awaiter(const data_awaiter &) = delete;
@@ -151,11 +157,11 @@ namespace nodecpp {
 					}
 
 					bool await_ready() {
-						return socket.dataForCommandProcessing.readBuffer.used_size() != 0;
+						return socket.dataForCommandProcessing.readBuffer.used_size() && socket.dataForCommandProcessing.readBuffer.used_size() >= minBytes;
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						socket.dataForCommandProcessing.ahd_read.min_bytes = 1;
+						socket.dataForCommandProcessing.ahd_read.min_bytes = minBytes;
 						nodecpp::setNoException(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
@@ -167,7 +173,7 @@ namespace nodecpp {
 						socket.dataForCommandProcessing.readBuffer.get_available_data( d );
 					}
 				};
-				return data_awaiter(*this, d);
+				return data_awaiter(*this, d, minBytes);
 			}
 
 			auto a_dataAvailable( uint32_t period, CircularByteBuffer::AvailableDataDescriptor& d ) { 
@@ -208,7 +214,7 @@ namespace nodecpp {
 				return data_awaiter(*this, period, d);
 			}
 
-			nodecpp::handler_ret_type readLine(std::string& line)
+			nodecpp::handler_ret_type readLine(nodecpp::string& line)
 			{
 				size_t pos = 0;
 				line.clear();
@@ -223,7 +229,7 @@ namespace nodecpp {
 							dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 							CO_RETURN;
 						}
-					line += std::string( (const char*)(d.ptr1), pos );
+					line += nodecpp::string( (const char*)(d.ptr1), pos );
 					dataForCommandProcessing.readBuffer.skip_data( pos );
 					pos = 0;
 					if ( d.ptr2 && d.sz2 )
@@ -231,11 +237,11 @@ namespace nodecpp {
 						for ( ; pos<d.sz2; ++pos )
 							if ( d.ptr2[pos] == '\n' )
 							{
-								line += std::string( (const char*)(d.ptr2), pos + 1 );
+								line += nodecpp::string( (const char*)(d.ptr2), pos + 1 );
 								dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 								CO_RETURN;
 							}
-						line += std::string( (const char*)(d.ptr2), pos );
+						line += nodecpp::string( (const char*)(d.ptr2), pos );
 						dataForCommandProcessing.readBuffer.skip_data( pos );
 						pos = 0;
 					}
@@ -255,6 +261,13 @@ namespace nodecpp {
 			{
 				for(;;)
 				{
+					// first test for continuation
+					CircularByteBuffer::AvailableDataDescriptor d;
+					co_await a_dataAvailable( d, 0 );
+					if ( d.sz1 == 0 ) // no more data - no more requests
+						CO_RETURN;
+
+					// now we can reasonably expect a new request
 					auto& rrPair = rrQueue.getHead();
 					co_await getRequest( *(rrPair.request) );
 
@@ -319,9 +332,9 @@ namespace nodecpp {
 		private:
 			struct Method // so far a struct
 			{
-				std::string name;
-				std::string url;
-				std::string version;
+				nodecpp::string name;
+				nodecpp::string url;
+				nodecpp::string version;
 				void clear() { name.clear(); url.clear(); version.clear(); }
 			};
 			Method method;
@@ -373,19 +386,19 @@ namespace nodecpp {
 					co_await sock->a_read( b, getContentLength() - bodyBytesRetrieved );
 					bodyBytesRetrieved += b.size();
 				}
-//				if ( bodyBytesRetrieved == getContentLength() )
-//					sock->proceedToNext();
+				if ( bodyBytesRetrieved == getContentLength() )
+					sock->proceedToNext();
 
 				CO_RETURN;
 			}
 #endif // NODECPP_NO_COROUTINES
 
 
-			bool parseMethod( const std::string& line )
+			bool parseMethod( const nodecpp::string& line )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::noinit ); 
 				size_t start = line.find_first_not_of( " \t" );
-				if ( start == std::string::npos || line[start] == '\r' || line[start] == '\n' )
+				if ( start == nodecpp::string::npos || line[start] == '\r' || line[start] == '\n' )
 					return false;
 				bool found = false;
 				// Method name
@@ -416,11 +429,11 @@ namespace nodecpp {
 				return true;
 			}
 
-			bool parseHeaderEntry( const std::string& line )
+			bool parseHeaderEntry( const nodecpp::string& line )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, readStatus == ReadStatus::in_hdr ); 
 				size_t end = line.find_last_not_of(" \t\r\n" );
-				if ( end == std::string::npos )
+				if ( end == nodecpp::string::npos )
 				{
 					if ( !( line.size() == 2 && line[0] == '\r' && line[1] == '\n' ) ) // last empty line
 						return true; // TODO: what should we do with this line of spaces? - just ignore or report a parsing error?
@@ -433,14 +446,14 @@ namespace nodecpp {
 				if ( idx >= end )
 					return false;
 				size_t valStart = line.find_first_not_of( " \t", idx + 1 );
-				std::string key = line.substr( start, idx-start );
+				nodecpp::string key = line.substr( start, idx-start );
 				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
 				return true;
 			}
 
-			const std::string& getMethod() { return method.name; }
-			const std::string& getUrl() { return method.url; }
-			const std::string& getHttpVersion() { return method.version; }
+			const nodecpp::string& getMethod() { return method.name; }
+			const nodecpp::string& getUrl() { return method.url; }
+			const nodecpp::string& getHttpVersion() { return method.version; }
 
 			size_t getContentLength() const { return contentLength; }
 
@@ -462,7 +475,7 @@ namespace nodecpp {
 
 		private:
 			nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> myRequest;
-			typedef std::map<std::string, std::string> header_t;
+			typedef std::map<nodecpp::string, nodecpp::string> header_t;
 			header_t header;
 			size_t contentLength = 0;
 			nodecpp::Buffer body;
@@ -470,7 +483,7 @@ namespace nodecpp {
 			enum WriteStatus { notyet, hdr_flushed, in_body, completed };
 			WriteStatus writeStatus = WriteStatus::notyet;
 
-			std::string replyStatus;
+			nodecpp::string replyStatus;
 			//size_t bodyBytesWritten = 0;
 
 		private:
@@ -513,14 +526,14 @@ namespace nodecpp {
 				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
 			}
 
-			void addHeader( std::string key, std::string value )
+			void addHeader( nodecpp::string key, nodecpp::string value )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: sanitize
 				header.insert( std::make_pair( key, value ) );
 			}
 
-			void setStatus( std::string status ) // temporary stub; TODO: ...
+			void setStatus( nodecpp::string status ) // temporary stub; TODO: ...
 			{
 				replyStatus = status;
 			}
@@ -530,20 +543,19 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: add real implementation
-				headerBuff.append( replyStatus.c_str(), replyStatus.size() );
+				headerBuff.appendString( replyStatus );
 				headerBuff.append( "\r\n", 2 );
 				for ( auto h: header )
 				{
-					headerBuff.append( h.first.c_str(), h.first.size() );
+					headerBuff.appendString( h.first );
 					headerBuff.append( ": ", 2 );
-					headerBuff.append( h.second.c_str(), h.second.size() );
+					headerBuff.appendString( h.second );
 					headerBuff.append( "\r\n", 2 );
 				}
 				headerBuff.append( "\r\n", 2 );
 
 				parseContentLength();
 				parseConnStatus();
-//				co_await sock->a_write( headerBuff );
 				writeStatus = WriteStatus::hdr_flushed;
 				header.clear();
 				CO_RETURN;
@@ -552,7 +564,6 @@ namespace nodecpp {
 			nodecpp::handler_ret_type writeBodyPart(Buffer& b)
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
-				// TODO: add real implementation
 				try {
 					if ( headerBuff.size() )
 					{
@@ -564,6 +575,7 @@ namespace nodecpp {
 						co_await sock->a_write( headerBuff );
 				} 
 				catch(...) {
+					// TODO: revise!!! should we close the socket? what should be done with other pipelined requests (if any)?
 					sock->end();
 					clear();
 					sock->release( idx );
@@ -595,13 +607,14 @@ namespace nodecpp {
 		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
 			bool ready = false;
-			std::string line;
+			nodecpp::string line;
 			co_await readLine(line);
 //			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			if ( !message.parseMethod( line ) )
 			{
 				// TODO: report error
 				end();
+				CO_RETURN;
 			}
 
 			do
@@ -623,7 +636,8 @@ namespace nodecpp {
 		template<size_t sizeExp>
 		void HttpSocketBase::RRQueue<sizeExp>::init( nodecpp::safememory::soft_ptr<HttpSocketBase> socket ) {
 			size_t size = ((size_t)1 << sizeExp);
-			cbuff = new RRPair [size];
+			cbuff = nodecpp::alloc<RRPair>( size ); // TODO: use nodecpp::a
+			//cbuff = new RRPair [size];
 			for ( size_t i=0; i<size; ++i )
 			{
 				cbuff[i].request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();

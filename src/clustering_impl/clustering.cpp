@@ -62,11 +62,9 @@ namespace nodecpp
 		worker.id_ = ++coreCtr; // TODO: assign an actual value
 		// TODO: init new thread, fill worker
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
-		bool newDelInterceptionState = interceptNewDeleteOperators(false);
-		ThreadStartupData* startupData = new ThreadStartupData;
+		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 		startupData->assignedThreadID = worker.id_;
 		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
-		interceptNewDeleteOperators(newDelInterceptionState);
 		// run worker thread
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("about to start Worker thread with threadID = {}...", worker.id_ );
 		std::thread t1( workerThreadMain, (void*)(startupData) );
@@ -87,7 +85,7 @@ namespace nodecpp
 		nodecpp::safememory::soft_ptr<Cluster::AgentServer> myPtr = myThis.getSoftPtr<Cluster::AgentServer>(this);
 		::registerAgentServer(/*node, */myPtr, -1); 
 	}
-	void Cluster::AgentServer::listen(uint16_t port, const char* ip, int backlog)
+	void Cluster::AgentServer::listen(uint16_t port, nodecpp::Ip4 ip, int backlog)
 	{
 		netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
 	}

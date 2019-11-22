@@ -416,8 +416,8 @@ namespace nodecpp {
 			}
 
 		public:
-			//std::string _remoteAddress;
-			//std::string _remoteFamily;
+			//nodecpp::string _remoteAddress;
+			//nodecpp::string _remoteFamily;
 			//uint16_t _remotePort = 0;
 			size_t _bytesRead = 0;
 			size_t _bytesWritten = 0;
@@ -448,12 +448,12 @@ namespace nodecpp {
 			void destroy();
 			bool destroyed() const { return !(dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting || dataForCommandProcessing.state == DataForCommandProcessing::State::Connected); };
 			void end();
-			std::string localAddress() const { return dataForCommandProcessing._local.ip.toStr(); }
+			nodecpp::string localAddress() const { return dataForCommandProcessing._local.ip.toStr(); }
 			uint16_t localPort() const { return dataForCommandProcessing._local.port; }
 
 
-			std::string remoteAddress() const { return dataForCommandProcessing._remote.ip.toStr(); }
-			const std::string& remoteFamily() const { return dataForCommandProcessing._remote.family; }
+			nodecpp::string remoteAddress() const { return dataForCommandProcessing._remote.ip.toStr(); }
+			const nodecpp::IPFAMILY remoteFamily() const { return dataForCommandProcessing._remote.family; }
 			uint16_t remotePort() const { return dataForCommandProcessing._remote.port; }
 
 			void ref();
@@ -468,6 +468,8 @@ namespace nodecpp {
 
 		public:
 			void connect(uint16_t port, const char* ip);
+			void connect(uint16_t port, string ip) { connect( port, ip.c_str() ); }
+			void connect(uint16_t port, string_literal ip) { connect( port, ip.c_str() ); };
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 
 			SocketBase& setNoDelay(bool noDelay = true);
@@ -885,91 +887,91 @@ namespace nodecpp {
 				once_( std::move(sl) );
 			}
 
-			void on( std::string name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on( string_literal name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert( !std::is_same< event::Close::callback, event::Connect::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Data::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Drain::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::End::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Error::callback >::value );
-				assert( name == event::Close::name );
+				assert( name == string_literal(event::Close::name) );
 				eClose.on(std::move(cb));
 			}
-			void on( std::string name, event::Data::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on( string_literal name, event::Data::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert( !std::is_same< event::Data::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Connect::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Drain::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::End::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Error::callback >::value );
-				assert( name == event::Data::name );
+				assert( name == string_literal(event::Data::name) );
 				eData.on(std::move(cb));
 			}
-			void on(std::string name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on(string_literal name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Connect::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Drain::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::End::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Data::callback >::value);
-				assert(name == event::Error::name);
+				assert( name == string_literal(event::Error::name) );
 				eError.on(std::move(cb));
 			}
-			void on( std::string name, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on( string_literal name, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert( !std::is_same< event::Connect::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Data::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Error::callback >::value);
 				static_assert( std::is_same< event::Connect::callback, event::Drain::callback >::value );
 				static_assert( std::is_same< event::Connect::callback, event::End::callback >::value );
-				if (name == event::Drain::name)
+				if ( name == string_literal(event::Drain::name) )
 					eDrain.on(std::move(cb));
-				else if (name == event::Connect::name)
+				else if ( name == string_literal(event::Connect::name) )
 					eConnect.on(std::move(cb));
-				else if (name == event::End::name)
+				else if ( name == string_literal(event::End::name) )
 					eEnd.on(std::move(cb));
-				else if (name == event::Accepted::name)
+				else if ( name == string_literal(event::Accepted::name) )
 					eAccepted.on(std::move(cb));
 				else
 					assert(false);
 			}
 
-			void once( std::string name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once( string_literal name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert( !std::is_same< event::Close::callback, event::Connect::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Data::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Drain::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::End::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Error::callback >::value );
-				assert( name == event::Close::name );
+				assert( name == string_literal(event::Close::name) );
 				eClose.once(std::move(cb));
 			}
-			void once( std::string name, event::Data::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once( string_literal name, event::Data::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert( !std::is_same< event::Data::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Connect::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Drain::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::End::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Error::callback >::value );
-				assert( name == event::Data::name );
+				assert( name == string_literal(event::Data::name) );
 				eData.once(std::move(cb));
 			}
-			void once(std::string name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once(string_literal name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Connect::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Drain::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::End::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Data::callback >::value);
-				assert(name == event::Error::name);
+				assert(name == string_literal(event::Error::name));
 				eError.once(std::move(cb));
 			}
-			void once( std::string name, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once( string_literal name, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) {
 				static_assert( !std::is_same< event::Connect::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Data::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Error::callback >::value);
 				static_assert( std::is_same< event::Connect::callback, event::Drain::callback >::value );
 				static_assert( std::is_same< event::Connect::callback, event::End::callback >::value );
-				if (name == event::Drain::name)
+				if (name == string_literal(event::Drain::name))
 					eDrain.once(std::move(cb));
-				else if (name == event::Connect::name)
+				else if (name == string_literal(event::Connect::name))
 					eConnect.once(std::move(cb));
-				else if (name == event::End::name)
+				else if (name == string_literal(event::End::name))
 					eEnd.once(std::move(cb));
-				else if (name == event::Accepted::name)
+				else if (name == string_literal(event::Accepted::name))
 					eAccepted.once(std::move(cb));
 				else
 					assert(false);
