@@ -819,18 +819,28 @@ private:
 			{
 				size_t total_received_sz = entry.getClientSocketData()->readBuffer.used_size();
 				size_t added_sz = total_received_sz - current_sz;
-				if ( total_received_sz >= required_min_sz )
+				if ( added_sz > 0 )
 				{
-					entry.getClientSocketData()->ahd_read.h = nullptr;
-					hr();
+					if ( total_received_sz >= required_min_sz )
+					{
+						entry.getClientSocketData()->ahd_read.h = nullptr;
+						hr();
+					}
 				}
-				else if ( added_sz == 0 )
+				else
 				{
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, required_min_sz != 0 );
+					if ( total_received_sz >= required_min_sz )
+					{
+						entry.getClientSocketData()->ahd_read.h = nullptr;
+						hr();
+					}
+					else
+					{
+						entry.getClientSocketData()->ahd_read.h = nullptr;
+						nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+						hr();
+					}
 					infraProcessRemoteEnded<Node>(entry);
-					entry.getClientSocketData()->ahd_read.h = nullptr;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
-					hr();
 				}
 			}
 		}
