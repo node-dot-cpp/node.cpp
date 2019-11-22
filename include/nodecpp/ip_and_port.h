@@ -28,6 +28,8 @@
 #ifndef IP_AND_PORT_H
 #define IP_AND_PORT_H
 
+#include "common.h"
+
 namespace nodecpp {
 	
 	class Ip4
@@ -44,7 +46,7 @@ namespace nodecpp {
 		uint32_t getNetwork() const { return ip; }
 		static Ip4 parse(const char* ip);
 		static Ip4 fromNetwork(uint32_t ip);
-		std::string toStr() const;
+		nodecpp::string toStr() const;
 
 		bool operator == ( const Ip4& other ) { return ip == other.ip; }
 	};
@@ -64,8 +66,49 @@ namespace nodecpp {
 		uint16_t getHost() const;
 		static Port fromHost(uint16_t port);
 		static Port fromNetwork(uint16_t port);
-		std::string toStr() const;
+		nodecpp::string toStr() const;
 	};
+
+	class IPFAMILY
+	{
+	public:
+		enum Value { Undefined, IPv4, IPv6 };
+		IPFAMILY() { value_ = Value::Undefined; }
+		IPFAMILY(nodecpp::string_literal family) { value_ = strncmp( family.c_str(), "ipv4", 4 ) == 0 ? IPFAMILY::IPv4 : ( ( strncmp( family.c_str(), "ipv6", 4 ) == 0 ) ? IPFAMILY::IPv6 : IPFAMILY::Undefined ); }
+		IPFAMILY( IPFAMILY::Value family ) { value_ = family; }
+		IPFAMILY( const IPFAMILY& other ) = default;
+		IPFAMILY& operator = ( const IPFAMILY& other ) = default;
+		IPFAMILY& operator = (nodecpp::string_literal family)  { value_ = strncmp( family.c_str(), "ipv4", 4 ) == 0 ? IPFAMILY::IPv4 : ( ( strncmp( family.c_str(), "ipv6", 4 ) == 0 ) ? IPFAMILY::IPv6 : IPFAMILY::Undefined ); return *this; }
+		IPFAMILY( IPFAMILY&& other ) = default;
+		IPFAMILY& operator = ( IPFAMILY&& other ) = default;
+
+		bool operator == ( const IPFAMILY& other ) { return value_ == other.value_; }
+		bool operator != ( const IPFAMILY& other ) { return value_ != other.value_; }
+
+		nodecpp::string_literal toString( Value family ) { 
+			switch ( family )
+			{
+				case Value::IPv4: return "IPv4";
+				case Value::IPv6: return "IPv6";
+				case Value::Undefined: return "Undefined";
+			}
+		}
+
+		Value value() { return value_; }
+
+		void fromNum( uint32_t value ) {
+			switch ( value )
+			{
+				case Value::IPv4: value = Value::IPv4; break;
+				case Value::IPv6: value = Value::IPv6; break;
+				default: value = Value::Undefined; break;
+			}
+		}
+
+	private:
+		Value value_;
+	};
+
 
 } // namespace nodecpp
 

@@ -120,8 +120,8 @@ class NetSockets
 	nodecpp::vector<NetSocketEntry> slaveServers;
 	static constexpr size_t SlaveServerEntryMinIndex = (((size_t)~((size_t)0))>>1)+1;
 #endif // NODECPP_ENABLE_CLUSTERING
-	std::vector<pollfd> osSide;
-	std::vector<pollfd> osSideAccum;
+	nodecpp::vector<pollfd> osSide;
+	nodecpp::vector<pollfd> osSideAccum;
 	size_t associatedCount = 0;
 	size_t usedCount = 0;
 	//mb: xxxSide[0] is always reserved and invalid.
@@ -132,7 +132,7 @@ class NetSockets
 		if ( ourSide.size() <= compactionMinSize || usedCount < ourSide.size() / 2 )
 			return;
 		NetSocketEntryVectorT ourSideNew;
-		std::vector<pollfd> osSideNew;
+		nodecpp::vector<pollfd> osSideNew;
 		ourSideNew.reserve(capacity_); 
 		osSideNew.reserve(capacity_);
 		ourSideNew.emplace_back(0); 
@@ -480,7 +480,7 @@ public:
 class NetSocketManagerBase : protected OSLayer
 {
 	friend class OSLayer;
-//	std::vector<Buffer> bufferStore; // TODO: improve
+//	nodecpp::vector<Buffer> bufferStore; // TODO: improve
 
 public:
 //	int typeIndexOfSocketO = -1;
@@ -802,18 +802,46 @@ private:
 		auto hr = entry.getClientSocketData()->ahd_read.h;
 		if ( hr )
 		{
-			size_t target_sz = entry.getClientSocketData()->ahd_read.min_bytes;
-			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, target_sz);
+			size_t required_min_sz = entry.getClientSocketData()->ahd_read.min_bytes;
+			size_t current_sz = entry.getClientSocketData()->readBuffer.used_size();
+			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, required_min_sz);
 			if ( !read_ok )
 			{
+				internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
+				Error e;
+				errorCloseSocket(entry, e);
+
 				entry.getClientSocketData()->ahd_read.h = nullptr;
 				nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 				hr();
 			}
-			else if ( entry.getClientSocketData()->readBuffer.used_size() >= entry.getClientSocketData()->ahd_read.min_bytes )
+			else
 			{
-				entry.getClientSocketData()->ahd_read.h = nullptr;
-				hr();
+				size_t total_received_sz = entry.getClientSocketData()->readBuffer.used_size();
+				size_t added_sz = total_received_sz - current_sz;
+				if ( added_sz > 0 )
+				{
+					if ( total_received_sz >= required_min_sz )
+					{
+						entry.getClientSocketData()->ahd_read.h = nullptr;
+						hr();
+					}
+				}
+				else
+				{
+					if ( total_received_sz >= required_min_sz )
+					{
+						entry.getClientSocketData()->ahd_read.h = nullptr;
+						hr();
+					}
+					else
+					{
+						entry.getClientSocketData()->ahd_read.h = nullptr;
+						nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+						hr();
+					}
+					infraProcessRemoteEnded<Node>(entry);
+				}
 			}
 		}
 		else
@@ -973,7 +1001,7 @@ protected:
 	nodecpp::vector<size_t> receivedListeningEvs;
 #endif // NODECPP_ENABLE_CLUSTERING
 
-	std::string family = "IPv4";
+	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
 	int typeIndexOfServerO = -1;
@@ -1063,20 +1091,19 @@ public:
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
 	template<class DataForCommandProcessing>
-	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
-		Ip4 myIp = Ip4::parse(ip);
+	void appListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Port myPort = Port::fromHost(port);
 #ifdef NODECPP_ENABLE_CLUSTERING
 		if ( getCluster().isWorker() )
 		{
-			dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
+			dataForCommandProcessing.localAddress.ip = ip;
 			dataForCommandProcessing.localAddress.port = port;
 			dataForCommandProcessing.localAddress.family = family;
-			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, myIp, port, family, backlog );
+			getCluster().acceptRequestForListeningAtSlave( dataForCommandProcessing.index, ip, port, family, backlog );
 			return;
 		}
 #endif // NODECPP_ENABLE_CLUSTERING
-		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, myIp, myPort)) {
+		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, ip, myPort)) {
 			throw Error();
 		}
 		if ( port == 0 )
@@ -1089,7 +1116,7 @@ public:
 			throw Error();
 		}
 		dataForCommandProcessing.refed = true;
-		dataForCommandProcessing.localAddress.ip = nodecpp::Ip4::parse( ip );
+		dataForCommandProcessing.localAddress.ip = ip;
 		dataForCommandProcessing.localAddress.port = port;
 		dataForCommandProcessing.localAddress.family = family;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dataForCommandProcessing.index != 0 );
@@ -1101,7 +1128,11 @@ public:
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
 		pendingListenEvents.push_back( dataForCommandProcessing.index );
 	}
-
+	template<class DataForCommandProcessing>
+	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
+		Ip4 ip4 = Ip4::parse(ip);
+		appListen<DataForCommandProcessing>(dataForCommandProcessing, ip4, port, backlog);
+	}
 	template<class DataForCommandProcessing>
 	void appRef(DataForCommandProcessing& dataForCommandProcessing) { 
 		dataForCommandProcessing.refed = true;
@@ -1174,7 +1205,7 @@ extern thread_local NetServerManagerBase* netServerManagerBase;
 template<class EmitterType>
 class NetServerManager : public NetServerManagerBase
 {
-	std::string family = "IPv4";
+	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
 	NetServerManager(NetSockets& ioSockets) : NetServerManagerBase(ioSockets) {}

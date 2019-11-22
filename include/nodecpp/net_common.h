@@ -164,7 +164,7 @@ namespace nodecpp {
 			*reinterpret_cast<uint8_t*>(begin() + size() ) = val;
 			return ++_size;
 		}
-		size_t appendString( const char* str, size_t sz ) { // TODO: revision required
+		/*size_t appendString( const char* str, size_t sz ) { // TODO: revision required
 			if ( str )
 			{
 				ensureCapacity(size() + sz + 1);
@@ -173,6 +173,14 @@ namespace nodecpp {
 			}
 			*reinterpret_cast<uint8_t*>(begin() + size() ) = 0;
 			return ++_size;
+		}*/
+		size_t appendString( const nodecpp::string& str ) {
+			append( str.c_str(), str.size() );
+			return _size;
+		}
+		size_t appendString( nodecpp::string_literal str ) {
+			append( str.c_str(), strlen( str.c_str() ) );
+			return _size;
 		}
 
 		// an attempt to follow node.js buffer-related interface
@@ -482,65 +490,6 @@ namespace nodecpp {
 		}
 	};
 
-	template <class ListItem>
-	class IntrusiveList
-	{
-		size_t _size = 0;
-		ListItem* _begin = nullptr;
-	public:
-		ListItem* add(ListItem* item)
-		{
-			//ListItem* item = new ListItem(sdata);
-			//owning_ptr<ListItem> p1 = make_owning<ListItem>(sdata);
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item != nullptr );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _begin == nullptr || _begin->prev_ == nullptr );
-			if ( _begin == nullptr )
-			{
-				_begin = item;
-				item->next_ = nullptr;
-				item->prev_ = nullptr;
-			}
-			else
-			{
-				item->next_ = _begin;
-				_begin->prev_ = item;
-				item->prev_ = nullptr;
-				_begin = item;
-			}
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _begin == nullptr || _begin->prev_ == nullptr );
-			++_size;
-			return item;
-		}
-		void removeAndDelete( ListItem* item )
-		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item != nullptr );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _begin == nullptr || _begin->prev_ == nullptr );
-			if ( _begin == item )
-			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, item == _begin );
-				_begin = item->next_;
-			}
-			if ( item->prev_ )
-				item->prev_->next_ = item->next_;
-			if ( item->next_ )
-				item->next_->prev_ = item->prev_;
-			--_size;
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _begin == nullptr || _begin->prev_ == nullptr );
-			delete item;
-		}
-		void clear()
-		{
-			while ( _begin )
-			{
-				ListItem* tmp = _begin;
-				delete _begin;
-				_begin = tmp;
-
-			}
-		}
-		size_t getCount() { return _size; }
-	};
-
 	template <class ItemT>
 	class MultiOwner
 	{
@@ -588,7 +537,7 @@ namespace nodecpp {
 
 		struct Address {
 			uint16_t port;
-			std::string family;
+			nodecpp::IPFAMILY family;
 			Ip4 ip;
 
 			bool operator == ( const Address& other ) { return port == other.port && ip == other.ip && family == other.family; }
@@ -611,7 +560,7 @@ namespace nodecpp {
 				FnT handler = nullptr;
 				void *object = nullptr;
 			};
-			std::vector<HandlerInstance> handlers;
+			nodecpp::vector<HandlerInstance> handlers;
 
 			bool willHandle() { return handlers.size(); }
 			void from(const UserDefHandlersBase<FnT>& patternUH, void* defaultObjPtr)

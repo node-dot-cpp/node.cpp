@@ -27,9 +27,6 @@
     <ClCompile Include="..\..\..\safe_memory\library\src\safe_ptr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc_windows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\page_allocator_windows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -49,6 +46,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

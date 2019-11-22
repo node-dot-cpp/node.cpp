@@ -384,11 +384,11 @@ namespace nodecpp {
 
 			size_t contentLength = 0;
 
-			typedef std::map<std::string, std::string> header_t; // so far good for both directions
+			typedef nodecpp::map<nodecpp::string, nodecpp::string> header_t; // so far good for both directions
 			header_t header;
 
 			// utils
-			std::string makeLower( std::string& str ) // quick and dirty; TODO: revise (see, for instance, discussion at https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case)
+			nodecpp::string makeLower( nodecpp::string& str ) // quick and dirty; TODO: revise (see, for instance, discussion at https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case)
 			{
 				std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
 				return str;
@@ -407,7 +407,7 @@ namespace nodecpp {
 				auto cs = header.find( "connection" );
 				if ( cs != header.end() )
 				{
-					std::string val = cs->second.c_str();
+					nodecpp::string val = cs->second;
 					val = makeLower( val );
 					if ( val == "keep alive" )
 						connStatus = ConnStatus::keep_alive;
