@@ -139,14 +139,15 @@ namespace nodecpp {
 				return continue_getting_awaiter(*this);
 			}
 
-			auto a_dataAvailable( CircularByteBuffer::AvailableDataDescriptor& d ) { 
+			auto a_dataAvailable( CircularByteBuffer::AvailableDataDescriptor& d, size_t minBytes = 1 ) { 
 
 				struct data_awaiter {
 					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					SocketBase& socket;
 					CircularByteBuffer::AvailableDataDescriptor& d;
+					size_t minBytes;
 
-					data_awaiter(SocketBase& socket_, CircularByteBuffer::AvailableDataDescriptor& d_) : socket( socket_ ), d( d_ ) {
+					data_awaiter(SocketBase& socket_, CircularByteBuffer::AvailableDataDescriptor& d_, size_t minBytes_) : socket( socket_ ), d( d_ ), minBytes(minBytes_) {
 					}
 
 					data_awaiter(const data_awaiter &) = delete;
@@ -156,11 +157,11 @@ namespace nodecpp {
 					}
 
 					bool await_ready() {
-						return socket.dataForCommandProcessing.readBuffer.used_size() != 0;
+						return socket.dataForCommandProcessing.readBuffer.used_size() && socket.dataForCommandProcessing.readBuffer.used_size() >= minBytes;
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						socket.dataForCommandProcessing.ahd_read.min_bytes = 1;
+						socket.dataForCommandProcessing.ahd_read.min_bytes = minBytes;
 						nodecpp::setNoException(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
@@ -172,7 +173,7 @@ namespace nodecpp {
 						socket.dataForCommandProcessing.readBuffer.get_available_data( d );
 					}
 				};
-				return data_awaiter(*this, d);
+				return data_awaiter(*this, d, minBytes);
 			}
 
 			auto a_dataAvailable( uint32_t period, CircularByteBuffer::AvailableDataDescriptor& d ) { 
@@ -260,6 +261,13 @@ namespace nodecpp {
 			{
 				for(;;)
 				{
+					// first test for continuation
+					CircularByteBuffer::AvailableDataDescriptor d;
+					co_await a_dataAvailable( d, 0 );
+					if ( d.sz1 == 0 ) // no more data - no more requests
+						CO_RETURN;
+
+					// now we can reasonably expect a new request
 					auto& rrPair = rrQueue.getHead();
 					co_await getRequest( *(rrPair.request) );
 
@@ -606,6 +614,7 @@ namespace nodecpp {
 			{
 				// TODO: report error
 				end();
+				CO_RETURN;
 			}
 
 			do
