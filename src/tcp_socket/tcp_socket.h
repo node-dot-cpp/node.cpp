@@ -807,6 +807,10 @@ private:
 			bool read_ok = OSLayer::infraGetPacketBytes2(entry.getClientSocketData()->readBuffer, entry.getClientSocketData()->osSocket, required_min_sz);
 			if ( !read_ok )
 			{
+				internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
+				Error e;
+				errorCloseSocket(entry, e);
+
 				entry.getClientSocketData()->ahd_read.h = nullptr;
 				nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 				hr();
@@ -823,14 +827,10 @@ private:
 				else if ( added_sz == 0 )
 				{
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, required_min_sz != 0 );
+					infraProcessRemoteEnded<Node>(entry);
 					entry.getClientSocketData()->ahd_read.h = nullptr;
 					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					hr();
-				}
-				else
-				{
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, total_received_sz < required_min_sz ); // still accumulating
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, added_sz != 0 ); // still accumulating
 				}
 			}
 		}
