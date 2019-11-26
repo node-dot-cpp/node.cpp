@@ -126,6 +126,10 @@ public:
 
 	virtual nodecpp::handler_ret_type main()
 	{
+		for ( size_t i=0; i<1000; ++i )
+			log.debug( "some silly msg with data {}", i );
+		CO_RETURN;
+
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);

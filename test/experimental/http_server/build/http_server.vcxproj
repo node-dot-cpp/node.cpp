@@ -470,6 +470,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\http_server.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\http_server_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\ip_and_port.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\log.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h" />
