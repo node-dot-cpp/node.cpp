@@ -11,6 +11,7 @@
 #ifdef NODECPP_ENABLE_CLUSTERING
 #include <nodecpp/cluster.h>
 #endif // NODECPP_ENABLE_CLUSTERING
+#include <log.h>
 
 using namespace std;
 using namespace nodecpp;
@@ -33,6 +34,8 @@ public: // just temporarily
 	Stats stats;
 
 	Buffer ctrlReplyBuff;
+
+	nodecpp::Log log;
 
 public:
 
@@ -69,6 +72,9 @@ public:
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		log.add( stdout );
+		log.level = nodecpp::Log::Level::silly;
+		log.debug( "some silly msg with data {}", 5 );
 	}
 
 #if IMPL_VERSION == 1
