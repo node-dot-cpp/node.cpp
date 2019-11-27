@@ -29,6 +29,7 @@
 #define NODECPP_LOGGING_H
 
 #include "common.h"
+#include "cluster.h"
 
 
 namespace nodecpp {
@@ -38,13 +39,8 @@ namespace nodecpp {
 	class Log;
 	class LogTransport;
 
-	class LogBuffer
+	struct LogBufferBaseData
 	{
-		// NOTE: it is just a quick sketch
-		// NOTE: so far it is only a thread-unsafe sketch
-		friend class Log;
-		friend class LogTransport;
-
 		size_t pageSize; // consider making a constexpr (do we consider 2Mb pages?)
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
 		size_t buffSize = 0; // a multiple of page size
@@ -53,58 +49,17 @@ namespace nodecpp {
 		static constexpr size_t skippedCntMsgSz = 10; // todo: calc actual size
 		size_t skippedCount = 0; // accessible by log-writing threads
 
-		FILE* target; // so far...
+		FILE* target = nullptr; // so far...
 
-		void addSkippedNotification()
-		{
-			// TODO: prepare and inster a message; update properly the 'end'
-			end += skippedCntMsgSz;
-			skippedCount = 0;
-		}
-
-	public:
-		LogBuffer() {}
-		LogBuffer( const LogBuffer& ) = delete;
-		LogBuffer& operator = ( const LogBuffer& ) = delete;
-		LogBuffer( LogBuffer&& other ) {
-			pageSize = other.pageSize;
-			buff = other.buff;
-			other.buff = nullptr;
-			buffSize = other.buffSize;
-			other.buffSize = 0;
-			start = other.start;
-			end = other.end;
-			other.start = 0;
-			other.end = 0;
-			skippedCount = other.skippedCount;
-		}
-		LogBuffer& operator = ( LogBuffer&& other )
-		{
-			pageSize = other.pageSize;
-			buff = other.buff;
-			other.buff = nullptr;
-			buffSize = other.buffSize;
-			other.buffSize = 0;
-			start = other.start;
-			end = other.end;
-			other.start = 0;
-			other.end = 0;
-			skippedCount = other.skippedCount;
-			return *this;
-		}
-		~LogBuffer()
-		{
-			if ( target ) fclose( target );
-			if ( buff ) nodecpp::dealloc( buff, buffSize );
-		}
 		void init( size_t pageSize_, size_t pageCnt, FILE* f )
 		{
-			if ( buff ) nodecpp::dealloc( buff, buffSize );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, nodecpp::clusterIsMaster() ); 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff == nullptr ); 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, target == nullptr ); 
 			pageSize = pageSize_;
 			buffSize = pageSize * pageCnt;
 			buff = nodecpp::alloc<uint8_t>( buffSize );
 
-			if ( target ) fclose( target );
 			target = f;
 		}
 		void init( size_t pageSize_, size_t pageCnt, const char* path )
@@ -112,53 +67,107 @@ namespace nodecpp {
 			FILE* f = fopen( path, "ab" );
 			init( pageSize_, pageCnt, f );
 		}
-
-		bool addMsg( const char* msg, size_t sz )
+		void deinit()
 		{
-			// TODO: thread-sync
-			size_t fullSzRequired = skippedCount == 0 ? sz : sz + skippedCntMsgSz;
-			if ( end - start + fullSzRequired <= buffSize ) // can copy
-			{
-				if ( skippedCount )
-					addSkippedNotification();
-				if ( buffSize - end >= sz )
-				{
-					memcpy( buff + end, msg, sz );
-					end += sz;
-				}
-				else
-				{
-					memcpy( buff + end, msg, buffSize - end );
-					memcpy( buff, msg + buffSize - end, sz - (buffSize - end) );
-					end = sz - (buffSize - end);
-				}
-				return true;
-			}
-			else
-			{
-				++skippedCount;
-				return false;
-			}
+			if ( buff ) nodecpp::dealloc( buff, buffSize );
 		}
+	};
+} // nodecpp
+
+
+namespace nodecpp::logging_impl {
+	extern void createLogWriterThread( ::nodecpp::LogBufferBaseData* );
+} // nodecpp::logging_impl
+
+
+namespace nodecpp {
+	class LogWriter : public LogBufferBaseData
+	{
+		LogBufferBaseData* logData;
+	public:
+		LogWriter( LogBufferBaseData* logData_ ) : logData( logData_ ) {}
 
 		void flush()
 		{
 			// TODO: thread-sync
 			// so far, for testing purposes we will sit single-threaded and do some kind of emulation
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( start & ( pageSize - 1) ) == 0 ); 
-			size_t pageRoundedEnd = end & ~(pageSize -1);
-			if ( start != pageRoundedEnd )
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
+			size_t pageRoundedEnd = logData->end & ~(logData->pageSize -1);
+			if ( logData->start != pageRoundedEnd )
 			{
-				size_t startoff = start % buffSize;
-				size_t endoff = pageRoundedEnd % buffSize;
+				size_t startoff = logData->start % buffSize;
+				size_t endoff = pageRoundedEnd % logData->buffSize;
 				if ( endoff > startoff )
-					fwrite( buff + startoff, 1, endoff - startoff, target );
+					fwrite( logData->buff + startoff, 1, endoff - startoff, logData->target );
 				else
 				{
-					fwrite( buff + startoff, 1, buffSize - startoff, target );
-					fwrite( buff, 1, endoff, target );
+					fwrite( logData->buff + startoff, 1, logData->buffSize - startoff, logData->target );
+					fwrite( logData->buff, 1, endoff, logData->target );
 				}
-				start = pageRoundedEnd;
+				logData->start = pageRoundedEnd;
+			}
+		}
+	};
+
+	class LogBuffer
+	{
+		// NOTE: it is just a quick sketch
+		// NOTE: so far it is only a thread-unsafe sketch
+		friend class Log;
+		friend class LogTransport;
+
+		LogBufferBaseData* logData;
+
+		void addSkippedNotification()
+		{
+			// TODO: prepare and inster a message; update properly the 'end'
+			logData->end += logData->skippedCntMsgSz;
+			logData->skippedCount = 0;
+		}
+
+	public:
+		LogBuffer( LogBufferBaseData* data ) : logData( data ) {}
+		LogBuffer( const LogBuffer& ) = delete;
+		LogBuffer& operator = ( const LogBuffer& ) = delete;
+		LogBuffer( LogBuffer&& other ) {
+			logData = other.logData;
+			other.logData = nullptr;
+		}
+		LogBuffer& operator = ( LogBuffer&& other )
+		{
+			logData = other.logData;
+			other.logData = nullptr;
+			return *this;
+		}
+		~LogBuffer()
+		{
+		}
+
+		bool addMsg( const char* msg, size_t sz )
+		{
+			// TODO: thread-sync
+			size_t fullSzRequired = logData->skippedCount == 0 ? sz : sz + logData->skippedCntMsgSz;
+			if ( logData->end - logData->start + fullSzRequired <= logData->buffSize ) // can copy
+			{
+				if ( logData->skippedCount )
+					addSkippedNotification();
+				if ( logData->buffSize - logData->end >= sz )
+				{
+					memcpy( logData->buff + logData->end, msg, sz );
+					logData->end += sz;
+				}
+				else
+				{
+					memcpy( logData->buff + logData->end, msg, logData->buffSize - logData->end );
+					memcpy( logData->buff, msg + logData->buffSize - logData->end, sz - (logData->buffSize - logData->end) );
+					logData->end = sz - (logData->buffSize - logData->end);
+				}
+				return true;
+			}
+			else
+			{
+				++(logData->skippedCount);
+				return false;
 			}
 		}
 	};
@@ -169,11 +178,10 @@ namespace nodecpp {
 		//FILE* target; // so far...
 		LogBuffer lb;
 	public:
-		LogTransport() {}
 //		LogTransport( nodecpp::string path ) { target = fopen( path.c_str(), "a" ); }
-		LogTransport( nodecpp::string path ) { lb.init( 0x1000, 2, path.c_str() ); }
+		LogTransport( LogBufferBaseData* data ) : lb( data ) {}
 //		LogTransport( FILE* f ) { target = f; }
-		LogTransport( FILE* f ) { lb.init( 0x1000, 2, f ); }
+//		LogTransport( FILE* f ) { lb.init( 0x1000, 2, f ); }
 		LogTransport( const LogTransport& ) = delete;
 		LogTransport& operator = ( const LogTransport& ) = delete;
 //		LogTransport( LogTransport&& other ) { target = other.target; other.target = nullptr; }
@@ -186,7 +194,7 @@ namespace nodecpp {
 		void writoToLog( nodecpp::string s, size_t severity );
 	};
 
-    class Log
+	class Log
 	{
 	public:
 		enum class Level { error = 0, warn = 1, info = 2, http = 3, verbose = 4, debug = 5, silly = 6 };
@@ -227,18 +235,38 @@ namespace nodecpp {
 		void silly( nodecpp::string_literal format_str, Objects ... obj ) { log( Level::silly, format_str, obj ... ); }
 
 		void clear() { transports.clear(); }
-		bool add( nodecpp::string path ) { transports.emplace_back( path ); return transports.back().lb.target != nullptr; }
-		bool add( FILE* cons ) { transports.emplace_back( cons ); return transports.back().lb.target != nullptr; } // TODO: input param is a subject for revision
+		bool add( nodecpp::string path ) 
+		{
+			if ( nodecpp::clusterIsMaster() )
+			{
+				LogBufferBaseData* data = nodecpp::stdalloc<LogBufferBaseData>( 1 );
+				data->init( 0x1000, 2, path.c_str() );
+				::nodecpp::logging_impl::createLogWriterThread( data );
+				transports.emplace_back( data ); 
+			}
+			return true; // TODO
+		}
+		bool add( FILE* cons ) // TODO: input param is a subject for revision
+		{
+			if ( nodecpp::clusterIsMaster() )
+			{
+				LogBufferBaseData* data = nodecpp::stdalloc<LogBufferBaseData>( 1 );
+				data->init( 0x1000, 2, cons );
+				::nodecpp::logging_impl::createLogWriterThread( data );
+				transports.emplace_back( data ); 
+			}
+			return true; // TODO
+		}
 		//TODO::add: remove()
 	};
 
+	inline
 	void LogTransport::writoToLog( nodecpp::string s, size_t severity ) {
-		if ( lb.target != nullptr )
+//		if ( lb.target != nullptr )
 		{
 			//fprintf( target, "[%s] %s\n", Log::LogLevelNames[(size_t)severity], s.c_str() );
 			nodecpp::string msgformatted = nodecpp::format( "[{}] {}\n", Log::LogLevelNames[(size_t)severity], s );
 			lb.addMsg( msgformatted.c_str(), msgformatted.size() );
-			lb.flush(); // just emulation
 		}
 	}
 } //namespace nodecpp

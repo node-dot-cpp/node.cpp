@@ -259,4 +259,10 @@ thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;*/
 extern nodecpp::stdvector<nodecpp::stdstring> argv;
 inline const nodecpp::stdvector<nodecpp::stdstring>& getArgv() { return argv; }
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+namespace nodecpp {
+	extern bool clusterIsMaster();
+}
+#endif // NODECPP_ENABLE_CLUSTERING
+
 #endif //COMMON_H

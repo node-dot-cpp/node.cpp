@@ -456,6 +456,7 @@
     <ClCompile Include="..\..\..\..\src\clustering_impl\clustering.cpp" />
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
+    <ClCompile Include="..\..\..\..\src\logging_impl\logging.cpp" />
     <ClCompile Include="..\..\..\..\src\net.cpp" />
     <ClCompile Include="..\..\..\..\src\tcp_socket\tcp_socket.cpp" />
     <ClCompile Include="..\user_code\NetSocket.cpp" />

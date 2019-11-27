@@ -72,9 +72,6 @@ public:
 	MySampleTNode()
 	{
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
-		log.add( stdout );
-		log.level = nodecpp::Log::Level::silly;
-//		log.debug( "some silly msg with data {}", 5 );
 	}
 
 #if IMPL_VERSION == 1
@@ -126,9 +123,8 @@ public:
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		for ( size_t i=0; i<1000; ++i )
-			log.debug( "some silly msg with data {}", i );
-		CO_RETURN;
+		log.add( stdout );
+		log.level = nodecpp::Log::Level::silly;
 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
@@ -151,6 +147,9 @@ public:
 		else
 #endif // NODECPP_ENABLE_CLUSTERING
 		{
+			for ( size_t i=0; i<150; ++i )
+				log.debug( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+
 			srv = nodecpp::net::createHttpServer<ServerType>();
 			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 

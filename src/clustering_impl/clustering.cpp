@@ -39,6 +39,7 @@ extern void workerThreadMain( void* pdata );
 namespace nodecpp
 {
 	thread_local Cluster cluster;
+	bool clusterIsMaster() { return cluster.isMaster(); }
 
 	void preinitMasterThreadClusterObject()
 	{
