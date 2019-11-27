@@ -62,9 +62,6 @@ namespace nodecpp {
 			skippedCount = 0;
 		}
 
-		size_t startOffset() { return start % buffSize; }
-		size_t endOffset() { return end % buffSize; }
-
 	public:
 		LogBuffer() {}
 		LogBuffer( const LogBuffer& ) = delete;
@@ -149,16 +146,20 @@ namespace nodecpp {
 			// TODO: thread-sync
 			// so far, for testing purposes we will sit single-threaded and do some kind of emulation
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( start & ( pageSize - 1) ) == 0 ); 
-			size_t startoff = startOffset();
-			size_t endoff = endOffset();
-			if ( endoff > startoff )
-				fwrite( buff + startoff, 1, endoff - startoff, target );
-			else if ( endoff < startoff )
+			size_t pageRoundedEnd = end & ~(pageSize -1);
+			if ( start != pageRoundedEnd )
 			{
-				fwrite( buff + startoff, 1, buffSize - startoff, target );
-				fwrite( buff + startoff, 1, endoff, target );
+				size_t startoff = start % buffSize;
+				size_t endoff = pageRoundedEnd % buffSize;
+				if ( endoff > startoff )
+					fwrite( buff + startoff, 1, endoff - startoff, target );
+				else
+				{
+					fwrite( buff + startoff, 1, buffSize - startoff, target );
+					fwrite( buff, 1, endoff, target );
+				}
+				start = pageRoundedEnd;
 			}
-			start = endoff;
 		}
 	};
 
@@ -235,8 +236,8 @@ namespace nodecpp {
 		if ( lb.target != nullptr )
 		{
 			//fprintf( target, "[%s] %s\n", Log::LogLevelNames[(size_t)severity], s.c_str() );
-			nodecpp::string s = nodecpp::format( "[%s] %s\n", Log::LogLevelNames[(size_t)severity], s.c_str() );
-			lb.addMsg( s.c_str(), s.size() );
+			nodecpp::string msgformatted = nodecpp::format( "[{}] {}\n", Log::LogLevelNames[(size_t)severity], s );
+			lb.addMsg( msgformatted.c_str(), msgformatted.size() );
 			lb.flush(); // just emulation
 		}
 	}

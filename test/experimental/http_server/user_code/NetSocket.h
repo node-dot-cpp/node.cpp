@@ -74,7 +74,7 @@ public:
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
 		log.add( stdout );
 		log.level = nodecpp::Log::Level::silly;
-		log.debug( "some silly msg with data {}", 5 );
+//		log.debug( "some silly msg with data {}", 5 );
 	}
 
 #if IMPL_VERSION == 1
