@@ -40,7 +40,7 @@ namespace nodecpp::logging_impl {
 	
 	void createLogWriterThread( ::nodecpp::LogBufferBaseData* data )
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data == nullptr ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data != nullptr ); 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("about to start LogWriterThread..." );
 		std::thread t( logWriterThreadMain, (void*)(data) );
 		t.detach();
