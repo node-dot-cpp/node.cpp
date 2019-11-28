@@ -37,6 +37,9 @@ namespace nodecpp::logging_impl {
 		for (;;)
 			writer.flush();
 	}
+
+//	thread_local ::nodecpp::vector<LogBufferBaseData*> logDataStructures;
+	::nodecpp::stdvector<LogBufferBaseData*> logDataStructures;
 	
 	void createLogWriterThread( ::nodecpp::LogBufferBaseData* data )
 	{

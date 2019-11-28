@@ -30,6 +30,8 @@
 
 #include "common.h"
 #include "cluster.h"
+#include <mutex>
+#include <windows.h>
 
 
 namespace nodecpp {
@@ -44,10 +46,14 @@ namespace nodecpp {
 		size_t pageSize; // consider making a constexpr (do we consider 2Mb pages?)
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
 		size_t buffSize = 0; // a multiple of page size
-		uint64_t start = 0; // writable by a thread writing to a file; readable: all
-		uint64_t end = 0; // writable: logging threads; readable: all
-		static constexpr size_t skippedCntMsgSz = 10; // todo: calc actual size
+		volatile int64_t start = 0; // writable by a thread writing to a file; readable: all
+		volatile uint64_t end = 0; // writable: logging threads; readable: all
+		static constexpr size_t skippedCntMsgSz = 32;
 		size_t skippedCount = 0; // accessible by log-writing threads
+		std::condition_variable waitLogger;
+		std::condition_variable waitLWriter;
+		std::mutex mx;
+		std::mutex mxWriter;
 
 		FILE* target = nullptr; // so far...
 
@@ -77,11 +83,13 @@ namespace nodecpp {
 
 namespace nodecpp::logging_impl {
 	extern void createLogWriterThread( ::nodecpp::LogBufferBaseData* );
+//	extern thread_local ::nodecpp::vector<LogBufferBaseData*> logDataStructures;
+	extern ::nodecpp::stdvector<LogBufferBaseData*> logDataStructures;
 } // nodecpp::logging_impl
 
 
 namespace nodecpp {
-	class LogWriter : public LogBufferBaseData
+	class LogWriter
 	{
 		LogBufferBaseData* logData;
 	public:
@@ -89,13 +97,15 @@ namespace nodecpp {
 
 		void flush()
 		{
-			// TODO: thread-sync
-			// so far, for testing purposes we will sit single-threaded and do some kind of emulation
+			/*{ // creating scope for lock...
+				std::unique_lock<std::mutex> lock(logData->mxWriter);
+			} // ...and unlocking*/
+
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
 			size_t pageRoundedEnd = logData->end & ~(logData->pageSize -1);
 			if ( logData->start != pageRoundedEnd )
 			{
-				size_t startoff = logData->start % buffSize;
+				size_t startoff = logData->start % logData->buffSize;
 				size_t endoff = pageRoundedEnd % logData->buffSize;
 				if ( endoff > startoff )
 					fwrite( logData->buff + startoff, 1, endoff - startoff, logData->target );
@@ -106,6 +116,8 @@ namespace nodecpp {
 				}
 				logData->start = pageRoundedEnd;
 			}
+			else
+				Sleep(0);
 		}
 	};
 
@@ -120,9 +132,17 @@ namespace nodecpp {
 
 		void addSkippedNotification()
 		{
-			// TODO: prepare and inster a message; update properly the 'end'
-			logData->end += logData->skippedCntMsgSz;
-			logData->skippedCount = 0;
+			if ( logData->skippedCount )
+			{
+				// TODO: prepare and inster a message; update properly the 'end'
+				nodecpp::string skippedMsg = nodecpp::format( "<skipped {} msgs>", logData->skippedCount );
+				if ( skippedMsg.size() < logData->skippedCntMsgSz - 1 )
+					skippedMsg.append( logData->skippedCntMsgSz - 1 - skippedMsg.size(), ' ' );
+				skippedMsg += '\n';
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, skippedMsg.size() == logData->skippedCntMsgSz ); 
+				logData->end += logData->skippedCntMsgSz;
+				logData->skippedCount = 0;
+			}
 		}
 
 	public:
@@ -143,32 +163,57 @@ namespace nodecpp {
 		{
 		}
 
-		bool addMsg( const char* msg, size_t sz )
+		void addMsg_( const char* msg, size_t sz )
 		{
-			// TODO: thread-sync
-			size_t fullSzRequired = logData->skippedCount == 0 ? sz : sz + logData->skippedCntMsgSz;
-			if ( logData->end - logData->start + fullSzRequired <= logData->buffSize ) // can copy
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= logData->end - logData->start );
+			size_t endoff = logData->end % logData->buffSize; // TODO: math
+			if ( logData->buffSize - endoff >= sz )
 			{
-				if ( logData->skippedCount )
-					addSkippedNotification();
-				if ( logData->buffSize - logData->end >= sz )
-				{
-					memcpy( logData->buff + logData->end, msg, sz );
-					logData->end += sz;
-				}
-				else
-				{
-					memcpy( logData->buff + logData->end, msg, logData->buffSize - logData->end );
-					memcpy( logData->buff, msg + logData->buffSize - logData->end, sz - (logData->buffSize - logData->end) );
-					logData->end = sz - (logData->buffSize - logData->end);
-				}
-				return true;
+				memcpy( logData->buff + endoff, msg, sz );
 			}
 			else
 			{
-				++(logData->skippedCount);
-				return false;
+				memcpy( logData->buff + endoff, msg, logData->buffSize - endoff );
+				memcpy( logData->buff, msg + logData->buffSize - endoff, sz - (logData->buffSize - endoff) );
 			}
+			logData->end += sz;
+		}
+
+		bool addMsg( const char* msg, size_t sz )
+		{
+			bool ret = true;
+			bool wakeWriter = false;
+			{
+//				std::unique_lock<std::mutex> lock(logData->mx);
+				size_t fullSzRequired = logData->skippedCount == 0 ? sz : sz + logData->skippedCntMsgSz;
+				if ( logData->end - logData->start + fullSzRequired <= logData->buffSize ) // can copy
+				{
+					size_t endoff = logData->end % logData->buffSize; // TODO: math
+					if ( logData->skippedCount )
+					{
+	//					addSkippedNotification();
+						nodecpp::string skippedMsg = nodecpp::format( "<skipped {} msgs>\n", logData->skippedCount );
+	//					if ( skippedMsg.size() < logData->skippedCntMsgSz - 1 )
+	//						skippedMsg.append( logData->skippedCntMsgSz - 1 - skippedMsg.size(), ' ' );
+	//					skippedMsg += '\n';
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, skippedMsg.size() == logData->skippedCntMsgSz );
+						addMsg_( skippedMsg.c_str(), skippedMsg.size() );
+						logData->skippedCount = 0;
+					}
+					addMsg_( msg, sz );
+					wakeWriter = logData->end - logData->start >= logData->pageSize;
+				}
+				else
+				{
+					++(logData->skippedCount);
+					ret = false;
+					wakeWriter = true;
+				}
+			} // unlocking
+			logData->waitLogger.notify_one(); // outside the lock!
+//			if ( wakeWriter )
+//				logData->waitLWriter.notify_one();
+			return ret;
 		}
 	};
 
@@ -207,6 +252,8 @@ namespace nodecpp {
 		//TODO::add: format
 		//TODO::add: exitOnError
 
+		size_t transportIdx = 0; // for adding purposes in case of clustering
+
 	public:
 		Log() {}
 		virtual ~Log() {}
@@ -243,8 +290,17 @@ namespace nodecpp {
 				data->init( 0x1000, 2, path.c_str() );
 				::nodecpp::logging_impl::createLogWriterThread( data );
 				transports.emplace_back( data ); 
+				::nodecpp::logging_impl::logDataStructures.push_back( data );
+				return true; // TODO
 			}
-			return true; // TODO
+			else
+			{
+				if ( ::nodecpp::logging_impl::logDataStructures.size() <= transportIdx )
+					return false;
+				LogBufferBaseData* data = ::nodecpp::logging_impl::logDataStructures[ transportIdx ];
+				transports.emplace_back( data ); 
+				++transportIdx;
+			}
 		}
 		bool add( FILE* cons ) // TODO: input param is a subject for revision
 		{
@@ -254,8 +310,17 @@ namespace nodecpp {
 				data->init( 0x1000, 2, cons );
 				::nodecpp::logging_impl::createLogWriterThread( data );
 				transports.emplace_back( data ); 
+				::nodecpp::logging_impl::logDataStructures.push_back( data );
+				return true; // TODO
 			}
-			return true; // TODO
+			else
+			{
+				if ( ::nodecpp::logging_impl::logDataStructures.size() <= transportIdx )
+					return false;
+				LogBufferBaseData* data = ::nodecpp::logging_impl::logDataStructures[ transportIdx ];
+				transports.emplace_back( data ); 
+				++transportIdx;
+			}
 		}
 		//TODO::add: remove()
 	};
