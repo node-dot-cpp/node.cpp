@@ -165,7 +165,7 @@ namespace nodecpp {
 
 		void addMsg_( const char* msg, size_t sz )
 		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= logData->end - logData->start );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= logData->buffSize - (logData->end - logData->start) );
 			size_t endoff = logData->end % logData->buffSize; // TODO: math
 			if ( logData->buffSize - endoff >= sz )
 			{
@@ -196,7 +196,7 @@ namespace nodecpp {
 	//					if ( skippedMsg.size() < logData->skippedCntMsgSz - 1 )
 	//						skippedMsg.append( logData->skippedCntMsgSz - 1 - skippedMsg.size(), ' ' );
 	//					skippedMsg += '\n';
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, skippedMsg.size() == logData->skippedCntMsgSz );
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, skippedMsg.size() <= logData->skippedCntMsgSz );
 						addMsg_( skippedMsg.c_str(), skippedMsg.size() );
 						logData->skippedCount = 0;
 					}
