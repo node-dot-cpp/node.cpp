@@ -31,7 +31,6 @@
 #include "common.h"
 #include "cluster.h"
 #include <mutex>
-#include <windows.h>
 
 
 namespace nodecpp {
@@ -97,9 +96,6 @@ namespace nodecpp {
 
 		void flush()
 		{
-			/*{ // creating scope for lock...
-				std::unique_lock<std::mutex> lock(logData->mxWriter);
-			} // ...and unlocking*/
 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
 			size_t pageRoundedEnd = logData->end & ~(logData->pageSize -1);
@@ -116,34 +112,16 @@ namespace nodecpp {
 				}
 				logData->start = pageRoundedEnd;
 			}
-			else
-				Sleep(0);
 		}
 	};
 
 	class LogBuffer
 	{
 		// NOTE: it is just a quick sketch
-		// NOTE: so far it is only a thread-unsafe sketch
 		friend class Log;
 		friend class LogTransport;
 
 		LogBufferBaseData* logData;
-
-		void addSkippedNotification()
-		{
-			if ( logData->skippedCount )
-			{
-				// TODO: prepare and inster a message; update properly the 'end'
-				nodecpp::string skippedMsg = nodecpp::format( "<skipped {} msgs>", logData->skippedCount );
-				if ( skippedMsg.size() < logData->skippedCntMsgSz - 1 )
-					skippedMsg.append( logData->skippedCntMsgSz - 1 - skippedMsg.size(), ' ' );
-				skippedMsg += '\n';
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, skippedMsg.size() == logData->skippedCntMsgSz ); 
-				logData->end += logData->skippedCntMsgSz;
-				logData->skippedCount = 0;
-			}
-		}
 
 	public:
 		LogBuffer( LogBufferBaseData* data ) : logData( data ) {}
@@ -191,11 +169,7 @@ namespace nodecpp {
 					size_t endoff = logData->end % logData->buffSize; // TODO: math
 					if ( logData->skippedCount )
 					{
-	//					addSkippedNotification();
 						nodecpp::string skippedMsg = nodecpp::format( "<skipped {} msgs>\n", logData->skippedCount );
-	//					if ( skippedMsg.size() < logData->skippedCntMsgSz - 1 )
-	//						skippedMsg.append( logData->skippedCntMsgSz - 1 - skippedMsg.size(), ' ' );
-	//					skippedMsg += '\n';
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, skippedMsg.size() <= logData->skippedCntMsgSz );
 						addMsg_( skippedMsg.c_str(), skippedMsg.size() );
 						logData->skippedCount = 0;
@@ -220,20 +194,15 @@ namespace nodecpp {
 	class LogTransport
 	{
 		friend class Log;
-		//FILE* target; // so far...
 		LogBuffer lb;
+
 	public:
-//		LogTransport( nodecpp::string path ) { target = fopen( path.c_str(), "a" ); }
 		LogTransport( LogBufferBaseData* data ) : lb( data ) {}
-//		LogTransport( FILE* f ) { target = f; }
-//		LogTransport( FILE* f ) { lb.init( 0x1000, 2, f ); }
 		LogTransport( const LogTransport& ) = delete;
 		LogTransport& operator = ( const LogTransport& ) = delete;
-//		LogTransport( LogTransport&& other ) { target = other.target; other.target = nullptr; }
-//		LogTransport& operator = ( LogTransport&& other ) { target = other.target; other.target = nullptr; return *this;}
-//		~LogTransport() { if ( target ) fclose( target ); }
 		LogTransport( LogTransport&& other ) = default;
 		LogTransport& operator = ( LogTransport&& other ) = default;
+		~LogTransport() {}
 
 	private:
 		void writoToLog( nodecpp::string s, size_t severity );
@@ -329,7 +298,6 @@ namespace nodecpp {
 	void LogTransport::writoToLog( nodecpp::string s, size_t severity ) {
 //		if ( lb.target != nullptr )
 		{
-			//fprintf( target, "[%s] %s\n", Log::LogLevelNames[(size_t)severity], s.c_str() );
 			nodecpp::string msgformatted = nodecpp::format( "[{}] {}\n", Log::LogLevelNames[(size_t)severity], s );
 			lb.addMsg( msgformatted.c_str(), msgformatted.size() );
 		}
