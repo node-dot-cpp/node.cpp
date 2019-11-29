@@ -147,7 +147,7 @@ public:
 		else
 #endif // NODECPP_ENABLE_CLUSTERING
 		{
-			for ( size_t i=0; i<150; ++i )
+			for ( size_t i=0; i<3000; ++i )
 				log.debug( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
 
 			srv = nodecpp::net::createHttpServer<ServerType>();

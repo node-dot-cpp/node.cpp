@@ -96,6 +96,9 @@ namespace nodecpp {
 
 		void flush()
 		{
+			std::unique_lock<std::mutex> lock(logData->mxWriter);
+			logData->waitLWriter.wait(lock);
+			lock.unlock();
 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
 			size_t pageRoundedEnd = logData->end & ~(logData->pageSize -1);
@@ -162,7 +165,7 @@ namespace nodecpp {
 			bool ret = true;
 			bool wakeWriter = false;
 			{
-//				std::unique_lock<std::mutex> lock(logData->mx);
+				std::unique_lock<std::mutex> lock(logData->mx);
 				size_t fullSzRequired = logData->skippedCount == 0 ? sz : sz + logData->skippedCntMsgSz;
 				if ( logData->end - logData->start + fullSzRequired <= logData->buffSize ) // can copy
 				{
@@ -185,8 +188,11 @@ namespace nodecpp {
 				}
 			} // unlocking
 			logData->waitLogger.notify_one(); // outside the lock!
-//			if ( wakeWriter )
-//				logData->waitLWriter.notify_one();
+			if ( wakeWriter )
+			{
+				std::lock_guard<std::mutex> lk(logData->mxWriter);
+				logData->waitLWriter.notify_one();
+			}
 			return ret;
 		}
 	};
