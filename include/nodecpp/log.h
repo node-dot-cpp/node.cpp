@@ -35,6 +35,9 @@
 
 namespace nodecpp {
 	
+	enum class LogLevel { error = 0, warn = 1, info = 2, http = 3, verbose = 4, debug = 5, silly = 6 };
+	static constexpr const char* LogLevelNames[] = { "error", "warn", "info", "http", "verbose", "debug", "silly", "" };
+
 //	enum class Console { std_out = ::stdout, std_err = ::stderr };
 
 	class Log;
@@ -51,7 +54,7 @@ namespace nodecpp {
 		static constexpr size_t skippedCntMsgSz = 32;
 		size_t skippedCount = 0; // accessible by log-writing threads
 		std::condition_variable waitLogger;
-		std::condition_variable waitLWriter;
+		std::condition_variable waitWriter;
 		std::mutex mx;
 		std::mutex mxWriter;
 
@@ -99,7 +102,7 @@ namespace nodecpp {
 		void flush()
 		{
 			std::unique_lock<std::mutex> lock(logData->mxWriter);
-			logData->waitLWriter.wait(lock);
+			logData->waitWriter.wait(lock);
 			lock.unlock();
 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
@@ -165,7 +168,7 @@ namespace nodecpp {
 			logData->end += sz;
 		}
 
-		bool addMsg( const char* msg, size_t sz )
+		bool addMsg( const char* msg, size_t sz, LogLevel l )
 		{
 			bool ret = true;
 			{
@@ -186,7 +189,7 @@ namespace nodecpp {
 					{
 						std::lock_guard<std::mutex> lk(logData->mxWriter);
 						logData->writerWakedFor = logData->end & ~(logData->pageSize-1);
-						logData->waitLWriter.notify_one();
+						logData->waitWriter.notify_one();
 					}
 				}
 				else
@@ -197,7 +200,7 @@ namespace nodecpp {
 					{
 						std::lock_guard<std::mutex> lk(logData->mxWriter);
 						logData->writerWakedFor = logData->end & ~(logData->pageSize-1);
-						logData->waitLWriter.notify_one();
+						logData->waitWriter.notify_one();
 					}
 				}
 			} // unlocking
@@ -220,15 +223,13 @@ namespace nodecpp {
 		~LogTransport() {}
 
 	private:
-		void writoToLog( nodecpp::string s, size_t severity );
+		void writoToLog( nodecpp::string s, LogLevel severity );
 	};
 
 	class Log
 	{
 	public:
-		enum class Level { error = 0, warn = 1, info = 2, http = 3, verbose = 4, debug = 5, silly = 6 };
-		static constexpr const char* LogLevelNames[] = { "error", "warn", "info", "http", "verbose", "debug", "silly", "" };
-		Level level = Level::info;
+		LogLevel level = LogLevel::info;
 
 		nodecpp::vector<LogTransport> transports;
 		bool silent = false;
@@ -243,27 +244,27 @@ namespace nodecpp {
 		virtual ~Log() {}
 
 		template<class ... Objects>
-		void log( Level l, nodecpp::string_literal format_str, Objects ... obj ) {
+		void log( LogLevel l, nodecpp::string_literal format_str, Objects ... obj ) {
 			if ( l <= level ) {
 				nodecpp::string msg = nodecpp::format( format_str, obj ... );
 				for ( auto& transport : transports )
-					transport.writoToLog( msg, (size_t)l );
+					transport.writoToLog( msg, l );
 			}				 
 		}
 		template<class ... Objects>
-		void error( nodecpp::string_literal format_str, Objects ... obj ) { log( Level::error, format_str, obj ... ); }
+		void error( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::error, format_str, obj ... ); }
 		template<class ... Objects>
-		void warn( nodecpp::string_literal format_str, Objects ... obj ) { log( Level::warn, format_str, obj ... ); }
+		void warn( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::warn, format_str, obj ... ); }
 		template<class ... Objects>
-		void info( nodecpp::string_literal format_str, Objects ... obj ) { log( Level::info, format_str, obj ... ); }
+		void info( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::info, format_str, obj ... ); }
 		template<class ... Objects>
-		void http( nodecpp::string_literal format_str, Objects ... obj ) { log( Level::http, format_str, obj ... ); }
+		void http( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::http, format_str, obj ... ); }
 		template<class ... Objects>
-		void verbose( nodecpp::string_literal format_str, Objects ... obj ) { log( Level::verbose, format_str, obj ... ); }
+		void verbose( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::verbose, format_str, obj ... ); }
 		template<class ... Objects>
-		void debug( nodecpp::string_literal format_str, Objects ... obj ) { log( Level::debug, format_str, obj ... ); }
+		void debug( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::debug, format_str, obj ... ); }
 		template<class ... Objects>
-		void silly( nodecpp::string_literal format_str, Objects ... obj ) { log( Level::silly, format_str, obj ... ); }
+		void silly( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::silly, format_str, obj ... ); }
 
 		void clear() { transports.clear(); }
 		bool add( nodecpp::string path ) 
@@ -310,11 +311,11 @@ namespace nodecpp {
 	};
 
 	inline
-	void LogTransport::writoToLog( nodecpp::string s, size_t severity ) {
+	void LogTransport::writoToLog( nodecpp::string s, LogLevel severity ) {
 //		if ( lb.target != nullptr )
 		{
-			nodecpp::string msgformatted = nodecpp::format( "[{}] {}\n", Log::LogLevelNames[(size_t)severity], s );
-			lb.addMsg( msgformatted.c_str(), msgformatted.size() );
+			nodecpp::string msgformatted = nodecpp::format( "[{}] {}\n", LogLevelNames[(size_t)severity], s );
+			lb.addMsg( msgformatted.c_str(), msgformatted.size(), severity );
 		}
 	}
 } //namespace nodecpp

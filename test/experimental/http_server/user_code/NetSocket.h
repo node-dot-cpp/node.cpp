@@ -124,7 +124,7 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		log.add( stdout );
-		log.level = nodecpp::Log::Level::silly;
+		log.level = nodecpp::LogLevel::silly;
 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
