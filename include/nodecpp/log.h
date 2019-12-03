@@ -46,6 +46,7 @@ namespace nodecpp {
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
 		size_t buffSize = 0; // a multiple of page size
 		volatile int64_t start = 0; // writable by a thread writing to a file; readable: all
+		volatile uint64_t writerWakedFor = 0; // writable: logging threads; readable: all
 		volatile uint64_t end = 0; // writable: logging threads; readable: all
 		static constexpr size_t skippedCntMsgSz = 32;
 		size_t skippedCount = 0; // accessible by log-writing threads
@@ -91,6 +92,7 @@ namespace nodecpp {
 	class LogWriter
 	{
 		LogBufferBaseData* logData;
+
 	public:
 		LogWriter( LogBufferBaseData* logData_ ) : logData( logData_ ) {}
 
@@ -101,8 +103,10 @@ namespace nodecpp {
 			lock.unlock();
 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
-			size_t pageRoundedEnd = logData->end & ~(logData->pageSize -1);
-			if ( logData->start != pageRoundedEnd )
+//			size_t pageRoundedEnd = logData->end & ~(logData->pageSize -1);
+			size_t pageRoundedEnd = logData->writerWakedFor & ~(logData->pageSize -1);
+//			if ( logData->start != pageRoundedEnd )
+			while ( logData->start != pageRoundedEnd )
 			{
 				size_t startoff = logData->start % logData->buffSize;
 				size_t endoff = pageRoundedEnd % logData->buffSize;
@@ -114,6 +118,7 @@ namespace nodecpp {
 					fwrite( logData->buff, 1, endoff, logData->target );
 				}
 				logData->start = pageRoundedEnd;
+				pageRoundedEnd = logData->writerWakedFor & ~(logData->pageSize -1);
 			}
 		}
 	};
@@ -163,7 +168,6 @@ namespace nodecpp {
 		bool addMsg( const char* msg, size_t sz )
 		{
 			bool ret = true;
-			bool wakeWriter = false;
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);
 				size_t fullSzRequired = logData->skippedCount == 0 ? sz : sz + logData->skippedCntMsgSz;
@@ -178,21 +182,26 @@ namespace nodecpp {
 						logData->skippedCount = 0;
 					}
 					addMsg_( msg, sz );
-					wakeWriter = logData->end - logData->start >= logData->pageSize;
+					if (logData->end - logData->writerWakedFor >= logData->pageSize)
+					{
+						std::lock_guard<std::mutex> lk(logData->mxWriter);
+						logData->writerWakedFor = logData->end & ~(logData->pageSize-1);
+						logData->waitLWriter.notify_one();
+					}
 				}
 				else
 				{
 					++(logData->skippedCount);
 					ret = false;
-					wakeWriter = true;
+					if (logData->end - logData->writerWakedFor >= logData->pageSize)
+					{
+						std::lock_guard<std::mutex> lk(logData->mxWriter);
+						logData->writerWakedFor = logData->end & ~(logData->pageSize-1);
+						logData->waitLWriter.notify_one();
+					}
 				}
 			} // unlocking
 			logData->waitLogger.notify_one(); // outside the lock!
-			if ( wakeWriter )
-			{
-				std::lock_guard<std::mutex> lk(logData->mxWriter);
-				logData->waitLWriter.notify_one();
-			}
 			return ret;
 		}
 	};
