@@ -47,12 +47,13 @@ namespace nodecpp {
 	{
 		std::condition_variable w;
 		std::mutex mx;
+		size_t sz;
 		ChainedWaitingData* next = nullptr;
 	};
 
 	struct LogBufferBaseData
 	{
-		LogLevel levelCouldBeSkipped = LogLevel::warn;
+		LogLevel levelCouldBeSkipped = LogLevel::info;
 		size_t pageSize; // consider making a constexpr (do we consider 2Mb pages?)
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
 		size_t buffSize = 0; // a multiple of page size
@@ -91,6 +92,7 @@ namespace nodecpp {
 		{
 			if ( buff ) nodecpp::dealloc( buff, buffSize );
 		}
+		size_t availableSize() { return buffSize - (end - start); }
 	};
 } // nodecpp
 
@@ -118,7 +120,11 @@ namespace nodecpp {
 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
 //			size_t pageRoundedEnd = logData->end & ~(logData->pageSize -1);
-			size_t pageRoundedEnd = logData->writerWakedFor & ~(logData->pageSize -1);
+			size_t pageRoundedEnd;
+			{
+				std::unique_lock<std::mutex> lock(logData->mx);
+				pageRoundedEnd = logData->writerWakedFor & ~(logData->pageSize -1);
+			} // unlocking
 //			if ( logData->start != pageRoundedEnd )
 			while ( logData->start != pageRoundedEnd )
 			{
@@ -143,7 +149,10 @@ namespace nodecpp {
 					if ( p )
 						p->w.notify_one();
 				}
-				pageRoundedEnd = logData->writerWakedFor & ~(logData->pageSize -1);
+				{
+					std::unique_lock<std::mutex> lock(logData->mx);
+					pageRoundedEnd = logData->writerWakedFor & ~(logData->pageSize -1);
+				} // unlocking
 			}
 		}
 	};
@@ -176,7 +185,7 @@ namespace nodecpp {
 
 		void insertSingleMsg( const char* msg, size_t sz )
 		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= logData->buffSize - (logData->end - logData->start) );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= logData->availableSize() );
 			size_t endoff = logData->end % logData->buffSize; // TODO: math
 			if ( logData->buffSize - endoff >= sz )
 			{
@@ -239,6 +248,7 @@ namespace nodecpp {
 						else
 						{
 							logData->nextToAdd->next = &d;
+							logData->nextToAdd->sz = sz;
 							logData->nextToAdd = &d;
 						}
 						waitAgain = true;
@@ -262,6 +272,11 @@ namespace nodecpp {
 					insertMessage( msg, sz );
 					if ( logData->nextToAdd == &d )
 						logData->nextToAdd = nullptr;
+					if ( d.sz < logData->availableSize() )
+					{
+						logData->firstToRelease = d.next;
+						d.next = nullptr;
+					}
 				} // unlocking
 				if ( d.next )
 					d.next->w.notify_one();
