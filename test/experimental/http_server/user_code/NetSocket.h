@@ -149,6 +149,8 @@ public:
 		{
 			for ( size_t i=0; i<1500; ++i )
 				log.warning( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+static int logfin = 0;
+nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "    ++++!!!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), ++logfin );
 
 			srv = nodecpp::net::createHttpServer<ServerType>();
 			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
