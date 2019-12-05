@@ -124,7 +124,7 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		log.add( stdout );
-		log.level = nodecpp::LogLevel::silly;
+		log.level = nodecpp::LogLevel::debug;
 
 		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
 
@@ -148,7 +148,7 @@ public:
 #endif // NODECPP_ENABLE_CLUSTERING
 		{
 			for ( size_t i=0; i<1500; ++i )
-				log.error( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+				log.warning( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
 
 			srv = nodecpp::net::createHttpServer<ServerType>();
 			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
