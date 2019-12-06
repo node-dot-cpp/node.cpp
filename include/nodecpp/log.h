@@ -67,6 +67,7 @@ namespace nodecpp {
 		std::condition_variable w;
 		std::mutex mx;
 		SkippedMsgCounters skippedCtrs;
+		bool canRun = false;
 		ChainedWaitingData* next = nullptr;
 	};
 
@@ -133,8 +134,9 @@ namespace nodecpp {
 
 		void flush()
 		{
-			std::unique_lock<std::mutex> lock(logData->mxWriter);
-			logData->waitWriter.wait(lock);
+			std::unique_lock<std::mutex> lock(logData->mx);
+			while ( (logData->end & ~( logData->pageSize - 1)) == logData->start )
+				logData->waitWriter.wait(lock);
 			lock.unlock();
 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
@@ -144,23 +146,30 @@ namespace nodecpp {
 			// 2. release a thread waiting for free size in buffer (if any)
 			// first, collects data
 			size_t pageRoundedEnd;
+			ChainedWaitingData* p = nullptr;
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);
 				pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
 				logData->writerPromisedNextStart = pageRoundedEnd;
 
-				ChainedWaitingData* p = nullptr;
 				if ( logData->start == pageRoundedEnd && logData->firstToRelease != nullptr )
 				{
 					p = logData->firstToRelease;
 					logData->firstToRelease = nullptr;
 				}
-				if ( p )
-				{
-					p->w.notify_one();
-					return;
-				}
 			} // unlocking
+			if ( p )
+			{
+				{
+					std::unique_lock<std::mutex> lock(p->mx);
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !p->canRun );
+					p->canRun = true;
+					++(p->dbgWakeCtr);
+				}
+				p->w.notify_one();
+				if ( logData->start == pageRoundedEnd )
+					return;
+			}
 			while ( logData->start != pageRoundedEnd )
 			{
 				size_t startoff = logData->start % logData->buffSize;
@@ -186,7 +195,15 @@ namespace nodecpp {
 					logData->writerPromisedNextStart = pageRoundedEnd;
 				} // unlocking
 				if ( p )
+				{
+					{
+						std::unique_lock<std::mutex> lock(p->mx);
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !p->canRun );
+						p->canRun = true;
+						++(p->dbgWakeCtr);
+					}
 					p->w.notify_one();
+				}
 			}
 		}
 	};
@@ -246,7 +263,6 @@ namespace nodecpp {
 			insertSingleMsg( msg, sz );
 			if (logData->end - logData->writerPromisedNextStart >= logData->pageSize)
 			{
-//				std::lock_guard<std::mutex> lk(logData->mxWriter);
 				logData->waitWriter.notify_one();
 			}
 		}
@@ -260,7 +276,6 @@ namespace nodecpp {
 				std::unique_lock<std::mutex> lock(logData->mx);
 				if (logData->end - logData->writerPromisedNextStart >= logData->pageSize)
 				{
-//					std::lock_guard<std::mutex> lk(logData->mxWriter);
 					logData->waitWriter.notify_one();
 				}
 				size_t fullSzRequired = logData->skippedCtrs.fullCount() == 0 ? sz : sz + logData->skippedCntMsgSz;
@@ -306,11 +321,14 @@ namespace nodecpp {
 			{
 				waitAgain = false;
 				std::unique_lock<std::mutex> lock(d.mx);
-				d.w.wait(lock);
+				while (!d.canRun)
+					d.w.wait(lock);
+				d.canRun = false;
 				lock.unlock();
 
 				{
 					std::unique_lock<std::mutex> lock(logData->mx);
+
 					size_t fullSzRequired = logData->skippedCtrs.fullCount() == 0 ? sz : sz + logData->skippedCntMsgSz;
 					if ( logData->end + fullSzRequired > logData->start + logData->buffSize )
 					{
@@ -319,9 +337,9 @@ namespace nodecpp {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, logData->nextToAdd != nullptr );
 						waitAgain = true;
 						{
-			//				std::lock_guard<std::mutex> lk(logData->mxWriter);
 							logData->waitWriter.notify_one();
 						}
+						lock.unlock();
 						continue;
 					}
 
@@ -339,7 +357,14 @@ namespace nodecpp {
 				} // unlocking
 
 				if ( d.next )
+				{
+					{
+						std::unique_lock<std::mutex> lock(d.next->mx);
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !d.next->canRun );
+						d.next->canRun = true;
+					}
 					d.next->w.notify_one();
+				}
 			}
 			return ret;
 		}
