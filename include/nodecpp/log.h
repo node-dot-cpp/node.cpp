@@ -85,7 +85,6 @@ namespace nodecpp {
 		std::condition_variable waitLogger;
 		std::condition_variable waitWriter;
 		std::mutex mx;
-		std::mutex mxWriter;
 
 		ChainedWaitingData* firstToRelease = nullptr; // for writer
 		ChainedWaitingData* nextToAdd = nullptr; // for loggers
@@ -132,67 +131,33 @@ namespace nodecpp {
 	public:
 		LogWriter( LogBufferBaseData* logData_ ) : logData( logData_ ) {}
 
-		void flush()
+		void runLoop()
 		{
-			std::unique_lock<std::mutex> lock(logData->mx);
-			while ( (logData->end & ~( logData->pageSize - 1)) == logData->start )
-				logData->waitWriter.wait(lock);
-			lock.unlock();
-
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
-
-			// there are two things we can do here:
-			// 1. flush one or more ready pages
-			// 2. release a thread waiting for free size in buffer (if any)
-			// first, collects data
-			size_t pageRoundedEnd;
-			ChainedWaitingData* p = nullptr;
+			for (;;)
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);
-				pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
-				logData->writerPromisedNextStart = pageRoundedEnd;
+				while ( (logData->end & ~( logData->pageSize - 1)) == logData->start )
+					logData->waitWriter.wait(lock);
+				lock.unlock();
 
-				if ( logData->start == pageRoundedEnd && logData->firstToRelease != nullptr )
-				{
-					p = logData->firstToRelease;
-					logData->firstToRelease = nullptr;
-				}
-			} // unlocking
-			if ( p )
-			{
-				{
-					std::unique_lock<std::mutex> lock(p->mx);
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !p->canRun );
-					p->canRun = true;
-					++(p->dbgWakeCtr);
-				}
-				p->w.notify_one();
-				if ( logData->start == pageRoundedEnd )
-					return;
-			}
-			while ( logData->start != pageRoundedEnd )
-			{
-				size_t startoff = logData->start % logData->buffSize;
-				size_t endoff = pageRoundedEnd % logData->buffSize;
-				if ( endoff > startoff )
-					fwrite( logData->buff + startoff, 1, endoff - startoff, logData->target );
-				else
-				{
-					fwrite( logData->buff + startoff, 1, logData->buffSize - startoff, logData->target );
-					fwrite( logData->buff, 1, endoff, logData->target );
-				}
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ( logData->start & ( logData->pageSize - 1) ) == 0 ); 
 
+				// there are two things we can do here:
+				// 1. flush one or more ready pages
+				// 2. release a thread waiting for free size in buffer (if any)
+				// first, collects data
+				size_t pageRoundedEnd;
 				ChainedWaitingData* p = nullptr;
 				{
 					std::unique_lock<std::mutex> lock(logData->mx);
-					logData->start = pageRoundedEnd;
-					if ( logData->firstToRelease )
+					pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
+					logData->writerPromisedNextStart = pageRoundedEnd;
+
+					if ( logData->start == pageRoundedEnd && logData->firstToRelease != nullptr )
 					{
 						p = logData->firstToRelease;
 						logData->firstToRelease = nullptr;
 					}
-					pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
-					logData->writerPromisedNextStart = pageRoundedEnd;
 				} // unlocking
 				if ( p )
 				{
@@ -200,9 +165,45 @@ namespace nodecpp {
 						std::unique_lock<std::mutex> lock(p->mx);
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !p->canRun );
 						p->canRun = true;
-						++(p->dbgWakeCtr);
 					}
 					p->w.notify_one();
+					if ( logData->start == pageRoundedEnd )
+						return;
+				}
+
+				while ( logData->start != pageRoundedEnd )
+				{
+					size_t startoff = logData->start % logData->buffSize;
+					size_t endoff = pageRoundedEnd % logData->buffSize;
+					if ( endoff > startoff )
+						fwrite( logData->buff + startoff, 1, endoff - startoff, logData->target );
+					else
+					{
+						fwrite( logData->buff + startoff, 1, logData->buffSize - startoff, logData->target );
+						fwrite( logData->buff, 1, endoff, logData->target );
+					}
+
+					ChainedWaitingData* p = nullptr;
+					{
+						std::unique_lock<std::mutex> lock(logData->mx);
+						logData->start = pageRoundedEnd;
+						if ( logData->firstToRelease )
+						{
+							p = logData->firstToRelease;
+							logData->firstToRelease = nullptr;
+						}
+						pageRoundedEnd = logData->end & ~( logData->pageSize - 1);
+						logData->writerPromisedNextStart = pageRoundedEnd;
+					} // unlocking
+					if ( p )
+					{
+						{
+							std::unique_lock<std::mutex> lock(p->mx);
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !p->canRun );
+							p->canRun = true;
+						}
+						p->w.notify_one();
+					}
 				}
 			}
 		}
@@ -274,10 +275,6 @@ namespace nodecpp {
 			ChainedWaitingData d;
 			{
 				std::unique_lock<std::mutex> lock(logData->mx);
-				if (logData->end - logData->writerPromisedNextStart >= logData->pageSize)
-				{
-					logData->waitWriter.notify_one();
-				}
 				size_t fullSzRequired = logData->skippedCtrs.fullCount() == 0 ? sz : sz + logData->skippedCntMsgSz;
 				if ( logData->nextToAdd != nullptr)
 				{
@@ -309,13 +306,12 @@ namespace nodecpp {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, logData->nextToAdd == nullptr );
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, logData->firstToRelease == nullptr ); 
 						logData->firstToRelease = &d;
+//						d.canRun = true;
 						logData->nextToAdd = &d;
 						waitAgain = true;
 					}
 				}
 			} // unlocking
-
-//			logData->waitLogger.notify_one(); // outside the lock!
 
 			while ( waitAgain )
 			{
@@ -336,9 +332,6 @@ namespace nodecpp {
 						logData->firstToRelease = &d;
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, logData->nextToAdd != nullptr );
 						waitAgain = true;
-						{
-							logData->waitWriter.notify_one();
-						}
 						lock.unlock();
 						continue;
 					}

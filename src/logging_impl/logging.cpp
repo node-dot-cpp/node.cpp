@@ -34,8 +34,7 @@ namespace nodecpp::logging_impl {
 	void logWriterThreadMain( void* pdata )
 	{
 		LogWriter writer( reinterpret_cast<::nodecpp::LogBufferBaseData*>( pdata ) );
-		for (;;)
-			writer.flush();
+		writer.runLoop();
 	}
 
 //	thread_local ::nodecpp::vector<LogBufferBaseData*> logDataStructures;
