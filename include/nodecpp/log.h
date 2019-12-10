@@ -222,31 +222,12 @@ namespace nodecpp {
 		}
 	};
 
-	class LogBuffer
+	class LogTransport
 	{
 		// NOTE: it is just a quick sketch
 		friend class Log;
-		friend class LogTransport;
 
 		LogBufferBaseData* logData;
-
-	public:
-		LogBuffer( LogBufferBaseData* data ) : logData( data ) {}
-		LogBuffer( const LogBuffer& ) = delete;
-		LogBuffer& operator = ( const LogBuffer& ) = delete;
-		LogBuffer( LogBuffer&& other ) {
-			logData = other.logData;
-			other.logData = nullptr;
-		}
-		LogBuffer& operator = ( LogBuffer&& other )
-		{
-			logData = other.logData;
-			other.logData = nullptr;
-			return *this;
-		}
-		~LogBuffer()
-		{
-		}
 
 		void insertSingleMsg( const char* msg, size_t sz ) // under lock
 		{
@@ -374,23 +355,26 @@ namespace nodecpp {
 			}
 			return ret;
 		}
-	};
 
-	class LogTransport
-	{
-		friend class Log;
-		LogBuffer lb;
+		void writoToLog( ModuleID mid, nodecpp::string s, LogLevel severity );
 
 	public:
-		LogTransport( LogBufferBaseData* data ) : lb( data ) {}
+		LogTransport( LogBufferBaseData* data ) : logData( data ) {}
 		LogTransport( const LogTransport& ) = delete;
 		LogTransport& operator = ( const LogTransport& ) = delete;
-		LogTransport( LogTransport&& other ) = default;
-		LogTransport& operator = ( LogTransport&& other ) = default;
-		~LogTransport() {}
-
-	private:
-		void writoToLog( ModuleID mid, nodecpp::string s, LogLevel severity );
+		LogTransport( LogTransport&& other ) {
+			logData = other.logData;
+			other.logData = nullptr;
+		}
+		LogTransport& operator = ( LogTransport&& other )
+		{
+			logData = other.logData;
+			other.logData = nullptr;
+			return *this;
+		}
+		~LogTransport()
+		{
+		}
 	};
 
 	class Log
@@ -504,13 +488,10 @@ namespace nodecpp {
 
 	inline
 	void LogTransport::writoToLog( ModuleID mid, nodecpp::string s, LogLevel severity ) {
-//		if ( lb.target != nullptr )
-		{
-			nodecpp::string msgformatted = mid.id() != nullptr ?
-				nodecpp::format( "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], s ) :
-				nodecpp::format( "[{}] {}\n", LogLevelNames[(size_t)severity], s );
-			lb.addMsg( msgformatted.c_str(), msgformatted.size(), severity );
-		}
+		nodecpp::string msgformatted = mid.id() != nullptr ?
+			nodecpp::format( "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], s ) :
+			nodecpp::format( "[{}] {}\n", LogLevelNames[(size_t)severity], s );
+		addMsg( msgformatted.c_str(), msgformatted.size(), severity );
 	}
 } //namespace nodecpp
 
