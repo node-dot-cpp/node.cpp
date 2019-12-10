@@ -31,6 +31,7 @@
 #include "common.h"
 #include "cluster.h"
 #include <mutex>
+#include <iibmalloc_page_allocator.h>
 
 
 namespace nodecpp {
@@ -88,6 +89,7 @@ namespace nodecpp {
 	{
 		LogLevel levelCouldBeSkipped = LogLevel::info;
 		size_t pageSize; // consider making a constexpr (do we consider 2Mb pages?)
+		static constexpr size_t pageCount = 4; // so far it is not obvious why we really need something else
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
 		size_t buffSize = 0; // a multiple of page size
 		volatile int64_t start = 0; // writable by a thread writing to a file; readable: all
@@ -104,25 +106,46 @@ namespace nodecpp {
 
 		FILE* target = nullptr; // so far...
 
-		void init( size_t pageSize_, size_t pageCnt, FILE* f )
+		void init( FILE* f )
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, nodecpp::clusterIsMaster() ); 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff == nullptr ); 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, target == nullptr ); 
-			pageSize = pageSize_;
-			buffSize = pageSize * pageCnt;
-			buff = nodecpp::alloc<uint8_t>( buffSize );
+			size_t memPageSz = VirtualMemory::getPageSize();
+			if ( memPageSz <= 0x2000 )
+			{
+				pageSize = memPageSz;
+				buffSize = pageSize * pageCount;
+				buff = reinterpret_cast<uint8_t*>( VirtualMemory::allocate( buffSize ) );
+			}
+			else // TODO: revise for Large pages!!!
+			{
+				pageSize = memPageSz / pageCount;
+				buffSize = memPageSz;
+				buff = reinterpret_cast<uint8_t*>( VirtualMemory::allocate( memPageSz ) );
+			}
+			if ( buff == nullptr )
+				throw;
 
 			target = f;
 		}
 		void init( size_t pageSize_, size_t pageCnt, const char* path )
 		{
 			FILE* f = fopen( path, "ab" );
-			init( pageSize_, pageCnt, f );
+			init( f );
 		}
 		void deinit()
 		{
-			if ( buff ) nodecpp::dealloc( buff, buffSize );
+			if ( buff )
+			{
+				VirtualMemory::deallocate( buff, buffSize );
+				buff = nullptr;
+			}
+			if ( target ) 
+			{
+				fclose( target );
+				target = nullptr;
+			}
 		}
 		size_t availableSize() { return buffSize - (end - start); }
 	};
@@ -468,7 +491,7 @@ namespace nodecpp {
 			if ( nodecpp::clusterIsMaster() )
 			{
 				LogBufferBaseData* data = nodecpp::stdalloc<LogBufferBaseData>( 1 );
-				data->init( 0x1000, 2, cons );
+				data->init( cons );
 				::nodecpp::logging_impl::createLogWriterThread( data );
 				transports.emplace_back( data ); 
 				::nodecpp::logging_impl::logDataStructures.push_back( data );
