@@ -34,6 +34,19 @@
 
 
 namespace nodecpp {
+
+	class ModuleID
+	{
+		const char* str;
+	public:
+		ModuleID( const char* str_) : str( str_ ) {}
+		ModuleID( const string_literal& other ) : str( other.c_str() ) {}
+		ModuleID( const ModuleID& other ) : str( other.str ) {}
+		ModuleID& operator = ( const ModuleID& other ) {str = other.str; return *this;}
+		ModuleID( ModuleID&& other ) = delete;
+		ModuleID& operator = ( ModuleID&& other ) = delete;
+		const char* id() const { return str; }
+	};
 	
 	enum class LogLevel { emerg = 0, alert = 1, crit = 2, err = 3, warning = 4, notice = 5, info = 6, debug = 7 };
 	static constexpr const char* LogLevelNames[] = { "emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "" };
@@ -377,7 +390,7 @@ namespace nodecpp {
 		~LogTransport() {}
 
 	private:
-		void writoToLog( nodecpp::string s, LogLevel severity );
+		void writoToLog( ModuleID mid, nodecpp::string s, LogLevel severity );
 	};
 
 	class Log
@@ -398,14 +411,19 @@ namespace nodecpp {
 		virtual ~Log() {}
 
 		template<class ... Objects>
-		void log( LogLevel l, nodecpp::string_literal format_str, Objects ... obj ) {
+		void log( ModuleID mid, LogLevel l, nodecpp::string_literal format_str, Objects ... obj ) {
 			if ( l <= level ) {
 				nodecpp::string msg = nodecpp::format( format_str, obj ... );
 				for ( auto& transport : transports )
-					transport.writoToLog( msg, l );
+					transport.writoToLog( mid, msg, l );
 			}				 
 		}
-//	enum class LogLevel { emerg = 0, alert = 1, crit = 2, err = 3, warning = 4, notice = 5, info = 6, debug = 7 };
+
+		template<class ... Objects>
+		void log( LogLevel l, nodecpp::string_literal format_str, Objects ... obj ) {
+			log( ModuleID( NODECPP_DEFAULT_LOG_MODULE ), l, format_str, obj ... );
+		}
+
 		template<class ... Objects>
 		void emergency( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::emerg, format_str, obj ... ); }
 		template<class ... Objects>
@@ -422,6 +440,23 @@ namespace nodecpp {
 		void info( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::info, format_str, obj ... ); }
 		template<class ... Objects>
 		void debug( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::debug, format_str, obj ... ); }
+
+		template<class ... Objects>
+		void emergency( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::emerg, format_str, obj ... ); }
+		template<class ... Objects>
+		void alert( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::alert, format_str, obj ... ); }
+		template<class ... Objects>
+		void critical( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::crit, format_str, obj ... ); }
+		template<class ... Objects>
+		void error( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::err, format_str, obj ... ); }
+		template<class ... Objects>
+		void warning( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::warning, format_str, obj ... ); }
+		template<class ... Objects>
+		void notice( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::notice, format_str, obj ... ); }
+		template<class ... Objects>
+		void info( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::info, format_str, obj ... ); }
+		template<class ... Objects>
+		void debug( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::debug, format_str, obj ... ); }
 
 		void clear() { transports.clear(); }
 		bool add( nodecpp::string path ) 
@@ -468,10 +503,12 @@ namespace nodecpp {
 	};
 
 	inline
-	void LogTransport::writoToLog( nodecpp::string s, LogLevel severity ) {
+	void LogTransport::writoToLog( ModuleID mid, nodecpp::string s, LogLevel severity ) {
 //		if ( lb.target != nullptr )
 		{
-			nodecpp::string msgformatted = nodecpp::format( "[{}] {}\n", LogLevelNames[(size_t)severity], s );
+			nodecpp::string msgformatted = mid.id() != nullptr ?
+				nodecpp::format( "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], s ) :
+				nodecpp::format( "[{}] {}\n", LogLevelNames[(size_t)severity], s );
 			lb.addMsg( msgformatted.c_str(), msgformatted.size(), severity );
 		}
 	}

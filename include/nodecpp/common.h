@@ -42,6 +42,10 @@
 #define NODECPP_UNUSED_VAR 
 #endif
 
+#ifndef NODECPP_DEFAULT_LOG_MODULE
+#define NODECPP_DEFAULT_LOG_MODULE nullptr
+#endif
+
 #include <stdint.h>
 namespace nodecpp {
 	constexpr uint64_t module_id = 4;
