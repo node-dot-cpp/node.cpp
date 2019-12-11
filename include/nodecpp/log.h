@@ -108,7 +108,10 @@ namespace nodecpp {
 
 		void init( FILE* f )
 		{
+#ifdef NODECPP_ENABLE_CLUSTERING
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, nodecpp::clusterIsMaster() ); 
+#endif // NODECPP_ENABLE_CLUSTERING
+
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff == nullptr ); 
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, target == nullptr ); 
 			size_t memPageSz = VirtualMemory::getPageSize();
@@ -475,7 +478,17 @@ namespace nodecpp {
 		void clear() { transports.clear(); }
 		bool add( nodecpp::string path ) 
 		{
-			if ( nodecpp::clusterIsMaster() )
+#ifdef NODECPP_ENABLE_CLUSTERING
+			if ( !nodecpp::clusterIsMaster() )
+			{
+				if ( ::nodecpp::logging_impl::logDataStructures.size() <= transportIdx )
+					return false;
+				LogBufferBaseData* data = ::nodecpp::logging_impl::logDataStructures[ transportIdx ];
+				transports.emplace_back( data ); 
+				++transportIdx;
+			}
+			else
+#endif // NODECPP_ENABLE_CLUSTERING
 			{
 				LogBufferBaseData* data = nodecpp::stdalloc<LogBufferBaseData>( 1 );
 				data->init( path.c_str() );
@@ -484,7 +497,12 @@ namespace nodecpp {
 				::nodecpp::logging_impl::logDataStructures.push_back( data );
 				return true; // TODO
 			}
-			else
+		}
+
+		bool add( FILE* cons ) // TODO: input param is a subject for revision
+		{
+#ifdef NODECPP_ENABLE_CLUSTERING
+			if ( !nodecpp::clusterIsMaster() )
 			{
 				if ( ::nodecpp::logging_impl::logDataStructures.size() <= transportIdx )
 					return false;
@@ -492,10 +510,8 @@ namespace nodecpp {
 				transports.emplace_back( data ); 
 				++transportIdx;
 			}
-		}
-		bool add( FILE* cons ) // TODO: input param is a subject for revision
-		{
-			if ( nodecpp::clusterIsMaster() )
+			else
+#endif // NODECPP_ENABLE_CLUSTERING
 			{
 				LogBufferBaseData* data = nodecpp::stdalloc<LogBufferBaseData>( 1 );
 				data->init( cons );
@@ -503,14 +519,6 @@ namespace nodecpp {
 				transports.emplace_back( data ); 
 				::nodecpp::logging_impl::logDataStructures.push_back( data );
 				return true; // TODO
-			}
-			else
-			{
-				if ( ::nodecpp::logging_impl::logDataStructures.size() <= transportIdx )
-					return false;
-				LogBufferBaseData* data = ::nodecpp::logging_impl::logDataStructures[ transportIdx ];
-				transports.emplace_back( data ); 
-				++transportIdx;
 			}
 		}
 		//TODO::add: remove()

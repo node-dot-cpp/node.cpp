@@ -54,7 +54,9 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, getCluster().isWorker() || ptr->dataForCommandProcessing.osSocket > 0 );
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
+#ifdef NODECPP_ENABLE_CLUSTERING
 	NetSocketEntry(size_t index/*, NodeBase* node*/, nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int type) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::AgentServer/*, node*/, ptr, type) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+#endif // #ifdef NODECPP_ENABLE_CLUSTERING
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
 	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
@@ -540,7 +542,9 @@ public:
 
 	static SocketRiia extractSocket(OpaqueSocketData& sdata)
 	{
+#ifdef NODECPP_ENABLE_CLUSTERING
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isMaster() );
+#endif // #ifdef NODECPP_ENABLE_CLUSTERING
 		return sdata.s.release();
 	}
 

@@ -147,13 +147,19 @@ public:
 		else
 #endif // NODECPP_ENABLE_CLUSTERING
 		{
+#ifdef NODECPP_ENABLE_CLUSTERING
 			for ( size_t i=0; i<1500; ++i )
 				if ( i&1 )
 					log.warning( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
 				else
 					log.warning( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
-static int logfin = 0;
-nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "    ++++!!!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), ++logfin );
+#else
+			for ( size_t i=0; i<1500; ++i )
+				if ( i&1 )
+					log.warning( nodecpp::ModuleID( "node" ), "some silly msg with data {}", i );
+				else
+					log.warning( "some silly msg with data {}", i );
+#endif // #ifdef NODECPP_ENABLE_CLUSTERING
 
 			srv = nodecpp::net::createHttpServer<ServerType>();
 			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();

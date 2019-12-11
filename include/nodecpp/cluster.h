@@ -25,6 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+
 #ifndef CLUSTER_H
 #define CLUSTER_H
 
@@ -655,4 +657,4 @@ namespace nodecpp
 }
 #endif //CLUSTER_H
 
-
+#endif // NODECPP_ENABLE_CLUSTERING
