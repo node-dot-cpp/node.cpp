@@ -49,8 +49,8 @@ namespace nodecpp {
 		const char* id() const { return str; }
 	};
 	
-	enum class LogLevel { emerg = 0, alert = 1, crit = 2, err = 3, warning = 4, notice = 5, info = 6, debug = 7 };
-	static constexpr const char* LogLevelNames[] = { "emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "" };
+	enum class LogLevel { fatal = 0, err = 1, warning = 2, info = 3, debug = 4 };
+	static constexpr const char* LogLevelNames[] = { "fatal", "err", "warning", "info", "debug", "" };
 	constexpr size_t log_level_count = sizeof( LogLevelNames ) / sizeof( const char*) - 1;
 
 	class Log;
@@ -442,34 +442,22 @@ namespace nodecpp {
 		}
 
 		template<class ... Objects>
-		void emergency( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::emerg, format_str, obj ... ); }
-		template<class ... Objects>
-		void alert( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::alert, format_str, obj ... ); }
-		template<class ... Objects>
-		void critical( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::crit, format_str, obj ... ); }
+		void fatal( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::fatal, format_str, obj ... ); }
 		template<class ... Objects>
 		void error( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::err, format_str, obj ... ); }
 		template<class ... Objects>
 		void warning( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::warning, format_str, obj ... ); }
-		template<class ... Objects>
-		void notice( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::notice, format_str, obj ... ); }
 		template<class ... Objects>
 		void info( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::info, format_str, obj ... ); }
 		template<class ... Objects>
 		void debug( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::debug, format_str, obj ... ); }
 
 		template<class ... Objects>
-		void emergency( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::emerg, format_str, obj ... ); }
-		template<class ... Objects>
-		void alert( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::alert, format_str, obj ... ); }
-		template<class ... Objects>
-		void critical( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::crit, format_str, obj ... ); }
+		void fatal( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::fatal, format_str, obj ... ); }
 		template<class ... Objects>
 		void error( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::err, format_str, obj ... ); }
 		template<class ... Objects>
 		void warning( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::warning, format_str, obj ... ); }
-		template<class ... Objects>
-		void notice( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::notice, format_str, obj ... ); }
 		template<class ... Objects>
 		void info( ModuleID mid, nodecpp::string_literal format_str, Objects ... obj ) { log( mid, LogLevel::info, format_str, obj ... ); }
 		template<class ... Objects>
