@@ -92,7 +92,7 @@ namespace nodecpp {
 		static constexpr size_t pageCount = 4; // so far it is not obvious why we really need something else
 		uint8_t* buff = nullptr; // aming: a set of consequtive pages
 		size_t buffSize = 0; // a multiple of page size
-		volatile int64_t start = 0; // writable by a thread writing to a file; readable: all
+		volatile uint64_t start = 0; // writable by a thread writing to a file; readable: all
 		volatile uint64_t writerPromisedNextStart = 0; // writable: logging threads; readable: all
 		volatile uint64_t end = 0; // writable: logging threads; readable: all
 		static constexpr size_t skippedCntMsgSz = 128;
@@ -486,6 +486,7 @@ namespace nodecpp {
 				LogBufferBaseData* data = ::nodecpp::logging_impl::logDataStructures[ transportIdx ];
 				transports.emplace_back( data ); 
 				++transportIdx;
+				return true;
 			}
 			else
 #endif // NODECPP_ENABLE_CLUSTERING
@@ -509,6 +510,7 @@ namespace nodecpp {
 				LogBufferBaseData* data = ::nodecpp::logging_impl::logDataStructures[ transportIdx ];
 				transports.emplace_back( data ); 
 				++transportIdx;
+				return true;
 			}
 			else
 #endif // NODECPP_ENABLE_CLUSTERING
