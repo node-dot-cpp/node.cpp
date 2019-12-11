@@ -120,16 +120,20 @@ namespace nodecpp {
 			}
 			else // TODO: revise for Large pages!!!
 			{
-				pageSize = memPageSz / pageCount;
-				buffSize = memPageSz;
-				buff = reinterpret_cast<uint8_t*>( VirtualMemory::allocate( memPageSz ) );
+				pageSize = 0x4000;
+				buffSize = pageSize * pageCount;;
+				buff = nodecpp::stdalloc<uint8_t>( buffSize );
 			}
 			if ( buff == nullptr )
 				throw;
 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ((pageSize-1)|pageSize)+1 == (pageSize<<1) ); 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ((pageCount-1)|pageCount)+1 == (pageCount<<1) ); 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ((pageSize-1)|pageSize)+1 == (pageSize<<1) ); 
+
 			target = f;
 		}
-		void init( size_t pageSize_, size_t pageCnt, const char* path )
+		void init( const char* path )
 		{
 			FILE* f = fopen( path, "ab" );
 			init( f );
@@ -138,7 +142,10 @@ namespace nodecpp {
 		{
 			if ( buff )
 			{
-				VirtualMemory::deallocate( buff, buffSize );
+				if ( buffSize <= 0x2000 * pageCount )
+					VirtualMemory::deallocate( buff, buffSize );
+				else
+					nodecpp::stddealloc( buff, buffSize );
 				buff = nullptr;
 			}
 			if ( target ) 
@@ -181,7 +188,7 @@ namespace nodecpp {
 				// there are two things we can do here:
 				// 1. flush one or more ready pages
 				// 2. release a thread waiting for free size in buffer (if any)
-				// first, collects data
+
 				size_t pageRoundedEnd;
 				ChainedWaitingData* p = nullptr;
 				{
@@ -209,8 +216,8 @@ namespace nodecpp {
 
 				while ( logData->start != pageRoundedEnd )
 				{
-					size_t startoff = logData->start % logData->buffSize;
-					size_t endoff = pageRoundedEnd % logData->buffSize;
+					size_t startoff = logData->start & (logData->buffSize - 1);
+					size_t endoff = pageRoundedEnd & (logData->buffSize - 1);
 					if ( endoff > startoff )
 						fwrite( logData->buff + startoff, 1, endoff - startoff, logData->target );
 					else
@@ -255,7 +262,7 @@ namespace nodecpp {
 		void insertSingleMsg( const char* msg, size_t sz ) // under lock
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= logData->availableSize() );
-			size_t endoff = logData->end % logData->buffSize; // TODO: math
+			size_t endoff = logData->end & (logData->buffSize - 1);
 			if ( logData->buffSize - endoff >= sz )
 			{
 				memcpy( logData->buff + endoff, msg, sz );
@@ -270,7 +277,7 @@ namespace nodecpp {
 
 		void insertMessage( const char* msg, size_t sz, SkippedMsgCounters& ctrs ) // under lock
 		{
-			size_t endoff = logData->end % logData->buffSize; // TODO: math
+			size_t endoff = logData->end & (logData->buffSize - 1);
 			if ( ctrs.fullCount() )
 			{
 				nodecpp::string skippedMsg = logData->skippedCtrs.toStr();
@@ -471,7 +478,7 @@ namespace nodecpp {
 			if ( nodecpp::clusterIsMaster() )
 			{
 				LogBufferBaseData* data = nodecpp::stdalloc<LogBufferBaseData>( 1 );
-				data->init( 0x1000, 2, path.c_str() );
+				data->init( path.c_str() );
 				::nodecpp::logging_impl::createLogWriterThread( data );
 				transports.emplace_back( data ); 
 				::nodecpp::logging_impl::logDataStructures.push_back( data );
