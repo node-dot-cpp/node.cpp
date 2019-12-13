@@ -97,7 +97,6 @@ namespace nodecpp {
 		volatile uint64_t end = 0; // writable: logging threads; readable: all
 		static constexpr size_t skippedCntMsgSz = 128;
 		SkippedMsgCounters skippedCtrs; // accessible by log-writing threads
-		std::condition_variable waitLogger;
 		std::condition_variable waitWriter;
 		std::mutex mx;
 
@@ -389,7 +388,12 @@ namespace nodecpp {
 			return ret;
 		}
 
-		void writoToLog( ModuleID mid, nodecpp::string s, LogLevel severity );
+		void writoToLog( ModuleID mid, nodecpp::string s, LogLevel severity ) {
+			nodecpp::string msgformatted = mid.id() != nullptr ?
+				nodecpp::format( "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], s ) :
+				nodecpp::format( "[{}] {}\n", LogLevelNames[(size_t)severity], s );
+			addMsg( msgformatted.c_str(), msgformatted.size(), severity );
+		}
 
 	public:
 		LogTransport( LogBufferBaseData* data ) : logData( data ) {}
@@ -514,13 +518,6 @@ namespace nodecpp {
 		//TODO::add: remove()
 	};
 
-	inline
-	void LogTransport::writoToLog( ModuleID mid, nodecpp::string s, LogLevel severity ) {
-		nodecpp::string msgformatted = mid.id() != nullptr ?
-			nodecpp::format( "[{}][{}] {}\n", mid.id(), LogLevelNames[(size_t)severity], s ) :
-			nodecpp::format( "[{}] {}\n", LogLevelNames[(size_t)severity], s );
-		addMsg( msgformatted.c_str(), msgformatted.size(), severity );
-	}
 } //namespace nodecpp
 
 #endif // NODECPP_LOGGING_H
