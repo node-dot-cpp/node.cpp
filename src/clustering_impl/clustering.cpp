@@ -66,13 +66,14 @@ namespace nodecpp
 		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 		startupData->assignedThreadID = worker.id_;
 		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
+		startupData->defaultLog = nodecpp::logging_impl::currentLog;
 		// run worker thread
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("about to start Worker thread with threadID = {}...", worker.id_ );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {}...", worker.id_ );
 		std::thread t1( workerThreadMain, (void*)(startupData) );
 		// startupData is no longer valid
 		startupData = nullptr;
 		t1.detach();
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("...starting Worker thread with threadID = {} completed at Master thread side", worker.id_ );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Worker thread with threadID = {} completed at Master thread side", worker.id_ );
 		workers_.push_back( std::move(worker) );
 		return workers_[internalID];
 	}
@@ -144,5 +145,13 @@ namespace nodecpp
 		CO_RETURN;
 	}
 }
+
+#include <logging.h>
+namespace nodecpp {
+	namespace logging_impl {
+		nodecpp::stdvector<nodecpp::log::Log*> logs;
+	} // namespace logging_impl
+	thread_local size_t Log::ordinalBase = 0;
+} // namespace nodecpp
 
 #endif // NODECPP_ENABLE_CLUSTERING

@@ -31,7 +31,6 @@
 #ifdef _MSC_VER
 //#pragma warning (disable:4800) // forcing value to bool 'true' or 'false' (performance warning)
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
 #define NOMINMAX
 #endif // _MSC_VER
 
@@ -71,6 +70,12 @@ namespace nodecpp {
 //#include "trace.h"
 //#include "assert.h"
 #include "mallocator.h"
+
+namespace nodecpp
+{
+	constexpr const char* nodecpp_module_id = "nodecpp";
+}
+
 
 using namespace ::nodecpp::safememory;
 

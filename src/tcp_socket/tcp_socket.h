@@ -755,7 +755,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
-//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getClientSocketData()->osSocket);
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLERR event at {}", current.getClientSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getClientSocketData()->osSocket);
 			//errorCloseSocket(current, storeError(Error()));
 			Error e;
@@ -775,25 +775,25 @@ sessionCreationtime += infraGetCurrentTime() - now;
 			{
 				if (!current.getClientSocketData()->paused)
 				{
-					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", begin[i].fd);
+					//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", begin[i].fd);
 					infraProcessReadEvent<Node>(current/*, evs*/);
 				}
 			}
 			else if ((revents & POLLHUP) != 0)
 			{
-//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLHUP event at {}", current.getClientSocketData()->osSocket);
+//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLHUP event at {}", current.getClientSocketData()->osSocket);
 				infraProcessRemoteEnded<Node>(current/*, evs*/);
 			}
 				
 			if ((revents & POLLOUT) != 0)
 			{
-//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLOUT event at {}", current.getClientSocketData()->osSocket);
+//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLOUT event at {}", current.getClientSocketData()->osSocket);
 				infraProcessWriteEvent<Node>(current/*, evs*/);
 			}
 		}
 		//else if (revents != 0)
 		//{
-		//	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected event at {}, value {:x}", begin[i].fd, revents);
+		//	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected event at {}, value {:x}", begin[i].fd, revents);
 		//	internal_getsockopt_so_error(entry.osSocket);
 		//	errorCloseSocket(entry);
 		//}
@@ -911,7 +911,7 @@ private:
 				}
 				else
 				{
-//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("infraProcessRemoteEnded() leads to internal_shutdown_send()...");
+//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"infraProcessRemoteEnded() leads to internal_shutdown_send()...");
 					internal_usage_only::internal_shutdown_send(entry.getClientSocketData()->osSocket);
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::LocalEnded;
 					closeSocket(entry);
@@ -920,7 +920,7 @@ private:
 		}
 		else
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected end on socket {}, already ended", entry.getClientSocketData()->osSocket);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected end on socket {}, already ended", entry.getClientSocketData()->osSocket);
 		}
 
 	}
@@ -1022,7 +1022,7 @@ public:
 		auto& entry = appGetEntry(id);
 		if (!entry.isUsed())
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected id {} on NetServerManager::close", id);
 			return;
 		}
 
@@ -1034,7 +1034,7 @@ public:
 		auto& entry = getCluster().isMaster() ? appGetEntry(id) : ioSockets.slaveServerAt(id);
 		if (!entry.isUsed())
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected id {} on NetServerManager::close", id);
 			return;
 		}
 		if ( getCluster().isMaster() )
@@ -1054,7 +1054,7 @@ public:
 		auto& entry = appGetEntry(id);
 		if (!entry.isUsed())
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetServerManager::close", id);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected id {} on NetServerManager::close", id);
 			return;
 		}
 		pendingCloseEvents.emplace_back(id, false);
@@ -1330,18 +1330,18 @@ public:
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
-//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLERR event at {}", current.getServerSocketData()->osSocket);
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
 			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
 		}
 		else if ((revents & POLLIN) != 0)
 		{
-//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("POLLIN event at {}", current.getServerSocketData()->osSocket);
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", current.getServerSocketData()->osSocket);
 			infraProcessAcceptEvent<Node>(current/*, evs*/);
 		}
 		else if (revents != 0)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
 			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
 		}

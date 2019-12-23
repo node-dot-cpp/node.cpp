@@ -36,6 +36,7 @@ struct ThreadStartupData
 {
 	size_t assignedThreadID;
 	uint16_t commPort;
+	nodecpp::log::Log* defaultLog = nullptr;
 };
 
 // ad-hoc marchalling between Master and Slave threads

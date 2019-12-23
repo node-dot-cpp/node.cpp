@@ -11,7 +11,7 @@
 #ifdef NODECPP_ENABLE_CLUSTERING
 #include <nodecpp/cluster.h>
 #endif // NODECPP_ENABLE_CLUSTERING
-#include <log.h>
+#include <nodecpp/logging.h>
 
 using namespace std;
 using namespace nodecpp;
@@ -71,13 +71,13 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
 	}
 
 #if IMPL_VERSION == 1
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
@@ -124,9 +124,9 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		log.add( stdout );
-		log.level = nodecpp::LogLevel::debug;
+		log.setLevel( nodecpp::LogLevel::debug );
 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
@@ -147,20 +147,6 @@ public:
 		else
 #endif // NODECPP_ENABLE_CLUSTERING
 		{
-#ifdef NODECPP_ENABLE_CLUSTERING
-			for ( size_t i=0; i<1500; ++i )
-				if ( i&1 )
-					log.warning( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
-				else
-					log.warning( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
-#else
-			for ( size_t i=0; i<1500; ++i )
-				if ( i&1 )
-					log.warning( nodecpp::ModuleID( "node" ), "some silly msg with data {}", i );
-				else
-					log.warning( "some silly msg with data {}", i );
-#endif // #ifdef NODECPP_ENABLE_CLUSTERING
-
 			srv = nodecpp::net::createHttpServer<ServerType>();
 			srvCtrl = nodecpp::net::createServer<CtrlServerType, nodecpp::net::SocketBase>();
 
@@ -185,6 +171,25 @@ public:
 			}, 3000 ) );
 #endif
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+			for ( size_t i=0; i<1000; ++i )
+				if ( i&1 )
+					log.warning( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+				else
+					log.warning( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+static int logfin = 0;
+nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), ++logfin );
+log.info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), ++logfin );
+#else
+			for ( size_t i=0; i<100; ++i )
+				if ( i&1 )
+					log.warning( nodecpp::ModuleID( "node" ), "some silly msg with data {}", i );
+				else
+					log.warning( "some silly msg with data {}", i );
+#endif // #ifdef NODECPP_ENABLE_CLUSTERING
+nodecpp::log::default_log::info( 
+	nodecpp::log::ModuleID("node"), "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   " );
+
 			nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
 			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
 			try { 
@@ -208,7 +213,7 @@ public:
 #elif IMPL_VERSION == 2
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::HttpServerBase::addHttpHandler<ServerType, nodecpp::net::HttpServerBase::Handler::IncomingRequest, &MySampleTNode::onRequest>(this);
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
@@ -427,7 +432,7 @@ public:
 	}
 
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<CtrlServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"server: onConnectionCtrl()!");
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		nodecpp::Buffer r_buff(0x200);
@@ -436,7 +441,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "About to exit successfully in automated testing (by timer)" );
 				socket->end();
 				socket->unref();
 				break;

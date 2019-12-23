@@ -82,7 +82,7 @@ public:
 		}
 		catch (...)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("!!! Exception out of user handler !!!");
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"!!! Exception out of user handler !!!");
 		}
 
 	}
