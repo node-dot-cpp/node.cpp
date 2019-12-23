@@ -173,13 +173,19 @@ public:
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 			for ( size_t i=0; i<1000; ++i )
+			{
 				if ( i&1 )
 					log.warning( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
 				else
 					log.warning( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+//				if ( i&7 )
+//					log.info( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+			}
 static int logfin = 0;
-nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), ++logfin );
-log.info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), ++logfin );
+++logfin;
+nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
+log.debug( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
+log.fatal( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
 #else
 			for ( size_t i=0; i<100; ++i )
 				if ( i&1 )
@@ -187,8 +193,6 @@ log.info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++
 				else
 					log.warning( "some silly msg with data {}", i );
 #endif // #ifdef NODECPP_ENABLE_CLUSTERING
-nodecpp::log::default_log::info( 
-	nodecpp::log::ModuleID("node"), "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   " );
 
 			nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
 			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
