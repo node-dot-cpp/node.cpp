@@ -148,8 +148,6 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	{
 		if ( h.cb != nullptr )
 			h.cb();
-//		else if ( h.h )
-//			h.h();
 		else if ( h.h != nullptr )
 		{
 			auto hr = h.h;
