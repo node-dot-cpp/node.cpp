@@ -61,11 +61,15 @@ namespace nodecpp {
 		OpaqueEmitter() : objectType(ObjectType::Undefined), type(-1) {}
 		OpaqueEmitter( ObjectType ot, nodecpp::safememory::soft_ptr<net::SocketBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_) {}
 		OpaqueEmitter( ObjectType ot, nodecpp::safememory::soft_ptr<net::ServerBase> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_) {}
+#ifdef NODECPP_ENABLE_CLUSTERING
 		OpaqueEmitter( ObjectType ot, nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr_, int type_ ) : ptr( ptr_), objectType(ot), type(type_) {}
+#endif // #ifdef NODECPP_ENABLE_CLUSTERING
 		bool isValid() const { return (bool)ptr; }
 		nodecpp::safememory::soft_ptr<net::SocketBase> getClientSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ClientSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::SocketBase>(ptr); }
 		nodecpp::safememory::soft_ptr<net::ServerBase> getServerSocketPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::ServerSocket ); return nodecpp::safememory::soft_ptr_static_cast<net::ServerBase>(ptr); }
+#ifdef NODECPP_ENABLE_CLUSTERING
 		nodecpp::safememory::soft_ptr<Cluster::AgentServer> getAgentServerPtr() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, objectType == ObjectType::AgentServer ); return nodecpp::safememory::soft_ptr_static_cast<Cluster::AgentServer>(ptr); }
+#endif // #ifdef NODECPP_ENABLE_CLUSTERING
 	};
 } // namespace nodecpp
 

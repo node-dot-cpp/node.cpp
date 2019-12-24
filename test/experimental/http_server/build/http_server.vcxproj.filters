@@ -22,9 +22,6 @@
     <ClCompile Include="..\user_code\NetSocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\page_allocator_windows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\safe_memory_error.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -43,6 +40,8 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\nodecpp_assert.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h">
@@ -115,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\ip_and_port.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\nodecpp\logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

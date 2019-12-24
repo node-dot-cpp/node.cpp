@@ -26,35 +26,25 @@
 * -------------------------------------------------------------------------------*/
 
 
-#ifndef CLUSTERING_COMMON_H
-#define CLUSTERING_COMMON_H
+#include "../../include/nodecpp/log.h"
+//#include "../../src/infrastructure.h"
+#include <thread>
 
-#include "../../include/nodecpp/common.h"
-#include "../../include/nodecpp/net_common.h"
-
-struct ThreadStartupData
-{
-	size_t assignedThreadID;
-	uint16_t commPort;
-	nodecpp::log::Log* defaultLog = nullptr;
-};
-
-// ad-hoc marchalling between Master and Slave threads
-struct ClusteringMsgHeader
-{
-	enum ClusteringMsgType { ThreadStarted, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification };
-	size_t bodySize;
-	ClusteringMsgType type;
-	size_t assignedThreadID;
-	size_t requestID;
-	size_t entryIdx;
-	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringMsgHeader ) ); }
-	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringMsgHeader ) <= b.size(), "indeed: {} + {} vs. {}", pos, sizeof( ClusteringMsgHeader ), b.size() ); 
-		memcpy( this, b.begin() + pos, sizeof( ClusteringMsgHeader ) );
-		return pos + sizeof( ClusteringMsgHeader );
+namespace nodecpp::logging_impl {
+	void logWriterThreadMain( void* pdata )
+	{
+		LogWriter writer( reinterpret_cast<::nodecpp::LogBufferBaseData*>( pdata ) );
+		writer.runLoop();
 	}
-	static bool couldBeDeserialized( const nodecpp::Buffer& b, size_t pos = 0 ) { return b.size() >= pos + sizeof( ClusteringMsgHeader ); }
-};
 
-#endif // CLUSTERING_COMMON_H
+//	thread_local ::nodecpp::vector<LogBufferBaseData*> logDataStructures;
+	::nodecpp::stdvector<LogBufferBaseData*> logDataStructures;
+	
+	void createLogWriterThread( ::nodecpp::LogBufferBaseData* data )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data != nullptr ); 
+		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("about to start LogWriterThread..." );
+		std::thread t( logWriterThreadMain, (void*)(data) );
+		t.detach();
+	}
+} // nodecpp::logging_impl

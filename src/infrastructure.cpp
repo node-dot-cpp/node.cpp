@@ -38,180 +38,182 @@
 uint64_t infraGetCurrentTime()
 {
 #ifdef _MSC_VER
-    return GetTickCount64() * 1000; // mks
+	return GetTickCount64() * 1000; // mks
 #else
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
-    return (uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000; // mks
+	return (uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000; // mks
 #endif
 }
 
 void TimeoutManager::appSetTimeout(TimeoutEntry& entry)
 {
-    NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
 
-    entry.lastSchedule = infraGetCurrentTime();
+	entry.lastSchedule = infraGetCurrentTime();
 
-    entry.nextTimeout = entry.lastSchedule + entry.delay;
+	entry.nextTimeout = entry.lastSchedule + entry.delay;
 
-    entry.active = true;
-    nextTimeouts.insert(std::make_pair(entry.nextTimeout, entry.id));
+	entry.active = true;
+	nextTimeouts.insert(std::make_pair(entry.nextTimeout, entry.id));
 
 }
 
 void TimeoutManager::appClearTimeout(TimeoutEntry& entry)
 {
-    if (entry.active)
-    {
-        auto it2 = nextTimeouts.equal_range(entry.nextTimeout);
-        bool found = false;
-        while (it2.first != it2.second)
-        {
-            if (it2.first->second == entry.id)
-            {
-                nextTimeouts.erase(it2.first);
-                entry.active = false;
-                break;
-            }
-            ++(it2.first);
-        }
-    }
+	if (entry.active)
+	{
+		auto it2 = nextTimeouts.equal_range(entry.nextTimeout);
+		bool found = false;
+		while (it2.first != it2.second)
+		{
+			if (it2.first->second == entry.id)
+			{
+				nextTimeouts.erase(it2.first);
+				entry.active = false;
+				break;
+			}
+			++(it2.first);
+		}
+	}
 
-    //if it was active, we must have deactivated it
-    NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
+	//if it was active, we must have deactivated it
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
 }
 
 
 void TimeoutManager::appClearTimeout(const nodecpp::Timeout& to)
 {
-    uint64_t id = to.getId();
+	uint64_t id = to.getId();
 
-    auto it = timers.find(id);
-    if (it != timers.end())
-    {
-        appClearTimeout(it->second);
-    }
+	auto it = timers.find(id);
+	if (it != timers.end())
+	{
+		appClearTimeout(it->second);
+	}
 }
 
 void TimeoutManager::appRefresh(uint64_t id)
 {
-    auto it = timers.find(id);
-    if (it != timers.end())
-    {
-        appClearTimeout(it->second);
-        appSetTimeout(it->second);
-    }
+	auto it = timers.find(id);
+	if (it != timers.end())
+	{
+		appClearTimeout(it->second);
+		appSetTimeout(it->second);
+	}
 }
 
 
 void TimeoutManager::appTimeoutDestructor(uint64_t id)
 {
-    auto it = timers.find(id);
-    if (it != timers.end())
-    {
-        it->second.handleDestroyed = true;
+	auto it = timers.find(id);
+	if (it != timers.end())
+	{
+		it->second.handleDestroyed = true;
 
-        if(it->second.active == false)
-            timers.erase(it);
-    }
-    else
-        nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("timer {} not found", id);
+		if(it->second.active == false)
+			timers.erase(it);
+	}
+	else
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"timer {} not found", id);
 }
 
 void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 {
-    auto itBegin = nextTimeouts.begin();
-    auto itEnd = nextTimeouts.upper_bound(now);
-    auto it = itBegin;
-    nodecpp::vector<TimeoutEntryHandlerData> handlers; // TODO: this approach could potentially be generalized
-    while (it != itEnd)
-    {
-        auto it2 = timers.find(it->second);
+	auto itBegin = nextTimeouts.begin();
+	auto itEnd = nextTimeouts.upper_bound(now);
+	auto it = itBegin;
+	nodecpp::vector<TimeoutEntryHandlerData> handlers; // TODO: this approach could potentially be generalized
+	while (it != itEnd)
+	{
+		auto it2 = timers.find(it->second);
 
-        NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,it2 != timers.end());
-        NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,it2->second.active);
-        
-        it2->second.active = false;
-            
-//        evs.add(it2->second.cb);
-        handlers.push_back( it2->second );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,it2 != timers.end());
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,it2->second.active);
+		
+		it2->second.active = false;
+			
+//		evs.add(it2->second.cb);
+		handlers.push_back( it2->second );
 
-        if (it2->second.handleDestroyed)
-            timers.erase(it2);
+		if (it2->second.handleDestroyed)
+			timers.erase(it2);
 
-        ++it;
-    }
+		++it;
+	}
 
-    nextTimeouts.erase(itBegin, itEnd);
+	nextTimeouts.erase(itBegin, itEnd);
 
-    for ( auto h : handlers )
-    {
-        if ( h.cb != nullptr )
-            h.cb();
-        else if ( h.h != nullptr )
-        {
-            auto hr = h.h;
-            if ( h.setExceptionWhenDone )
-            {
-                nodecpp::setException(h.h, std::exception()); // TODO: switch to our exceptions ASAP!
-            }
-            h.h = nullptr;
-            hr();
-        }
-    }
+	for ( auto h : handlers )
+	{
+		if ( h.cb != nullptr )
+			h.cb();
+//		else if ( h.h )
+//			h.h();
+		else if ( h.h != nullptr )
+		{
+			auto hr = h.h;
+			if ( h.setExceptionWhenDone )
+			{
+				nodecpp::setException(h.h, std::exception()); // TODO: switch to our exceptions ASAP!
+			}
+			h.h = nullptr;
+			hr();
+		}
+	}
 }
 
 
 
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 {
-         if(nextTimeoutAt == TimeOutNever)
-             return -1;
-         else if(nextTimeoutAt <= now)
-             return 0;
-         else if((nextTimeoutAt - now) / 1000 + 1 <= uint64_t(INT_MAX))
-             return static_cast<int>((nextTimeoutAt - now) / 1000 + 1);
-         else
-             return INT_MAX;
+	 	if(nextTimeoutAt == TimeOutNever)
+	 		return -1;
+	 	else if(nextTimeoutAt <= now)
+	 		return 0;
+	 	else if((nextTimeoutAt - now) / 1000 + 1 <= uint64_t(INT_MAX))
+	 		return static_cast<int>((nextTimeoutAt - now) / 1000 + 1);
+	 	else
+	         return INT_MAX;
 }
 
 namespace nodecpp {
-    nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
-    {
-        return timeoutManager->appSetTimeout(cb, ms);
-    }
+	nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
+	{
+		return timeoutManager->appSetTimeout(cb, ms);
+	}
 
 #ifndef NODECPP_NO_COROUTINES
-    nodecpp::Timeout setTimeoutForAction(awaitable_handle_t h, int32_t ms)
-    {
-        return timeoutManager->appSetTimeoutForAction(h, ms);
-    }
+	nodecpp::Timeout setTimeoutForAction(awaitable_handle_t h, int32_t ms)
+	{
+		return timeoutManager->appSetTimeoutForAction(h, ms);
+	}
 #endif // NODECPP_NO_COROUTINES
 
-    void refreshTimeout(Timeout& to)
-    {
-        return timeoutManager->appRefresh(to.getId());
-    }
+	void refreshTimeout(Timeout& to)
+	{
+		return timeoutManager->appRefresh(to.getId());
+	}
 
-    void clearTimeout(const Timeout& to)
-    {
-        return timeoutManager->appClearTimeout(to.getId());
-    }
+	void clearTimeout(const Timeout& to)
+	{
+		return timeoutManager->appClearTimeout(to.getId());
+	}
 
-    void setInmediate(std::function<void()> cb)
-    {
-        inmediateQueue->add(std::move(cb));
-    }
+	void setInmediate(std::function<void()> cb)
+	{
+		inmediateQueue->add(std::move(cb));
+	}
 
-    namespace time
-    {
-        size_t now()
-        {
+	namespace time
+	{
+		size_t now()
+		{
 #if defined NODECPP_MSVC || ( (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG) )
 #ifdef NODECPP_X64
-            return GetTickCount64();
+			return GetTickCount64();
 #else
-            return GetTickCount();
+			return GetTickCount();
 #endif // NODECPP_X86 or NODECPP_X64
 #elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
     struct timespec ts;
@@ -220,8 +222,8 @@ namespace nodecpp {
 #else
 #error not implemented for this compiler
 #endif
-        }
-    } // namespace time
+		}
+	} // namespace time
 
 } // namespace nodecpp
 
