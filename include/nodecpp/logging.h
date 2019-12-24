@@ -94,6 +94,25 @@ namespace nodecpp {
 		}
 
 		void setLevel( LogLevel l ) { if (log_ ) log_->level = l; }
+		void setGuaranteedLevel( LogLevel l )
+		{
+#ifdef NODECPP_ENABLE_CLUSTERING
+			if ( nodecpp::clusterIsMaster() && log_  )
+				log_->setGuaranteedLevel( l );
+#else
+			if ( log_  )
+				log_->setGuaranteedLevel( l );
+#endif
+		}
+		void resetGuaranteedLevel() { 
+#ifdef NODECPP_ENABLE_CLUSTERING
+			if ( nodecpp::clusterIsMaster() && log_  )
+				log_->resetGuaranteedLevel();
+#else
+			if ( log_  )
+				log_->resetGuaranteedLevel();
+#endif
+		}
 
 		template<class ... Objects>
 		void fatal( nodecpp::string_literal format_str, Objects ... obj ) { log( LogLevel::fatal, format_str, obj ... ); }

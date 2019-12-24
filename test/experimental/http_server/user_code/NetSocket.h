@@ -125,13 +125,14 @@ public:
 	{
 		log.add( stdout );
 		log.setLevel( nodecpp::LogLevel::debug );
+		log.setGuaranteedLevel( nodecpp::LogLevel::warning );
 
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-		if ( getCluster().isMaster() )
+		if ( getCluster().isMaster() ) 
 		{
 			size_t coreCnt = 1;
 			auto argv = getArgv();
