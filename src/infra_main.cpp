@@ -90,9 +90,15 @@ int main( int argc, char *argv_[] )
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
-	nodecpp::log::init_log();
+	nodecpp::log::Log log;
+	log.level = nodecpp::log::LogLevel::info;
+	log.add( stdout );
+	nodecpp::logging_impl::currentLog = &log;
+
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
+
+	nodecpp::logging_impl::currentLog = nullptr; // TODO: this is thread-unsafe. Revise and make sure all other threads using nodecpp::logging_impl::currentLog has already exited
 
 	return 0;
 }
@@ -116,9 +122,10 @@ void workerThreadMain( void* pdata )
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
-	nodecpp::log::init_log();
+	nodecpp::logging_impl::currentLog = startupData.defaultLog;
+	nodecpp::logging_impl::instanceId = startupData.assignedThreadID;
 	nodecpp::preinitSlaveThreadClusterObject( startupData );
-	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("starting Worker thread with threadID = {}", startupData.assignedThreadID );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Worker thread with threadID = {}", startupData.assignedThreadID );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
 }
@@ -131,10 +138,17 @@ int main( int argc, char *argv_[] )
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
-	nodecpp::log::init_log();
+	nodecpp::log::Log log;
+	log.level = nodecpp::log::LogLevel::info;
+	log.add( nodecpp::string_literal( "default_log.txt" ) );
+	nodecpp::logging_impl::currentLog = &log;
+	nodecpp::logging_impl::instanceId = 0;
+
 	nodecpp::preinitMasterThreadClusterObject();
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
+
+	nodecpp::logging_impl::currentLog = nullptr; // TODO: this is thread-unsafe. Revise and make sure all other threads using nodecpp::logging_impl::currentLog has already exited
 
 	return 0;
 }

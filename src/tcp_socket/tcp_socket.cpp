@@ -107,7 +107,6 @@ inline int getSockError()
 
 bool netInitialize()
 {
-	nodecpp::log::init_log(); // just make sure
 #ifdef _MSC_VER
 	// do Windows magic
 	WSADATA wsaData;
@@ -115,10 +114,10 @@ bool netInitialize()
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0)
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("WSAStartup failed with error: {}", iResult);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"WSAStartup failed with error: {}", iResult);
 		return false;
 	}
-	nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("WSAStartup success");
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"WSAStartup success");
 #endif
 	return true;
 }
@@ -133,7 +132,7 @@ namespace nodecpp
 	{
 		void internal_close(SOCKET sock)
 		{
-//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_close() on sock {}", sock);
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_close() on sock {}", sock);
 			CLOSE_SOCKET(sock);
 		}
 
@@ -145,13 +144,13 @@ namespace nodecpp
 			int how = SHUT_WR;
 		#endif
 
-//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_shutdown_send() on sock {}", sock);
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_shutdown_send() on sock {}", sock);
 
 			int res = shutdown(sock, how);
 			if (0 != res)
 			{
 				int error = getSockError();
-//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("shutdown on sock {} failed; error {}", sock, error);
+//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"shutdown on sock {} failed; error {}", sock, error);
 			}
 		}
 
@@ -168,7 +167,7 @@ namespace nodecpp
 			if (0 != res2)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("async on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"async on sock {} failed; error {}", sock, error);
 				return false;
 			}
 
@@ -189,7 +188,7 @@ namespace nodecpp
 			if (0 != result)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("TCP_NODELAY on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"TCP_NODELAY on sock {} failed; error {}", sock, error);
 		//		internal_close(sock);
 				return false;
 			}
@@ -211,7 +210,7 @@ namespace nodecpp
 			if (0 != result)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("TCP_NODELAY on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"TCP_NODELAY on sock {} failed; error {}", sock, error);
 				//		internal_close(sock);
 				return false;
 			}
@@ -233,7 +232,7 @@ namespace nodecpp
 			if (0 != result)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("SO_LINGER on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"SO_LINGER on sock {} failed; error {}", sock, error);
 				return false;
 			}
 
@@ -246,11 +245,11 @@ namespace nodecpp
 			if (INVALID_SOCKET == sock)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("socket() failed; error {}", error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"socket() failed; error {}", error);
 				return INVALID_SOCKET;
 			}
 
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("socket() success {}", sock);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"socket() success {}", sock);
 
 			if (!internal_async_socket(sock))
 			{
@@ -267,7 +266,7 @@ namespace nodecpp
 			if (0 != res)
 			{
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("bind() on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"bind() on sock {} failed; error {}", sock, error);
 				return false;
 			}
 
@@ -283,24 +282,24 @@ namespace nodecpp
 				int error = getSockError();
 				if (isErrorWouldBlock(error))
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("connect() on sock {} in progress", sock);
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"connect() on sock {} in progress", sock);
 					return COMMLAYER_RET_PENDING;
 				}
 				else
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("connect() on sock {} failed; error {}", sock, error);
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"connect() on sock {} failed; error {}", sock, error);
 					return COMMLAYER_RET_FAILED;
 				}
 			}
 			else
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("connect() on sock {} completed", sock);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"connect() on sock {} completed", sock);
 
 			return COMMLAYER_RET_OK;
 		}
 
 		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_bind_socket() on sock {} to {}:{}", sock, ip.toStr(), port.toStr());
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_bind_socket() on sock {} to {}:{}", sock, ip.toStr(), port.toStr());
 			struct ::sockaddr_in sa;
 			memset(&sa, 0, sizeof(struct ::sockaddr_in));
 			sa.sin_family = AF_INET;
@@ -325,10 +324,10 @@ namespace nodecpp
 			int res = listen(sock, backlog);
 			if (0 != res) {
 				int error = getSockError();
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("listen() on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"listen() on sock {} failed; error {}", sock, error);
 				return false;
 			}
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("listen() on sock {} success", sock);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"listen() on sock {} success", sock);
 
 			return true;
 		}
@@ -336,7 +335,7 @@ namespace nodecpp
 		static
 		uint8_t internal_connect_for_address(Ip4 peerIp, Port peerPort, SOCKET sock)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_connect_for_address() on sock {} to {}:{}", sock, peerIp.toStr(), peerPort.toStr());
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_connect_for_address() on sock {} to {}:{}", sock, peerIp.toStr(), peerPort.toStr());
 
 			struct ::sockaddr_in saOther;
 			memset(&saOther, 0, sizeof(struct ::sockaddr_in));
@@ -349,7 +348,7 @@ namespace nodecpp
 
 		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock)
 		{
-//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_tcp_accept() on sock {}", sock);
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_tcp_accept() on sock {}", sock);
 			struct ::sockaddr_in sa;
 			socklen_t sz = sizeof(struct ::sockaddr_in);
 			memset(&sa, 0, sz);
@@ -358,7 +357,7 @@ namespace nodecpp
 			if (INVALID_SOCKET == outSock)
 			{
 				int error = getSockError();
-//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() on sock {} failed; error {}", sock, error);
+//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"accept() on sock {} failed; error {}", sock, error);
 
 				return INVALID_SOCKET;
 			}
@@ -366,7 +365,7 @@ namespace nodecpp
 	
 			ip = Ip4::fromNetwork(sa.sin_addr.s_addr);
 			port = Port::fromNetwork(sa.sin_port);
-//!!//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("accept() new sock {} from {}:{}", outSock, ip.toStr(), port.toStr());
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"accept() new sock {} from {}:{}", outSock, ip.toStr(), port.toStr());
 
 			if (!internal_async_socket(outSock))
 			{
@@ -385,13 +384,13 @@ namespace nodecpp
 			if (err != 0)
 			{
 				int error = getSockError();
-//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("getsockopt() SO_ERROR on sock {} failed; error {}", sock, error);
+//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"getsockopt() SO_ERROR on sock {} failed; error {}", sock, error);
 				return false;
 			}
 
 			if (result != 0)
 			{
-//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("getsockopt() SO_ERROR on sock {} error {}", sock, result);
+//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"getsockopt() SO_ERROR on sock {} error {}", sock, result);
 				return false;
 			}
 
@@ -416,13 +415,13 @@ waitTime += infraGetCurrentTime() - now1;
 				int error = getSockError();
 				if (isErrorWouldBlock(error))
 				{
-//!!//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} PENDING", sock, size);
+//!!//					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_send_packet() on sock {} size {} PENDING", sock, size);
 
 					return COMMLAYER_RET_PENDING;
 				}
 				else
 				{
-//!!//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} ERROR {}", sock, size, error);
+//!!//					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_send_packet() on sock {} size {} ERROR {}", sock, size, error);
 					return COMMLAYER_RET_FAILED;
 				}
 			}
@@ -431,13 +430,13 @@ waitTime += infraGetCurrentTime() - now1;
 				sentSize = static_cast<size_t>(bytes_sent);
 				if(sentSize == size)
 				{
-					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} OK", sock, size);
+					//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_send_packet() on sock {} size {} OK", sock, size);
 
 					return COMMLAYER_RET_OK;
 				}
 				else
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_send_packet() on sock {} size {} PENDING sent {} ", sock, size, sentSize);
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_send_packet() on sock {} size {} PENDING sent {} ", sock, size, sentSize);
 			
 					return COMMLAYER_RET_PENDING;
 				}
@@ -471,18 +470,18 @@ waitTime += infraGetCurrentTime() - now1;
 				int error = getSockError();
 				if (isErrorWouldBlock(error))
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_get_packet_bytes2() on sock {} PENDING", sock);
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_get_packet_bytes2() on sock {} PENDING", sock);
 					return COMMLAYER_RET_PENDING;
 				}
 				else
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_get_packet_bytes2() on sock {} ERROR {}", sock, error);
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_get_packet_bytes2() on sock {} ERROR {}", sock, error);
 					return COMMLAYER_RET_FAILED;
 				}
 			}
 
 			retSz = static_cast<size_t>(ret);
-			//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("internal_get_packet_bytes2() on sock {} size {} OK", sock, retSz);
+			//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"internal_get_packet_bytes2() on sock {} size {} OK", sock, retSz);
 			return COMMLAYER_RET_OK;
 		}
 
@@ -589,7 +588,7 @@ void OSLayer::appDestroy(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	if (!sockData.isValid())
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetSocketManager::destroy", sockData.index);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected id {} on NetSocketManager::destroy", sockData.index);
 		throw Error();
 	}
 	//	
@@ -604,7 +603,7 @@ void OSLayer::appEnd(net::SocketBase::DataForCommandProcessing& sockData)
 {
 	if (!sockData.isValid())
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetSocketManager::end", sockData.index);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected id {} on NetSocketManager::end", sockData.index);
 		throw Error();
 	}
 
@@ -635,7 +634,7 @@ void OSLayer::appSetKeepAlive(net::SocketBase::DataForCommandProcessing& sockDat
 {
 	if (!sockData.isValid())
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetSocketManager::setKeepAlive", sockData.index);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected id {} on NetSocketManager::setKeepAlive", sockData.index);
 		throw Error();
 	}
 
@@ -651,7 +650,7 @@ void OSLayer::appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData,
 {
 	if (!sockData.isValid())
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected id {} on NetSocketManager::setNoDelay", sockData.index);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected id {} on NetSocketManager::setNoDelay", sockData.index);
 		throw Error();
 	}
 
@@ -668,13 +667,13 @@ bool NetSocketManagerBase::appWrite(net::SocketBase::DataForCommandProcessing& s
 {
 	if (!sockData.isValid())
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected StreamSocket {} on sendStreamSegment", sockData.index);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected StreamSocket {} on sendStreamSegment", sockData.index);
 		throw Error();
 	}
 
 	if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding || sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("StreamSocket {} already ended", sockData.index);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"StreamSocket {} already ended", sockData.index);
 //		errorCloseSocket(sockData, storeError(Error()));
 		Error e;
 		OSLayer::errorCloseSocket(sockData, e);
@@ -715,7 +714,7 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 {
 	if (!sockData.isValid())
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Unexpected StreamSocket {} on sendStreamSegment", sockData.index);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected StreamSocket {} on sendStreamSegment", sockData.index);
 		throw Error();
 	}
 
@@ -723,7 +722,7 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 
 	if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding || sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("StreamSocket {} already ended", sockData.index);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"StreamSocket {} already ended", sockData.index);
 //		nodecpp::setException(sockData.ahd_write.h, std::exception()); // TODO: switch to our exceptions ASAP!
 //		errorCloseSocket(sockData, storeError(Error()));
 		Error e;
@@ -864,7 +863,7 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 				//updateEventMaskOnWriteBufferStatusChanged( sockData.index, true );
 				if (sockData.state == net::SocketBase::DataForCommandProcessing::LocalEnding)
 				{
-//!!//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("_infraProcessWriteEvent() leads to internal_shutdown_send()...");
+//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"_infraProcessWriteEvent() leads to internal_shutdown_send()...");
 					internal_usage_only::internal_shutdown_send(sockData.osSocket);
 					//current.pendingLocalEnd = false;
 					//current.localEnded = true;

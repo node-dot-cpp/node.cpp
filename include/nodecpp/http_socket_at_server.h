@@ -459,11 +459,11 @@ namespace nodecpp {
 
 			void dbgTrace()
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [->] {} {} HTTP/{}", method.name, method.url, method.version );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "   [->] {} {} HTTP/{}", method.name, method.url, method.version );
 				for ( auto& entry : header )
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [->] {}: {}", entry.first, entry.second );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "   [->] {}: {}", entry.first, entry.second );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "[CL = {}, Conn = {}]", getContentLength(), connStatus == ConnStatus::keep_alive ? "keep-alive" : "close" );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "" );
 			}
 		};
 
@@ -520,10 +520,10 @@ namespace nodecpp {
 
 			void dbgTrace()
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [<-] {}", replyStatus );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "   [<-] {}", replyStatus );
 				for ( auto& entry : header )
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   [<-] {}: {}", entry.first, entry.second );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "" );
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "   [<-] {}: {}", entry.first, entry.second );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "" );
 			}
 
 			void addHeader( nodecpp::string key, nodecpp::string value )
@@ -609,7 +609,7 @@ namespace nodecpp {
 			bool ready = false;
 			nodecpp::string line;
 			co_await readLine(line);
-//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			if ( !message.parseMethod( line ) )
 			{
 				// TODO: report error
@@ -620,7 +620,7 @@ namespace nodecpp {
 			do
 			{
 				co_await readLine(line);
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
 			while ( message.parseHeaderEntry( line ) );
 

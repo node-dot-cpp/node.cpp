@@ -31,7 +31,6 @@
 #ifdef _MSC_VER
 //#pragma warning (disable:4800) // forcing value to bool 'true' or 'false' (performance warning)
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
 #define NOMINMAX
 #endif // _MSC_VER
 
@@ -40,6 +39,10 @@
 #define NODECPP_UNUSED_VAR [[gnu::unused]]
 #else
 #define NODECPP_UNUSED_VAR 
+#endif
+
+#ifndef NODECPP_DEFAULT_LOG_MODULE
+#define NODECPP_DEFAULT_LOG_MODULE nullptr
 #endif
 
 #include <stdint.h>
@@ -67,6 +70,12 @@ namespace nodecpp {
 //#include "trace.h"
 //#include "assert.h"
 #include "mallocator.h"
+
+namespace nodecpp
+{
+	constexpr const char* nodecpp_module_id = "nodecpp";
+}
+
 
 using namespace ::nodecpp::safememory;
 
@@ -258,5 +267,11 @@ thread_local Infra* NodeRegistrator<RunnableT,Infra>::infraPtr;*/
 
 extern nodecpp::stdvector<nodecpp::stdstring> argv;
 inline const nodecpp::stdvector<nodecpp::stdstring>& getArgv() { return argv; }
+
+#ifdef NODECPP_ENABLE_CLUSTERING
+namespace nodecpp {
+	extern bool clusterIsMaster();
+}
+#endif // NODECPP_ENABLE_CLUSTERING
 
 #endif //COMMON_H

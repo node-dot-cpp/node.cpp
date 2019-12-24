@@ -11,6 +11,7 @@
 #ifdef NODECPP_ENABLE_CLUSTERING
 #include <nodecpp/cluster.h>
 #endif // NODECPP_ENABLE_CLUSTERING
+#include <nodecpp/logging.h>
 
 using namespace std;
 using namespace nodecpp;
@@ -33,6 +34,8 @@ public: // just temporarily
 	Stats stats;
 
 	Buffer ctrlReplyBuff;
+
+	nodecpp::Log log;
 
 public:
 
@@ -68,13 +71,13 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
 	}
 
 #if IMPL_VERSION == 1
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
@@ -120,12 +123,16 @@ public:
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log.add( stdout );
+		log.setLevel( nodecpp::LogLevel::debug );
+		log.setGuaranteedLevel( nodecpp::LogLevel::warning );
+
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-		if ( getCluster().isMaster() )
+		if ( getCluster().isMaster() ) 
 		{
 			size_t coreCnt = 1;
 			auto argv = getArgv();
@@ -155,15 +162,38 @@ public:
 			srvCtrl->listen(2001, "127.0.0.1", 5);
 
 #ifdef AUTOMATED_TESTING_ONLY
-			to = std::move( nodecpp::setTimeout(  [this]() { 
+			to = nodecpp::setTimeout(  [this]() { 
 				srv->close();
 				srv->unref();
 				srvCtrl->close();
 				srvCtrl->unref();
 				stopAccepting = true;
-				to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
-			}, 3000 ) );
+				to = nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 );
+			}, 3000 );
 #endif
+
+#ifdef NODECPP_ENABLE_CLUSTERING
+			for ( size_t i=0; i<1000; ++i )
+			{
+				if ( i&1 )
+					log.warning( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+				else
+					log.warning( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+//				if ( i&7 )
+//					log.info( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
+			}
+static int logfin = 0;
+++logfin;
+nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
+log.debug( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
+log.fatal( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
+#else
+			for ( size_t i=0; i<100; ++i )
+				if ( i&1 )
+					log.warning( nodecpp::ModuleID( "node" ), "some silly msg with data {}", i );
+				else
+					log.warning( "some silly msg with data {}", i );
+#endif // #ifdef NODECPP_ENABLE_CLUSTERING
 
 			nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
 			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
@@ -188,7 +218,7 @@ public:
 #elif IMPL_VERSION == 2
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::HttpServerBase::addHttpHandler<ServerType, nodecpp::net::HttpServerBase::Handler::IncomingRequest, &MySampleTNode::onRequest>(this);
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
@@ -407,7 +437,7 @@ public:
 	}
 
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<CtrlServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"server: onConnectionCtrl()!");
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		nodecpp::Buffer r_buff(0x200);
@@ -416,7 +446,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "About to exit successfully in automated testing (by timer)" );
 				socket->end();
 				socket->unref();
 				break;

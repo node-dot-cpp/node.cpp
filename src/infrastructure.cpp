@@ -115,7 +115,7 @@ void TimeoutManager::appTimeoutDestructor(uint64_t id)
 			timers.erase(it);
 	}
 	else
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("timer {} not found", id);
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"timer {} not found", id);
 }
 
 void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)

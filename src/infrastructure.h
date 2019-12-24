@@ -107,7 +107,7 @@ class TimeoutManager
 		}
 		else
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Failed to insert Timeout {}", id);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Failed to insert Timeout {}", id);
 			return Timeout(0);
 		}
 	}
@@ -225,7 +225,7 @@ waitTime += infraGetCurrentTime() - now1;
 #ifdef _MSC_VER
 			int error = WSAGetLastError();
 			//		if ( error == WSAEWOULDBLOCK )
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("error {}", error);
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"error {}", error);
 #else
 			perror("select()");
 			//		int error = errno;
@@ -233,7 +233,7 @@ waitTime += infraGetCurrentTime() - now1;
 #endif
 			/*        return WAIT_RESULTED_IN_TIMEOUT;*/
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,false);
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("COMMLAYER_RET_FAILED");
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"COMMLAYER_RET_FAILED");
 			return false;
 		}
 		else if (retval == 0)

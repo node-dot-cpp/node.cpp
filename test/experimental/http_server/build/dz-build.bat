@@ -1,5 +1,6 @@
 
 
+nodecpp-checker ../user_code/NetSocket.cpp >checker.log
 nodecpp-instrument ../user_code/NetSocket.cpp
 
 set FILES=../user_code/NetSocket.dz.cpp
