@@ -32,11 +32,7 @@
 
 #ifndef NODECPP_NO_COROUTINES
 
-#if (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG)
-#include <coroutine.h>
-#else
 #include <experimental/coroutine>
-#endif
 
 #define CO_RETURN co_return
 

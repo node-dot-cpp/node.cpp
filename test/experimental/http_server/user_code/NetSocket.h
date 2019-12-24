@@ -162,14 +162,14 @@ public:
 			srvCtrl->listen(2001, "127.0.0.1", 5);
 
 #ifdef AUTOMATED_TESTING_ONLY
-			to = std::move( nodecpp::setTimeout(  [this]() { 
+			to = nodecpp::setTimeout(  [this]() { 
 				srv->close();
 				srv->unref();
 				srvCtrl->close();
 				srvCtrl->unref();
 				stopAccepting = true;
-				to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
-			}, 3000 ) );
+				to = nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 );
+			}, 3000 );
 #endif
 
 #ifdef NODECPP_ENABLE_CLUSTERING

@@ -146,7 +146,7 @@ namespace nodecpp
 	}
 }
 
-#include <logging.h>
+#include "../include/nodecpp/logging.h"
 namespace nodecpp {
 	namespace logging_impl {
 		nodecpp::stdvector<nodecpp::log::Log*> logs;
