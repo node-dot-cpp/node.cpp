@@ -356,31 +356,6 @@ log.fatal( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!+++
 
 		CO_RETURN;
 	}
-	void parseUrlQueryString(const nodecpp::string& query, nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>>& queryValues )
-	{
-		size_t start = 0;
-
-		for(;;)
-		{
-			size_t endEq = query.find_first_of( "=", start );
-			if ( endEq == nodecpp::string::npos )
-			{
-				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), "" ) );
-				break;
-			}
-			size_t endAmp = query.find_first_of( "&", endEq+ 1  );
-			if ( endAmp == nodecpp::string::npos )
-			{
-				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), query.substr( endEq + 1 ) ) );
-				break;
-			}
-			else
-			{
-				queryValues.push_back( std::make_pair( query.substr( start, endEq-start ), query.substr( endEq + 1, endAmp - endEq - 1 ) ) );
-				start = endAmp + 1;
-			}
-		}
-	}
 
 	nodecpp::handler_ret_type yetSimpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response )
 	{
@@ -397,19 +372,19 @@ log.fatal( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!+++
 		}
 
 		const auto & url = request->getUrl();
-		size_t start = url.find_first_of( "?" );
+		nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>> queryValues;
+		nodecpp::Url::parseUrlQueryString( url, queryValues );
+
 		response->setStatus( "HTTP/1.1 200 OK" );
 		response->addHeader( "Content-Type", "text/xml" );
 		Buffer b;
-		if ( start == nodecpp::string::npos )
+		if ( queryValues.empty() )
 		{
 			b.append( "no value specified", sizeof( "undefined" ) - 1 );
 			response->addHeader( "Connection", "close" );
 		}
 		else
 		{
-			nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>> queryValues;
-			parseUrlQueryString(url.substr(start+1), queryValues );
 			for ( auto entry: queryValues )
 				if ( entry.first == "value" )
 				{

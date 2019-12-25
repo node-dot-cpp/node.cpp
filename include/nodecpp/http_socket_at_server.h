@@ -30,6 +30,7 @@
 
 #include "http_server_common.h"
 #include "socket_common.h"
+#include "url.h"
 
 #include <algorithm>
 #include <cctype>
