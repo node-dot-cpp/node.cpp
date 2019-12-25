@@ -82,8 +82,9 @@ namespace nodecpp
 			h.assignedThreadID = threadID;
 			h.requestID = requestID;
 			h.entryIdx = entryIndex;
-			h.bodySize = 4 + 2 + sizeof(int) + 4 + 1;
+			h.bodySize = 4 + 2 + sizeof(int) + 4;
 			h.serialize( b );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, sizeof( ClusteringMsgHeader ) == b.size() );
 
 			uint32_t uip = ip.getNetwork();
 			b.append( &uip, 4 );
@@ -91,6 +92,7 @@ namespace nodecpp
 			b.append( &backlog, sizeof(int) );
 			uint32_t familyNum = (uint32_t)(family.value());
 			b.append( &familyNum, 4 );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, sizeof( ClusteringMsgHeader ) + h.bodySize == b.size() );
 		}
 		static size_t deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::Buffer& b, size_t offset, size_t sz ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz + offset <= b.size() );
@@ -205,7 +207,6 @@ namespace nodecpp
 					case ClusteringMsgHeader::ClusteringMsgType::ThreadStarted:
 					{
 						nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ThreadStarted({}) request (for thread id: {})", (size_t)(mh.type), mh.assignedThreadID );
-						nodecpp::net::Address addr;
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID == Cluster::InvalidThreadID, "indeed: {}", assignedThreadID ); 
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID != Cluster::InvalidThreadID ); 
 						assignedThreadID = mh.assignedThreadID;
