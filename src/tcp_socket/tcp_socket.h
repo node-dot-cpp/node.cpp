@@ -301,13 +301,13 @@ public:
 	{
 		if ( ourSideAccum.size() )
 		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSideAccum.size() == ourSideAccum.size(), "indeed; {} vs. {}", osSideAccum.size(), ourSideAccum.size() );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity(), "indeed; {} vs. {}", ourSide.size(), ourSide.capacity() );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide.size() == ourSide.size(), "indeed; {} vs. {}", osSide.size(), ourSide.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSideAccum.size() == ourSideAccum.size(), "indeed: {} vs. {}", osSideAccum.size(), ourSideAccum.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity(), "indeed: {} vs. {}", ourSide.size(), ourSide.capacity() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide.size() == ourSide.size(), "indeed: {} vs. {}", osSide.size(), ourSide.size() );
 			for (size_t i=0; i != ourSideAccum.size(); ++i)
 			{
 //				ourSideAccum[i].updateIndex( ourSide.size() );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSideAccum[i].index == ourSide.size(), "indeed; {} vs. {}", ourSideAccum[i].index, ourSide.size() );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSideAccum[i].index == ourSide.size(), "indeed: {} vs. {}", ourSideAccum[i].index, ourSide.size() );
 				ourSide.emplace_back( std::move( ourSideAccum[i] ) );
 				osSide.push_back( osSideAccum[i] );
 			}
