@@ -527,6 +527,17 @@ namespace nodecpp {
 				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "" );
 			}
 
+			template< class Str>
+			void writeHeader( size_t statusCode, Str statusMessage )
+			{
+				setStatus( nodecpp::format( "HTTP/{} {} {}", myRequest->getHttpVersion(), statusCode, statusMessage ) ); 
+			}
+
+			void writeHeader( size_t statusCode )
+			{
+				setStatus( nodecpp::format( "HTTP/{} {}", myRequest->getHttpVersion(), statusCode ) ); 
+			}
+
 			void addHeader( nodecpp::string key, nodecpp::string value )
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
@@ -544,7 +555,8 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: add real implementation
-				headerBuff.appendString( replyStatus );
+				if ( replyStatus.size() ) // NOTE: this makes sense only if no headers were added via writeHeader()
+					headerBuff.appendString( replyStatus );
 				headerBuff.append( "\r\n", 2 );
 				for ( auto h: header )
 				{
@@ -585,9 +597,30 @@ namespace nodecpp {
 				CO_RETURN;
 			}
 
+			nodecpp::handler_ret_type end(Buffer& b)
+			{
+				if ( writeStatus != WriteStatus::hdr_flushed )
+					co_await flushHeaders();
+				writeBodyPart(b);
+
+				myRequest->clear();
+				if ( connStatus != ConnStatus::keep_alive )
+				{
+					sock->end();
+					clear();
+					CO_RETURN;
+				}
+
+				clear();
+				sock->release( idx );
+				sock->proceedToNext();
+				CO_RETURN;
+			}
+
 			nodecpp::handler_ret_type end()
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
+				if ( writeStatus != WriteStatus::hdr_flushed )
+					co_await flushHeaders();
 				myRequest->clear();
 				if ( connStatus != ConnStatus::keep_alive )
 				{

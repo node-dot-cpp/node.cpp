@@ -37,7 +37,7 @@
 namespace nodecpp
 {
 	class Buffer;
-	namespace net { class SocketBase;}
+	namespace net { class SocketBase; class IncomingHttpMessageAtServer; class HttpServerResponse; }
 
 
 	struct event
@@ -105,6 +105,13 @@ namespace nodecpp
 			static constexpr const char* name = "listening";
 		};
 		static constexpr Listening listening = Listening();
+
+		struct HttpRequest
+		{
+			using callback = std::function<void(nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer>, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse>)>;
+			static constexpr const char* name = "HttpRequest";
+		};
+		static constexpr HttpRequest httpRequest = HttpRequest();
 
 	};
 

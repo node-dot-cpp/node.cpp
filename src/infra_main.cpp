@@ -92,7 +92,7 @@ int main( int argc, char *argv_[] )
 #endif
 	nodecpp::log::Log log;
 	log.level = nodecpp::log::LogLevel::info;
-	log.add( stdout );
+	log.add( nodecpp::string_literal( "default_log.txt" ) );
 	nodecpp::logging_impl::currentLog = &log;
 
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )

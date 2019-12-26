@@ -211,6 +211,11 @@ namespace nodecpp
 
 }
 
+namespace nodecpp::net {
+	template< class ... args > class ServerTEmitter;
+	template< class ... args > class SocketTEmitter;
+} // namespace nodecpp::net
+
 class NodeBase
 {
 public:
@@ -218,8 +223,8 @@ public:
 	virtual ~NodeBase() {}
 	virtual nodecpp::handler_ret_type main() = 0;
 
-	using EmitterType = void;
-	using EmitterTypeForServer = void;
+	using EmitterType = nodecpp::net::SocketTEmitter<>;
+	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
 
 //	using SocketEmmitterType = void;
 //	using ServerEmmitterType = void;

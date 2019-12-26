@@ -239,6 +239,8 @@ namespace nodecpp {
 				}
 				else if ( dataForHttpCommandProcessing.isIncomingRequesEventHandler() )
 					dataForHttpCommandProcessing.handleIncomingRequesEvent( myThis.getSoftPtr<HttpServerBase>(this), request, response );
+				else if ( eHttpRequest.listenerCount() )
+					eHttpRequest.emit( request, response );
 			}
 
 			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<HttpServerResponse>& response) { 
@@ -337,6 +339,13 @@ namespace nodecpp {
 			{
 				DataForHttpCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandler<handler, memmberFn, UserClass>();
 			}
+
+			EventEmitter<event::HttpRequest> eHttpRequest;
+			void on(nodecpp::string_literal name, event::HttpRequest::callback cb [[nodecpp::may_extend_to_this]]) {
+				assert(name == event::HttpRequest::name);
+				eHttpRequest.on(std::move(cb));
+			}
+
 		};
 
 		template<class DataParentT>
