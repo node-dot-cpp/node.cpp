@@ -17,7 +17,7 @@ class MySampleTNode : public NodeBase
 	safememory::owning_ptr<ServerType> srv; 
 
 public:
-	virtual handler_ret_type main()
+	void main()
 	{
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
@@ -70,7 +70,6 @@ public:
 			response->end(b); // TODOX: non-awaitable version
 		});
 
-		CO_RETURN;
 	}
 
 //	using EmitterType = net::SocketTEmitter<>;

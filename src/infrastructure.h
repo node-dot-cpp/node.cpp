@@ -463,7 +463,12 @@ class Runnable : public RunnableBase
 			nodecpp::postinitThreadClusterObject();
 #endif // NODECPP_ENABLE_CLUSTERING
 			node = make_owning<Node>();
-			thisThreadNode = &(*node);
+			thisThreadNode = &(*node); 
+			// NOTE!!! 
+			// By coincidence it so happened that both void Node::main() and nodecpp::handler_ret_type Node::main() are currently treated in the same way.
+			// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
+			// http://www.gotw.ca/gotw/071.htm and 
+			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
 			node->main();
 			infra.template runInfraLoop2<Node>();
 			node = nullptr;

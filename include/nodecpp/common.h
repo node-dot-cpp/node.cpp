@@ -221,7 +221,6 @@ class NodeBase
 public:
 	NodeBase() {}
 	virtual ~NodeBase() {}
-	virtual nodecpp::handler_ret_type main() = 0;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
