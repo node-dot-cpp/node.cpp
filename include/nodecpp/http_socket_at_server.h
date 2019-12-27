@@ -591,8 +591,10 @@ namespace nodecpp {
 						case num: return nodecpp::format( "{}: {}\r\n", key, valNum );
 						default:
 							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (size_t)valType ); 
+							return nodecpp::string( "" );
 					}
 				}
+				const char* getKey() { return key; } 
 			};
 
 			template< class Str1>
@@ -600,7 +602,18 @@ namespace nodecpp {
 			{
 				setStatus( nodecpp::format( "HTTP/{} {} {}\r\n", myRequest->getHttpVersion(), statusCode, statusMessage ) ); 
 				for ( auto& h : headers ) {
-					replyStatus.append( h.toStr() );
+					if ( strncmp( h.key, "Content-Length", sizeof("Content-Length")-1) != 0 )
+						replyStatus.append( h.toStr() );
+				}
+				replyStatus.erase( replyStatus.end() - 2, replyStatus.end() );
+			}
+
+			void writeHead( size_t statusCode, std::initializer_list<HeaderHolder> headers )
+			{
+				setStatus( nodecpp::format( "HTTP/{} {}\r\n", myRequest->getHttpVersion(), statusCode ) ); 
+				for ( auto& h : headers ) {
+					if ( strncmp( h.key, "Content-Length", sizeof("Content-Length")-1) != 0 )
+						replyStatus.append( h.toStr() );
 				}
 				replyStatus.erase( replyStatus.end() - 2, replyStatus.end() );
 			}
@@ -620,7 +633,8 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: sanitize
-				header.insert( std::make_pair( key, value ) );
+				if ( key != "Content-Length" )
+					header.insert( std::make_pair( key, value ) );
 			}
 
 			void setStatus( nodecpp::string status ) // temporary stub; TODO: ...
@@ -664,6 +678,7 @@ namespace nodecpp {
 					}
 					else
 						co_await sock->a_write( b );
+					writeStatus = WriteStatus::in_body;
 				} 
 				catch(...) {
 					// TODO: revise!!! should we close the socket? what should be done with other pipelined requests (if any)?
@@ -677,8 +692,12 @@ namespace nodecpp {
 
 			nodecpp::handler_ret_type end(Buffer& b)
 			{
-				if ( writeStatus != WriteStatus::hdr_flushed )
-					co_await flushHeaders();
+				if ( writeStatus != WriteStatus::in_body )
+				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
+					header.insert( std::make_pair( "Content-Length", format( "{}", b.size() ) ) );
+				}
+//dbgTrace();
 				writeBodyPart(b);
 
 				myRequest->clear();
@@ -693,6 +712,32 @@ namespace nodecpp {
 				sock->release( idx );
 				sock->proceedToNext();
 				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type end(const char* s)
+			{
+				// TODO: potentially, quite temporary implementation
+				size_t ln = strlen( s );
+				Buffer b( ln );
+				b.append( s, ln );
+				co_await end( b );
+				CO_RETURN;
+			}
+
+			nodecpp::handler_ret_type end(nodecpp::string s)
+			{
+				// TODO: potentially, quite temporary implementation
+				Buffer b;
+				b.appendString( s );
+				co_await end( b );
+			}
+
+			nodecpp::handler_ret_type end(nodecpp::string_literal s)
+			{
+				// TODO: potentially, quite temporary implementation
+				Buffer b;
+				b.appendString( s );
+				co_await end( b );
 			}
 
 			nodecpp::handler_ret_type end()
