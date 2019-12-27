@@ -36,11 +36,12 @@ namespace nodecpp {
 	class Url {
 	public:
 		static inline
-		void parseUrlQueryString(const nodecpp::string& url, nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>>& queryValues )
+		nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>> parseUrlQueryString(const nodecpp::string& url )
 		{
+			nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>> queryValues;
 			size_t start = url.find_first_of( "?" );
 			if ( start == nodecpp::string::npos )
-				return;
+				return queryValues;
 			++start;
 
 			for(;;)
@@ -63,6 +64,7 @@ namespace nodecpp {
 					start = endAmp + 1;
 				}
 			}
+			return queryValues;
 		}
 	};
 

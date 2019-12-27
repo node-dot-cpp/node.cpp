@@ -481,13 +481,36 @@ namespace nodecpp {
 			size_t contentLength = 0;
 			nodecpp::Buffer body;
 			ConnStatus connStatus = ConnStatus::keep_alive;
-			enum WriteStatus { notyet, hdr_flushed, in_body, completed };
+			enum WriteStatus { notyet, hdr_serialized, hdr_flushed, in_body, completed };
 			WriteStatus writeStatus = WriteStatus::notyet;
 
 			nodecpp::string replyStatus;
 			//size_t bodyBytesWritten = 0;
 
 		private:
+			nodecpp::handler_ret_type serializeHeaders()
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
+				// TODO: add real implementation
+				if ( replyStatus.size() ) // NOTE: this makes sense only if no headers were added via writeHeader()
+					headerBuff.appendString( replyStatus );
+				headerBuff.append( "\r\n", 2 );
+				for ( auto h: header )
+				{
+					headerBuff.appendString( h.first );
+					headerBuff.append( ": ", 2 );
+					headerBuff.appendString( h.second );
+					headerBuff.append( "\r\n", 2 );
+				}
+				headerBuff.append( "\r\n", 2 );
+
+				parseContentLength();
+				parseConnStatus();
+				writeStatus = WriteStatus::hdr_serialized;
+				header.clear();
+				CO_RETURN;
+			}
+
 
 		public:
 			HttpServerResponse() : headerBuff(0x1000) {}
@@ -527,13 +550,68 @@ namespace nodecpp {
 				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "" );
 			}
 
+			template< class Str1, class Str2, size_t N>
+			void writeHead( size_t statusCode, Str1 statusMessage, std::pair<nodecpp::string, nodecpp::string> headers[N] )
+			{
+				replyStatus = statusCode;
+				setStatus( nodecpp::format( "{} {} {}", myRequest->getHttpVersion(), statusCode, statusMessage ) ); 
+				for ( size_t i=0; i<N; ++i ) {
+					header.insert( headers[i] ); 
+				}
+			}
+
+			struct HeaderHolder
+			{
+				const char* key;
+				enum ValType { undef, str, num };
+				ValType valType;
+				const char* valStr;
+				size_t valNum;
+				HeaderHolder( const char* key_, const char* val ) { key = key_; valType = ValType::str; valStr = val; }
+				HeaderHolder( nodecpp::string key_, const char* val ) { key = key_.c_str(); valType = ValType::str; valStr = val; }
+				HeaderHolder( nodecpp::string_literal key_, const char* val ) { key = key_.c_str(); valType = ValType::str; valStr = val; }
+
+				HeaderHolder( const char* key_, nodecpp::string val ) { key = key_; valType = ValType::str; valStr = val.c_str(); }
+				HeaderHolder( nodecpp::string key_, nodecpp::string val ) { key = key_.c_str(); valType = ValType::str; valStr = val.c_str(); }
+				HeaderHolder( nodecpp::string_literal key_, nodecpp::string val ) { key = key_.c_str(); valType = ValType::str; valStr = val.c_str(); }
+
+				HeaderHolder( const char* key_, nodecpp::string_literal val ) { key = key_; valType = ValType::str; valStr = val.c_str(); }
+				HeaderHolder( nodecpp::string key_, nodecpp::string_literal val ) { key = key_.c_str(); valType = ValType::str; valStr = val.c_str(); }
+				HeaderHolder( nodecpp::string_literal key_, nodecpp::string_literal val ) { key = key_.c_str(); valType = ValType::str; valStr = val.c_str(); }
+
+				HeaderHolder( const char* key_, size_t val ) { key = key_; valType = ValType::num; valNum = val; }
+				HeaderHolder( nodecpp::string key_, size_t val ) { key = key_.c_str(); valType = ValType::num; valNum = val; }
+				HeaderHolder( nodecpp::string_literal key_, size_t val ) { key = key_.c_str(); valType = ValType::num; valNum = val; }
+
+				nodecpp::string toStr() const
+				{
+					switch ( valType )
+					{
+						case str: return nodecpp::format( "{}: {}\r\n", key, valStr );
+						case num: return nodecpp::format( "{}: {}\r\n", key, valNum );
+						default:
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (size_t)valType ); 
+					}
+				}
+			};
+
+			template< class Str1>
+			void writeHead( size_t statusCode, Str1 statusMessage, std::initializer_list<HeaderHolder> headers )
+			{
+				setStatus( nodecpp::format( "HTTP/{} {} {}\r\n", myRequest->getHttpVersion(), statusCode, statusMessage ) ); 
+				for ( auto& h : headers ) {
+					replyStatus.append( h.toStr() );
+				}
+				replyStatus.erase( replyStatus.end() - 2, replyStatus.end() );
+			}
+
 			template< class Str>
-			void writeHeader( size_t statusCode, Str statusMessage )
+			void writeHead( size_t statusCode, Str statusMessage )
 			{
 				setStatus( nodecpp::format( "HTTP/{} {} {}", myRequest->getHttpVersion(), statusCode, statusMessage ) ); 
 			}
 
-			void writeHeader( size_t statusCode )
+			void writeHead( size_t statusCode )
 			{
 				setStatus( nodecpp::format( "HTTP/{} {}", myRequest->getHttpVersion(), statusCode ) ); 
 			}
@@ -553,39 +631,39 @@ namespace nodecpp {
 #ifndef NODECPP_NO_COROUTINES
 			nodecpp::handler_ret_type flushHeaders()
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
-				// TODO: add real implementation
-				if ( replyStatus.size() ) // NOTE: this makes sense only if no headers were added via writeHeader()
-					headerBuff.appendString( replyStatus );
-				headerBuff.append( "\r\n", 2 );
-				for ( auto h: header )
-				{
-					headerBuff.appendString( h.first );
-					headerBuff.append( ": ", 2 );
-					headerBuff.appendString( h.second );
-					headerBuff.append( "\r\n", 2 );
+				if ( writeStatus == WriteStatus::notyet )
+					serializeHeaders();
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_serialized ); 
+				try {
+					co_await sock->a_write( headerBuff );
+					headerBuff.clear();
+					writeStatus = WriteStatus::hdr_flushed;
+				} 
+				catch(...) {
+					// TODO: revise!!! should we close the socket? what should be done with other pipelined requests (if any)?
+					sock->end();
+					clear();
+					sock->release( idx );
+					sock->proceedToNext();
 				}
-				headerBuff.append( "\r\n", 2 );
-
-				parseContentLength();
-				parseConnStatus();
-				writeStatus = WriteStatus::hdr_flushed;
-				header.clear();
 				CO_RETURN;
 			}
 
 			nodecpp::handler_ret_type writeBodyPart(Buffer& b)
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_flushed ); 
+				if ( writeStatus == WriteStatus::notyet )
+					serializeHeaders();
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::hdr_serialized || writeStatus == WriteStatus::hdr_flushed ); 
 				try {
-					if ( headerBuff.size() )
+					if ( writeStatus == WriteStatus::hdr_serialized )
 					{
 						headerBuff.append( b );
 						co_await sock->a_write( headerBuff );
 						headerBuff.clear();
+						writeStatus = WriteStatus::hdr_flushed;
 					}
 					else
-						co_await sock->a_write( headerBuff );
+						co_await sock->a_write( b );
 				} 
 				catch(...) {
 					// TODO: revise!!! should we close the socket? what should be done with other pipelined requests (if any)?
