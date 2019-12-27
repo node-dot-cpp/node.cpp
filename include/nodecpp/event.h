@@ -108,7 +108,7 @@ namespace nodecpp
 
 		struct HttpRequest
 		{
-			using callback = std::function<void(nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer>, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse>)>;
+			using callback = std::function<void(nodecpp::net::IncomingHttpMessageAtServer&, nodecpp::net::HttpServerResponse&)>;
 			static constexpr const char* name = "HttpRequest";
 		};
 		static constexpr HttpRequest httpRequest = HttpRequest();
@@ -176,7 +176,7 @@ namespace nodecpp
 		}
 
 		template<class... ARGS>
-		void emit(ARGS... args) {
+		void emit(ARGS&... args) {
 
 			nodecpp::vector<std::pair<bool, typename EV::callback>> other;
 			

@@ -19,20 +19,20 @@ class MySampleTNode : public NodeBase
 public:
 	void main()
 	{
-		srv = net::createHttpServer<ServerType>( [](safememory::soft_ptr<net::IncomingHttpMessageAtServer> request, safememory::soft_ptr<net::HttpServerResponse> response){
-			if ( request->getMethod() == "GET" || request->getMethod() == "HEAD" ) {
-				response->writeHead(200, {{"Content-Type", "text/xml"}});
-				auto queryValues2 = Url::parseUrlQueryString( request->getUrl() );
-				auto value = queryValues2["value"];
+		srv = net::createHttpServer<ServerType>( [](net::IncomingHttpMessageAtServer& request, net::HttpServerResponse& response){
+			if ( request.getMethod() == "GET" || request.getMethod() == "HEAD" ) {
+				response.writeHead(200, {{"Content-Type", "text/xml"}});
+				auto queryValues = Url::parseUrlQueryString( request.getUrl() );
+				auto value = queryValues["value"];
 				if (value == ""){
-					response->end("no value specified");
+					response.end("no value specified");
 				} else {
 					auto chksm = nodecpp::Fletcher16( value.c_str(), value.size() );
-					response->end( nodecpp::format( "{} ({})", value, chksm ) );
+					response.end( nodecpp::format( "{} ({})", value, chksm ) );
 				}
 			} else {
-				response->writeHead( 405, "Method Not Allowed", {{"Connection", "close" }} );
-				response->end();
+				response.writeHead( 405, "Method Not Allowed", {{"Connection", "close" }} );
+				response.end();
 			}
 		});
 		srv->listen(2000, "0.0.0.0", 5000);

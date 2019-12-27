@@ -228,23 +228,7 @@ namespace nodecpp {
 				}
 			}
 
-			void onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<HttpServerResponse> response )
-			{
-//printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
-				if ( ahd_request.h != nullptr )
-				{
-					ahd_request.request = request;
-					ahd_request.response = response;
-					auto hr = ahd_request.h;
-					ahd_request.h = nullptr;
-//printf( "about to rezume ahd_request.h\n" );
-					hr();
-				}
-				else if ( dataForHttpCommandProcessing.isIncomingRequesEventHandler() )
-					dataForHttpCommandProcessing.handleIncomingRequesEvent( myThis.getSoftPtr<HttpServerBase>(this), request, response );
-				else if ( eHttpRequest.listenerCount() )
-					eHttpRequest.emit( request, response );
-			}
+			void onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<HttpServerResponse> response );
 
 			auto a_request(nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer>& request, nodecpp::safememory::soft_ptr<HttpServerResponse>& response) { 
 
