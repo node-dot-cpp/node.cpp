@@ -34,10 +34,40 @@
 
 namespace nodecpp {
 
+	class UrlQueryItem{
+		nodecpp::vector<nodecpp::string> elems;
+		nodecpp::string none;
+
+	public:
+		UrlQueryItem() {}
+		UrlQueryItem( const UrlQueryItem& ) = delete;
+		UrlQueryItem& operator = ( const UrlQueryItem& ) = delete;
+		UrlQueryItem( UrlQueryItem&& other ) { elems = std::move( other.elems ); }
+		UrlQueryItem& operator = ( UrlQueryItem&& other ) { elems = std::move( other.elems ); return *this; }
+
+		void add( const nodecpp::string& val )
+		{
+			elems.push_back( val );
+		}
+		nodecpp::string toStr() const
+		{
+			nodecpp::string ret;
+			if ( elems.empty() )
+				return ret;
+			ret.append( elems[0] );
+			for ( size_t i=1; i<elems.size(); ++i )
+			{
+				ret.append( "," );
+				ret.append( elems[i] );
+			}
+			return ret;
+		}
+	};
+
 	class UrlQuery
 	{
-		nodecpp::map<nodecpp::string, nodecpp::string> parsed;
-		nodecpp::string none;
+		nodecpp::map<nodecpp::string, UrlQueryItem> parsed;
+		UrlQueryItem none;
 	public:
 		UrlQuery() {}
 		UrlQuery( const UrlQuery& ) = delete;
@@ -47,27 +77,31 @@ namespace nodecpp {
 
 		void add( const nodecpp::string& key, const nodecpp::string& val )
 		{
-			auto ins = parsed.insert( std::make_pair( key, val ) );
-			if ( !ins.second )
+			auto f = parsed.find( key );
+			if ( f != parsed.end() )
+				f->second.add( val );
+			else
 			{
-				ins.first->second.append( "," );
-				ins.first->second.append( val );
+				UrlQueryItem it;
+				it.add( val );
+				auto ins = parsed.insert( std::make_pair( key, std::move( it ) ) );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ins.second );
 			}
 		}
-		const nodecpp::string& operator [] ( const nodecpp::string& key ) {
+		const UrlQueryItem& operator [] ( const nodecpp::string& key ) {
 			auto f = parsed.find( key );
 			if ( f != parsed.end() )
 				return f->second;
 			return none;
 		}
-		const nodecpp::string& operator [] ( const nodecpp::string_literal& key ) {
+		const UrlQueryItem& operator [] ( const nodecpp::string_literal& key ) {
 			nodecpp::string s( key.c_str() );
 			auto f = parsed.find( s );
 			if ( f != parsed.end() )
 				return f->second;
 			return none;
 		}
-		const nodecpp::string& operator [] ( const char* key ) {
+		const UrlQueryItem& operator [] ( const char* key ) {
 			nodecpp::string s( key );
 			auto f = parsed.find( s );
 			if ( f != parsed.end() )

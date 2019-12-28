@@ -1,4 +1,3 @@
-var fletcher16 = require('fletcher');
 var http = require('http'), url = require('url');
 http.createServer(function(request, response) {
     if ( request.method == "GET" || request.method == "HEAD" ) {
@@ -8,8 +7,7 @@ http.createServer(function(request, response) {
         if (value == ''){
             response.end("no value specified");
         } else {
-            var checks = fletcher16(Buffer.from("" + value + ""));
-            response.end("" + value + " (" + checks + ")");
+            response.end("" + value + "");
         }
     } else {
         response.writeHead(405, "Method Not Allowed");

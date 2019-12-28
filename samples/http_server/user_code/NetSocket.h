@@ -7,7 +7,6 @@
 #include <nodecpp/socket_type_list.h>
 #include <nodecpp/server_type_list.h>
 #include <nodecpp/http_server.h>
-#include <nodecpp/misc.h>
 
 using namespace nodecpp;
 
@@ -23,12 +22,11 @@ public:
 			if ( request.getMethod() == "GET" || request.getMethod() == "HEAD" ) {
 				response.writeHead(200, {{"Content-Type", "text/xml"}});
 				auto queryValues = Url::parseUrlQueryString( request.getUrl() );
-				auto value = queryValues["value"];
-				if (value == ""){
+				auto& value = queryValues["value"];
+				if (value.toStr() == ""){
 					response.end("no value specified");
 				} else {
-					auto chksm = nodecpp::Fletcher16( value.c_str(), value.size() );
-					response.end( nodecpp::format( "{} ({})", value, chksm ) );
+					response.end( nodecpp::format( "{}", value.toStr() ) );
 				}
 			} else {
 				response.writeHead( 405, "Method Not Allowed", {{"Connection", "close" }} );
