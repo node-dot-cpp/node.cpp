@@ -698,7 +698,7 @@ namespace nodecpp {
 					header.insert( std::make_pair( "Content-Length", format( "{}", b.size() ) ) );
 				}
 //dbgTrace();
-				writeBodyPart(b);
+				co_await writeBodyPart(b);
 
 				myRequest->clear();
 				if ( connStatus != ConnStatus::keep_alive )

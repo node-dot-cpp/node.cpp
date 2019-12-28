@@ -43,7 +43,7 @@ namespace nodecpp {
 		UrlQuery( const UrlQuery& ) = delete;
 		UrlQuery& operator = ( const UrlQuery& ) = delete;
 		UrlQuery( UrlQuery&& other ) { parsed = std::move( other.parsed ); }
-		UrlQuery& operator = ( UrlQuery&& other ) { parsed = std::move( other.parsed ); }
+		UrlQuery& operator = ( UrlQuery&& other ) { parsed = std::move( other.parsed ); return *this; }
 
 		void add( const nodecpp::string& key, const nodecpp::string& val )
 		{
@@ -58,14 +58,14 @@ namespace nodecpp {
 			auto f = parsed.find( key );
 			if ( f != parsed.end() )
 				return f->second;
-			return nodecpp::string("");
+			return none;
 		}
 		const nodecpp::string& operator [] ( const nodecpp::string_literal& key ) {
 			nodecpp::string s( key.c_str() );
 			auto f = parsed.find( s );
 			if ( f != parsed.end() )
 				return f->second;
-			return nodecpp::string("");
+			return none;
 		}
 		const nodecpp::string& operator [] ( const char* key ) {
 			nodecpp::string s( key );
