@@ -26,10 +26,10 @@ public:
 				if (value.toStr() == ""){
 					response.end("no value specified");
 				} else {
-					response.end( nodecpp::format( "{}", value.toStr() ) );
+					response.end( value.toStr() );
 				}
 			} else {
-				response.writeHead( 405, "Method Not Allowed", {{"Connection", "close" }} );
+				response.writeHead( 405, "Method Not Allowed" );
 				response.end();
 			}
 		});
