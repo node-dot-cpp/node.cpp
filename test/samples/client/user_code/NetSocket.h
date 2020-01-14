@@ -33,7 +33,7 @@ class MySampleTNode : public NodeBase
 public:
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
 	}
 
 #if IMPL_VERSION == 2
@@ -44,7 +44,7 @@ public:
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		clientSock = nodecpp::net::createSocket();
 
@@ -59,7 +59,7 @@ public:
 		}
 		catch (...)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("processing on socket failed. Exiting...");
+			log::default_log::error( log::ModuleID(nodecpp_module_id), "processing on socket failed. Exiting...");
 		}
 		CO_RETURN;
 	}
@@ -77,21 +77,21 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting...");
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed). Exiting...");
 				break;
 			}
 			++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				socket->end();
 				socket->unref();
 				break;
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 			recvSize += r_buff.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -101,7 +101,7 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed). Exiting...");
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed). Exiting...");
 				break;
 			}
 			// TODO: address failure
@@ -110,6 +110,7 @@ public:
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
+	using EmitterTypeForServer = void;
 
 #elif IMPL_VERSION == 21
 
@@ -130,9 +131,9 @@ public:
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 		nodecpp::a_timeout(1000);
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   ...after timeout" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "   ...after timeout" );
 
 		clientSock = nodecpp::net::createSocket<ClientSockType>();
 		*( clientSock->getExtra() ) = 17;
@@ -148,7 +149,7 @@ public:
 		}
 		catch (...)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("processing on socket with extra = {} failed. Exiting...", *(clientSock->getExtra()));
+			log::default_log::error( log::ModuleID(nodecpp_module_id), "processing on socket with extra = {} failed. Exiting...", *(clientSock->getExtra()));
 		}
 		CO_RETURN;
 	}
@@ -166,21 +167,21 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
 				break;
 			}
 			++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				socket->end();
 				socket->unref();
 				break;
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 			recvSize += r_buff.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -190,7 +191,7 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
 				break;
 			}
 			// TODO: address failure
@@ -199,6 +200,7 @@ public:
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
+	using EmitterTypeForServer = void;
 
 #elif IMPL_VERSION == 3
 
@@ -219,7 +221,7 @@ public:
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::SocketBase::addHandler<MySocketOne, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &MySampleTNode::onWhateverConnect>(this);
 
@@ -242,7 +244,7 @@ public:
 		}
 		catch (...)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+			log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
 			// TODO: address failure
 		}
 		CO_RETURN;
@@ -261,21 +263,21 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
 				break;
 			}
 			++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				socket->end();
 				socket->unref();
 				break;
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 			recvSize += r_buff.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -285,7 +287,7 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
 				break;
 			}
 			// TODO: address failure
@@ -294,11 +296,12 @@ public:
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
+	using EmitterTypeForServer = void;
 
 #elif IMPL_VERSION == 4
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &MySampleTNode::onWhateverConnect>(this);
 		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &ClientSockType::onWhateverConnect>();
@@ -344,7 +347,7 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(getExtra()));
 				// TODO: address failure
 			}
 			CO_RETURN;
@@ -361,21 +364,21 @@ public:
 				}
 				catch (...)
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(getExtra()));
+					log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(getExtra()));
 					break;
 				}
 				++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 				if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+					log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 					end();
 					unref();
 					break;
 				}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+					log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 				recvSize += r_buff.size();
 				buf.writeInt8( 2, 0 );
 				buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -385,7 +388,7 @@ public:
 				}
 				catch (...)
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(getExtra()));
+					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(getExtra()));
 					break;
 				}
 				// TODO: address failure
@@ -400,7 +403,7 @@ public:
 #elif IMPL_VERSION == 5
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 //		clientSock = nodecpp::net::createSocket<MySampleTNode, ClientSockType>();
 		clientSock = nodecpp::net::createSocket<ClientSockType>();
@@ -451,7 +454,7 @@ public:
 			}
 			catch (...)
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(getExtra()));
 				// TODO: address failure
 			}
 			CO_RETURN;
@@ -468,21 +471,21 @@ public:
 				}
 				catch (...)
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(getExtra()));
+					log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(getExtra()));
 					break;
 				}
 				++recvReplies;
 #ifdef AUTOMATED_TESTING_ONLY
 				if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+					log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 					end();
 					unref();
 					break;
 				}
 #endif
 				if ( ( recvReplies & 0xFFF ) == 0 )
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
+					log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 				recvSize += r_buff.size();
 				buf.writeInt8( 2, 0 );
 				buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -492,7 +495,7 @@ public:
 				}
 				catch (...)
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(getExtra()));
+					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(getExtra()));
 					break;
 				}
 				// TODO: address failure
@@ -509,13 +512,14 @@ public:
 	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< ClientSockType, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect> > >;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
+	using EmitterTypeForServer = void;
 
 
 #elif IMPL_VERSION == 6
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 //		clientSock = nodecpp::net::createSocket<MySampleTNode, ClientSockType>();
 		clientSock = nodecpp::net::createSocket<ClientSockType>();
@@ -555,13 +559,13 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				end();
 				unref();
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}, total received size = {}", recvReplies, *(getExtra()), buffer.size(), recvSize );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onWhateverData(), extra = {}, size = {}, total received size = {}", recvReplies, *(getExtra()), buffer.size(), recvSize );
 			recvSize += buffer.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -578,6 +582,7 @@ public:
 	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect>, nodecpp::net::OnDataT<clientData> > >;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
+	using EmitterTypeForServer = void;
 
 #elif IMPL_VERSION == 7
 
@@ -590,7 +595,7 @@ public:
 
 	virtual nodecpp::awaitable<void> main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		clientSock = nodecpp::net::createSocket();
 
@@ -610,13 +615,13 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				clientSock->end();
 				clientSock->unref();
 			}
 #endif
 			if ( ( recvReplies & 0xFFF ) == 0 )
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
 			recvSize += buffer.size();
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
@@ -629,6 +634,7 @@ public:
 	}
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
+	using EmitterTypeForServer = void;
 
 #else
 #error

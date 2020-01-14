@@ -17,12 +17,12 @@ class MySampleTNode : public NodeBase
 public:
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
 	}
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		clientSock = nodecpp::net::createSocket<ClientSockType>();
 		*( clientSock->getExtra() ) = 17;
@@ -44,7 +44,7 @@ public:
 		};
 		void printStats(const Stats& stats)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, {}, {}, {}, {}", infraGetCurrentTime(), stats.connCnt, stats.recvSize, stats.sentSize, stats.rqCnt );
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "{}, {}, {}, {}, {}", infraGetCurrentTime(), stats.connCnt, stats.recvSize, stats.sentSize, stats.rqCnt );
 		}
 
 		size_t recvSize = 0;
@@ -68,7 +68,7 @@ public:
 
 		nodecpp::handler_ret_type onWhateverConnect() 
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::onWhateverConnect(), extra = {}", *(getExtra()) );
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::onWhateverConnect(), extra = {}", *(getExtra()) );
 
 			sendBuff.begin()[0] = 2;
 			sendBuff.begin()[1] = 1;
@@ -82,11 +82,11 @@ public:
 			{
 				if ( dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::LocalEnded && buffer.size() == 10 )
 				{
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "   server finaly says: {}", (char*)(buffer.begin()) );
+					log::default_log::info( log::ModuleID(nodecpp_module_id), "   server finaly says: {}", (char*)(buffer.begin()) );
 					CO_RETURN;
 				}
 				else
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
+					log::default_log::info( log::ModuleID(nodecpp_module_id), "{}, Failure (expected {} bytes, received {} bytes", infraGetCurrentTime(), sizeof( Stats ), buffer.size() );
 			}
 			else
 				printStats( *reinterpret_cast<Stats*>( buffer.begin() ) );
@@ -96,7 +96,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( recvReplies > 3 )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				// test just once
 				end();
 				unref();
@@ -125,6 +125,7 @@ public:
 	using clientSocketHD = nodecpp::net::SocketHandlerDescriptor< MySocketOne, nodecpp::net::SocketHandlerDescriptorBase<nodecpp::net::OnConnectT<clientConnect>, nodecpp::net::OnDataT<clientData> > >;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
+	using EmitterTypeForServer = void;
 
 	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
 };

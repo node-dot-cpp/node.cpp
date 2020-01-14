@@ -54,12 +54,12 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
 	}
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		srv = nodecpp::net::createServer<nodecpp::net::ServerBase>();
 		srvCtrl = nodecpp::net::createServer<nodecpp::net::ServerBase, nodecpp::net::SocketBase>();
@@ -103,7 +103,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -134,7 +134,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -176,12 +176,12 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
 	}
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		srv = nodecpp::net::createServer<nodecpp::net::ServerBase>();
 		srvCtrl = nodecpp::net::createServer<nodecpp::net::ServerBase, nodecpp::net::SocketBase>();
@@ -234,7 +234,7 @@ public:
 		size_t respondingTime = 0;
 		while ( respondingTime < maxInteractionTime )
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "iteration: waiting for {} at max", maxInteractionTime - respondingTime );
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "iteration: waiting for {} at max", maxInteractionTime - respondingTime );
 			try { co_await socket->a_read( maxInteractionTime - respondingTime, r_buff, 2 ); } catch ( ... ) { break; }
 			co_await onDataServerSocket_(socket, r_buff);
 			respondingTime = nodecpp::time::now() - respondingStartTime;
@@ -339,13 +339,13 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleTNode::MySampleTNode()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
 	}
 
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "MySampleLambdaOneNode::main()" );
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
 
 		nodecpp::net::ServerBase::addHandler<ServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionx>(this);
 		nodecpp::net::ServerBase::addHandler<CtrlServerType, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
@@ -381,7 +381,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -403,7 +403,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -512,7 +512,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -539,7 +539,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Closing socket (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -617,7 +617,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Closing socket (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -679,7 +679,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Closing socket (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -803,7 +803,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Closing socket (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -831,7 +831,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Closing socket (by timer)" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Closing socket (by timer)" );
 				socket->end();
 				socket->unref();
 				break;
@@ -1157,8 +1157,8 @@ public:
 		void onDataServerSocket(Buffer& buffer) {
 			if ( buffer.size() < 2 )
 			{
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket" );
+//				log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket idx = {}", *(socket->getExtra()) );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket" );
 				//socket->unref();
 				return;
 			}
@@ -1167,8 +1167,8 @@ public:
 			size_t receivedSz = buffer.begin()[0];
 			if ( receivedSz != buffer.size() )
 			{
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size() );
+//				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size() );
 				//socket->unref();
 				return;
 			}
@@ -1188,7 +1188,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( getDataParent()->stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				end();
 				unref();
 			}
@@ -1406,8 +1406,8 @@ public:
 		void onDataServerSocket(const Buffer& buffer) {
 			if ( buffer.size() < 2 )
 			{
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket" );
+//				log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket idx = {}", *(socket->getExtra()) );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket" );
 				//socket->unref();
 				return;
 			}
@@ -1416,8 +1416,8 @@ public:
 			size_t receivedSz = buffer.begin()[0];
 			if ( receivedSz != buffer.size() )
 			{
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size() );
+//				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size() );
 				//socket->unref();
 				return;
 			}
@@ -1437,7 +1437,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 			if ( myNode->stopResponding )
 			{
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing" );
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				end();
 				unref();
 			}
@@ -1562,7 +1562,7 @@ public:
 			socket->on( event::data, [this, socket](const Buffer& buffer) {
 				if ( buffer.size() < 2 )
 				{
-					//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = %d", *extra );
+					//log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket idx = %d", *extra );
 					socket->end();
 					return;
 				}
@@ -1570,8 +1570,8 @@ public:
 				size_t receivedSz = buffer.readUInt8(0);
 				if ( receivedSz != buffer.size() )
 				{
-//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes", *extra, receivedSz, buffer.size() );
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes", receivedSz, buffer.size() );
+//					log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes", *extra, receivedSz, buffer.size() );
+					log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes", receivedSz, buffer.size() );
 					socket->unref();
 					return;
 				}
@@ -1661,8 +1661,8 @@ public:
 	nodecpp::handler_ret_type onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 		if ( buffer.size() < 2 )
 		{
-//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data on socket idx = {}", *(socket->getExtra()) );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Insufficient data: received {} bytes", buffer.size() );
+//			log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket idx = {}", *(socket->getExtra()) );
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data: received {} bytes", buffer.size() );
 			socket->unref();
 			CO_RETURN;
 		}
@@ -1671,8 +1671,8 @@ public:
 		size_t receivedSz = buffer.begin()[0];
 		if ( receivedSz != buffer.size() )
 		{
-//			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "Corrupted data: received {}, expected: {} bytes", receivedSz, buffer.size() );
+//			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data: received {}, expected: {} bytes", receivedSz, buffer.size() );
 			socket->unref();
 			CO_RETURN;
 		}
@@ -1693,7 +1693,7 @@ public:
 #ifdef AUTOMATED_TESTING_ONLY
 		/*if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>( "About to exit successfully in automated testing (by count)" );
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing (by count)" );
 			socket->end();
 			socket->unref();
 		}*/
