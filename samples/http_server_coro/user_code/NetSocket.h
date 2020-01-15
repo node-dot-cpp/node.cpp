@@ -20,7 +20,7 @@ public:
 
 	nodecpp::safememory::owning_ptr<ServerType> srv; 
 
-	virtual nodecpp::handler_ret_type main()
+	nodecpp::handler_ret_type main()
 	{
 		log.add( stdout );
 		log.setLevel( nodecpp::LogLevel::debug );
@@ -56,10 +56,10 @@ public:
 				if (value.toStr() == ""){
 					co_await response->end("no value specified");
 				} else {
-					co_await response->end( nodecpp::format( "{}", value.toStr() ) );
+					co_await response->end( value.toStr() );
 				}
 			} else {
-				response->writeHead( 405, "Method Not Allowed", {{"Connection", "close" }} );
+				response->writeHead( 405, "Method Not Allowed" );
 				co_await response->end();
 			}
 
