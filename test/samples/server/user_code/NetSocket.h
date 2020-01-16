@@ -5,8 +5,8 @@
 
 
 #include <nodecpp/common.h>
-#include <nodecpp/socket_type_list.h>
-#include <nodecpp/server_type_list.h>
+#include <nodecpp/socket_common.h>
+#include <nodecpp/server_common.h>
 
 
 using namespace std;
@@ -15,9 +15,9 @@ using namespace fmt;
 
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
-#define IMPL_VERSION 21 // main() is a single coro (using awaitable API with time restrictions)
+//#define IMPL_VERSION 21 // main() is a single coro (using awaitable API with time restrictions)
 //#define IMPL_VERSION 3 // onConnect is a coro
-//#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
+#define IMPL_VERSION 5 // adding handler per socket class before creating any socket instance
 //#define IMPL_VERSION 6 // adding handler per socket class before creating any socket instance (template-based)
 //#define IMPL_VERSION 7 // adding handler per socket class before creating any socket instance (template-based with use of DataParent concept)
 //#define IMPL_VERSION 8 // adding handler per socket class before creating any socket instance (template-based) with no explicit awaitable staff

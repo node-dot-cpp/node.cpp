@@ -4,7 +4,8 @@
 #define NET_SOCKET_H
 
 #include <nodecpp/common.h>
-#include <nodecpp/socket_type_list.h>
+//#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_common.h>
 
 
 using namespace nodecpp;
@@ -13,8 +14,8 @@ using namespace fmt;
 #ifndef NODECPP_NO_COROUTINES
 //#define IMPL_VERSION 2 // main() is a single coro
 //#define IMPL_VERSION 21 // main() is a single coro with non-default socket class
-#define IMPL_VERSION 3 // onConnect is a coro (onConnect is added via addHandler<...>(...))
-//#define IMPL_VERSION 4 // registering handlers (per class)
+//#define IMPL_VERSION 3 // onConnect is a coro (onConnect is added via addHandler<...>(...))
+#define IMPL_VERSION 4 // registering handlers (per class)
 //#define IMPL_VERSION 5 // registering handlers (per class, template-based)
 //#define IMPL_VERSION 6 // registering handlers (per class, template-based) with no explicit awaitable staff
 //#define IMPL_VERSION 7 // lambda-based

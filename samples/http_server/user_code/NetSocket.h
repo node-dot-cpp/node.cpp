@@ -4,15 +4,13 @@
 #define NET_SOCKET_H
 
 #include <nodecpp/common.h>
-#include <nodecpp/socket_type_list.h>
-#include <nodecpp/server_type_list.h>
 #include <nodecpp/http_server.h>
 
 using namespace nodecpp;
 
 class MySampleTNode : public NodeBase
 {
-	using ServerType = net::HttpServer<MySampleTNode>;
+	using ServerType = net::HttpServer<MySampleTNode>;	
 	safememory::owning_ptr<ServerType> srv; 
 
 public:
