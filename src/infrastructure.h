@@ -144,20 +144,16 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
 
-template<class EmitterType, class ServerEmitterType>
 class Infrastructure
 {
 	//nodecpp::vector<NetSocketEntry> ioSockets;
 	NetSockets ioSockets;
-	NetSocketManager<EmitterType> netSocket;
-	NetServerManager<ServerEmitterType> netServer;
+	NetSocketManager netSocket;
+	NetServerManager netServer;
 	TimeoutManager timeout;
 	EvQueue inmediateQueue;
 
 public:
-	using EmitterTypeT = EmitterType;
-	using ServerEmitterTypeT = ServerEmitterType;
-
 	Infrastructure() : netSocket(ioSockets), netServer(ioSockets) {}
 
 public:
@@ -165,8 +161,8 @@ public:
 public:
 	bool running = true;
 	uint64_t nextTimeoutAt = 0;
-	NetSocketManager<EmitterType>& getNetSocket() { return netSocket; }
-	NetServerManager<ServerEmitterType>& getNetServer() { return netServer; }
+	NetSocketManager& getNetSocket() { return netSocket; }
+	NetServerManager& getNetServer() { return netServer; }
 	TimeoutManager& getTimeout() { return timeout; }
 	EvQueue& getInmediateQueue() { return inmediateQueue; }
 //	void setInmediate(std::function<void()> cb) { inmediateQueue.add(std::move(cb)); }
@@ -184,7 +180,6 @@ public:
 //		return timeout.infraNextTimeout();
 	}
 
-//	template<class Node>
 	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
 	{
 /*		size_t fds_sz;
@@ -280,20 +275,12 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 						switch ( current.emitter.objectType )
 						{
 							case OpaqueEmitter::ObjectType::ClientSocket:
-								netSocket./*.template*/ infraCheckPollFdSet/*<Node>*/(current, revents);
+								netSocket. infraCheckPollFdSet(current, revents);
 								break;
 							case OpaqueEmitter::ObjectType::ServerSocket:
 							case OpaqueEmitter::ObjectType::AgentServer:
-								if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-								{
-									netServer./*.template*/ infraCheckPollFdSet/*<Node>*/(current, revents);
-									break;
-								}
-								else
-								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
-									break;
-								}
+								netServer. infraCheckPollFdSet(current, revents);
+								break;
 							default:
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
 								break;
@@ -303,13 +290,12 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 			}
 #ifdef NODECPP_ENABLE_CLUSTERING
 			if ( getCluster().isWorker() )
-				netServer./*.template*/ infraEmitAcceptedSocketEventsReceivedfromMaster/*<Node>*/();
+				netServer. infraEmitAcceptedSocketEventsReceivedfromMaster();
 #endif // NODECPP_ENABLE_CLUSTERING
 			return true;
 		}
 	}
 
-//	template<class Node>
 	void runInfraLoop2()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
@@ -320,38 +306,29 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 
 			EvQueue queue;
 
-			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-			{
-				netServer.infraGetPendingEvents(queue);
-				netServer./*.template*/ infraEmitListeningEvents/*<Node>*/();
-				queue.emit();
-			}
+			netServer.infraGetPendingEvents(queue);
+			netServer. infraEmitListeningEvents();
+			queue.emit();
 
 			uint64_t now = infraGetCurrentTime();
 			timeout.infraTimeoutEvents(now, queue);
 			queue.emit();
 
 			now = infraGetCurrentTime();
-			bool refed = pollPhase2/*<Node>*/(refedTimeout(), nextTimeout(), now/*, queue*/);
+			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now/*, queue*/);
 			if(!refed)
 				return;
 
 			queue.emit();
 			emitInmediates();
 
-			netSocket./*.template*/ infraGetCloseEvent/*<Node>*/(/*queue*/);
-			netSocket./*.template*/ infraProcessSockAcceptedEvents/*<Node>*/();
-			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-			{
-				netServer./*.template*/ infraGetCloseEvents/*<Node>*/(/*queue*/);
-			}
+			netSocket. infraGetCloseEvent(/*queue*/);
+			netSocket. infraProcessSockAcceptedEvents();
+			netServer. infraGetCloseEvents(/*queue*/);
 			queue.emit();
 
 //			netSocket.infraClearStores();
-			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
-			{
-				netServer.infraClearStores();
-			}
+			netServer.infraClearStores();
 
 			ioSockets.reworkIfNecessary();
 		}
@@ -359,17 +336,17 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 };
 
 inline
-void registerWithInfraAndAcquireSocket(/*NodeBase* node,*/ nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
+void registerWithInfraAndAcquireSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	netSocketManagerBase->appAcquireSocket(/*node, */t, typeId);
+	netSocketManagerBase->appAcquireSocket(t, typeId);
 }
 
 inline
-void registerWithInfraAndAssignSocket(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
+void registerWithInfraAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	netSocketManagerBase->appAssignSocket(/*node, */t, typeId, sdata);
+	netSocketManagerBase->appAssignSocket(t, typeId, sdata);
 }
 
 inline
@@ -379,9 +356,9 @@ void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 }
 
 inline
-void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId)
+void registerServer(soft_ptr<net::ServerBase> t, int typeId)
 {
-	return netServerManagerBase->appAddServer(/*node, */t, typeId);
+	return netServerManagerBase->appAddServer(t, typeId);
 }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
@@ -440,7 +417,7 @@ template<class Node>
 class Runnable : public RunnableBase
 {
 	owning_ptr<Node> node;
-	template<class ClientSocketEmitter, class ServerSocketEmitter>
+
 	void internalRun()
 	{
 		interceptNewDeleteOperators(true);
@@ -450,14 +427,11 @@ class Runnable : public RunnableBase
 			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.init();
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 
-			Infrastructure<ClientSocketEmitter, ServerSocketEmitter> infra;
+			Infrastructure infra;
 			netSocketManagerBase = reinterpret_cast<NetSocketManagerBase*>(&infra.getNetSocket());
 			timeoutManager = &infra.getTimeout();
 			inmediateQueue = &infra.getInmediateQueue();
-			if constexpr (!std::is_same< ServerSocketEmitter, void >::value)
-			{
-				netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
-			}
+			netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
@@ -470,7 +444,7 @@ class Runnable : public RunnableBase
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
 			node->main();
-			infra./*.template*/ runInfraLoop2/*<Node>*/();
+			infra. runInfraLoop2();
 			node = nullptr;
 
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
@@ -486,7 +460,7 @@ public:
 	Runnable() {}
 	void run() override
 	{
-		return internalRun<typename Node::EmitterType, typename Node::EmitterTypeForServer>();
+		return internalRun();
 	}
 };
 

@@ -221,12 +221,6 @@ class NodeBase
 public:
 	NodeBase() {}
 	virtual ~NodeBase() {}
-
-	using EmitterType = nodecpp::net::SocketTEmitter<>;
-	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
-
-//	using SocketEmmitterType = void;
-//	using ServerEmmitterType = void;
 };
 
 class RunnableBase

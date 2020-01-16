@@ -638,7 +638,6 @@ protected:
 
 extern thread_local NetSocketManagerBase* netSocketManagerBase;
 
-template<class EmitterType>
 class NetSocketManager : public NetSocketManagerBase {
 	Buffer recvBuffer;
 	static constexpr size_t recvBufferCapacity = 64 * 1024;
@@ -1170,7 +1169,6 @@ protected:
 extern thread_local NetServerManagerBase* netServerManagerBase;
 
 
-template<class EmitterType>
 class NetServerManager : public NetServerManagerBase
 {
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
@@ -1350,8 +1348,7 @@ private:
 	//template<class Node>
 	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd, Ip4 remoteIp, Port remotePort)
 	{
-//		soft_ptr<net::SocketBase> ptr = entry.getServerSocket()->makeSocket(, osd);
-		soft_ptr<net::SocketBase> ptr = entry.getServerSocket()->makeSocket( osd );
+//		soft_ptr<net::SocketBase> ptr = entry.getServerSocket()->makeSocket( osd );
 #ifdef USE_TEMP_PERF_CTRS
 extern thread_local int sessionCnt;
 extern thread_local size_t sessionCreationtime;
@@ -1405,13 +1402,6 @@ sessionCreationtime += infraGetCurrentTime() - now;
 		// TODO: what should we do with this event, if, at present, nobody is willing to process it?
 		pendingCloseEvents.emplace_back(entry.index, true);
 	}
-};
-
-template<>
-class NetServerManager<void>
-{
-public:
-	NetServerManager(NetSockets&) {}
 };
 
 
