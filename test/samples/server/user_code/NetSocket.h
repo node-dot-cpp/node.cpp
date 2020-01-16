@@ -371,7 +371,7 @@ public:
 	}
 
 	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 
@@ -394,7 +394,7 @@ public:
 	}
 
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
 		nodecpp::Buffer r_buff(0x200);
@@ -451,12 +451,12 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleTNode::MySampleTNode()");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()");
 	}
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()");
 
 		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MyServerSocketOne::onListening>();
 		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &MySampleTNode::onListening>(this);
@@ -493,15 +493,15 @@ public:
 	class MyServerSocketOne; // just forward declaration
 public:
 	nodecpp::handler_ret_type onListening(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening()!");
 		CO_RETURN;
 	}
 	nodecpp::handler_ret_type onListening2(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening2()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening2()!");
 		CO_RETURN;
 	}
 	nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 
 		nodecpp::Buffer r_buff(0x200);
@@ -526,11 +526,11 @@ public:
 	class MyServerSocketTwo; // just forward declaration
 public:
 	nodecpp::handler_ret_type onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address addr) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");
 		CO_RETURN;
 	}
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 
 		nodecpp::Buffer r_buff(0x200);
@@ -574,11 +574,11 @@ public:
 		virtual ~MyServerSocketOne() {}
 
 		nodecpp::handler_ret_type onListening(size_t id, nodecpp::net::Address addr) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onListening()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onListening()!");
 			CO_RETURN;
 		}
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onConnection()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			CO_RETURN;
 		}
@@ -592,11 +592,11 @@ public:
 		virtual ~MyServerSocketTwo() {}
 
 		nodecpp::handler_ret_type onListening(size_t id, nodecpp::net::Address addr) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onListening()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onListening()!");
 			CO_RETURN;
 		}
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onConnection()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			CO_RETURN;
 		}
@@ -630,16 +630,16 @@ public:
 			}
 			catch (...)
 			{
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting...");
+//				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed). Exiting...");
 				break;
 			}
 
 			size_t receivedSz = buffer.begin()[0];
 			if (receivedSz != buffer.size())
 			{
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size());
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size());
+//				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size());
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size());
 				socket->unref();
 				break;
 			}
@@ -656,8 +656,8 @@ public:
 				}
 				catch (...)
 				{
-//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed. Exiting...");
+//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed. Exiting...");
 					break;
 				}
 			}
@@ -692,8 +692,8 @@ public:
 			}
 			catch (...)
 			{
-//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting..." );
+//				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed). Exiting..." );
 				break;
 			}
 			size_t requestedSz = buffer.begin()[1];
@@ -709,8 +709,8 @@ public:
 				}
 				catch (...)
 				{
-//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed). Exiting..." );
+//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed). Exiting..." );
 					break;
 				}
 			}
@@ -754,12 +754,12 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleTNode::MySampleTNode()");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()");
 	}
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()");
 
 		srv = nodecpp::net::createServer<MyServerSocketOne, nodecpp::net::SocketBase>();
 		srv_1 = nodecpp::net::createServer<MyServerSocketOne, nodecpp::net::SocketBase>();
@@ -787,15 +787,15 @@ public:
 public:
 	class MyServerSocketOne; // just forward declaration
 	nodecpp::handler_ret_type onListening(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening()!");
 		CO_RETURN;
 	}
 	nodecpp::handler_ret_type onListening2(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening2()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening2()!");
 		CO_RETURN;
 	}
 	nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
@@ -819,11 +819,11 @@ public:
 public:
 	class MyServerSocketTwo; // just forward declaration
 	nodecpp::handler_ret_type onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address addr) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");
 		CO_RETURN;
 	}
 	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
@@ -866,11 +866,11 @@ public:
 		virtual ~MyServerSocketOne() {}
 
 		nodecpp::handler_ret_type onListening(size_t id, nodecpp::net::Address addr) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onListening()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onListening()!");
 			CO_RETURN;
 		}
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketOne::onConnection()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			CO_RETURN;
 		}
@@ -894,11 +894,11 @@ public:
 		virtual ~MyServerSocketTwo() {}
 
 		nodecpp::handler_ret_type onListening(size_t id, nodecpp::net::Address addr) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onListening()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onListening()!");
 			CO_RETURN;
 		}
 		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MyServerSocketTwo::onConnection()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			CO_RETURN;
 		}
@@ -920,16 +920,16 @@ public:
 			}
 			catch (...)
 			{
-				//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting...");
+				//				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed). Exiting...");
 				break;
 			}
 
 			size_t receivedSz = buffer.begin()[0];
 			if (receivedSz != buffer.size())
 			{
-				//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size());
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size());
+				//				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size());
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size());
 				socket->unref();
 				break;
 			}
@@ -946,8 +946,8 @@ public:
 				}
 				catch (...)
 				{
-					//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed. Exiting...");
+					//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed. Exiting...");
 					break;
 				}
 			}
@@ -973,8 +973,8 @@ public:
 			}
 			catch (...)
 			{
-				//				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Reading data failed). Exiting..." );
+				//				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed). Exiting..." );
 				break;
 			}
 			size_t requestedSz = buffer.begin()[1];
@@ -990,8 +990,8 @@ public:
 				}
 				catch (...)
 				{
-					//					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-					nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::error>("Writing data failed). Exiting..." );
+					//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed). Exiting..." );
 					break;
 				}
 			}
@@ -1051,12 +1051,12 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleTNode::MySampleTNode()");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()");
 	}
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()");
 
 		srv = nodecpp::net::createServer<MyServerSocketOne, MySocketSocketOne>(this);
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, MySocketSocketTwo>(this);
@@ -1082,13 +1082,13 @@ public:
 
 	class MyServerSocketOne; // just forward declaration
 	nodecpp::handler_ret_type onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening()!");
 		CO_RETURN;
 	}
 
 	class MyServerSocketTwo; // just forward declaration
 	nodecpp::handler_ret_type onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");
 		CO_RETURN;
 	}
 
@@ -1107,7 +1107,7 @@ public:
 		MyServerSocketOne(MySampleTNode* node) : ServerType(node) {}
 		virtual ~MyServerSocketOne() {}
 		nodecpp::handler_ret_type onConnectionServer(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 			soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			CO_RETURN;
@@ -1124,7 +1124,7 @@ public:
 		MyServerSocketTwo(MySampleTNode* node) : ServerType(node) {}
 		virtual ~MyServerSocketTwo() {}
 		nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 			soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			CO_RETURN;
@@ -1151,7 +1151,7 @@ public:
 
 		void onCloseServerSocket(bool hadError)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onCloseServerSocket!");
 			//srv.removeSocket( socket );
 		}
 		void onDataServerSocket(Buffer& buffer) {
@@ -1162,7 +1162,7 @@ public:
 				//socket->unref();
 				return;
 			}
-			//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *(socket->getExtra()) );
+			//log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onData for idx {} !", *(socket->getExtra()) );
 
 			size_t receivedSz = buffer.begin()[0];
 			if ( receivedSz != buffer.size() )
@@ -1195,7 +1195,7 @@ public:
 #endif
 		}
 		void onEndServerSocket() {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onEnd!");
 			Buffer b;
 			b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 			write(b);
@@ -1215,7 +1215,7 @@ public:
 		virtual ~MySocketSocketTwo() {}
 		void onCloseCtrlServerSocket(bool hadError)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onCloseServerSocket!");
 			//srvCtrl.removeSocket( socket );
 		}
 		void onDataCtrlServerSocket(Buffer& buffer) {
@@ -1282,12 +1282,12 @@ public:
 
 	MySampleTNode()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleTNode::MySampleTNode()");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()");
 	}
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("MySampleLambdaOneNode::main()");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()");
 
 		srv = nodecpp::net::createServer<MyServerSocketOne, MySocketSocketOne>();
 		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, MySocketSocketTwo>();
@@ -1297,12 +1297,12 @@ public:
 
 #ifdef AUTOMATED_TESTING_ONLY
 		to = std::move( nodecpp::setTimeout(  [this]() { 
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("About to request closing server");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "About to request closing server");
 			srv->close();
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("About to request closing ctrl server");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "About to request closing ctrl server");
 			srvCtrl->close();
 			stopAccepting = true;
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("resetting timer");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "resetting timer");
 			to = std::move( nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 ) );
 		}, 3000 ) );
 #endif
@@ -1318,30 +1318,30 @@ public:
 
 	class MyServerSocketOne; // just forward declaration
 	void onConnectionServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 		soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
 	void onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListening()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening()!");
 	}
 	void onCloseServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, bool hasError) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onClose()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onClose()!");
 		srv->unref();
 	}
 
 
 	class MyServerSocketTwo; // just forward declaration
 	void onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 		soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onListeninCtrlg()!");}
+	void onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");}
 	void onCloseServerCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, bool hasError) {
-		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseCtrl()!");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onCloseCtrl()!");
 		srvCtrl->unref();
 	}
 
@@ -1401,7 +1401,7 @@ public:
 
 		void onCloseServerSocket(bool hadError)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onCloseServerSocket!");
 		}
 		void onDataServerSocket(const Buffer& buffer) {
 			if ( buffer.size() < 2 )
@@ -1411,7 +1411,7 @@ public:
 				//socket->unref();
 				return;
 			}
-			//nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *(socket->getExtra()) );
+			//log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onData for idx {} !", *(socket->getExtra()) );
 
 			size_t receivedSz = buffer.begin()[0];
 			if ( receivedSz != buffer.size() )
@@ -1444,7 +1444,7 @@ public:
 #endif
 		}
 		void onEndServerSocket() {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onEnd!");
 			Buffer b;
 			b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 			write(b);
@@ -1466,7 +1466,7 @@ public:
 		virtual ~MySocketSocketTwo() {}
 		void onCloseCtrlServerSocket(bool hadError)
 		{
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onCloseServerSocket!");
 		}
 		void onDataCtrlServerSocket(const Buffer& buffer) {
 
@@ -1481,7 +1481,7 @@ public:
 			}
 		}
 		void onEndCtrlServerSocket() {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("ctrl server socket: onEnd!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "ctrl server socket: onEnd!");
 			Buffer b;
 			b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 			write(b);
@@ -1542,7 +1542,7 @@ public:
 		srvCtrl = nodecpp::net::createServer<net::ServerBase>();
 
 		srv->on( event::close, [this](bool hadError) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServer()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onCloseServer()!");
 		});
 		srv->on( event::connection, [this](soft_ptr<net::SocketBase> socket) {
 #ifdef AUTOMATED_TESTING_ONLY
@@ -1551,11 +1551,11 @@ public:
 				socket->unref();
 				}, 3000 );
 #endif
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnection()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 			//srv->unref();
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			socket->on( event::close, [this, socket](bool hadError) {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onCloseServerSocket!");
 				socket->unref();
 			});
 
@@ -1590,7 +1590,7 @@ public:
 				++(stats.rqCnt);
 			});
 			socket->on( event::end, [this, socket]() {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onEnd!");
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 				socket->write( b );
@@ -1600,10 +1600,10 @@ public:
 		});
 
 		srvCtrl->on( event::close, [this](bool hadError) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onCloseServerCtrl()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onCloseServerCtrl()!");
 		});
 		srvCtrl->on( event::connection, [this](soft_ptr<net::SocketBase> socket) {
-			nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server: onConnectionCtrl()!");
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 #ifdef AUTOMATED_TESTING_ONLY
 			nodecpp::setTimeout(  [this, socket]() { 
@@ -1612,7 +1612,7 @@ public:
 				}, 3000 );
 #endif
 			socket->on( event::close, [this, socket](bool hadError) {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onCloseServerSocket!");
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onCloseServerSocket!");
 			});
 			socket->on( event::data, [this, socket](const Buffer& buffer) {
 				size_t requestedSz = buffer.readUInt8(1);
@@ -1626,7 +1626,7 @@ public:
 				}
 			});
 			socket->on( event::end, [this, socket]() {
-				nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onEnd!");
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onEnd!");
 				Buffer b;
 				b.appendString( "goodbye!", sizeof( "goodbye!" ) );
 				socket->write( b );
@@ -1666,7 +1666,7 @@ public:
 			socket->unref();
 			CO_RETURN;
 		}
-//		nodecpp::log::log<nodecpp::module_id, nodecpp::log::LogLevel::info>("server socket: onData for idx {} !", *(socket->getExtra()) );
+//		log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onData for idx {} !", *(socket->getExtra()) );
 
 		size_t receivedSz = buffer.begin()[0];
 		if ( receivedSz != buffer.size() )
