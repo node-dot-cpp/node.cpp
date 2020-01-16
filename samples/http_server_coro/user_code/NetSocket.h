@@ -13,24 +13,24 @@ using namespace nodecpp;
 
 class MySampleTNode : public NodeBase
 {
-	nodecpp::Log log;
+	Log log; 
 
 public:
-	using ServerType = nodecpp::net::HttpServer<MySampleTNode>;
+	using ServerType = net::HttpServer<MySampleTNode>;
 
-	nodecpp::safememory::owning_ptr<ServerType> srv; 
+	safememory::owning_ptr<ServerType> srv; 
 
-	nodecpp::handler_ret_type main()
+	handler_ret_type main()
 	{
 		log.add( stdout );
-		log.setLevel( nodecpp::LogLevel::debug );
-		log.setGuaranteedLevel( nodecpp::LogLevel::warning );
+		log.setLevel( LogLevel::debug );
+		log.setGuaranteedLevel( LogLevel::warning );
 
-		srv = nodecpp::net::createHttpServer<ServerType>();
+		srv = net::createHttpServer<ServerType>();
 		srv->listen(2000, "0.0.0.0", 5000);
 
-		nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
-		nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;
+		safememory::soft_ptr<net::IncomingHttpMessageAtServer> request;
+		safememory::soft_ptr<net::HttpServerResponse> response;
 
 		try { 
 			for(;;) { 
@@ -47,7 +47,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type processRequest( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response )
+	handler_ret_type processRequest( safememory::soft_ptr<net::IncomingHttpMessageAtServer> request, safememory::soft_ptr<net::HttpServerResponse> response )
 	{
 			if ( request->getMethod() == "GET" || request->getMethod() == "HEAD" ) {
 				response->writeHead(200, {{"Content-Type", "text/xml"}});

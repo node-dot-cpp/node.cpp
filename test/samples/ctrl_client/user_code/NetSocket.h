@@ -4,7 +4,8 @@
 #define NET_SOCKET_H
 
 #include <nodecpp/common.h>
-#include <nodecpp/socket_type_list.h>
+//#include <nodecpp/socket_type_list.h>
+#include <nodecpp/socket_common.h>
 
 
 using namespace nodecpp;
@@ -13,23 +14,6 @@ using namespace fmt;
 class MySampleTNode : public NodeBase
 {
 	using SocketIdType = int;
-
-public:
-	MySampleTNode()
-	{
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
-	}
-
-	virtual nodecpp::handler_ret_type main()
-	{
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
-
-		clientSock = nodecpp::net::createSocket<ClientSockType>();
-		*( clientSock->getExtra() ) = 17;
-		clientSock->connect(2001, "127.0.0.1");
-
-		CO_RETURN;
-	}
 
 	using ClientSockBaseType = nodecpp::net::SocketBase;
 
@@ -49,9 +33,6 @@ public:
 
 		size_t recvSize = 0;
 		size_t recvReplies = 0;
-
-	public:
-		using NodeType = MySampleTNode;
 
 	private:
 		Buffer sendBuff;
@@ -118,6 +99,30 @@ public:
 
 	using ClientSockType = MySocketOne;
 
+	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
+
+public:
+	MySampleTNode()
+	{
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
+	}
+
+	virtual nodecpp::handler_ret_type main()
+	{
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
+
+		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &ClientSockType::onWhateverConnect>();
+		nodecpp::net::SocketBase::addHandler<ClientSockType, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &ClientSockType::onWhateverData>();
+
+		clientSock = nodecpp::net::createSocket<ClientSockType>();
+		*( clientSock->getExtra() ) = 17;
+		clientSock->connect(2001, "127.0.0.1");
+
+		CO_RETURN;
+	}
+
+	/*using ClientSockType = MySocketOne;
+
 	using clientConnect_1 = nodecpp::net::HandlerData<MySocketOne, &MySocketOne::onWhateverConnect>;
 	using clientConnect = nodecpp::net::SocketHandlerDataList<MySocketOne, clientConnect_1>;
 	using clientData_1 = nodecpp::net::HandlerData<MySocketOne, &MySocketOne::onWhateverData>;
@@ -127,7 +132,7 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
 	using EmitterTypeForServer = void;
 
-	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
+	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;*/
 };
 
 #endif // NET_SOCKET_H

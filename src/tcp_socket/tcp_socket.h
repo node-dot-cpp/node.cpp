@@ -647,7 +647,7 @@ public:
 	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets), recvBuffer(recvBufferCapacity) {}
 
 	// to help with 'poll'
-	template<class Node>
+	//template<class Node>
 	void infraGetCloseEvent(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to appClose it,
@@ -673,21 +673,11 @@ public:
 					if (err && entry.isUsed()) //if error closing, then first error event
 					{
 						entry.getClientSocket()->emitError(current.second.second);
-						if constexpr ( !std::is_same<EmitterType, void>::value )
-						{
-							if ( EmitterType::template isErrorEmitter<Node>(entry.getEmitter(), current.second.second) )
-								EmitterType::template emitError<Node>(entry.getEmitter(), current.second.second);
-						}
 						if (entry.getClientSocketData()->isErrorEventHandler())
 							entry.getClientSocketData()->handleErrorEvent(entry.getClientSocket(), current.second.second);
 					}
 					if (entry.isUsed())
 						entry.getClientSocket()->emitClose(err);
-					if constexpr ( !std::is_same<EmitterType, void>::value )
-					{
-						if ( EmitterType::template isCloseEmitter<Node>(entry.getEmitter(), err) )
-							EmitterType::template emitClose<Node>(entry.getEmitter(), err);
-					}
 					if (entry.getClientSocketData()->isCloseEventHandler())
 						entry.getClientSocketData()->handleCloseEvent(entry.getClientSocket(), err);
 					if (entry.isUsed())
@@ -708,7 +698,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 		pendingCloseEvents.clear();
 	}
 
-	template<class Node>
+	//template<class Node>
 	void infraProcessSockAcceptedEvents()
 	{
 		size_t inisz = pendingAcceptedEvents.size();
@@ -730,12 +720,6 @@ sessionCreationtime += infraGetCurrentTime() - now;
 					else // TODO: make sure we never have both cases in the same time
 					{
 						entry.getClientSocket()->emitAccepted();
-//						EmitterType::emitAccepted(entry.getEmitter());
-						if constexpr ( !std::is_same<EmitterType, void>::value )
-						{
-							if ( EmitterType::template isAcceptedEmitter<Node>(entry.getEmitter()) )
-								EmitterType::template emitAccepted<Node>(entry.getEmitter());
-						}
 						if (entry.getClientSocketData()->isAcceptedEventHandler())
 							entry.getClientSocketData()->handleAcceptedEvent(entry.getClientSocket());
 					}
@@ -750,7 +734,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 			pendingAcceptedEvents.erase( pendingAcceptedEvents.begin(), pendingAcceptedEvents.begin() + inisz );
 	}
 
-	template<class Node>
+	//template<class Node>
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
@@ -776,19 +760,19 @@ sessionCreationtime += infraGetCurrentTime() - now;
 				if (!current.getClientSocketData()->paused)
 				{
 					//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", begin[i].fd);
-					infraProcessReadEvent<Node>(current/*, evs*/);
+					infraProcessReadEvent/*<Node>*/(current/*, evs*/);
 				}
 			}
 			else if ((revents & POLLHUP) != 0)
 			{
 //!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLHUP event at {}", current.getClientSocketData()->osSocket);
-				infraProcessRemoteEnded<Node>(current/*, evs*/);
+				infraProcessRemoteEnded/*<Node>*/(current/*, evs*/);
 			}
 				
 			if ((revents & POLLOUT) != 0)
 			{
 //!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLOUT event at {}", current.getClientSocketData()->osSocket);
-				infraProcessWriteEvent<Node>(current/*, evs*/);
+				infraProcessWriteEvent/*<Node>*/(current/*, evs*/);
 			}
 		}
 		//else if (revents != 0)
@@ -800,7 +784,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 	}
 
 private:
-	template<class Node>
+	//template<class Node>
 	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
 		auto hr = entry.getClientSocketData()->ahd_read.h;
@@ -844,7 +828,7 @@ private:
 						nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 						hr();
 					}
-					infraProcessRemoteEnded<Node>(entry);
+					infraProcessRemoteEnded/*<Node>*/(entry);
 				}
 			}
 		}
@@ -857,11 +841,6 @@ private:
 				if (recvBuffer.size() != 0)
 				{
 					entry.getClientSocket()->emitData( recvBuffer);
-					if constexpr ( !std::is_same<EmitterType, void>::value )
-					{
-						if ( EmitterType::template isDataEmitter<Node>(entry.getEmitter(), recvBuffer) )
-							EmitterType::template emitData<Node>(entry.getEmitter(), recvBuffer);
-					}
 					if (entry.getClientSocketData()->isDataEventHandler())
 						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), recvBuffer);
 					
@@ -869,7 +848,7 @@ private:
 				}
 				else //if (!entry.remoteEnded)
 				{
-					infraProcessRemoteEnded<Node>(entry);
+					infraProcessRemoteEnded/*<Node>*/(entry);
 				}
 			}
 			else
@@ -881,7 +860,7 @@ private:
 		}
 	}
 
-	template<class Node>
+	//template<class Node>
 	void infraProcessRemoteEnded(NetSocketEntry& entry)
 	{
 		if (!entry.getClientSocketData()->remoteEnded)
@@ -890,11 +869,6 @@ private:
 			ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
 
 			entry.getClientSocket()->emitEnd();
-			if constexpr ( !std::is_same<EmitterType, void>::value )
-			{
-				if ( EmitterType::template isEndEmitter<Node>(entry.getEmitter()) )
-					EmitterType::template emitEnd<Node>(entry.getEmitter());
-			}
 			if (entry.getClientSocketData()->isEndEventHandler())
 				entry.getClientSocketData()->handleEndEvent(entry.getClientSocket());
 
@@ -925,7 +899,7 @@ private:
 
 	}
 
-	template<class Node>
+	//template<class Node>
 	void infraProcessWriteEvent(NetSocketEntry& current)
 	{
 		NetSocketManagerBase::ShouldEmit status = this->_infraProcessWriteEvent(*current.getClientSocketData());
@@ -942,11 +916,6 @@ private:
 				else
 				{
 					current.getClientSocket()->emitConnect();
-					if constexpr ( !std::is_same<EmitterType, void>::value )
-					{
-						if ( EmitterType::template isConnectEmitter<Node>(current.getEmitter()) )
-							EmitterType::template emitConnect<Node>(current.getEmitter());
-					}
 					if (current.getClientSocketData()->isConnectEventHandler())
 						current.getClientSocketData()->handleConnectEvent(current.getClientSocket());
 				}
@@ -963,11 +932,6 @@ private:
 				else // TODO: make sure we never have both cases in the same time
 				{
 					current.getClientSocket()->emitDrain();
-					if constexpr ( !std::is_same<EmitterType, void>::value )
-					{
-						if ( EmitterType::template isDrainEmitter<Node>(current.getEmitter()) )
-							EmitterType::template emitDrain<Node>(current.getEmitter());
-					}
 					if (current.getClientSocketData()->isDrainEventHandler())
 						current.getClientSocketData()->handleDrainEvent(current.getClientSocket());
 				}
@@ -1224,7 +1188,7 @@ public:
 		errorStore.clear();
 	}
 
-	template<class Node>
+	//template<class Node>
 	void infraGetCloseEvents(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to close it,
@@ -1257,13 +1221,7 @@ public:
 					}
 					else
 					{
-						//EmitterType::emitClose( entry.getEmitter(), current.second);
 						entry.getServerSocket()->emitClose( current.second );
-						if constexpr ( !std::is_same<EmitterType, void>::value )
-						{
-							if ( EmitterType::template isCloseEmitter<Node>(entry.getEmitter(), current.second) )
-								EmitterType::template emitClose<Node>( entry.getEmitter(), current.second);
-						}
 						if (entry.getServerSocketData()->isCloseEventHandler())
 							entry.getServerSocketData()->handleCloseEvent(entry.getServerSocket(), current.second);
 						// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -1275,7 +1233,7 @@ public:
 		pendingCloseEvents.clear();
 	}
 
-	template<class Node>
+	//template<class Node>
 	void infraEmitListeningEvents()
 	{
 		while ( pendingListenEvents.size() )
@@ -1307,13 +1265,7 @@ public:
 							}
 							else
 							{
-								//EmitterType::emitListening(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
 								entry.getServerSocket()->emitListening(current, entry.getServerSocketData()->localAddress);
-								if constexpr ( !std::is_same<EmitterType, void>::value )
-								{
-									if ( EmitterType::template isListeningEmitter<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress) )
-										EmitterType::template emitListening<Node>(entry.getEmitter(), current, entry.getServerSocketData()->localAddress);
-								}
 								if (entry.getServerSocketData()->isListenEventHandler() )
 									entry.getServerSocketData()->handleListenEvent(entry.getServerSocket(), current, entry.getServerSocketData()->localAddress);
 								// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -1325,30 +1277,30 @@ public:
 		}
 	}
 
-	template<class Node>
+	//template<class Node>
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
 //!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
+			infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
 		}
 		else if ((revents & POLLIN) != 0)
 		{
 //!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", current.getServerSocketData()->osSocket);
-			infraProcessAcceptEvent<Node>(current/*, evs*/);
+			infraProcessAcceptEvent/*<Node>*/(current/*, evs*/);
 		}
 		else if (revents != 0)
 		{
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose<Node>(current/*, evs*/);
+			infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
 		}
 	}
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-	template<class Node>
+	//template<class Node>
 	void infraEmitAcceptedSocketEventsReceivedfromMaster()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isWorker() );
@@ -1356,14 +1308,14 @@ public:
 		{
 			auto& entry = ioSockets.slaveServerAt( info.idx );
 			OpaqueSocketData osd = NetSocketManagerBase::createOpaqueSocketData( info.socket );
-			consumeAcceptedSocket<Node>(entry, osd, info.remoteIp, info.remotePort);
+			consumeAcceptedSocket/*<Node>*/(entry, osd, info.remoteIp, info.remotePort);
 		}
 		acceptedSockets.clear();
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
 
 private:
-	template<class Node>
+	//template<class Node>
 	void infraProcessAcceptEvent(NetSocketEntry& entry) //TODO:CLUSTERING alt impl
 	{
 		OpaqueSocketData osd( false );
@@ -1385,30 +1337,31 @@ private:
 		{
 			if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
 				return;
-			consumeAcceptedSocket<Node>(entry, osd, remoteIp, remotePort);
+			consumeAcceptedSocket/*<Node>*/(entry, osd, remoteIp, remotePort);
 		}
 #else
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
 			return;
-		consumeAcceptedSocket<Node>(entry, osd, remoteIp, remotePort);
+		consumeAcceptedSocket/*<Node>*/(entry, osd, remoteIp, remotePort);
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 
 
-	template<class Node>
+	//template<class Node>
 	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd, Ip4 remoteIp, Port remotePort)
 	{
-//		soft_ptr<net::SocketBase> ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+//		soft_ptr<net::SocketBase> ptr = entry.getServerSocket()->makeSocket(, osd);
+		soft_ptr<net::SocketBase> ptr = entry.getServerSocket()->makeSocket( osd );
 #ifdef USE_TEMP_PERF_CTRS
 extern thread_local int sessionCnt;
 extern thread_local size_t sessionCreationtime;
 extern uint64_t infraGetCurrentTime();
 ++sessionCnt;
 size_t now = infraGetCurrentTime();
-		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+		auto ptr = entry.getServerSocket()->makeSocket(, osd);
 sessionCreationtime += infraGetCurrentTime() - now;
 #else
-		auto ptr = EmitterType::makeSocket(entry.getEmitter(), osd);
+		auto ptr = entry.getServerSocket()->makeSocket( osd);
 #endif // USE_TEMP_PERF_CTRS
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
 		netSocketManagerBase->infraAddAccepted(ptr);
@@ -1424,13 +1377,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 		}
 		else
 		{
-			//EmitterType::emitConnection(entry.getEmitter(), ptr); 
 			entry.getServerSocket()->emitConnection(ptr);
-			if constexpr ( !std::is_same<EmitterType, void>::value )
-			{
-				if ( EmitterType::template isConnectionEmitter<Node>(entry.getEmitter(), ptr) )
-					EmitterType::template emitConnection<Node>(entry.getEmitter(), ptr); 
-			}
 			if (entry.getServerSocketData()->isConnectionEventHandler())
 				entry.getServerSocketData()->handleConnectionEvent(entry.getServerSocket(), ptr);
 			// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -1439,7 +1386,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 		return;
 	}
 
-	template<class Node>
+	//template<class Node>
 	void infraMakeErrorEventAndClose(NetSocketEntry& entry)
 	{
 		Error e;
@@ -1453,11 +1400,6 @@ sessionCreationtime += infraGetCurrentTime() - now;
 #endif // NODECPP_ENABLE_CLUSTERING
 //		evs.add(&net::Server::emitError, entry.getPtr(), std::ref(infraStoreError(Error())));
 		entry.getServerSocket()->emitError( e );
-		if constexpr ( !std::is_same<EmitterType, void>::value )
-		{
-			if ( EmitterType::template isErrorEmitter<Node>(entry.getEmitter(), e) )
-				EmitterType::template emitError<Node>( entry.getEmitter(), e );
-		}
 		if (entry.getServerSocketData()->isErrorEventHandler())
 			entry.getServerSocketData()->handleErrorEvent(entry.getServerSocket(), e);
 		// TODO: what should we do with this event, if, at present, nobody is willing to process it?

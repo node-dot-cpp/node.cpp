@@ -184,7 +184,7 @@ public:
 //		return timeout.infraNextTimeout();
 	}
 
-	template<class Node>
+//	template<class Node>
 	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
 	{
 /*		size_t fds_sz;
@@ -280,13 +280,13 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 						switch ( current.emitter.objectType )
 						{
 							case OpaqueEmitter::ObjectType::ClientSocket:
-								netSocket.template infraCheckPollFdSet<Node>(current, revents);
+								netSocket./*.template*/ infraCheckPollFdSet/*<Node>*/(current, revents);
 								break;
 							case OpaqueEmitter::ObjectType::ServerSocket:
 							case OpaqueEmitter::ObjectType::AgentServer:
 								if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 								{
-									netServer.template infraCheckPollFdSet<Node>(current, revents);
+									netServer./*.template*/ infraCheckPollFdSet/*<Node>*/(current, revents);
 									break;
 								}
 								else
@@ -303,13 +303,13 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 			}
 #ifdef NODECPP_ENABLE_CLUSTERING
 			if ( getCluster().isWorker() )
-				netServer.template infraEmitAcceptedSocketEventsReceivedfromMaster<Node>();
+				netServer./*.template*/ infraEmitAcceptedSocketEventsReceivedfromMaster/*<Node>*/();
 #endif // NODECPP_ENABLE_CLUSTERING
 			return true;
 		}
 	}
 
-	template<class Node>
+//	template<class Node>
 	void runInfraLoop2()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
@@ -323,7 +323,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
 				netServer.infraGetPendingEvents(queue);
-				netServer.template infraEmitListeningEvents<Node>();
+				netServer./*.template*/ infraEmitListeningEvents/*<Node>*/();
 				queue.emit();
 			}
 
@@ -332,18 +332,18 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 			queue.emit();
 
 			now = infraGetCurrentTime();
-			bool refed = pollPhase2<Node>(refedTimeout(), nextTimeout(), now/*, queue*/);
+			bool refed = pollPhase2/*<Node>*/(refedTimeout(), nextTimeout(), now/*, queue*/);
 			if(!refed)
 				return;
 
 			queue.emit();
 			emitInmediates();
 
-			netSocket.template infraGetCloseEvent<Node>(/*queue*/);
-			netSocket.template infraProcessSockAcceptedEvents<Node>();
+			netSocket./*.template*/ infraGetCloseEvent/*<Node>*/(/*queue*/);
+			netSocket./*.template*/ infraProcessSockAcceptedEvents/*<Node>*/();
 			if constexpr ( !std::is_same< ServerEmitterTypeT, void >::value )
 			{
-				netServer.template infraGetCloseEvents<Node>(/*queue*/);
+				netServer./*.template*/ infraGetCloseEvents/*<Node>*/(/*queue*/);
 			}
 			queue.emit();
 
@@ -470,7 +470,7 @@ class Runnable : public RunnableBase
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
 			node->main();
-			infra.template runInfraLoop2<Node>();
+			infra./*.template*/ runInfraLoop2/*<Node>*/();
 			node = nullptr;
 
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
