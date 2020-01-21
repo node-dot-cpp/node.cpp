@@ -7,3 +7,16 @@ Debug
 *.vcxproj.user
 test/samples/client/build/automated_test_release/
 test/experimental/test_co_await/HISTORY/
+samples/http_server/build/default_log.txt
+samples/http_server_handlers/build/default_log.txt
+samples/tcp_client/build/default_log.txt
+samples/http_server_handlers/build/http_server_handlers.vcxproj.filters
+samples/http_server/build/http_server.vcxproj.filters
+samples/tcp_client/build/tcp_client.vcxproj.filters
+samples/tcp_client_handlers/build/default_log.txt
+samples/tcp_client_handlers/build/tcp_client.vcxproj.filters
+samples/tcp_server/build/default_log.txt
+samples/tcp_server/build/tcp_server.vcxproj.filters
+samples/tcp_server_handlers/build/default_log.txt
+samples/tcp_server_handlers/build/tcp_server_handlers.vcxproj.filters
+test/experimental/http_server/build/default_log.txt
