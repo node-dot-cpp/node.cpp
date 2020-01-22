@@ -4,8 +4,6 @@
 #define NET_SOCKET_H
 
 #include <nodecpp/common.h>
-//#include <nodecpp/socket_type_list.h>
-//#include <nodecpp/server_type_list.h>
 #include <nodecpp/http_server.h>
 #include <nodecpp/logging.h>
 
