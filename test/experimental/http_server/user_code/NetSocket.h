@@ -5,8 +5,6 @@
 
 
 #include <nodecpp/common.h>
-#include <nodecpp/socket_type_list.h>
-#include <nodecpp/server_type_list.h>
 #include <nodecpp/http_server.h>
 #ifdef NODECPP_ENABLE_CLUSTERING
 #include <nodecpp/cluster.h>
@@ -18,8 +16,8 @@ using namespace nodecpp;
 using namespace fmt;
 
 //#define IMPL_VERSION 1 // main() is a single coro
-#define IMPL_VERSION 12 // main() is a single coro (with clustering)
-//#define IMPL_VERSION 2 // onRequest is a coro
+//#define IMPL_VERSION 12 // main() is a single coro (with clustering)
+#define IMPL_VERSION 2 // onRequest is a coro
 
 class MySampleTNode : public NodeBase
 {
@@ -359,54 +357,19 @@ log.fatal( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!+++
 
 	nodecpp::handler_ret_type yetSimpleProcessing( nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response )
 	{
-		// unexpected method
-		if ( !(request->getMethod() == "GET" || request->getMethod() == "HEAD" ) )
-		{
-			response->setStatus( "HTTP/1.1 405 Method Not Allowed" );
-			response->addHeader( "Connection", "close" );
-			response->addHeader( "Content-Length", "0" );
-//			response->dbgTrace();
-			co_await response->flushHeaders();
+		if ( request->getMethod() == "GET" || request->getMethod() == "HEAD" ) {
+			response->writeHead(200, {{"Content-Type", "text/xml"}});
+			auto queryValues = nodecpp::Url::parseUrlQueryString( request->getUrl() );
+			auto& value = queryValues["value"];
+			if (value.toStr() == ""){
+				co_await response->end("no value specified");
+			} else {
+				co_await response->end( value.toStr() );
+			}
+		} else {
+			response->writeHead( 405, "Method Not Allowed" );
 			co_await response->end();
-			CO_RETURN;
 		}
-
-		const auto & url = request->getUrl();
-		nodecpp::vector<std::pair<nodecpp::string, nodecpp::string>> queryValues;
-		nodecpp::Url::parseUrlQueryString( url, queryValues );
-
-		response->setStatus( "HTTP/1.1 200 OK" );
-		response->addHeader( "Content-Type", "text/xml" );
-		Buffer b;
-		if ( queryValues.empty() )
-		{
-			b.append( "no value specified", sizeof( "undefined" ) - 1 );
-			response->addHeader( "Connection", "close" );
-		}
-		else
-		{
-			for ( auto entry: queryValues )
-				if ( entry.first == "value" )
-				{
-					b.appendString( entry.second );
-					b.appendUint8( ',' );
-				}
-			if ( b.size() )
-			{
-				b.trim( 1 );
-				response->addHeader( "Connection", "keep-alive" );
-			}
-			else
-			{
-				b.append( "no value specified", sizeof( "no value specified" ) - 1 );
-				response->addHeader( "Connection", "close" );
-			}
-		}
-		response->addHeader( "Content-Length", nodecpp::format( "{}", b.size() ) );
-//		response->dbgTrace();
-		co_await response->flushHeaders();
-		co_await response->writeBodyPart(b);
-		co_await response->end();
 
 		CO_RETURN;
 	}
