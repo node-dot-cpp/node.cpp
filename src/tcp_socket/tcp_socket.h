@@ -1199,16 +1199,11 @@ public:
 			if (current.first < ioSockets.size())
 			{
 				auto& entry = ioSockets.at(current.first);
-				entry.getServerSocket()->internalCleanupBeforeClosing();
-//				if (entry.isValid())
 				if (entry.isUsed())
 				{
-					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, entry.getServerSocketData()->state == nodecpp::net::ServerBase::DataForCommandProcessing::State::BeingClosed ); 
-//					if (entry.getServerSocketData()->osSocket != INVALID_SOCKET)
-//						internal_usage_only::internal_close(entry.getServerSocketData()->osSocket);
-//					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, entry.getServerSocketData()->osSocket == INVALID_SOCKET ); 
-					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, ioSockets.socketsAt(current.first) == INVALID_SOCKET ); 
-					//evs.add(&net::Server::emitClose, entry.getPtr(), current.second);
+					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, entry.getServerSocketData()->state == nodecpp::net::ServerBase::DataForCommandProcessing::State::BeingClosed, "indeed: {}", (size_t)(entry.getServerSocketData()->state) ); 
+					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, ioSockets.socketsAt(current.first) == INVALID_SOCKET, "indeed: {}", ioSockets.socketsAt(current.first) ); 
+					entry.getServerSocket()->internalCleanupBeforeClosing();
 					auto hr = entry.getServerSocketData()->ahd_close;
 					if ( hr != nullptr )
 					{
