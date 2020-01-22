@@ -470,6 +470,9 @@ namespace nodecpp {
 			void connect(uint16_t port, const char* ip);
 			void connect(uint16_t port, string ip) { connect( port, ip.c_str() ); }
 			void connect(uint16_t port, string_literal ip) { connect( port, ip.c_str() ); };
+			void connect(uint16_t port, string ip, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) { connect( port, ip.c_str(), std::move(cb) ); }
+			void connect(uint16_t port, string_literal ip, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) { connect( port, ip.c_str(), std::move(cb) ); };
+
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 
 			SocketBase& setNoDelay(bool noDelay = true);

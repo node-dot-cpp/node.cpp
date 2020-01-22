@@ -23,16 +23,10 @@ public:
 	Buffer buf;
 
 	using ClientSockType = net::SocketBase;
-	Timeout to;
 
 	virtual awaitable<void> main()
 	{
 		clientSock = net::createSocket();
-
-		to = std::move( setTimeout( [this]() { 
-			printf( "   !!!TIMER!!!\n" );
-			refreshTimeout(to);
-		}, 1000) );
 
 		clientSock->on(event::connect, [this]() { 
 			buf.writeInt8( 2, 0 );
@@ -60,7 +54,7 @@ public:
 
 		clientSock->connect(2000, "127.0.0.1");
 		
-		co_return;
+		CO_RETURN;
 	}
 
 	safememory::owning_ptr<ClientSockType> clientSock;
