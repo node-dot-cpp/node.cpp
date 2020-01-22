@@ -16,10 +16,7 @@ using namespace fmt;
 class MySampleTNode : public NodeBase
 {
 public:
-	MySampleTNode()
-	{
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()" );
-	}
+	MySampleTNode() {}
 
 	size_t recvSize = 0;
 	size_t recvReplies = 0;
@@ -30,8 +27,6 @@ public:
 
 	virtual awaitable<void> main()
 	{
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleLambdaOneNode::main()" );
-
 		clientSock = net::createSocket();
 
 		to = std::move( setTimeout( [this]() { 
