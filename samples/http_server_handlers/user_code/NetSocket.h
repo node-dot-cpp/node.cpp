@@ -40,6 +40,9 @@ public:
 				auto& value = queryValues["value"];
 				if (value.toStr() == ""){
 					co_await response->end("no value specified");
+				} else if (value.toStr() == "close") {
+					srv->close();
+					co_await response->end( value.toStr() );
 				} else {
 					co_await response->end( value.toStr() );
 				}

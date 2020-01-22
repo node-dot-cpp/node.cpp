@@ -23,6 +23,9 @@ public:
 				auto& value = queryValues["value"];
 				if (value.toStr() == ""){
 					response.end("no value specified");
+				} else if (value.toStr() == "close"){
+					srv->close();
+					response.end("no value specified");
 				} else {
 					response.end( value.toStr() );
 				}
