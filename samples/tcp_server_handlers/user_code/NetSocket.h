@@ -7,9 +7,7 @@
 #include <nodecpp/socket_common.h>
 #include <nodecpp/server_common.h>
 
-using namespace std;
 using namespace nodecpp;
-using namespace fmt;
 
 #ifdef AUTOMATED_TESTING_ONLY
 #define AUTOMATED_TESTING_CYCLE_COUNT 30
@@ -35,10 +33,7 @@ public:
 	nodecpp::Timeout to;
 #endif
 
-	MySampleTNode()
-	{
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "MySampleTNode::MySampleTNode()");
-	}
+	MySampleTNode() {}
 
 	virtual nodecpp::handler_ret_type main()
 	{

@@ -25,7 +25,7 @@ public:
 	{
 		auto argv = getArgv();
 		for ( size_t i=1; i<argv.size(); ++i )
-			if ( argv[i].size() > 12 && argv[i].substr(0,12) == "-autotest" )
+			if ( argv[i].size() >= 9 && argv[i].substr(0,9) == "-autotest" )
 			{
 				maxRequests = autotestRespCnt;
 				break;
@@ -41,20 +41,33 @@ public:
 
 		clientSock->on(event::data, [this](const Buffer& buffer) { 
 			++recvReplies;
+			recvSize += buffer.size();
 
-			if ( recvReplies > maxRequests )
+			if ( ( recvReplies & 0xFFF ) == 0 )
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
+
+			if ( recvReplies < maxRequests )
+			{
+				buf.writeInt8( 2, 0 );
+				buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+				clientSock->write(buf);
+			}
+			else if ( recvReplies == maxRequests )
+			{
+				buf.writeInt8( 4, 0 );
+				buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+				buf.writeInt8( (uint8_t)0xfe, 2 );
+				buf.writeInt8( (uint8_t)0xfe, 3 );
+				clientSock->write(buf);
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Sending the last request in automated testing" );
+			}
+			else
 			{
 				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				clientSock->end();
 				clientSock->unref();
 			}
 
-			if ( ( recvReplies & 0xFFF ) == 0 )
-				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
-			recvSize += buffer.size();
-			buf.writeInt8( 2, 0 );
-			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-			clientSock->write(buf);
 		});
 
 		clientSock->connect(2000, "127.0.0.1");
