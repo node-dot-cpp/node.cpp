@@ -8,15 +8,13 @@
 
 using namespace nodecpp;
 
-#ifdef AUTOMATED_TESTING_ONLY
-#define AUTOMATED_TESTING_CYCLE_COUNT 30
-#endif
-
 class MySampleTNode : public NodeBase
 {
 	size_t recvSize = 0;
 	size_t recvReplies = 0;
 	Buffer buf;
+	uint64_t maxRequests = UINT64_MAX;
+	static constexpr uint64_t autotestRespCnt = 30;
 
 	using ClientSockType = net::SocketBase;
 
@@ -30,6 +28,14 @@ public:
 
 		clientSock = net::createSocket<ClientSockType>();
 		clientSock->connect(2000, "127.0.0.1");
+
+		for ( size_t i=1; i<argv.size(); ++i )
+			if ( argv[i].size() > 12 && argv[i].substr(0,12) == "-autotest" )
+			{
+				maxRequests = autotestRespCnt;
+				break;
+			}
+
 		CO_RETURN;
 	}
 
@@ -55,15 +61,14 @@ public:
 	{
 //		co_await socket->a_read(r_buff, (uint8_t)recvReplies | 1);
 		++recvReplies;
-#ifdef AUTOMATED_TESTING_ONLY
-		if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+		if ( recvReplies > maxRequests )
 		{
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 			socket->end();
 			socket->unref();
 			CO_RETURN;
 		}
-#endif
+
 		if ( ( recvReplies & 0xFFF ) == 0 )
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onWhateverData(), size = {}, total received size = {}", recvReplies, r_buff.size(), recvSize );
 		recvSize += r_buff.size();
