@@ -52,8 +52,7 @@ public:
 				size_t receivedSz = buffer.readUInt8(0);
 				if ( receivedSz != buffer.size() )
 				{
-//					log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = %d: received %zd, expected: %zd bytes", *extra, receivedSz, buffer.size() );
-					log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = [??]: received %zd, expected: %zd bytes", receivedSz, buffer.size() );
+					log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = [??]: received {}, expected: {} bytes", receivedSz, buffer.size() );
 					socket->unref();
 					return;
 				}
@@ -116,50 +115,6 @@ public:
 
 	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srv;
 	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srvCtrl;
-#if 0
-	nodecpp::handler_ret_type onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
-		if ( buffer.size() < 2 )
-		{
-//			log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket idx = {}", *(socket->getExtra()) );
-			log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data: received {} bytes", buffer.size() );
-			socket->unref();
-			CO_RETURN;
-		}
-//		log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onData for idx {} !", *(socket->getExtra()) );
-
-		size_t receivedSz = buffer.begin()[0];
-		if ( receivedSz != buffer.size() )
-		{
-//			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
-			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data: received {}, expected: {} bytes", receivedSz, buffer.size() );
-			socket->unref();
-			CO_RETURN;
-		}
-
-		uint32_t requestedSz = buffer.begin()[1];
-		if ( requestedSz )
-		{
-			Buffer reply(requestedSz);
-			//buffer.begin()[0] = (uint8_t)requestedSz;
-			memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-			reply.set_size(requestedSz);
-			socket->write(reply);
-		}
-
-		stats.recvSize += receivedSz;
-		stats.sentSize += requestedSz;
-		++(stats.rqCnt);
-#ifdef AUTOMATED_TESTING_ONLY
-		/*if ( stats.rqCnt > AUTOMATED_TESTING_CYCLE_COUNT )
-		{
-			log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing (by count)" );
-			socket->end();
-			socket->unref();
-		}*/
-#endif
-		CO_RETURN;
-	}
-#endif
 };
 
 #endif // NET_SOCKET_H
