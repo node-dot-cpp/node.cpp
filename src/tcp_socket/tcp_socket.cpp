@@ -900,16 +900,26 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 
 void OSLayer::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
 {
-	sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
-	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( false, Error())));
+	if ( !( sockData.state == net::SocketBase::DataForCommandProcessing::Closing ||
+			sockData.state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
+			sockData.state == net::SocketBase::DataForCommandProcessing::Closed ) )
+	{
+		sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
+		netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( false, Error())));
+	}
 }
 
 void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err)
 {
-	sockData.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
-	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
+	if ( !( sockData.state == net::SocketBase::DataForCommandProcessing::Closing ||
+			sockData.state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
+			sockData.state == net::SocketBase::DataForCommandProcessing::Closed ) )
+	{
+		sockData.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
+		netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
+	}
 }
 
 void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)

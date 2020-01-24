@@ -160,6 +160,18 @@ public:
 
 	NetSockets() {ourSide.reserve(capacity_); osSide.reserve(capacity_); ourSide.emplace_back(0); osSide.emplace_back();}
 
+	bool isUsed(size_t idx) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		if ( idx < ourSide.size() )
+			return ourSide[idx].isUsed(); 
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
+			idx -= ourSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			return ourSideAccum.at(idx).isUsed();
+		}
+	}
 	NetSocketEntry& at(size_t idx) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
 		if ( idx < ourSide.size() )
@@ -172,6 +184,7 @@ public:
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
 			idx -= ourSide.capacity();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSideAccum[idx].isUsed() ); 
 			return ourSideAccum.at(idx);
 		}
 	}
@@ -590,24 +603,23 @@ protected:
 
 	void closeSocket(NetSocketEntry& entry) //app-infra neutral
 	{
-		entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closing;
-		//entry.getClientSocketData()->refed = true;
-		//entry.refed = false;
-
-	//	evs.add(&net::Socket::emitError, entry.getPtr(), storeError(Error()));
-	//	pendingCloseEvents.emplace_back(entry.index, std::function<void()>());
-		pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
+		if ( !( entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Closing ||
+				entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
+				entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Closed ) )
+		{
+			entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closing;
+			pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
+		}
 	}
 	void errorCloseSocket(NetSocketEntry& entry, Error& err) //app-infra neutral
 	{
-		entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
-		//entry.getClientSocketData()->refed = true;
-		//entry.refed = false;
-
-	//	std::function<void()> ev = std::bind(&net::Socket::emitError, entry.getPtr(), std::ref(err));
-	//	std::function<void()> ev = std::bind(&net::SocketEmitter::emitError, entry.getEmitter(), std::ref(err));
-	//	pendingCloseEvents.emplace_back(entry.index, std::move(ev));
-		pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
+		if ( !( entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Closing ||
+				entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
+				entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Closed ) )
+		{
+			entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
+			pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
+		}
 	}
 
 public:
@@ -656,9 +668,9 @@ public:
 		{
 			if (ioSockets.isValidId(current.first))
 			{
-				auto& entry = ioSockets.at(current.first);
-				if (entry.isUsed())
+				if (ioSockets.isUsed(current.first))
 				{
+					auto& entry = ioSockets.at(current.first);
 					bool err = entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::ErrorClosing;
 					if ( (SOCKET)(entry.getClientSocketData()->osSocket) != INVALID_SOCKET)
 					{
@@ -690,8 +702,8 @@ sessionCreationtime += infraGetCurrentTime() - now;
 #else
 					entry.getClientSocket()->onFinalCleanup();
 #endif // USE_TEMP_PERF_CTRS
+					entry = NetSocketEntry(current.first); 
 				}
-				entry = NetSocketEntry(current.first); 
 			}
 		}
 		pendingCloseEvents.clear();
