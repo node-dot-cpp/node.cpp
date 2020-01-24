@@ -22,19 +22,64 @@ class MySampleTNode : public NodeBase
 
 	Buffer replyBuff;
 
+	class MyWorkingSocket : public nodecpp::net::SocketBase
+	{
+	public:
+		using NodeType = MySampleTNode;
+		friend class MySampleTNode;
+
+	private:
+		MySampleTNode* myNode = nullptr;
+
+	public:
+		MyWorkingSocket() {}
+		virtual ~MyWorkingSocket() {}
+	};
+
+	class MyStatSocket : public nodecpp::net::SocketBase
+	{
+	public:
+		using NodeType = MySampleTNode;
+		friend class MySampleTNode;
+
+	private:
+		MySampleTNode* myNode = nullptr;
+
+	public:
+		MyStatSocket() {}
+		virtual ~MyStatSocket() {}
+	};
+
+	class MyWorkingServer : public nodecpp::net::ServerBase
+	{
+	public:
+		MyWorkingServer() {}
+//		MyWorkingServer(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {};
+		virtual ~MyWorkingServer() {}
+	};
+
+	class MyStatServer : public nodecpp::net::ServerBase
+	{
+	public:
+		MyStatServer() {}
+//		MyStatServer(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {};
+		virtual ~MyStatServer() {}
+	};
+
 public:
 	MySampleTNode() {}
 
 	virtual nodecpp::handler_ret_type main()
 	{
-		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketOne::onConnection>();
-		nodecpp::net::ServerBase::addHandler<MyServerSocketOne, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnection>(this);
+		// registering handlers
+		nodecpp::net::ServerBase::addHandler<MyWorkingServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionWorking>(this);
+		nodecpp::net::ServerBase::addHandler<MyStatServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionStat>(this);
 
-		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MyServerSocketTwo::onConnection>();
-		nodecpp::net::ServerBase::addHandler<MyServerSocketTwo, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionCtrl>(this);
+		nodecpp::net::SocketBase::addHandler<MyWorkingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MySampleTNode::onWorkingData>(this);
+		nodecpp::net::SocketBase::addHandler<MyStatSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MySampleTNode::onStatData>(this);
 
-		srv = nodecpp::net::createServer<MyServerSocketOne>();
-		srvCtrl = nodecpp::net::createServer<MyServerSocketTwo, nodecpp::net::SocketBase>();
+		srv = nodecpp::net::createServer<MyWorkingServer, MyWorkingSocket>();
+		srvCtrl = nodecpp::net::createServer<MyStatServer, MyStatSocket>();
 
 		srv->listen(2000, "127.0.0.1", 5);
 		srvCtrl->listen(2001, "127.0.0.1", 5);
@@ -43,10 +88,9 @@ public:
 	}
 
 	// server
-	class MyServerSocketOne; // just forward declaration
 public:
-	nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
+	nodecpp::handler_ret_type onConnectionWorking(nodecpp::safememory::soft_ptr<MyWorkingServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionWorking()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 
 		nodecpp::Buffer r_buff(0x200);
@@ -59,10 +103,9 @@ public:
 	}
 
 	// ctrl server
-	class MyServerSocketTwo; // just forward declaration
 public:
-	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
+	nodecpp::handler_ret_type onConnectionStat(nodecpp::safememory::soft_ptr<MyStatServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionStat()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 
 		nodecpp::Buffer r_buff(0x200);
@@ -77,141 +120,66 @@ public:
 	using SockTypeServerSocket = nodecpp::net::SocketBase;
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
 
-	class MyServerSocketOne : public nodecpp::net::ServerBase
+	nodecpp::safememory::owning_ptr<MyWorkingServer> srv;
+	nodecpp::safememory::owning_ptr<MyStatServer> srvCtrl;
+
+	nodecpp::handler_ret_type onWorkingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer)
 	{
-	public:
-		MyServerSocketOne() {}
-//		MyServerSocketOne(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {};
-		virtual ~MyServerSocketOne() {}
-
-		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onConnection()!");
-			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-			CO_RETURN;
-		}
-	};
-
-	class MyServerSocketTwo : public nodecpp::net::ServerBase
-	{
-	public:
-		MyServerSocketTwo() {}
-//		MyServerSocketTwo(acceptedSocketCreationRoutineType socketCreationCB) : MyServerSocketBase(socketCreationCB) {};
-		virtual ~MyServerSocketTwo() {}
-
-		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onConnection()!");
-			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-			CO_RETURN;
-		}
-	};
-
-	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv;
-	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl;
-
-	nodecpp::handler_ret_type serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
-	{
-		nodecpp::Buffer buffer(0x20);
-
-		for (;; )
+		size_t receivedSz = buffer.begin()[0];
+		if (receivedSz != buffer.size())
 		{
-			buffer.clear();
-			try
-			{
-				co_await socket->a_read(buffer, 2);
-			}
-			catch (...)
-			{
-//				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
-				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed). Exiting...");
-				break;
-			}
-
-			size_t receivedSz = buffer.begin()[0];
-			if (receivedSz != buffer.size())
-			{
 //				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size());
-				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size());
-				socket->unref();
-				break;
-			}
-
-			size_t requestedSz = buffer.begin()[1];
-			if (requestedSz)
-			{
-				Buffer reply(requestedSz);
-				reply.set_size(requestedSz);
-				memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-				try
-				{
-					co_await socket->a_write(reply);
-				}
-				catch (...)
-				{
-//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed. Exiting...");
-					break;
-				}
-			}
-
-			stats.recvSize += receivedSz;
-			stats.sentSize += requestedSz;
-			++(stats.rqCnt);
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size());
+			socket->unref();
+			CO_RETURN;
 		}
-
-		CO_RETURN;
-	}
-	nodecpp::handler_ret_type serverCtrlSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
-	{
-		nodecpp::Buffer buffer(0x20);
-		Buffer reply(sizeof(stats));
-
-		for (;; )
-		{
-			buffer.clear();
-			try
-			{
-				co_await socket->a_read(buffer, 2);
-			}
-			catch (...)
-			{
-//				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed (extra = {}). Exiting...", *(socket->getExtra()));
-				log::default_log::error( log::ModuleID(nodecpp_module_id), "Reading data failed). Exiting..." );
-				break;
-			}
-			size_t requestedSz = buffer.begin()[1];
-			if (requestedSz)
-			{
-				stats.connCnt = srv->getSockCount();
-				size_t replySz = sizeof(Stats);
-				reply.clear();
-				reply.append(&stats, replySz);
-				try
-				{
-					co_await socket->a_write(reply);
-				}
-				catch (...)
-				{
-//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
-					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed). Exiting..." );
-					break;
-				}
-			}
-		}
-	}
-	/*nodecpp::handler_ret_type onDataCtrlServerSocket_1(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
 		{
-			Buffer reply(sizeof(stats));
-			stats.connCnt = srv->getSockCount();
-			uint32_t replySz = sizeof(Stats);
-			uint8_t* buff = ptr.get();
-			memcpy(buff, &stats, replySz); // naive marshalling will work for a limited number of cases
-			socket->write(buff, replySz);
+			Buffer reply(requestedSz);
+			reply.set_size(requestedSz);
+			memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
+			try
+			{
+				co_await socket->a_write(reply);
+			}
+			catch (...)
+			{
+//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed. Exiting...");
+				CO_RETURN;
+			}
 		}
+
+		stats.recvSize += receivedSz;
+		stats.sentSize += requestedSz;
+		++(stats.rqCnt);
+
 		CO_RETURN;
-	}*/
+	}
+	nodecpp::handler_ret_type onStatData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer)
+	{
+		Buffer reply(sizeof(stats));
+
+		size_t requestedSz = buffer.begin()[1];
+		if (requestedSz)
+		{
+			stats.connCnt = srv->getSockCount();
+			size_t replySz = sizeof(Stats);
+			reply.clear();
+			reply.append(&stats, replySz);
+			try
+			{
+				co_await socket->a_write(reply);
+			}
+			catch (...)
+			{
+//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
+				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed). Exiting..." );
+			}
+		}
+	}
 	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
