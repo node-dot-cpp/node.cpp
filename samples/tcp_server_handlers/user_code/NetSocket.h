@@ -87,48 +87,20 @@ public:
 		CO_RETURN;
 	}
 
-	// server
 public:
+	// server
 	nodecpp::handler_ret_type onConnectionWorking(nodecpp::safememory::soft_ptr<MyWorkingServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionWorking()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 
-		nodecpp::Buffer r_buff(0x200);
-		for (;;)
-		{
-			co_await socket->a_read(r_buff, 2);
-			co_await onDataServerSocket_(socket, r_buff);
-		}
 		CO_RETURN;
 	}
 
-	// ctrl server
-public:
-	nodecpp::handler_ret_type onConnectionStat(nodecpp::safememory::soft_ptr<MyStatServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionStat()!");
-		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-
-		nodecpp::Buffer r_buff(0x200);
-		for (;;)
-		{
-			co_await socket->a_read(r_buff, 2);
-			co_await onDataCtrlServerSocket_(socket, r_buff);
-		}
-		CO_RETURN;
-	}
-
-	using SockTypeServerSocket = nodecpp::net::SocketBase;
-	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
-
-	nodecpp::safememory::owning_ptr<MyWorkingServer> srv;
-	nodecpp::safememory::owning_ptr<MyStatServer> srvCtrl;
-
-	nodecpp::handler_ret_type onWorkingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer)
+	nodecpp::handler_ret_type onWorkingData(nodecpp::safememory::soft_ptr<MyWorkingSocket> socket, Buffer& buffer)
 	{
 		size_t receivedSz = buffer.begin()[0];
 		if (receivedSz != buffer.size())
 		{
-//				log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size());
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket: received {}, expected: {} bytes", receivedSz, buffer.size());
 			socket->unref();
 			CO_RETURN;
@@ -146,7 +118,6 @@ public:
 			}
 			catch (...)
 			{
-//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
 				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed. Exiting...");
 				CO_RETURN;
 			}
@@ -158,7 +129,16 @@ public:
 
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onStatData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer)
+
+	// ctrl server
+	nodecpp::handler_ret_type onConnectionStat(nodecpp::safememory::soft_ptr<MyStatServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionStat()!");
+		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
+
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type onStatData(nodecpp::safememory::soft_ptr<MyStatSocket> socket, Buffer& buffer)
 	{
 		Buffer reply(sizeof(stats));
 
@@ -175,59 +155,13 @@ public:
 			}
 			catch (...)
 			{
-//					log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed (extra = {}). Exiting...", *(socket->getExtra()));
 				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed). Exiting..." );
 			}
 		}
 	}
-	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
-		size_t requestedSz = buffer.begin()[1];
-		if (requestedSz)
-		{
-			Buffer reply(sizeof(stats));
-			stats.connCnt = srv->getSockCount();
-			size_t replySz = sizeof(Stats);
-			reply.append(&stats, replySz); // naive marshalling will work for a limited number of cases
-			co_await socket->a_write(reply);
-		}
-		CO_RETURN;
-	}
-
-	nodecpp::handler_ret_type onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
-		if ( buffer.size() < 2 )
-		{
-//			log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket idx = {}", *(socket->getExtra()) );
-			log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data: received {} bytes", buffer.size() );
-			socket->unref();
-			CO_RETURN;
-		}
-//		log::default_log::info( log::ModuleID(nodecpp_module_id), "server socket: onData for idx {} !", *(socket->getExtra()) );
-
-		size_t receivedSz = buffer.begin()[0];
-		if ( receivedSz != buffer.size() )
-		{
-//			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = {}: received {}, expected: {} bytes", *(socket->getExtra()), receivedSz, buffer.size() );
-			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data: received {}, expected: {} bytes", receivedSz, buffer.size() );
-			socket->unref();
-			CO_RETURN;
-		}
-
-		uint32_t requestedSz = buffer.begin()[1];
-		if ( requestedSz )
-		{
-			Buffer reply(requestedSz);
-			//buffer.begin()[0] = (uint8_t)requestedSz;
-			memset(reply.begin(), (uint8_t)requestedSz, requestedSz);
-			reply.set_size(requestedSz);
-			socket->write(reply);
-		}
-
-		stats.recvSize += receivedSz;
-		stats.sentSize += requestedSz;
-		++(stats.rqCnt);
-		CO_RETURN;
-	}
+	nodecpp::safememory::owning_ptr<MyWorkingServer> srv;
+	nodecpp::safememory::owning_ptr<MyStatServer> srvCtrl;
 };
 
 #endif // NET_SOCKET_H

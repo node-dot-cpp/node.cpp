@@ -780,8 +780,8 @@ namespace nodecpp {
 						{
 							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
 							int id = -1;
-							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
-								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
+//							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
+//								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
 							ret->registerMeByIDAndAssignSocket(sdata, id);
 						}
 						else
