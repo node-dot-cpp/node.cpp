@@ -31,11 +31,13 @@ public:
 	virtual nodecpp::handler_ret_type main()
 	{
 		// registering handlers
-		nodecpp::net::ServerBase::addHandler<MyWorkingServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionWorking>(this);
-		nodecpp::net::ServerBase::addHandler<MyStatServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &MySampleTNode::onConnectionStat>(this);
+		nodecpp::net::ServerBase::addHandler<MyWorkingServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Close, &MySampleTNode::onCloseWorkingServer>(this);
+		nodecpp::net::ServerBase::addHandler<MyStatServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Close, &MySampleTNode::onCloseStatServer>(this);
 
 		nodecpp::net::SocketBase::addHandler<MyWorkingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MySampleTNode::onWorkingData>(this);
 		nodecpp::net::SocketBase::addHandler<MyStatSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &MySampleTNode::onStatData>(this);
+		nodecpp::net::SocketBase::addHandler<MyWorkingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::End, &MySampleTNode::onWorkingEnd>(this);
+		nodecpp::net::SocketBase::addHandler<MyStatSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::End, &MySampleTNode::onStatEnd>(this);
 
 		srv = nodecpp::net::createServer<MyWorkingServer, MyWorkingSocket>();
 		srvCtrl = nodecpp::net::createServer<MyStatServer, MyStatSocket>();
@@ -48,10 +50,8 @@ public:
 
 public:
 	// server
-	nodecpp::handler_ret_type onConnectionWorking(nodecpp::safememory::soft_ptr<MyWorkingServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionWorking()!");
-		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
-
+	nodecpp::handler_ret_type onCloseWorkingServer(nodecpp::safememory::soft_ptr<MyWorkingServer> server, bool haserror) {
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "working server: closed!");
 		CO_RETURN;
 	}
 
@@ -95,11 +95,19 @@ public:
 		CO_RETURN;
 	}
 
-	// ctrl server
-	nodecpp::handler_ret_type onConnectionStat(nodecpp::safememory::soft_ptr<MyStatServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionStat()!");
-		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
+	nodecpp::handler_ret_type onWorkingEnd(nodecpp::safememory::soft_ptr<MyWorkingSocket> socket)
+	{
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "working server socket: onEnd!");
+		Buffer b;
+		b.appendString( nodecpp::string_literal( "goodbye!" ) );
+		socket->write( b );
+		socket->end();
+		CO_RETURN;
+	}
 
+	// ctrl server
+	nodecpp::handler_ret_type onCloseStatServer(nodecpp::safememory::soft_ptr<MyStatServer> server, bool hasError) {
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "stat server: closed!");
 		CO_RETURN;
 	}
 
@@ -114,6 +122,16 @@ public:
 			reply.append(&stats, replySz);
 			co_await socket->a_write(reply);
 		}
+	}
+
+	nodecpp::handler_ret_type onStatEnd(nodecpp::safememory::soft_ptr<MyStatSocket> socket)
+	{
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "stat server socket: onEnd!");
+		Buffer b;
+		b.appendString( nodecpp::string_literal( "goodbye!" ) );
+		socket->write( b );
+		socket->end();
+		CO_RETURN;
 	}
 
 	nodecpp::safememory::owning_ptr<MyWorkingServer> srv;
