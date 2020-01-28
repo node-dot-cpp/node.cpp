@@ -264,22 +264,8 @@ namespace nodecpp {
 				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandler<handler, memmberFn, UserClass>();
 			}
 
-		protected:
-//			uint16_t localPort = 0;
-
-//			size_t id = 0;
-//			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
-
-		//protected:
 		public:
 			void registerServer(soft_ptr<net::ServerBase> t);
-			/*template<class Node, class DerivedServer>
-			void registerServer(soft_ptr<DerivedServer> t) {
-				int id = -1;
-				if constexpr ( !std::is_same< typename Node::EmitterTypeForServer, void>::value )
-					id = Node::EmitterTypeForServer::template getTypeIndex<DerivedServer>( &(*t));
-				registerServerByID(t, id);
-			}*/
 
 		public:
 			NodeBase* node = nullptr;
@@ -290,9 +276,6 @@ namespace nodecpp {
 
 		public:
 			ServerBase();
-			//ServerBase(int typeID);
-//			ServerBase(acceptedSocketCreationRoutineType socketCreationCB);
-			//ServerBase(int typeID, acceptedSocketCreationRoutineType socketCreationCB);
 			virtual ~ServerBase() {
 				socketList.clear();
 				reportBeingDestructed();
@@ -806,13 +789,6 @@ namespace nodecpp {
 		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
 			return createServer<ServerT, SocketBase>(::std::forward<Types>(args)...);
 		}
-
-		//template<class T>
-		//T* createServer(std::function<void()> cb) {
-		//	auto svr = new T();
-		//	svr->on<event::Connect>(cb);
-		//	return svr;
-		//}
 
 		//template<class T>
 		//T* createConnection(uint16_t port, const char* host) {

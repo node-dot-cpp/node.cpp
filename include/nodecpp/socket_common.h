@@ -397,23 +397,6 @@ namespace nodecpp {
 		public:
 			void registerMeAndAcquireSocket();
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
-			/*template<class Node, class DerivedSocket>
-			void registerMeAndAssignSocket(OpaqueSocketData& sdata)
-			{
-				int id = -1;
-				if constexpr ( !std::is_same< typename Node::EmitterType, void>::value )
-					id = Node::EmitterType::template softGetTypeIndexIfTypeExists<DerivedSocket>();
-				registerMeByIDAndAssignSocket( sdata, id );
-			}
-
-			template<class Node, class DerivedSocket>
-			void registerMeAndAcquireSocket(nodecpp::safememory::soft_ptr<DerivedSocket> s)
-			{
-				int id = -1;
-				if constexpr ( !std::is_same< typename Node::EmitterType, void>::value )
-					id = Node::EmitterType::template softGetTypeIndexIfTypeExists<DerivedSocket>();
-				registerMeAndAcquireSocket( id );
-			}*/
 
 		public:
 			//nodecpp::string _remoteAddress;
