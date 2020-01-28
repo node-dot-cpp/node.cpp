@@ -65,7 +65,7 @@ namespace nodecpp {
 				using SocketT = HttpSocket< RequestT, void>;
 				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
 						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
-						ret->registerMeByIDAndAssignSocket(sdata, -1);
+						ret->registerMeAndAssignSocket(sdata);
 						return ret;
 					} );
 			}
@@ -83,7 +83,7 @@ namespace nodecpp {
 						{
 							retSock = nodecpp::safememory::make_owning<SocketT>();
 						}
-						retSock->registerMeByIDAndAssignSocket(sdata, -1);
+						retSock->registerMeAndAssignSocket(sdata);
 						return retSock;
 					} );
 			}
