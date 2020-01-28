@@ -44,19 +44,12 @@ public:
 			Buffer buf(2);
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( 1, 1 );
-			try { co_await socket->a_write(buf); }
-			catch (...)
-			{
-				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed). Exiting..." );
-				socket->end();
-				socket->unref();
-			}
+			co_await socket->a_write(buf);
 			CO_RETURN;
 	}
 
 	awaitable<void> onData(safememory::soft_ptr<net::SocketBase> socket, Buffer& r_buff )
 	{
-//		co_await socket->a_read(r_buff, (uint8_t)recvReplies | 1);
 		++recvReplies;
 		recvSize += r_buff.size();
 		if ( ( recvReplies & 0xFFF ) == 0 )
@@ -66,13 +59,7 @@ public:
 		{
 			buf.writeInt8( 2, 0 );
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-			try { co_await socket->a_write(buf); }
-			catch (...)
-			{
-				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed. Exiting..." );
-				socket->end();
-				socket->unref();
-			}
+			co_await socket->a_write(buf);
 		}
 		else if ( recvReplies == maxRequests )
 		{
@@ -80,13 +67,7 @@ public:
 			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
 			buf.writeInt8( 0xfe, 2 );
 			buf.writeInt8( 0xfe, 3 );
-			try { co_await socket->a_write(buf); }
-			catch (...)
-			{
-				log::default_log::error( log::ModuleID(nodecpp_module_id), "Writing data failed. Exiting..." );
-				socket->end();
-				socket->unref();
-			}
+			co_await socket->a_write(buf);
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "Sending the last request in automated testing" );
 		}
 		else
