@@ -793,7 +793,7 @@ namespace nodecpp {
 							retSock = nodecpp::safememory::make_owning<SocketT>();
 						}
 						retSock->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*retSock));
-						retSock->registerMeByIDAndAssignSocket(sdata);
+						retSock->registerMeAndAssignSocket(sdata);
 						return retSock;
 					} );
 			}
