@@ -900,31 +900,41 @@ NetSocketManagerBase::ShouldEmit NetSocketManagerBase::_infraProcessWriteEvent(n
 
 void OSLayer::closeSocket(net::SocketBase::DataForCommandProcessing& sockData)
 {
-	sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
-	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( false, Error())));
+	if ( !( sockData.state == net::SocketBase::DataForCommandProcessing::Closing ||
+			sockData.state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
+			sockData.state == net::SocketBase::DataForCommandProcessing::Closed ) )
+	{
+		sockData.state = net::SocketBase::DataForCommandProcessing::Closing;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
+		netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( false, Error())));
+	}
 }
 
 void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockData, Error& err)
 {
-	sockData.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
-	netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
+	if ( !( sockData.state == net::SocketBase::DataForCommandProcessing::Closing ||
+			sockData.state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
+			sockData.state == net::SocketBase::DataForCommandProcessing::Closed ) )
+	{
+		sockData.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, netSocketManagerBase != nullptr );
+		netSocketManagerBase->pendingCloseEvents.push_back(std::make_pair( sockData.index, std::make_pair( true, err)));
+	}
 }
 
-void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+void NetServerManagerBase::addServerEntry(nodecpp::safememory::soft_ptr<net::ServerBase> ptr)
 {
-	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
+	ioSockets.addEntry<net::ServerBase>( ptr );
 }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-void NetServerManagerBase::addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+void NetServerManagerBase::addSlaveServerEntry(nodecpp::safememory::soft_ptr<net::ServerBase> ptr)
 {
-	ioSockets.addSlaveServerEntry<net::ServerBase>( /*node, */ptr, typeId );
+	ioSockets.addSlaveServerEntry<net::ServerBase>( ptr );
 }
 
-void NetServerManagerBase::addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId)
+void NetServerManagerBase::addAgentServerEntry(nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr)
 {
-	ioSockets.addEntry<Cluster::AgentServer>( /*node, */ptr, typeId );
+	ioSockets.addEntry<Cluster::AgentServer>( ptr );
 }
 #endif // NODECPP_ENABLE_CLUSTERING

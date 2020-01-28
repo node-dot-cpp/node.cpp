@@ -64,17 +64,13 @@ bool SocketBase::write2(Buffer& b)
 	_bytesWritten += b.size();
 	return netSocketManagerBase->appWrite2(dataForCommandProcessing, b);
 }
-void SocketBase::registerMeAndAcquireSocket(int typeID) {
-//	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
+void SocketBase::registerMeAndAcquireSocket() {
 	nodecpp::safememory::soft_ptr<SocketBase> p = myThis.getSoftPtr<SocketBase>(this);
-//	registerWithInfraAndAcquireSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketO*/);
-	registerWithInfraAndAcquireSocket(/*this->node, */p, typeID);
+	registerWithInfraAndAcquireSocket(p);
 }
-void SocketBase::registerMeByIDAndAssignSocket(OpaqueSocketData& sdata, int typeID) {
-//	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, this->node != nullptr );
+void SocketBase::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
 	nodecpp::safememory::soft_ptr<SocketBase> p = myThis.getSoftPtr<SocketBase>(this);
-//	registerWithInfraAndAssignSocket(this->node, p/*, netSocketManagerBase->typeIndexOfSocketO*/, sdata);
-	registerWithInfraAndAssignSocket(/*this->node, */p, typeID, sdata);
+	registerWithInfraAndAssignSocket(p, sdata);
 }
 
 SocketBase& SocketBase::setNoDelay(bool noDelay) { OSLayer::appSetNoDelay(dataForCommandProcessing, noDelay); return *this; }
@@ -113,7 +109,7 @@ ServerBase::ServerBase() {
 	registerServerByID(this->node, p, typeID);
 }*/
 
-void ServerBase::registerServerByID(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId) { ::registerServer(/*node, */t, typeId); }
+void ServerBase::registerServer(soft_ptr<net::ServerBase> t) { ::registerServer(t); }
 
 void ServerBase::ref() { netServerManagerBase->appRef(dataForCommandProcessing); }
 void ServerBase::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }

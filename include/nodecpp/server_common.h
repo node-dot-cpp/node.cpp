@@ -264,23 +264,8 @@ namespace nodecpp {
 				DataForCommandProcessing::userHandlerClassPattern.getPatternForUpdate<UserClass>().template addHandler<handler, memmberFn, UserClass>();
 			}
 
-		protected:
-//			uint16_t localPort = 0;
-
-//			size_t id = 0;
-//			enum State { UNINITIALIZED = 0, LISTENING, CLOSED } state = UNINITIALIZED;
-
-		//protected:
 		public:
-			void registerServerByID(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId);
-			void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t) {registerServerByID(/*node, */t, -1);}
-			template<class Node, class DerivedServer>
-			void registerServer(soft_ptr<DerivedServer> t) {
-				int id = -1;
-				if constexpr ( !std::is_same< typename Node::EmitterTypeForServer, void>::value )
-					id = Node::EmitterTypeForServer::template getTypeIndex<DerivedServer>( &(*t));
-				registerServerByID(/*nullptr, */t, id);
-			}
+			void registerServer(soft_ptr<net::ServerBase> t);
 
 		public:
 			NodeBase* node = nullptr;
@@ -291,9 +276,6 @@ namespace nodecpp {
 
 		public:
 			ServerBase();
-			//ServerBase(int typeID);
-//			ServerBase(acceptedSocketCreationRoutineType socketCreationCB);
-			//ServerBase(int typeID, acceptedSocketCreationRoutineType socketCreationCB);
 			virtual ~ServerBase() {
 				socketList.clear();
 				reportBeingDestructed();
@@ -776,18 +758,7 @@ namespace nodecpp {
 				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
 						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
 						ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
-						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
-						{
-							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-							int id = -1;
-							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
-								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
-							ret->registerMeByIDAndAssignSocket(sdata, id);
-						}
-						else
-						{
-							ret->registerMeByIDAndAssignSocket(sdata, -1);
-						}
+						ret->registerMeAndAssignSocket(sdata);
 						return ret;
 					} );
 			}
@@ -805,18 +776,7 @@ namespace nodecpp {
 							retSock = nodecpp::safememory::make_owning<SocketT>();
 						}
 						retSock->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*retSock));
-						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
-						{
-							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-							int id = -1;
-							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
-								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
-							retSock->registerMeByIDAndAssignSocket(sdata, id);
-						}
-						else
-						{
-							retSock->registerMeByIDAndAssignSocket(sdata, -1);
-						}
+						retSock->registerMeAndAssignSocket(sdata);
 						return retSock;
 					} );
 			}
@@ -829,13 +789,6 @@ namespace nodecpp {
 		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
 			return createServer<ServerT, SocketBase>(::std::forward<Types>(args)...);
 		}
-
-		//template<class T>
-		//T* createServer(std::function<void()> cb) {
-		//	auto svr = new T();
-		//	svr->on<event::Connect>(cb);
-		//	return svr;
-		//}
 
 		//template<class T>
 		//T* createConnection(uint16_t port, const char* host) {

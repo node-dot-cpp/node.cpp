@@ -7,11 +7,6 @@
 #include <nodecpp/socket_common.h>
 
 using namespace nodecpp;
-using namespace fmt;
-
-#ifdef AUTOMATED_TESTING_ONLY
-#define AUTOMATED_TESTING_CYCLE_COUNT 30
-#endif
 
 class MySampleTNode : public NodeBase
 {
@@ -21,18 +16,22 @@ public:
 	size_t recvSize = 0;
 	size_t recvReplies = 0;
 	Buffer buf;
+	uint64_t maxRequests = UINT64_MAX;
+	static constexpr uint64_t autotestRespCnt = 30;
 
 	using ClientSockType = net::SocketBase;
-	Timeout to;
 
 	virtual awaitable<void> main()
 	{
-		clientSock = net::createSocket();
+		auto argv = getArgv();
+		for ( size_t i=1; i<argv.size(); ++i )
+			if ( argv[i].size() >= 9 && argv[i].substr(0,9) == "-autotest" )
+			{
+				maxRequests = autotestRespCnt;
+				break;
+			}
 
-		to = std::move( setTimeout( [this]() { 
-			printf( "   !!!TIMER!!!\n" );
-			refreshTimeout(to);
-		}, 1000) );
+		clientSock = net::createSocket();
 
 		clientSock->on(event::connect, [this]() { 
 			buf.writeInt8( 2, 0 );
@@ -42,25 +41,38 @@ public:
 
 		clientSock->on(event::data, [this](const Buffer& buffer) { 
 			++recvReplies;
-#ifdef AUTOMATED_TESTING_ONLY
-			if ( recvReplies > AUTOMATED_TESTING_CYCLE_COUNT )
+			recvSize += buffer.size();
+
+			if ( ( recvReplies & 0xFFF ) == 0 )
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
+
+			if ( recvReplies < maxRequests )
+			{
+				buf.writeInt8( 2, 0 );
+				buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+				clientSock->write(buf);
+			}
+			else if ( recvReplies == maxRequests )
+			{
+				buf.writeInt8( 4, 0 );
+				buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
+				buf.writeInt8( (uint8_t)0xfe, 2 );
+				buf.writeInt8( (uint8_t)0xfe, 3 );
+				clientSock->write(buf);
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "Sending the last request in automated testing" );
+			}
+			else
 			{
 				log::default_log::info( log::ModuleID(nodecpp_module_id), "About to exit successfully in automated testing" );
 				clientSock->end();
 				clientSock->unref();
 			}
-#endif
-			if ( ( recvReplies & 0xFFF ) == 0 )
-				log::default_log::info( log::ModuleID(nodecpp_module_id), "[{}] MySampleTNode::onData(), size = {}", recvReplies, buffer.size() );
-			recvSize += buffer.size();
-			buf.writeInt8( 2, 0 );
-			buf.writeInt8( (uint8_t)recvReplies | 1, 1 );
-			clientSock->write(buf);
+
 		});
 
 		clientSock->connect(2000, "127.0.0.1");
 		
-		co_return;
+		CO_RETURN;
 	}
 
 	safememory::owning_ptr<ClientSockType> clientSock;

@@ -16,7 +16,7 @@ class MySampleTNode : public NodeBase
 public:
 	void main()
 	{
-		srv = net::createHttpServer<ServerType>( [](net::IncomingHttpMessageAtServer& request, net::HttpServerResponse& response){
+		srv = net::createHttpServer<ServerType>( [this](net::IncomingHttpMessageAtServer& request, net::HttpServerResponse& response){
 			if ( request.getMethod() == "GET" || request.getMethod() == "HEAD" ) {
 				response.writeHead(200, {{"Content-Type", "text/xml"}});
 				auto queryValues = Url::parseUrlQueryString( request.getUrl() );
@@ -25,7 +25,7 @@ public:
 					response.end("no value specified");
 				} else if (value.toStr() == "close"){
 					srv->close();
-					response.end("no value specified");
+					response.end("closing server...");
 				} else {
 					response.end( value.toStr() );
 				}

@@ -395,25 +395,8 @@ namespace nodecpp {
 
 //		private:
 		public:
-			void registerMeAndAcquireSocket(int typeID);
-			void registerMeByIDAndAssignSocket(OpaqueSocketData& sdata, int typeID);
-			template<class Node, class DerivedSocket>
-			void registerMeAndAssignSocket(OpaqueSocketData& sdata)
-			{
-				int id = -1;
-				if constexpr ( !std::is_same< typename Node::EmitterType, void>::value )
-					id = Node::EmitterType::template softGetTypeIndexIfTypeExists<DerivedSocket>();
-				registerMeByIDAndAssignSocket( sdata, id );
-			}
-
-			template<class Node, class DerivedSocket>
-			void registerMeAndAcquireSocket(nodecpp::safememory::soft_ptr<DerivedSocket> s)
-			{
-				int id = -1;
-				if constexpr ( !std::is_same< typename Node::EmitterType, void>::value )
-					id = Node::EmitterType::template softGetTypeIndexIfTypeExists<DerivedSocket>();
-				registerMeAndAcquireSocket( id );
-			}
+			void registerMeAndAcquireSocket();
+			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
 
 		public:
 			//nodecpp::string _remoteAddress;
@@ -470,6 +453,9 @@ namespace nodecpp {
 			void connect(uint16_t port, const char* ip);
 			void connect(uint16_t port, string ip) { connect( port, ip.c_str() ); }
 			void connect(uint16_t port, string_literal ip) { connect( port, ip.c_str() ); };
+			void connect(uint16_t port, string ip, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) { connect( port, ip.c_str(), std::move(cb) ); }
+			void connect(uint16_t port, string_literal ip, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) { connect( port, ip.c_str(), std::move(cb) ); };
+
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 
 			SocketBase& setNoDelay(bool noDelay = true);
@@ -1046,15 +1032,7 @@ namespace nodecpp {
 			nodecpp::safememory::owning_ptr<SocketT> createSocket(Types&& ... args) {
 			static_assert( std::is_base_of< SocketBase, SocketT >::value );
 			nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>(::std::forward<Types>(args)...);
-			if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
-			{
-				static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-				ret->template registerMeAndAcquireSocket<typename SocketT::NodeType, SocketT>(ret);
-			}
-			else
-			{
-				ret->registerMeAndAcquireSocket(-1);
-			}
+			ret->registerMeAndAcquireSocket();
 			ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
 			return ret;
 		}
