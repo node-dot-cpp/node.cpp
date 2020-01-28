@@ -272,15 +272,14 @@ namespace nodecpp {
 
 		//protected:
 		public:
-			void registerServerByID(/*NodeBase* node, */soft_ptr<net::ServerBase> t, int typeId);
-			void registerServer(/*NodeBase* node, */soft_ptr<net::ServerBase> t) {registerServerByID(/*node, */t, -1);}
-			template<class Node, class DerivedServer>
+			void registerServer(soft_ptr<net::ServerBase> t);
+			/*template<class Node, class DerivedServer>
 			void registerServer(soft_ptr<DerivedServer> t) {
 				int id = -1;
 				if constexpr ( !std::is_same< typename Node::EmitterTypeForServer, void>::value )
 					id = Node::EmitterTypeForServer::template getTypeIndex<DerivedServer>( &(*t));
-				registerServerByID(/*nullptr, */t, id);
-			}
+				registerServerByID(t, id);
+			}*/
 
 		public:
 			NodeBase* node = nullptr;
@@ -776,18 +775,7 @@ namespace nodecpp {
 				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
 						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
 						ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
-						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
-						{
-							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-							int id = -1;
-//							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
-//								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
-							ret->registerMeByIDAndAssignSocket(sdata, id);
-						}
-						else
-						{
-							ret->registerMeByIDAndAssignSocket(sdata, -1);
-						}
+						ret->registerMeAndAssignSocket(sdata);
 						return ret;
 					} );
 			}
@@ -805,18 +793,7 @@ namespace nodecpp {
 							retSock = nodecpp::safememory::make_owning<SocketT>();
 						}
 						retSock->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*retSock));
-						if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
-						{
-							static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-							int id = -1;
-							if constexpr ( !std::is_same< typename SocketT::NodeType::EmitterType, void>::value )
-								id = SocketT::NodeType::EmitterType::template softGetTypeIndexIfTypeExists<SocketT>();
-							retSock->registerMeByIDAndAssignSocket(sdata, id);
-						}
-						else
-						{
-							retSock->registerMeByIDAndAssignSocket(sdata, -1);
-						}
+						retSock->registerMeByIDAndAssignSocket(sdata);
 						return retSock;
 					} );
 			}

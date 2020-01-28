@@ -336,17 +336,17 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 };
 
 inline
-void registerWithInfraAndAcquireSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId)
+void registerWithInfraAndAcquireSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	netSocketManagerBase->appAcquireSocket(t, typeId);
+	netSocketManagerBase->appAcquireSocket(t);
 }
 
 inline
-void registerWithInfraAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t, int typeId, OpaqueSocketData& sdata)
+void registerWithInfraAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t, OpaqueSocketData& sdata)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	netSocketManagerBase->appAssignSocket(t, typeId, sdata);
+	netSocketManagerBase->appAssignSocket(t, sdata);
 }
 
 inline
@@ -356,16 +356,16 @@ void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 }
 
 inline
-void registerServer(soft_ptr<net::ServerBase> t, int typeId)
+void registerServer(soft_ptr<net::ServerBase> t)
 {
-	return netServerManagerBase->appAddServer(t, typeId);
+	return netServerManagerBase->appAddServer(t);
 }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 inline
-void registerAgentServer(/*NodeBase* node, */soft_ptr<Cluster::AgentServer> t, int typeId)
+void registerAgentServer(soft_ptr<Cluster::AgentServer> t)
 {
-	return netServerManagerBase->appAddAgentServer(/*node, */t, typeId);
+	return netServerManagerBase->appAddAgentServer(t);
 }
 #endif // NODECPP_ENABLE_CLUSTERING
 

@@ -922,19 +922,19 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 	}
 }
 
-void NetServerManagerBase::addServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+void NetServerManagerBase::addServerEntry(nodecpp::safememory::soft_ptr<net::ServerBase> ptr)
 {
-	ioSockets.addEntry<net::ServerBase>( /*node, */ptr, typeId );
+	ioSockets.addEntry<net::ServerBase>( ptr );
 }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-void NetServerManagerBase::addSlaveServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<net::ServerBase> ptr, int typeId)
+void NetServerManagerBase::addSlaveServerEntry(nodecpp::safememory::soft_ptr<net::ServerBase> ptr)
 {
-	ioSockets.addSlaveServerEntry<net::ServerBase>( /*node, */ptr, typeId );
+	ioSockets.addSlaveServerEntry<net::ServerBase>( ptr );
 }
 
-void NetServerManagerBase::addAgentServerEntry(/*NodeBase* node, */nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr, int typeId)
+void NetServerManagerBase::addAgentServerEntry(nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr)
 {
-	ioSockets.addEntry<Cluster::AgentServer>( /*node, */ptr, typeId );
+	ioSockets.addEntry<Cluster::AgentServer>( ptr );
 }
 #endif // NODECPP_ENABLE_CLUSTERING

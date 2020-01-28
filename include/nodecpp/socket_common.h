@@ -395,9 +395,9 @@ namespace nodecpp {
 
 //		private:
 		public:
-			void registerMeAndAcquireSocket(int typeID);
-			void registerMeByIDAndAssignSocket(OpaqueSocketData& sdata, int typeID);
-			template<class Node, class DerivedSocket>
+			void registerMeAndAcquireSocket();
+			void registerMeAndAssignSocket(OpaqueSocketData& sdata);
+			/*template<class Node, class DerivedSocket>
 			void registerMeAndAssignSocket(OpaqueSocketData& sdata)
 			{
 				int id = -1;
@@ -413,7 +413,7 @@ namespace nodecpp {
 				if constexpr ( !std::is_same< typename Node::EmitterType, void>::value )
 					id = Node::EmitterType::template softGetTypeIndexIfTypeExists<DerivedSocket>();
 				registerMeAndAcquireSocket( id );
-			}
+			}*/
 
 		public:
 			//nodecpp::string _remoteAddress;
@@ -1049,15 +1049,7 @@ namespace nodecpp {
 			nodecpp::safememory::owning_ptr<SocketT> createSocket(Types&& ... args) {
 			static_assert( std::is_base_of< SocketBase, SocketT >::value );
 			nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>(::std::forward<Types>(args)...);
-			if constexpr ( !std::is_same<typename SocketT::NodeType, void>::value )
-			{
-				static_assert( std::is_base_of< NodeBase, typename SocketT::NodeType >::value );
-				ret->template registerMeAndAcquireSocket<typename SocketT::NodeType, SocketT>(ret);
-			}
-			else
-			{
-				ret->registerMeAndAcquireSocket(-1);
-			}
+			ret->registerMeAndAcquireSocket();
 			ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
 			return ret;
 		}
