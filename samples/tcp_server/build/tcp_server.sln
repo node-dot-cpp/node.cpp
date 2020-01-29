@@ -6,10 +6,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tcp_server", "tcp_server.vc
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		automated_testing_debug|x64 = automated_testing_debug|x64
-		automated_testing_debug|x86 = automated_testing_debug|x86
-		automated_testing_release|x64 = automated_testing_release|x64
-		automated_testing_release|x86 = automated_testing_release|x86
 		dbg_with_clustering|x64 = dbg_with_clustering|x64
 		dbg_with_clustering|x86 = dbg_with_clustering|x86
 		Debug|x64 = Debug|x64
@@ -24,14 +20,6 @@ Global
 		release-clang|x86 = release-clang|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x64.ActiveCfg = automated_testing_debug|x64
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x64.Build.0 = automated_testing_debug|x64
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x86.ActiveCfg = automated_testing_debug|Win32
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x86.Build.0 = automated_testing_debug|Win32
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x64.ActiveCfg = automated_testing_release|x64
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x64.Build.0 = automated_testing_release|x64
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x86.ActiveCfg = automated_testing_release|Win32
-		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x86.Build.0 = automated_testing_release|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x64.ActiveCfg = dbg_with_clustering|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x64.Build.0 = dbg_with_clustering|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x86.ActiveCfg = dbg_with_clustering|Win32
