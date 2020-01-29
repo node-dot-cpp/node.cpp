@@ -1,7 +1,7 @@
-// NetSocket.h : sample of user-defined code
+// TcpClientWithHandlersSample.h : sample of user-defined code
 
-#ifndef NET_SOCKET_H
-#define NET_SOCKET_H
+#ifndef TCP_CLIENT_WITH_HANDLERS_SAMPLE_H
+#define TCP_CLIENT_WITH_HANDLERS_SAMPLE_H
 
 #include <nodecpp/common.h>
 #include <nodecpp/socket_common.h>
@@ -83,4 +83,4 @@ public:
 	safememory::owning_ptr<ClientSockType> clientSock;
 };
 
-#endif // NET_SOCKET_H
+#endif // TCP_CLIENT_WITH_HANDLERS_SAMPLE_H

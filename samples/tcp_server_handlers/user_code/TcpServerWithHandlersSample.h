@@ -1,7 +1,7 @@
-// NetSocket.h : sample of user-defined code
+// TcpServerWithHandlersSample.h : sample of user-defined code
 
-#ifndef NET_SOCKET_H
-#define NET_SOCKET_H
+#ifndef TCP_SERVER_WITH_HANDLERS_SAMPLE_H
+#define TCP_SERVER_WITH_HANDLERS_SAMPLE_H
 
 #include <nodecpp/common.h>
 #include <nodecpp/socket_common.h>
@@ -138,4 +138,4 @@ public:
 	nodecpp::safememory::owning_ptr<MyStatServer> srvCtrl;
 };
 
-#endif // NET_SOCKET_H
+#endif // TCP_SERVER_WITH_HANDLERS_SAMPLE_H

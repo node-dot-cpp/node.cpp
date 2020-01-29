@@ -1,7 +1,7 @@
 // NetSocket.h : sample of user-defined code for an http server
 
-#ifndef NET_SOCKET_H
-#define NET_SOCKET_H
+#ifndef HTTP_SERVER_WITH_HANDLERS_SAMPLE_H
+#define HTTP_SERVER_WITH_HANDLERS_SAMPLE_H
 
 #include <nodecpp/common.h>
 #include <nodecpp/http_server.h>
@@ -55,4 +55,4 @@ public:
 	}
 };
 
-#endif // NET_SOCKET_H
+#endif // HTTP_SERVER_WITH_HANDLERS_SAMPLE_H

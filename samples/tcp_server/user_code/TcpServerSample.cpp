@@ -1,7 +1,7 @@
-// NetSocket.cpp : sample of user-defined code
+// TcpServerSample.cpp : sample of user-defined code
 
 
 #include <infrastructure.h>
-#include "NetSocket.h"
+#include "TcpServerSample.h"
 
 static NodeRegistrator<Runnable<MySampleTNode>> noname( "MySampleTemplateNode" );
