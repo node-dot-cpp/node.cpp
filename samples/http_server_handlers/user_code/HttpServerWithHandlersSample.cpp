@@ -1,7 +1,7 @@
-// NetSocket.cpp : sample of user-defined code
+// HttpServerWithHandlersSample.cpp : sample of user-defined code
 
 
 #include <infrastructure.h>
-#include "NetSocket.h"
+#include "HttpServerWithHandlersSample.h"
 
 static NodeRegistrator<Runnable<MySampleTNode>> noname( "MySampleTemplateNode" );

@@ -620,7 +620,7 @@
     <ClCompile Include="..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\src\net.cpp" />
     <ClCompile Include="..\..\..\src\tcp_socket\tcp_socket.cpp" />
-    <ClCompile Include="..\user_code\NetSocket.cpp" />
+    <ClCompile Include="..\user_code\TcpServerSample.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\nodecpp\awaitable.h" />
@@ -641,7 +641,7 @@
     <ClInclude Include="..\..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\..\src\tcp_socket\tcp_socket.h" />
     <ClInclude Include="..\..\..\src\tcp_socket\tcp_socket_base.h" />
-    <ClInclude Include="..\user_code\NetSocket.h" />
+    <ClInclude Include="..\user_code\TcpServerSample.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
