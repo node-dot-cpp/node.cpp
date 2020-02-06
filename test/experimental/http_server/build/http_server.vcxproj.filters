@@ -40,8 +40,12 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\nodecpp_assert.cpp" />
-    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\nodecpp_assert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h">
@@ -71,25 +75,13 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\server_type_list.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_type_list.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\trace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h">
@@ -117,6 +109,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\logging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\clustering_impl\interthred_comm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

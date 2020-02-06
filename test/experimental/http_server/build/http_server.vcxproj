@@ -475,13 +475,10 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\net_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\server_type_list.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\socket_type_list.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\template_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\trace.h" />
     <ClInclude Include="..\..\..\..\src\clustering_impl\clustering_common.h" />
+    <ClInclude Include="..\..\..\..\src\clustering_impl\interthred_comm.h" />
     <ClInclude Include="..\..\..\..\src\ev_queue.h" />
     <ClInclude Include="..\..\..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />

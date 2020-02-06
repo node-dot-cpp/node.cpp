@@ -25,6 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#include "interthred_comm.h"
+ThreadMsgQueue threadQueues[MAX_THREADS];
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 
