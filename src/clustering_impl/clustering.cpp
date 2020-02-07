@@ -37,16 +37,24 @@
 #include "interthred_comm.h"
 ThreadMsgQueue threadQueues[MAX_THREADS];
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t threadIdx )
+thread_local InterThreadComm interThreadComm;
+
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, ThreadID threadId )
 {
-	// check idx
-	ThreadMsgQueue& queue = threadQueues[ threadIdx ];
-	// get socket from under the mutex
-	queue.queue.push_back( std::move( msg ) );
+	// validate idx
+	int sock;
+	uint64_t reincarnation;
+	
+	{// get socket and reincarnation from under the mutex
+		sock = threadQueues[ threadId.slotId ].sock;
+		reincarnation = threadQueues[ threadId.slotId ].reincarnation;
+	}// release mutex
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == threadId.reincarnation ); 
+	threadQueues[ threadId.slotId ].queue.push_back( std::move( msg ) );
 	// write a byte to sock
 	uint8_t singleByte = 0x1;
 	size_t sentSize = 0;
-	auto ret = nodecpp::internal_usage_only::internal_send_packet( &singleByte, 1, queue.sock, sentSize );
+	auto ret = nodecpp::internal_usage_only::internal_send_packet( &singleByte, 1, sock, sentSize );
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == COMMLAYER_RET_OK ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sentSize == 1 ); 
 }

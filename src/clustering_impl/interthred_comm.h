@@ -159,9 +159,16 @@ public:
 
 using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<nodecpp::platform::internal_msg::InternalMsg, 4>>; // TODO: revise the second param value
 
+struct ThreadID
+{
+	size_t slotId;
+	uint64_t reincarnation;
+};
+
 struct ThreadMsgQueue
 {
 	int sock;
+	uint64_t reincarnation;
 	MsgQueue queue;
 };
 
@@ -169,6 +176,99 @@ struct ThreadMsgQueue
 
 extern ThreadMsgQueue threadQueues[MAX_THREADS];
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t threadIdx );
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, ThreadID threadId );
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+using namespace nodecpp;
+
+class InterThreadComm
+{
+	class MyReadingSocket : public nodecpp::net::SocketBase {};
+	class PublishedSocket : public nodecpp::net::SocketBase {};
+	class MyTempServer : public nodecpp::net::ServerBase {};
+
+public:
+	InterThreadComm() {}
+
+	virtual nodecpp::handler_ret_type init()
+	{
+		// registering handlers
+		nodecpp::net::ServerBase::addHandler<MyTempServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &InterThreadComm::onListeningTempServer>(this);
+		nodecpp::net::ServerBase::addHandler<MyTempServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &InterThreadComm::onConnectionTempServer>(this);
+
+		nodecpp::net::SocketBase::addHandler<MyReadingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &InterThreadComm::onDataReadingSocket>(this);
+		nodecpp::net::SocketBase::addHandler<MyReadingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::End, &InterThreadComm::onEndReadingSocket>(this);
+		nodecpp::net::SocketBase::addHandler<MyReadingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Error, &InterThreadComm::onErrorReadingSocket>(this);
+
+		nodecpp::net::SocketBase::addHandler<PublishedSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &InterThreadComm::onConnectPublishedSocket>(this);
+		nodecpp::net::SocketBase::addHandler<PublishedSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::End, &InterThreadComm::onEndPublishedSocket>(this);
+		nodecpp::net::SocketBase::addHandler<PublishedSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Error, &InterThreadComm::onErrorPublishedSocket>(this);
+
+		srv = nodecpp::net::createServer<MyTempServer, MyReadingSocket>();
+		publishedSock = nodecpp::net::createSocket<PublishedSocket>();
+
+		srv->listen(0, "127.0.0.1", 5);
+
+		CO_RETURN;
+	}
+
+public:
+	// server
+	nodecpp::handler_ret_type onListeningTempServer(nodecpp::safememory::soft_ptr<MyTempServer> server, size_t id, nodecpp::net::Address addr ) {
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "onListeningTempServer");
+		publishedSock->connect( addr.port, "127.0.0.1" );
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type onConnectionTempServer(nodecpp::safememory::soft_ptr<MyTempServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket ) {
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "onConnectionTempServer");
+		server->close();
+		CO_RETURN;
+	}
+
+	// reading socket
+	nodecpp::handler_ret_type onDataReadingSocket(nodecpp::safememory::soft_ptr<MyReadingSocket> socket, Buffer& buffer)
+	{
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type onEndReadingSocket(nodecpp::safememory::soft_ptr<MyReadingSocket> socket)
+	{
+		socket->end();
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type onErrorReadingSocket(nodecpp::safememory::soft_ptr<MyReadingSocket> socket, Error& e)
+	{
+		socket->end();
+		CO_RETURN;
+	}
+
+	// published socket
+	nodecpp::handler_ret_type onConnectPublishedSocket(nodecpp::safememory::soft_ptr<PublishedSocket> socket)
+	{
+		// TODO: publish the socket
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type onEndPublishedSocket(nodecpp::safememory::soft_ptr<PublishedSocket> socket)
+	{
+		socket->end();
+		CO_RETURN;
+	}
+
+	nodecpp::handler_ret_type onErrorPublishedSocket(nodecpp::safememory::soft_ptr<PublishedSocket> socket, Error& e)
+	{
+		socket->end();
+		CO_RETURN;
+	}
+
+	nodecpp::safememory::owning_ptr<MyTempServer> srv;
+	nodecpp::safememory::owning_ptr<PublishedSocket> publishedSock;
+};
+
+extern thread_local InterThreadComm interThreadComm;
 
 #endif // INTERTHREAD_COMM_H
