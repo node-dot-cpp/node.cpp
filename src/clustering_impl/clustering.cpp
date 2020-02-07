@@ -25,8 +25,6 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include "interthred_comm.h"
-ThreadMsgQueue threadQueues[MAX_THREADS];
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 
@@ -35,6 +33,25 @@ ThreadMsgQueue threadQueues[MAX_THREADS];
 #include "../../src/infrastructure.h"
 #include "../../src/tcp_socket/tcp_socket.h"
 #include <thread>
+
+#include "interthred_comm.h"
+ThreadMsgQueue threadQueues[MAX_THREADS];
+
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t threadIdx )
+{
+	// check idx
+	ThreadMsgQueue& queue = threadQueues[ threadIdx ];
+	// get socket from under the mutex
+	queue.queue.push_back( std::move( msg ) );
+	// write a byte to sock
+	uint8_t singleByte = 0x1;
+	size_t sentSize = 0;
+	auto ret = nodecpp::internal_usage_only::internal_send_packet( &singleByte, 1, queue.sock, sentSize );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == COMMLAYER_RET_OK ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sentSize == 1 ); 
+}
+
+
 
 extern void workerThreadMain( void* pdata );
 

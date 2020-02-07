@@ -28,7 +28,7 @@
 #ifndef INTERTHREAD_COMM_H
 #define INTERTHREAD_COMM_H
 
-#include <vector_of_pages.h>
+#include <internal_msg.h>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -169,14 +169,6 @@ struct ThreadMsgQueue
 
 extern ThreadMsgQueue threadQueues[MAX_THREADS];
 
-inline
-void sendMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t threadIdx )
-{
-	// check idx
-	ThreadMsgQueue& queue = threadQueues[ threadIdx ];
-	// get socket from under the mutex
-	queue.queue.push_back( std::move( msg ) );
-	// write a byte to sock
-}
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t threadIdx );
 
 #endif // INTERTHREAD_COMM_H

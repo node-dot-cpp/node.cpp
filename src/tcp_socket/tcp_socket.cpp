@@ -68,11 +68,6 @@ typedef int ssize_t;
 
 #endif // _MSC_VER
 
-//mb: TODO make enum
-#define COMMLAYER_RET_FAILED 0
-#define COMMLAYER_RET_OK 1
-#define COMMLAYER_RET_PENDING 2
-
 using namespace std;
 
 /////////////////////////////////////////////     COMMUNICATION     ///////////////////////////////////////////
@@ -397,7 +392,6 @@ namespace nodecpp
 			return true;
 		}
 
-		static
 		uint8_t internal_send_packet(const uint8_t* data, size_t size, SOCKET sock, size_t& sentSize)
 		{
 			const char* ptr = reinterpret_cast<const char*>(data); //windows uses char*, linux void*
