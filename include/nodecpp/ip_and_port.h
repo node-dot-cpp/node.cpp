@@ -48,7 +48,7 @@ namespace nodecpp {
 		static Ip4 fromNetwork(uint32_t ip);
 		nodecpp::string toStr() const;
 
-		bool operator == ( const Ip4& other ) { return ip == other.ip; }
+		bool operator == ( const Ip4& other ) const { return ip == other.ip; }
 	};
 	
 	class Port
@@ -82,10 +82,10 @@ namespace nodecpp {
 		IPFAMILY( IPFAMILY&& other ) = default;
 		IPFAMILY& operator = ( IPFAMILY&& other ) = default;
 
-		bool operator == ( const IPFAMILY& other ) { return value_ == other.value_; }
-		bool operator != ( const IPFAMILY& other ) { return value_ != other.value_; }
+		bool operator == ( const IPFAMILY& other ) const { return value_ == other.value_; }
+		bool operator != ( const IPFAMILY& other ) const { return value_ != other.value_; }
 
-		nodecpp::string_literal toString( Value family ) { 
+		nodecpp::string_literal toString( Value family ) const { 
 			switch ( family )
 			{
 				case Value::IPv4: return "IPv4";
@@ -94,7 +94,7 @@ namespace nodecpp {
 			}
 		}
 
-		Value value() { return value_; }
+		Value value() const { return value_; }
 
 		void fromNum( uint32_t value ) {
 			switch ( value )

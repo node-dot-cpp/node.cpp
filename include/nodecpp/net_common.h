@@ -540,7 +540,7 @@ namespace nodecpp {
 			nodecpp::IPFAMILY family;
 			Ip4 ip;
 
-			bool operator == ( const Address& other ) { return port == other.port && ip == other.ip && family == other.family; }
+			bool operator == ( const Address& other ) const { return port == other.port && ip == other.ip && family == other.family; }
 		};
 
 //		enum Mode { callable, awaitable };
