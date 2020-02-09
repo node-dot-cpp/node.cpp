@@ -35,6 +35,20 @@
 
 namespace nodecpp::platform::internal_msg { class InternalMsg; } // forward declaration
 
+struct InterThreadMsg
+{
+	uint64_t reincarnation;
+	size_t msgType;
+	nodecpp::platform::internal_msg::InternalMsg msg;
+
+	InterThreadMsg() {}
+	InterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg_, size_t msgType_, uint64_t reincarnation_) : reincarnation( reincarnation_ ), msgType( msgType_ ), msg( std::move(msg_) )  {}
+	InterThreadMsg( const InterThreadMsg& ) = delete;
+	InterThreadMsg& operator = ( const InterThreadMsg& ) = delete;
+	InterThreadMsg( InterThreadMsg&& other ) = default; 
+	InterThreadMsg& operator = ( InterThreadMsg&& other ) = default;
+};
+
 template<class T, size_t maxsz_bits>
 class CircularBuffer {
 	static constexpr size_t bufsz = 1 << maxsz_bits;
@@ -157,7 +171,7 @@ public:
 	}
 };
 
-using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<nodecpp::platform::internal_msg::InternalMsg, 4>>; // TODO: revise the second param value
+using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<InterThreadMsg, 4>>; // TODO: revise the second param value
 
 struct ThreadID
 {
@@ -176,7 +190,7 @@ struct ThreadMsgQueue
 
 extern ThreadMsgQueue threadQueues[MAX_THREADS];
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, ThreadID threadId );
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID threadId );
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -198,6 +212,7 @@ public:
 		nodecpp::net::ServerBase::addHandler<MyTempServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &InterThreadComm::onListeningTempServer>(this);
 		nodecpp::net::ServerBase::addHandler<MyTempServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &InterThreadComm::onConnectionTempServer>(this);
 
+		nodecpp::net::SocketBase::addHandler<MyReadingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &InterThreadComm::onConnectReadingSocket>(this);
 		nodecpp::net::SocketBase::addHandler<MyReadingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &InterThreadComm::onDataReadingSocket>(this);
 		nodecpp::net::SocketBase::addHandler<MyReadingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::End, &InterThreadComm::onEndReadingSocket>(this);
 		nodecpp::net::SocketBase::addHandler<MyReadingSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Error, &InterThreadComm::onErrorReadingSocket>(this);
@@ -224,11 +239,20 @@ public:
 
 	nodecpp::handler_ret_type onConnectionTempServer(nodecpp::safememory::soft_ptr<MyTempServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket ) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "onConnectionTempServer");
-		server->close();
+		if ( socket->remoteAddress() == publishedSock->localAddress() )
+			server->close();
+		else
+			socket->end();
 		CO_RETURN;
 	}
 
 	// reading socket
+	nodecpp::handler_ret_type onConnectReadingSocket(nodecpp::safememory::soft_ptr<MyReadingSocket> socket)
+	{
+		// comm system is ready
+		CO_RETURN;
+	}
+
 	nodecpp::handler_ret_type onDataReadingSocket(nodecpp::safememory::soft_ptr<MyReadingSocket> socket, Buffer& buffer)
 	{
 		CO_RETURN;

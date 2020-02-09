@@ -39,7 +39,7 @@ ThreadMsgQueue threadQueues[MAX_THREADS];
 
 thread_local InterThreadComm interThreadComm;
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, ThreadID threadId )
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID threadId )
 {
 	// validate idx
 	int sock;
@@ -50,7 +50,7 @@ void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Thre
 		reincarnation = threadQueues[ threadId.slotId ].reincarnation;
 	}// release mutex
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == threadId.reincarnation ); 
-	threadQueues[ threadId.slotId ].queue.push_back( std::move( msg ) );
+	threadQueues[ threadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, reincarnation ) );
 	// write a byte to sock
 	uint8_t singleByte = 0x1;
 	size_t sentSize = 0;
