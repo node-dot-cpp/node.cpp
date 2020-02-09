@@ -119,8 +119,11 @@ private:
 public:
 	using T = typename FixedSizeCollection::value_type;
 
-	MWSRFixedSizeQueueWithFlowControl() {
-	}
+	MWSRFixedSizeQueueWithFlowControl() {}
+	MWSRFixedSizeQueueWithFlowControl( const MWSRFixedSizeQueueWithFlowControl& ) = delete;
+	MWSRFixedSizeQueueWithFlowControl& operator = ( const MWSRFixedSizeQueueWithFlowControl& ) = delete;
+	MWSRFixedSizeQueueWithFlowControl( MWSRFixedSizeQueueWithFlowControl&& ) = delete;
+	MWSRFixedSizeQueueWithFlowControl& operator = ( MWSRFixedSizeQueueWithFlowControl&& ) = delete;
 	void push_back(T&& it) {
 		//if the queue is full, BLOCKS until some space is freed
 		{//creating scope for lock
@@ -152,8 +155,9 @@ public:
 			return std::pair<bool, T>(false, T());
 
 		assert(coll.size() > 0);
-		T ret = std::move(coll.front());
-		coll.pop_front();
+//		T ret = std::move(coll.front());
+//		coll.pop_front();
+		T ret = std::move(coll.pop_front());
 		lock.unlock();
 		waitwr.notify_one();
 
@@ -202,12 +206,18 @@ class InterThreadComm
 	class MyReadingSocket : public nodecpp::net::SocketBase {};
 	class PublishedSocket : public nodecpp::net::SocketBase {};
 	class MyTempServer : public nodecpp::net::ServerBase {};
+	uint64_t reincarnation = 0;
+	size_t threadIdx = 0;
 
 public:
 	InterThreadComm() {}
 
-	virtual nodecpp::handler_ret_type init()
+	virtual nodecpp::handler_ret_type init( size_t threadIdx_, uint64_t reincarnation_ )
 	{
+		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx_ < MAX_THREADS );
+		threadIdx = threadIdx_;
+		reincarnation = reincarnation_;
+
 		// registering handlers
 		nodecpp::net::ServerBase::addHandler<MyTempServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Listen, &InterThreadComm::onListeningTempServer>(this);
 		nodecpp::net::ServerBase::addHandler<MyTempServer, nodecpp::net::ServerBase::DataForCommandProcessing::UserHandlers::Handler::Connection, &InterThreadComm::onConnectionTempServer>(this);
@@ -249,12 +259,27 @@ public:
 	// reading socket
 	nodecpp::handler_ret_type onConnectReadingSocket(nodecpp::safememory::soft_ptr<MyReadingSocket> socket)
 	{
-		// comm system is ready
+		// comm system is ready TODO: report, ...
 		CO_RETURN;
 	}
 
 	nodecpp::handler_ret_type onDataReadingSocket(nodecpp::safememory::soft_ptr<MyReadingSocket> socket, Buffer& buffer)
 	{
+		// TODO: processMessage(s)
+		MsgQueue& myQueue = threadQueues[threadIdx].queue;
+		for ( size_t i=0; i<buffer.size(); ++i )
+		{
+			auto popRes = std::move( myQueue.pop_front() );
+			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, popRes.first ); // unless we've already killed it
+			InterThreadMsg& msg = popRes.second;
+			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, msg.reincarnation == reincarnation, "{} vs. {}", msg.reincarnation, reincarnation ); // unless we've already killed it
+			// TODO: process message
+			auto readit = msg.msg.getReadIter();
+			size_t sz = readit.availableSize();
+			const char* text = reinterpret_cast<const char*>( readit.read(sz) );
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "msg = \"{}\"", text );
+		}
+
 		CO_RETURN;
 	}
 
@@ -279,12 +304,14 @@ public:
 
 	nodecpp::handler_ret_type onEndPublishedSocket(nodecpp::safememory::soft_ptr<PublishedSocket> socket)
 	{
+		// TODO: handling (consider both cases: "initiated by our side" and "errors")
 		socket->end();
 		CO_RETURN;
 	}
 
 	nodecpp::handler_ret_type onErrorPublishedSocket(nodecpp::safememory::soft_ptr<PublishedSocket> socket, Error& e)
 	{
+		// TODO: handling (consider both cases: "initiated by our side" and "errors")
 		socket->end();
 		CO_RETURN;
 	}
