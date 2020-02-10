@@ -106,6 +106,7 @@ int main( int argc, char *argv_[] )
 #else
 
 #include "clustering_impl/clustering_common.h"
+#include "clustering_impl/interthred_comm.h"
 
 namespace nodecpp {
 extern void preinitMasterThreadClusterObject();
@@ -143,6 +144,8 @@ int main( int argc, char *argv_[] )
 	log.add( nodecpp::string_literal( "default_log.txt" ) );
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;
+
+	interThreadComm.init( 0, 0 );
 
 	nodecpp::preinitMasterThreadClusterObject();
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )

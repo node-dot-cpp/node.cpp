@@ -32,6 +32,8 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <nodecpp/socket_common.h>
+#include <nodecpp/server_common.h>
 
 namespace nodecpp::platform::internal_msg { class InternalMsg; } // forward declaration
 
