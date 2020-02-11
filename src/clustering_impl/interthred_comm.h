@@ -187,8 +187,8 @@ struct ThreadID
 
 struct ThreadMsgQueue
 {
-	int sock;
-	uint64_t reincarnation;
+	int sock = -1;
+	uint64_t reincarnation = 0;
 	MsgQueue queue;
 };
 
@@ -216,6 +216,7 @@ public:
 
 	virtual nodecpp::handler_ret_type init( size_t threadIdx_, uint64_t reincarnation_ )
 	{
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "InterThreadComm::init(), threadIdx = {}, reincarnation = {}", threadIdx_, reincarnation_ );
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx_ < MAX_THREADS );
 		threadIdx = threadIdx_;
 		reincarnation = reincarnation_;
@@ -244,13 +245,13 @@ public:
 public:
 	// server
 	nodecpp::handler_ret_type onListeningTempServer(nodecpp::safememory::soft_ptr<MyTempServer> server, size_t id, nodecpp::net::Address addr ) {
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "onListeningTempServer");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "onListeningTempServer(), threadIdx = {}, reincarnation = {}", threadIdx, reincarnation );
 		publishedSock->connect( addr.port, "127.0.0.1" );
 		CO_RETURN;
 	}
 
 	nodecpp::handler_ret_type onConnectionTempServer(nodecpp::safememory::soft_ptr<MyTempServer> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket ) {
-		log::default_log::info( log::ModuleID(nodecpp_module_id), "onConnectionTempServer");
+		log::default_log::info( log::ModuleID(nodecpp_module_id), "onConnectionTempServer, threadIdx = {}, reincarnation = {}", threadIdx, reincarnation );
 		if ( socket->remoteAddress() == publishedSock->localAddress() )
 			server->close();
 		else
@@ -262,6 +263,13 @@ public:
 	nodecpp::handler_ret_type onConnectReadingSocket(nodecpp::safememory::soft_ptr<MyReadingSocket> socket)
 	{
 		// comm system is ready TODO: report, ...
+		{
+			nodecpp::platform::internal_msg::InternalMsg msg;
+			ThreadID threadId = {0, 0};
+			auto reportStr = nodecpp::format( "Thread {} has almost initialized interthread comm system ...", threadIdx );
+			msg.append( const_cast<char*>(reportStr.c_str()), reportStr.size() + 1 ); // TODO: update Foundation and remove cast ASAP!!!
+			sendInterThreadMsg( std::move( msg ), 17, threadId );
+		}
 		CO_RETURN;
 	}
 
@@ -300,7 +308,15 @@ public:
 	// published socket
 	nodecpp::handler_ret_type onConnectPublishedSocket(nodecpp::safememory::soft_ptr<PublishedSocket> socket)
 	{
-		// TODO: publish the socket
+		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx < MAX_THREADS, "{} vs. {}", threadIdx, MAX_THREADS ); // unless we've already killed it
+		threadQueues[threadIdx].sock = socket->dataForCommandProcessing.osSocket;
+		{
+			nodecpp::platform::internal_msg::InternalMsg msg;
+			ThreadID threadId = {0, 0};
+			auto reportStr = nodecpp::format( "Thread {} has initialized interthread comm system; socket = {}", threadIdx, socket->dataForCommandProcessing.osSocket );
+			msg.append( const_cast<char*>(reportStr.c_str()), reportStr.size() + 1 ); // TODO: update Foundation and remove cast ASAP!!!
+			sendInterThreadMsg( std::move( msg ), 17, threadId );
+		}
 		CO_RETURN;
 	}
 

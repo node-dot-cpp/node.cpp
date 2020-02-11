@@ -145,8 +145,6 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;
 
-	interThreadComm.init( 0, 0 );
-
 	nodecpp::preinitMasterThreadClusterObject();
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();

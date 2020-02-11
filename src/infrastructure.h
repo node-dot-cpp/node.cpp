@@ -411,6 +411,7 @@ auto a_timeout_impl(uint32_t ms) {
 }
 #endif // NODECPP_NO_COROUTINES
 
+#include "clustering_impl/interthred_comm.h"
 
 extern thread_local NodeBase* thisThreadNode;
 template<class Node>
@@ -435,6 +436,7 @@ class Runnable : public RunnableBase
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
+			interThreadComm.init( nodecpp::cluster.worker().id(), 0 );
 #endif // NODECPP_ENABLE_CLUSTERING
 			node = make_owning<Node>();
 			thisThreadNode = &(*node); 
