@@ -309,35 +309,13 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 	void runInterthreadCommInitLoop()
 	{
 		activateInterThreadCommSystem();
+
 		while (!isInterThreadCommSystemInitialized())
 		{
-
-			EvQueue queue;
-
-			netServer.infraGetPendingEvents(queue);
-			netServer. infraEmitListeningEvents();
-			queue.emit();
-
 			uint64_t now = infraGetCurrentTime();
-			timeout.infraTimeoutEvents(now, queue);
-			queue.emit();
-
-			now = infraGetCurrentTime();
-			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now/*, queue*/);
+			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now);
 			if(!refed)
 				return;
-
-			queue.emit();
-			emitInmediates();
-
-			netSocket. infraGetCloseEvent(/*queue*/);
-			netSocket. infraProcessSockAcceptedEvents();
-			netServer. infraGetCloseEvents(/*queue*/);
-			queue.emit();
-
-//			netSocket.infraClearStores();
-			netServer.infraClearStores();
-
 			ioSockets.reworkIfNecessary();
 		}
 	}
