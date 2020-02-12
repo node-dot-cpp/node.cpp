@@ -178,7 +178,20 @@ class NetSockets
 
 public:
 
-	NetSockets() {ourSide.reserve(capacity_); osSide.reserve(capacity_); ourSide.emplace_back(0); osSide.emplace_back();}
+	NetSockets() {
+		ourSide.reserve(capacity_); 
+		osSide.reserve(capacity_);
+		ourSide.emplace_back(0);
+		osSide.emplace_back();
+#ifdef NODECPP_ENABLE_CLUSTERING
+		ourSide.emplace_back(0);
+		osSide.emplace_back();
+		osSide[awakerSockIdx].fd = INVALID_SOCKET;
+		ourSide.emplace_back(0);
+		osSide.emplace_back();
+		osSide[interThreadCommServerIdx].fd = INVALID_SOCKET;
+#endif // NODECPP_ENABLE_CLUSTERING
+	}
 
 	bool isUsed(size_t idx) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
@@ -238,7 +251,7 @@ public:
 		}
 	}
 	SOCKET socketsAt(size_t idx) const { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
 		if ( idx < osSide.size() )
 		{
 			return osSide.at(idx).fd;
@@ -1104,8 +1117,7 @@ public:
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addAgentServerEntry(ptr);
 	}
-#endif // NODECPP_ENABLE_CLUSTERING
-#ifdef NODECPP_ENABLE_CLUSTERING
+
 	void acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog) {
 		SocketRiia s( OSLayer::appAcquireSocket() );
 		Port myPort;
