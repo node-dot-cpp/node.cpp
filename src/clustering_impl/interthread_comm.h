@@ -340,4 +340,7 @@ public:
 
 extern thread_local InterThreadComm interThreadComm;
 
+nodecpp::handler_ret_type activateInterThreadCommSystem();
+bool isInterThreadCommSystemInitialized();
+
 #endif // INTERTHREAD_COMM_H

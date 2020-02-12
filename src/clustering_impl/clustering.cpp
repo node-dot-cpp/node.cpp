@@ -34,7 +34,7 @@
 #include "../../src/tcp_socket/tcp_socket.h"
 #include <thread>
 
-#include "interthred_comm.h"
+#include "interthread_comm.h"
 ThreadMsgQueue threadQueues[MAX_THREADS];
 
 thread_local InterThreadComm interThreadComm;

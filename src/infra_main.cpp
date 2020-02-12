@@ -106,7 +106,7 @@ int main( int argc, char *argv_[] )
 #else
 
 #include "clustering_impl/clustering_common.h"
-#include "clustering_impl/interthred_comm.h"
+//#include "clustering_impl/interthread_comm.h"
 
 namespace nodecpp {
 extern void preinitMasterThreadClusterObject();

@@ -144,6 +144,8 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
 
+#include "clustering_impl/interthread_comm.h"
+
 class Infrastructure
 {
 	//nodecpp::vector<NetSocketEntry> ioSockets;
@@ -410,8 +412,6 @@ auto a_timeout_impl(uint32_t ms) {
     return timeout_awaiter(ms);
 }
 #endif // NODECPP_NO_COROUTINES
-
-#include "clustering_impl/interthred_comm.h"
 
 extern thread_local NodeBase* thisThreadNode;
 template<class Node>
