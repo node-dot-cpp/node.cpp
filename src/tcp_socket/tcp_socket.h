@@ -127,7 +127,16 @@ class NetSockets
 	size_t associatedCount = 0;
 	size_t usedCount = 0;
 	//mb: xxxSide[0] is always reserved and invalid.
-	static const size_t capacity_ = 2; // just a temporary workaround to prevent reallocation at arbitrary time; TODO: address properly!
+	//di: in clustering mode xxxSide[1] is always reserved and invalid (separate handling for awaker socket)
+	//di: in clustering mode xxxSide[2] is always reserved and invalid (separate handling for InterThreadCommServer socket)
+#ifdef NODECPP_ENABLE_CLUSTERING
+	static constexpr size_t awakerSockIdx = 1;
+	static constexpr size_t interThreadCommServerIdx = 2;
+	static constexpr size_t reserved_capacity = 3;
+#else
+	static constexpr size_t reserved_capacity = 1;
+#endif // NODECPP_ENABLE_CLUSTERING
+	static const size_t capacity_ = 1 + reserved_capacity; // just a temporary workaround to prevent reallocation at arbitrary time; TODO: address properly!
 	static const size_t compactionMinSize = 32;
 
 	void makeCompactIfNecessary() {
@@ -140,7 +149,18 @@ class NetSockets
 		ourSideNew.emplace_back(0); 
 		osSideNew.emplace_back();
 		size_t usedCountNew = 0;
-		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
+#ifdef NODECPP_ENABLE_CLUSTERING
+		// copy reserverd part
+		ourSideNew.emplace_back(std::move(ourSide[awakerSockIdx]));
+		osSideNew.push_back( osSide[awakerSockIdx] );
+		if ( osSide[awakerSockIdx].fd != INVALID_SOCKET )
+			++usedCountNew;
+		ourSideNew.emplace_back(std::move(ourSide[interThreadCommServerIdx]));
+		osSideNew.push_back( osSide[interThreadCommServerIdx] );
+		if ( osSide[interThreadCommServerIdx].fd != INVALID_SOCKET )
+			++usedCountNew;
+#endif // NODECPP_ENABLE_CLUSTERING
+		for (size_t i = reserved_capacity; i != ourSide.size(); ++i) // skip reserved part
 		{
 			if (ourSide[i].isUsed())
 			{
@@ -161,7 +181,7 @@ public:
 	NetSockets() {ourSide.reserve(capacity_); osSide.reserve(capacity_); ourSide.emplace_back(0); osSide.emplace_back();}
 
 	bool isUsed(size_t idx) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 			return ourSide[idx].isUsed(); 
 		else
@@ -173,7 +193,7 @@ public:
 		}
 	}
 	NetSocketEntry& at(size_t idx) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
@@ -189,7 +209,7 @@ public:
 		}
 	}
 	const NetSocketEntry& at(size_t idx) const {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
@@ -205,40 +225,40 @@ public:
 	}
 	short reventsAt(size_t idx) const {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
-		if ( idx < ourSide.size() )
+		if ( idx < osSide.size() )
 		{
 			return osSide.at(idx).revents;
 		}
 		else
 		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
-			idx -= ourSide.capacity();
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide.size() == osSide.capacity() && idx >= osSide.size() ); 
+			idx -= osSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < osSideAccum.size() );
 			return osSideAccum.at(idx).revents;
 		}
 	}
 	SOCKET socketsAt(size_t idx) const { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
-		if ( idx < ourSide.size() )
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
+		if ( idx < osSide.size() )
 		{
 			return osSide.at(idx).fd;
 		}
 		else
 		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == ourSide.capacity() && idx >= ourSide.size() ); 
-			idx -= ourSide.capacity();
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSideAccum.size(), "{} vs. {}", idx, ourSideAccum.size() );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide.size() == osSide.capacity() && idx >= osSide.size() ); 
+			idx -= osSide.capacity();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < osSideAccum.size(), "{} vs. {}", idx, osSideAccum.size() );
 			return osSideAccum.at(idx).fd;
 		}
 	}
 	size_t size() const {return ourSide.size() - 1; }
-	bool isValidId( size_t idx ) { return idx && idx < ourSide.size() + ourSideAccum.size(); }
+	bool isValidId( size_t idx ) { return idx >= reserved_capacity && idx < ourSide.size() + ourSideAccum.size(); }
 
 	template<class SocketType>
 	void addEntry(nodecpp::safememory::soft_ptr<SocketType> ptr) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
-		for (size_t i = 1; i != ourSide.size(); ++i) // skip ourSide[0]
+		for (size_t i = reserved_capacity; i != ourSide.size(); ++i) // skip ourSide[0]
 		{
 			if (!ourSide[i].isUsed())
 			{
@@ -280,6 +300,22 @@ public:
 		return;
 	}
 #ifdef NODECPP_ENABLE_CLUSTERING
+	void setAwakerSocket( SOCKET sock )
+	{
+		osSide[awakerSockIdx].fd = sock;
+		osSide[awakerSockIdx].events = 0;
+		osSide[awakerSockIdx].revents = 0;
+		++usedCount;
+		return;
+	}
+	void setInterThreadCommServerSocket( SOCKET sock )
+	{
+		osSide[interThreadCommServerIdx].fd = sock;
+		osSide[interThreadCommServerIdx].events = 0;
+		osSide[interThreadCommServerIdx].revents = 0;
+		++usedCount;
+		return;
+	}
 	NetSocketEntry& slaveServerAt(size_t idx) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= SlaveServerEntryMinIndex ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < SlaveServerEntryMinIndex + slaveServers.size() ); 
@@ -331,7 +367,7 @@ public:
 	}
 
 	void setAssociated( size_t idx/*, pollfd p*/ ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
@@ -356,7 +392,7 @@ public:
 		}
 	}
 	void setPollout( size_t idx ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 			osSide[idx].events |= POLLOUT; 
 		else
@@ -368,7 +404,7 @@ public:
 		}
 	}
 	void unsetPollout( size_t idx ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 			osSide[idx].events &= ~POLLOUT; 
 		else
@@ -380,7 +416,7 @@ public:
 		}
 	}
 	void setPollin( size_t idx ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 			osSide[idx].events |= POLLIN; 
 		else
@@ -392,7 +428,7 @@ public:
 		}
 	}
 	void unsetPollin( size_t idx ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 			osSide[idx].events &= ~POLLIN; 
 		else
@@ -404,7 +440,7 @@ public:
 		}
 	}
 	void setRefed( size_t idx, bool refed ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !refed || ourSide[idx].isUsed() ); 
@@ -419,7 +455,7 @@ public:
 		}
 	}
 	void setUnused( size_t idx ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
 			if ( osSide[idx].fd != INVALID_SOCKET )
@@ -446,7 +482,7 @@ public:
 
 	}
 	void setSocketClosed( size_t idx ) {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide[idx].isUsed() ); 
