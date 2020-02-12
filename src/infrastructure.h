@@ -369,6 +369,16 @@ void registerAgentServer(soft_ptr<Cluster::AgentServer> t)
 {
 	return netServerManagerBase->appAddAgentServer(t);
 }
+inline
+void acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog)
+{
+	return netServerManagerBase->acquireSocketAndLetInterThreadCommServerListening( ip, port, backlog );
+}
+inline
+SOCKET acquireAndConnectSocketForInterThreadComm( const char* ip, uint16_t destinationPort, uint16_t& sourcePort )
+{
+	return netServerManagerBase->acquireAndConnectSocketForInterThreadComm( ip, destinationPort, sourcePort );
+}
 #endif // NODECPP_ENABLE_CLUSTERING
 
 extern thread_local TimeoutManager* timeoutManager;

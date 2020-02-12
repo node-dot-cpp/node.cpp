@@ -111,7 +111,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\clustering_impl\interthred_comm.h">
+    <ClInclude Include="..\..\..\..\src\clustering_impl\interthread_comm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

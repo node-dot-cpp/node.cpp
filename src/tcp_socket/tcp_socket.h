@@ -1133,6 +1133,19 @@ public:
 		}
 		ioSockets.setInterThreadCommServerSocket( s.get() );
 	}
+
+	SOCKET acquireAndConnectSocketForInterThreadComm( const char* ip, uint16_t destinationPort, uint16_t& sourcePort )
+	{
+		SocketRiia s( OSLayer::appAcquireSocket() );
+		struct ::sockaddr_in sa;
+		memset(&sa, 0, sizeof(struct ::sockaddr_in));
+		sourcePort = internal_usage_only::internal_port_of_tcp_socket( s.get() );
+		Ip4 ip4 = Ip4::parse(ip);
+		if ( sourcePort == 0 )
+			throw Error();
+		OSLayer::appConnectSocket(s.get(), ip, destinationPort );
+		return s.release();
+	}
 #endif // NODECPP_ENABLE_CLUSTERING
 	template<class DataForCommandProcessing>
 	void appListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl

@@ -16,8 +16,8 @@ using namespace nodecpp;
 using namespace fmt;
 
 //#define IMPL_VERSION 1 // main() is a single coro
-//#define IMPL_VERSION 12 // main() is a single coro (with clustering)
-#define IMPL_VERSION 2 // onRequest is a coro
+#define IMPL_VERSION 12 // main() is a single coro (with clustering)
+//#define IMPL_VERSION 2 // onRequest is a coro
 
 class MySampleTNode : public NodeBase
 {
