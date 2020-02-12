@@ -30,14 +30,73 @@
 
 #include "clustering_common.h"
 #include "../../include/nodecpp/cluster.h"
-#include "../../src/infrastructure.h"
-#include "../../src/tcp_socket/tcp_socket.h"
+#include "../infrastructure.h"
+#include "../tcp_socket/tcp_socket.h"
 #include <thread>
 
 #include "interthread_comm.h"
+#include "interthread_comm_impl.h"
+
 ThreadMsgQueue threadQueues[MAX_THREADS];
 
 thread_local InterThreadComm interThreadComm;
+
+static InterThreadCommInitializer interThreadCommInitializer;
+
+void InterThreadCommInitializer::startInitialization()
+{
+	Ip4 ip4;
+	ip4.parse( "127.0.01" );
+	acquireSocketAndLetInterThreadCommServerListening( ip4, myServerPort, 128 );
+	commHandles.writeHandle = acquireAndConnectSocketForInterThreadComm( "127.0.01", myServerPort, myServerPort );
+	RequestData rd = {requestIdBase++, 0, commHandles.writeHandle};
+	requests.insert( std::make_pair( commHandles.writeHandle, rd ) );
+}
+
+void InterThreadCommInitializer::generateHandlePair( size_t userDefID )
+{
+	int handle = acquireAndConnectSocketForInterThreadComm( "127.0.01", myServerPort, myServerPort );
+	RequestData rd = {requestIdBase++, userDefID, handle};
+	requests.insert( std::make_pair( commHandles.writeHandle, rd ) );
+}
+
+nodecpp::handler_ret_type InterThreadCommInitializer::onConnectionTempServer( int sock, nodecpp::net::Address sourceAddr )
+{
+	log::default_log::info( log::ModuleID(nodecpp_module_id), "onConnectionTempServer, sock = {}, from port = {}", sock, sourceAddr.port );
+	auto findRes = requests.find( sourceAddr.port );
+	if ( findRes != requests.end() )
+	{
+		if ( findRes->second.requestId != 0 )
+		{
+			InterThreadCommPair handles;
+			handles.readHandle = sock;
+			handles.writeHandle = findRes->second.writeHandle;
+			// TODO: report accordingly
+			// use findRes->second.userDefID
+		}
+		else
+		{
+			commHandles.readHandle = sock;
+			isInitialized_ = true;
+		}
+	}
+	else
+	{
+		// TODO: close sock
+	}
+
+	CO_RETURN;
+}
+
+void activateInterThreadCommSystem()
+{
+	interThreadCommInitializer.startInitialization();
+}
+
+bool isInterThreadCommSystemInitialized()
+{
+	return interThreadCommInitializer.isInitialized();
+}
 
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID threadId )
 {

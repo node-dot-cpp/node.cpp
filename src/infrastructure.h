@@ -298,11 +298,53 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 		}
 	}
 
-	void runInfraLoop2()
+	void doBasicInitialization()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
 
 		ioSockets.reworkIfNecessary();
+	}
+
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void runInterthreadCommInitLoop()
+	{
+		activateInterThreadCommSystem();
+		while (!isInterThreadCommSystemInitialized())
+		{
+
+			EvQueue queue;
+
+			netServer.infraGetPendingEvents(queue);
+			netServer. infraEmitListeningEvents();
+			queue.emit();
+
+			uint64_t now = infraGetCurrentTime();
+			timeout.infraTimeoutEvents(now, queue);
+			queue.emit();
+
+			now = infraGetCurrentTime();
+			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now/*, queue*/);
+			if(!refed)
+				return;
+
+			queue.emit();
+			emitInmediates();
+
+			netSocket. infraGetCloseEvent(/*queue*/);
+			netSocket. infraProcessSockAcceptedEvents();
+			netServer. infraGetCloseEvents(/*queue*/);
+			queue.emit();
+
+//			netSocket.infraClearStores();
+			netServer.infraClearStores();
+
+			ioSockets.reworkIfNecessary();
+		}
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
+
+	void runStandardLoop()
+	{
 		while (running)
 		{
 
@@ -429,7 +471,11 @@ class Runnable : public RunnableBase
 {
 	owning_ptr<Node> node;
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void internalRun( bool isMaster )
+#else
 	void internalRun()
+#endif
 	{
 		interceptNewDeleteOperators(true);
 		{
@@ -443,10 +489,15 @@ class Runnable : public RunnableBase
 			timeoutManager = &infra.getTimeout();
 			inmediateQueue = &infra.getInmediateQueue();
 			netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
+			infra.doBasicInitialization();
+#ifdef NODECPP_ENABLE_CLUSTERING
+//			if ( isMaster )
+//				infra.runInterthreadCommInitLoop();
+#endif
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
-			interThreadComm.init( nodecpp::cluster.worker().id(), 0 );
+//			interThreadComm.init( nodecpp::cluster.worker().id(), 0 );
 #endif // NODECPP_ENABLE_CLUSTERING
 			node = make_owning<Node>();
 			thisThreadNode = &(*node); 
@@ -456,7 +507,7 @@ class Runnable : public RunnableBase
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
 			node->main();
-			infra. runInfraLoop2();
+			infra.runStandardLoop();
 			node = nullptr;
 
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
@@ -470,10 +521,17 @@ class Runnable : public RunnableBase
 public:
 	using NodeType = Node;
 	Runnable() {}
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void run(bool isMaster) override
+	{
+		return internalRun(isMaster);
+	}
+#else
 	void run() override
 	{
 		return internalRun();
 	}
+#endif // NODECPP_ENABLE_CLUSTERING
 };
 
 #endif //INFRASTRUCTURE_H

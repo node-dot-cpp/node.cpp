@@ -114,6 +114,9 @@
     <ClInclude Include="..\..\..\..\src\clustering_impl\interthread_comm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\src\clustering_impl\interthread_comm_impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

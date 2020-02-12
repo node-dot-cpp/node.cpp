@@ -128,7 +128,7 @@ void workerThreadMain( void* pdata )
 	nodecpp::preinitSlaveThreadClusterObject( startupData );
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Worker thread with threadID = {}", startupData.assignedThreadID );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-		f.second->create()->run();
+		f.second->create()->run(false);
 }
 
 int main( int argc, char *argv_[] )
@@ -147,7 +147,7 @@ int main( int argc, char *argv_[] )
 
 	nodecpp::preinitMasterThreadClusterObject();
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-		f.second->create()->run();
+		f.second->create()->run(true);
 
 	nodecpp::logging_impl::currentLog = nullptr; // TODO: this is thread-unsafe. Revise and make sure all other threads using nodecpp::logging_impl::currentLog has already exited
 
