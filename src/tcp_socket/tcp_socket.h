@@ -303,7 +303,7 @@ public:
 	void setAwakerSocket( SOCKET sock )
 	{
 		osSide[awakerSockIdx].fd = sock;
-		osSide[awakerSockIdx].events = 0;
+		osSide[awakerSockIdx].events |= POLLIN;
 		osSide[awakerSockIdx].revents = 0;
 		++usedCount;
 		return;
@@ -311,7 +311,7 @@ public:
 	void setInterThreadCommServerSocket( SOCKET sock )
 	{
 		osSide[interThreadCommServerIdx].fd = sock;
-		osSide[interThreadCommServerIdx].events = 0;
+		osSide[interThreadCommServerIdx].events |= POLLIN;
 		osSide[interThreadCommServerIdx].revents = 0;
 		++usedCount;
 		return;
@@ -1103,6 +1103,23 @@ public:
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		addAgentServerEntry(ptr);
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog) {
+		SocketRiia s( OSLayer::appAcquireSocket() );
+		Port myPort;
+		myPort.fromNetwork( 0 );
+		if (!internal_usage_only::internal_bind_socket(s.get(), ip, myPort)) {
+			throw Error();
+		}
+		port = internal_usage_only::internal_port_of_tcp_socket(s.get());
+		if ( port == 0 )
+			throw Error();
+		if (!internal_usage_only::internal_listen_tcp_socket(s.get(), backlog)) {
+			throw Error();
+		}
+		ioSockets.setInterThreadCommServerSocket( s.get() );
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
 	template<class DataForCommandProcessing>
