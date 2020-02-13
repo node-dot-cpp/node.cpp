@@ -38,39 +38,19 @@
 #include "../tcp_socket/tcp_socket.h"
 
 
-struct InterThreadCommPair
-{
-	int readHandle;
-	int writeHandle;
-};
-
 class InterThreadCommInitializer
 {
-	struct RequestData
-	{
-		size_t requestId;
-		size_t userDefID;
-		int writeHandle;
-	};
-
 	bool isInitialized_ = false;
-	InterThreadCommPair commHandles;
 	uint16_t myServerPort;
-	uint16_t srcPort;
-	size_t requestIdBase = 0;
-	nodecpp::stdmap<uint16_t, RequestData> requests;
+	SOCKET myServerSocket;
 
 public:
 	InterThreadCommInitializer() {}
 
-	void startInitialization();
+	InterThreadCommPair init();
 
 public:
-	bool isInitialized() { return isInitialized_; }
-	void generateHandlePair( size_t userDefID );
-
-	// server
-	nodecpp::handler_ret_type onConnectionTempServer( int sock, nodecpp::net::Address sourceAddr );
+	InterThreadCommPair generateHandlePair();
 };
 
 #endif // INTERTHREAD_COMM_IMPL_H

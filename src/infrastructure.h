@@ -295,10 +295,6 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 					{
 						// TODO: ...
 					}
-					else if ( i == ioSockets.interThreadCommServerIdx )
-					{
-						netServer.infraCheckPollFdSetOnInterThreadServerCommInitSocket(revents);
-					}
 				}
 			}
 #ifdef NODECPP_ENABLE_CLUSTERING
@@ -315,22 +311,6 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 
 		ioSockets.reworkIfNecessary();
 	}
-
-#ifdef NODECPP_ENABLE_CLUSTERING
-	void runInterthreadCommInitLoop()
-	{
-		activateInterThreadCommSystem();
-
-		while (!isInterThreadCommSystemInitialized())
-		{
-			uint64_t now = infraGetCurrentTime();
-			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now);
-			if(!refed)
-				return;
-			ioSockets.reworkIfNecessary();
-		}
-	}
-#endif // NODECPP_ENABLE_CLUSTERING
 
 	void runStandardLoop()
 	{
@@ -401,14 +381,14 @@ void registerAgentServer(soft_ptr<Cluster::AgentServer> t)
 	return netServerManagerBase->appAddAgentServer(t);
 }
 inline
-void acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog)
+SOCKET acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog)
 {
 	return netServerManagerBase->acquireSocketAndLetInterThreadCommServerListening( ip, port, backlog );
 }
 inline
-SOCKET acquireAndConnectSocketForInterThreadComm( const char* ip, uint16_t destinationPort, uint16_t& sourcePort )
+std::pair<std::pair<SOCKET, uint16_t>, std::pair<SOCKET, uint16_t>> acquireAndConnectSocketForInterThreadComm( SOCKET interThreadCommServerSock, const char* ip, uint16_t destinationPort )
 {
-	return netServerManagerBase->acquireAndConnectSocketForInterThreadComm( ip, destinationPort, sourcePort );
+	return netServerManagerBase->acquireAndConnectSocketForInterThreadComm( interThreadCommServerSock, ip, destinationPort );
 }
 #endif // NODECPP_ENABLE_CLUSTERING
 
@@ -481,7 +461,10 @@ class Runnable : public RunnableBase
 			infra.doBasicInitialization();
 #ifdef NODECPP_ENABLE_CLUSTERING
 			if ( isMaster )
-				infra.runInterthreadCommInitLoop();
+			{
+				auto commPair = initInterThreadCommSystem();
+				// TODO: ...
+			}
 #endif
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING

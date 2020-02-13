@@ -43,64 +43,28 @@ thread_local InterThreadComm interThreadComm;
 
 static InterThreadCommInitializer interThreadCommInitializer;
 
-void InterThreadCommInitializer::startInitialization()
+InterThreadCommPair InterThreadCommInitializer::init()
 {
 	Ip4 ip4 = Ip4::parse( "127.0.01" );
-	acquireSocketAndLetInterThreadCommServerListening( ip4, myServerPort, 128 );
-	commHandles.writeHandle = acquireAndConnectSocketForInterThreadComm( "127.0.01", myServerPort, myServerPort );
-	RequestData rd = {requestIdBase++, 0, commHandles.writeHandle};
-	requests.insert( std::make_pair( commHandles.writeHandle, rd ) );
+	myServerSocket = acquireSocketAndLetInterThreadCommServerListening( ip4, myServerPort, 128 );
+	return generateHandlePair();
 }
 
-void InterThreadCommInitializer::generateHandlePair( size_t userDefID )
+InterThreadCommPair InterThreadCommInitializer::generateHandlePair()
 {
-	int handle = acquireAndConnectSocketForInterThreadComm( "127.0.01", myServerPort, myServerPort );
-	RequestData rd = {requestIdBase++, userDefID, handle};
-	requests.insert( std::make_pair( commHandles.writeHandle, rd ) );
+	auto res = acquireAndConnectSocketForInterThreadComm( myServerSocket, "127.0.01", myServerPort );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, res.first.second == res.second.second ); 
+	return InterThreadCommPair({res.first.first, res.second.first});
 }
 
-nodecpp::handler_ret_type InterThreadCommInitializer::onConnectionTempServer( int sock, nodecpp::net::Address sourceAddr )
+InterThreadCommPair initInterThreadCommSystem()
 {
-	log::default_log::info( log::ModuleID(nodecpp_module_id), "onConnectionTempServer, sock = {}, from port = {}", sock, sourceAddr.port );
-	auto findRes = requests.find( sourceAddr.port );
-	if ( findRes != requests.end() )
-	{
-		if ( findRes->second.requestId != 0 )
-		{
-			InterThreadCommPair handles;
-			handles.readHandle = sock;
-			handles.writeHandle = findRes->second.writeHandle;
-			// TODO: report accordingly
-			// use findRes->second.userDefID
-		}
-		else
-		{
-			commHandles.readHandle = sock;
-			isInitialized_ = true;
-		}
-	}
-	else
-	{
-		// TODO: close sock
-	}
-
-	CO_RETURN;
+	return interThreadCommInitializer.init();
 }
 
-nodecpp::handler_ret_type onConnectionTempServer( int sock, nodecpp::net::Address sourceAddr )
+InterThreadCommPair generateHandlePair()
 {
-	co_await interThreadCommInitializer.onConnectionTempServer( sock, sourceAddr );
-	CO_RETURN;
-}
-
-void activateInterThreadCommSystem()
-{
-	interThreadCommInitializer.startInitialization();
-}
-
-bool isInterThreadCommSystemInitialized()
-{
-	return interThreadCommInitializer.isInitialized();
+	return interThreadCommInitializer.generateHandlePair();
 }
 
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID threadId )

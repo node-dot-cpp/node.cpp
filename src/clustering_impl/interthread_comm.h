@@ -340,8 +340,13 @@ public:
 
 extern thread_local InterThreadComm interThreadComm;
 
-void activateInterThreadCommSystem();
-bool isInterThreadCommSystemInitialized();
-nodecpp::handler_ret_type onConnectionTempServer( int sock, nodecpp::net::Address sourceAddr );
+struct InterThreadCommPair
+{
+	SOCKET readHandle;
+	SOCKET writeHandle;
+};
+
+InterThreadCommPair initInterThreadCommSystem();
+InterThreadCommPair generateHandlePair();
 
 #endif // INTERTHREAD_COMM_H

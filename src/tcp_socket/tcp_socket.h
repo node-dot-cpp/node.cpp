@@ -1121,7 +1121,7 @@ public:
 		addAgentServerEntry(ptr);
 	}
 
-	void acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog) {
+	SOCKET acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog) {
 		SocketRiia s( OSLayer::appAcquireSocket() );
 		Port myPort = Port::fromNetwork( 0 );
 		if (!internal_usage_only::internal_bind_socket(s.get(), ip, myPort)) {
@@ -1134,17 +1134,29 @@ public:
 			throw Error();
 		}
 		ioSockets.setInterThreadCommServerSocket( s.get() );
+		return s.release();
 	}
 
-	SOCKET acquireAndConnectSocketForInterThreadComm( const char* ip, uint16_t destinationPort, uint16_t& sourcePort )
+	std::pair<std::pair<SOCKET, uint16_t>, std::pair<SOCKET, uint16_t>> acquireAndConnectSocketForInterThreadComm( SOCKET interThreadCommServerSock, const char* ip, uint16_t destinationPort )
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
 		Ip4 ip4 = Ip4::parse(ip);
 		OSLayer::appConnectSocket(s.get(), ip, destinationPort );
-		sourcePort = internal_usage_only::internal_port_of_tcp_socket( s.get() );
+		uint16_t sourcePort = internal_usage_only::internal_port_of_tcp_socket( s.get() );
 		if ( sourcePort == 0 )
 			throw Error();
-		return s.release();
+
+		nodecpp::net::Address addr;
+		Port remotePort;
+		SocketRiia newSock( internal_usage_only::internal_tcp_accept( addr.ip, remotePort, interThreadCommServerSock ) );
+		if (newSock.get() == INVALID_SOCKET)
+		{
+			// TODO: think about error processing
+			throw Error();
+		}
+		addr.port = remotePort.getHost();
+
+		return std::make_pair( std::make_pair( s.release(), sourcePort ), std::make_pair( newSock.release(), addr.port ) );
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
 	template<class DataForCommandProcessing>
@@ -1380,27 +1392,6 @@ public:
 	}
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-	void infraCheckPollFdSetOnInterThreadServerCommInitSocket(short revents)
-	{
-		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
-		{
-//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLERR event at {}", current.getServerSocketData()->osSocket);
-//			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-//			infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
-		}
-		else if ((revents & POLLIN) != 0)
-		{
-//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", current.getServerSocketData()->osSocket);
-			infraProcessAcceptEventOnInterThreadServerCommInitSocket();
-		}
-		else if (revents != 0)
-		{
-			//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
-			//internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			//infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
-		}
-	}
-
 	void infraEmitAcceptedSocketEventsReceivedfromMaster()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isWorker() );
@@ -1412,23 +1403,6 @@ public:
 		}
 		acceptedSockets.clear();
 	}
-
-	void infraProcessAcceptEventOnInterThreadServerCommInitSocket()
-	{
-		OpaqueSocketData osd( false );
-
-		nodecpp::net::Address addr;
-		Port remotePort;
-		SocketRiia newSock( internal_usage_only::internal_tcp_accept( addr.ip, remotePort, ioSockets.getThreadCommServerSocket() ) );
-		if (newSock.get() == INVALID_SOCKET)
-		{
-			// TODO: think about error processing
-			return;
-		}
-		addr.port = remotePort.getHost();
-		onConnectionTempServer( newSock.release(), addr );
-	}
-
 #endif // NODECPP_ENABLE_CLUSTERING
 
 private:
