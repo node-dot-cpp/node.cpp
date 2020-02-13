@@ -707,7 +707,6 @@ public:
 	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets), recvBuffer(recvBufferCapacity) {}
 
 	// to help with 'poll'
-	//template<class Node>
 	void infraGetCloseEvent(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to appClose it,
@@ -758,7 +757,6 @@ sessionCreationtime += infraGetCurrentTime() - now;
 		pendingCloseEvents.clear();
 	}
 
-	//template<class Node>
 	void infraProcessSockAcceptedEvents()
 	{
 		size_t inisz = pendingAcceptedEvents.size();
@@ -794,7 +792,6 @@ sessionCreationtime += infraGetCurrentTime() - now;
 			pendingAcceptedEvents.erase( pendingAcceptedEvents.begin(), pendingAcceptedEvents.begin() + inisz );
 	}
 
-	//template<class Node>
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
@@ -844,7 +841,6 @@ sessionCreationtime += infraGetCurrentTime() - now;
 	}
 
 private:
-	//template<class Node>
 	void infraProcessReadEvent(NetSocketEntry& entry)
 	{
 		auto hr = entry.getClientSocketData()->ahd_read.h;
@@ -920,7 +916,6 @@ private:
 		}
 	}
 
-	//template<class Node>
 	void infraProcessRemoteEnded(NetSocketEntry& entry)
 	{
 		if (!entry.getClientSocketData()->remoteEnded)
@@ -959,7 +954,6 @@ private:
 
 	}
 
-	//template<class Node>
 	void infraProcessWriteEvent(NetSocketEntry& current)
 	{
 		NetSocketManagerBase::ShouldEmit status = this->_infraProcessWriteEvent(*current.getClientSocketData());
@@ -1276,7 +1270,6 @@ public:
 		errorStore.clear();
 	}
 
-	//template<class Node>
 	void infraGetCloseEvents(/*EvQueue& evs*/)
 	{
 		// if there is an issue with a socket, we may need to close it,
@@ -1316,7 +1309,6 @@ public:
 		pendingCloseEvents.clear();
 	}
 
-	//template<class Node>
 	void infraEmitListeningEvents()
 	{
 		while ( pendingListenEvents.size() )
@@ -1360,7 +1352,6 @@ public:
 		}
 	}
 
-	//template<class Node>
 	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
@@ -1383,7 +1374,6 @@ public:
 	}
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-	//template<class Node>
 	void infraEmitAcceptedSocketEventsReceivedfromMaster()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isWorker() );
@@ -1398,7 +1388,6 @@ public:
 #endif // NODECPP_ENABLE_CLUSTERING
 
 private:
-	//template<class Node>
 	void infraProcessAcceptEvent(NetSocketEntry& entry) //TODO:CLUSTERING alt impl
 	{
 		OpaqueSocketData osd( false );
@@ -1430,7 +1419,6 @@ private:
 	}
 
 
-	//template<class Node>
 	void consumeAcceptedSocket(NetSocketEntry& entry, OpaqueSocketData& osd, Ip4 remoteIp, Port remotePort)
 	{
 //		soft_ptr<net::SocketBase> ptr = entry.getServerSocket()->makeSocket( osd );
@@ -1468,7 +1456,6 @@ sessionCreationtime += infraGetCurrentTime() - now;
 		return;
 	}
 
-	//template<class Node>
 	void infraMakeErrorEventAndClose(NetSocketEntry& entry)
 	{
 		Error e;
