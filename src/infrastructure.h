@@ -271,7 +271,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 				{
 #endif
 					++processed;
-					if ( i >= ioSockets.reserved_capacity )
+					if ( 1 + i >= ioSockets.reserved_capacity )
 					{
 						NetSocketEntry& current = ioSockets.at( 1 + i );
 						if ( current.isAssociated() )
