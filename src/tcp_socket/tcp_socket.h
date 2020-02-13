@@ -134,8 +134,7 @@ public:
 	//di: in clustering mode xxxSide[2] is always reserved and invalid (separate handling for InterThreadCommServer socket)
 #ifdef NODECPP_ENABLE_CLUSTERING
 	static constexpr size_t awakerSockIdx = 1;
-	static constexpr size_t interThreadCommServerIdx = 2;
-	static constexpr size_t reserved_capacity = 3;
+	static constexpr size_t reserved_capacity = 2;
 #else
 	static constexpr size_t reserved_capacity = 1;
 #endif // NODECPP_ENABLE_CLUSTERING
@@ -158,10 +157,6 @@ private:
 		ourSideNew.emplace_back(std::move(ourSide[awakerSockIdx]));
 		osSideNew.push_back( osSide[awakerSockIdx] );
 		if ( osSide[awakerSockIdx].fd != INVALID_SOCKET )
-			++usedCountNew;
-		ourSideNew.emplace_back(std::move(ourSide[interThreadCommServerIdx]));
-		osSideNew.push_back( osSide[interThreadCommServerIdx] );
-		if ( osSide[interThreadCommServerIdx].fd != INVALID_SOCKET )
 			++usedCountNew;
 #endif // NODECPP_ENABLE_CLUSTERING
 		for (size_t i = reserved_capacity; i != ourSide.size(); ++i) // skip reserved part
@@ -191,9 +186,6 @@ public:
 		ourSide.emplace_back(0);
 		osSide.emplace_back();
 		osSide[awakerSockIdx].fd = INVALID_SOCKET;
-		ourSide.emplace_back(0);
-		osSide.emplace_back();
-		osSide[interThreadCommServerIdx].fd = INVALID_SOCKET;
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 
@@ -269,7 +261,6 @@ public:
 		}
 	}
 #ifdef NODECPP_ENABLE_CLUSTERING
-	SOCKET getThreadCommServerSocket() { return osSide[interThreadCommServerIdx].fd; }
 	SOCKET getAwakerSockSocket() { return osSide[awakerSockIdx].fd; }
 #endif // NODECPP_ENABLE_CLUSTERING
 
@@ -327,14 +318,6 @@ public:
 		osSide[awakerSockIdx].fd = sock;
 		osSide[awakerSockIdx].events |= POLLIN;
 		osSide[awakerSockIdx].revents = 0;
-		++usedCount;
-		return;
-	}
-	void setInterThreadCommServerSocket( SOCKET sock )
-	{
-		osSide[interThreadCommServerIdx].fd = sock;
-		osSide[interThreadCommServerIdx].events |= POLLIN;
-		osSide[interThreadCommServerIdx].revents = 0;
 		++usedCount;
 		return;
 	}
@@ -1133,7 +1116,6 @@ public:
 		if (!internal_usage_only::internal_listen_tcp_socket(s.get(), backlog)) {
 			throw Error();
 		}
-		ioSockets.setInterThreadCommServerSocket( s.get() );
 		return s.release();
 	}
 

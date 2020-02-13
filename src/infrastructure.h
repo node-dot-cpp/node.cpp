@@ -148,6 +148,9 @@ uint64_t infraGetCurrentTime();
 
 class Infrastructure
 {
+	template<class Node> 
+	friend class Runnable;
+
 	//nodecpp::vector<NetSocketEntry> ioSockets;
 	NetSockets ioSockets;
 	NetSocketManager netSocket;
@@ -463,7 +466,9 @@ class Runnable : public RunnableBase
 			if ( isMaster )
 			{
 				auto commPair = initInterThreadCommSystem();
-				// TODO: ...
+				threadQueues[0].reincarnation = 0;
+				threadQueues[0].sock = commPair.writeHandle;
+				infra.ioSockets.setAwakerSocket( commPair.readHandle );
 			}
 #endif
 			// from now on all internal structures are ready to use; let's run their "users"
