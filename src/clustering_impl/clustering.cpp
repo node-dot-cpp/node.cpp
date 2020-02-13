@@ -88,6 +88,12 @@ nodecpp::handler_ret_type InterThreadCommInitializer::onConnectionTempServer( in
 	CO_RETURN;
 }
 
+nodecpp::handler_ret_type onConnectionTempServer( int sock, nodecpp::net::Address sourceAddr )
+{
+	co_await interThreadCommInitializer.onConnectionTempServer( sock, sourceAddr );
+	CO_RETURN;
+}
+
 void activateInterThreadCommSystem()
 {
 	interThreadCommInitializer.startInitialization();

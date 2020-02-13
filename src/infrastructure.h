@@ -271,22 +271,33 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 				{
 #endif
 					++processed;
-					NetSocketEntry& current = ioSockets.at( 1 + i );
-					if ( current.isAssociated() )
+					if ( i >= ioSockets.reserved_capacity )
 					{
-						switch ( current.emitter.objectType )
+						NetSocketEntry& current = ioSockets.at( 1 + i );
+						if ( current.isAssociated() )
 						{
-							case OpaqueEmitter::ObjectType::ClientSocket:
-								netSocket. infraCheckPollFdSet(current, revents);
-								break;
-							case OpaqueEmitter::ObjectType::ServerSocket:
-							case OpaqueEmitter::ObjectType::AgentServer:
-								netServer. infraCheckPollFdSet(current, revents);
-								break;
-							default:
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
-								break;
+							switch ( current.emitter.objectType )
+							{
+								case OpaqueEmitter::ObjectType::ClientSocket:
+									netSocket. infraCheckPollFdSet(current, revents);
+									break;
+								case OpaqueEmitter::ObjectType::ServerSocket:
+								case OpaqueEmitter::ObjectType::AgentServer:
+									netServer. infraCheckPollFdSet(current, revents);
+									break;
+								default:
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
+									break;
+							}
 						}
+					}
+					else if ( i == ioSockets.awakerSockIdx )
+					{
+						// TODO: ...
+					}
+					else if ( i == ioSockets.interThreadCommServerIdx )
+					{
+						netServer.infraCheckPollFdSetOnInterThreadServerCommInitSocket(revents);
 					}
 				}
 			}
@@ -469,8 +480,8 @@ class Runnable : public RunnableBase
 			netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
 			infra.doBasicInitialization();
 #ifdef NODECPP_ENABLE_CLUSTERING
-//			if ( isMaster )
-//				infra.runInterthreadCommInitLoop();
+			if ( isMaster )
+				infra.runInterthreadCommInitLoop();
 #endif
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING

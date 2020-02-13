@@ -342,5 +342,6 @@ extern thread_local InterThreadComm interThreadComm;
 
 void activateInterThreadCommSystem();
 bool isInterThreadCommSystemInitialized();
+nodecpp::handler_ret_type onConnectionTempServer( int sock, nodecpp::net::Address sourceAddr );
 
 #endif // INTERTHREAD_COMM_H

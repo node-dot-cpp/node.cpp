@@ -30,7 +30,8 @@
 #define TCP_SOCKET_H
 
 #include "tcp_socket_base.h"
-#include "clustering_impl/clustering_common.h"
+#include "../clustering_impl/clustering_common.h"
+#include "../clustering_impl/interthread_comm.h"
 
 using namespace nodecpp;
 
@@ -115,6 +116,7 @@ public:
 
 class NetSockets
 {
+private:
 	using NetSocketEntryVectorT = nodecpp::vector<NetSocketEntry>;
 	NetSocketEntryVectorT ourSide;
 	NetSocketEntryVectorT ourSideAccum;
@@ -126,6 +128,7 @@ class NetSockets
 	nodecpp::vector<pollfd> osSideAccum;
 	size_t associatedCount = 0;
 	size_t usedCount = 0;
+public:
 	//mb: xxxSide[0] is always reserved and invalid.
 	//di: in clustering mode xxxSide[1] is always reserved and invalid (separate handling for awaker socket)
 	//di: in clustering mode xxxSide[2] is always reserved and invalid (separate handling for InterThreadCommServer socket)
@@ -136,8 +139,9 @@ class NetSockets
 #else
 	static constexpr size_t reserved_capacity = 1;
 #endif // NODECPP_ENABLE_CLUSTERING
-	static const size_t capacity_ = 1 + reserved_capacity; // just a temporary workaround to prevent reallocation at arbitrary time; TODO: address properly!
-	static const size_t compactionMinSize = 32;
+private:
+	static constexpr size_t capacity_ = 1 + reserved_capacity; // just a temporary workaround to prevent reallocation at arbitrary time; TODO: address properly!
+	static constexpr size_t compactionMinSize = 32;
 
 	void makeCompactIfNecessary() {
 		if ( ourSide.size() <= compactionMinSize || usedCount < ourSide.size() / 2 )
@@ -264,6 +268,11 @@ public:
 			return osSideAccum.at(idx).fd;
 		}
 	}
+#ifdef NODECPP_ENABLE_CLUSTERING
+	SOCKET getThreadCommServerSocket() { return osSide[interThreadCommServerIdx].fd; }
+	SOCKET getAwakerSockSocket() { return osSide[awakerSockIdx].fd; }
+#endif // NODECPP_ENABLE_CLUSTERING
+
 	size_t size() const {return ourSide.size() - 1; }
 	bool isValidId( size_t idx ) { return idx >= reserved_capacity && idx < ourSide.size() + ourSideAccum.size(); }
 
@@ -1374,6 +1383,27 @@ public:
 	}
 
 #ifdef NODECPP_ENABLE_CLUSTERING
+	void infraCheckPollFdSetOnInterThreadServerCommInitSocket(short revents)
+	{
+		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
+		{
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLERR event at {}", current.getServerSocketData()->osSocket);
+//			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
+//			infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
+		}
+		else if ((revents & POLLIN) != 0)
+		{
+//!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", current.getServerSocketData()->osSocket);
+			infraProcessAcceptEventOnInterThreadServerCommInitSocket();
+		}
+		else if (revents != 0)
+		{
+			//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
+			//internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
+			//infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
+		}
+	}
+
 	void infraEmitAcceptedSocketEventsReceivedfromMaster()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, getCluster().isWorker() );
@@ -1385,6 +1415,23 @@ public:
 		}
 		acceptedSockets.clear();
 	}
+
+	void infraProcessAcceptEventOnInterThreadServerCommInitSocket()
+	{
+		OpaqueSocketData osd( false );
+
+		nodecpp::net::Address addr;
+		Port remotePort;
+		SocketRiia newSock( internal_usage_only::internal_tcp_accept( addr.ip, remotePort, ioSockets.getThreadCommServerSocket() ) );
+		if (newSock.get() == INVALID_SOCKET)
+		{
+			// TODO: think about error processing
+			return;
+		}
+		addr.port = remotePort.getHost();
+		onConnectionTempServer( newSock.release(), addr );
+	}
+
 #endif // NODECPP_ENABLE_CLUSTERING
 
 private:
