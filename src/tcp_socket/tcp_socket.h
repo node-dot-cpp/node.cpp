@@ -1123,8 +1123,7 @@ public:
 
 	void acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog) {
 		SocketRiia s( OSLayer::appAcquireSocket() );
-		Port myPort;
-		myPort.fromNetwork( 0 );
+		Port myPort = Port::fromNetwork( 0 );
 		if (!internal_usage_only::internal_bind_socket(s.get(), ip, myPort)) {
 			throw Error();
 		}
@@ -1140,13 +1139,11 @@ public:
 	SOCKET acquireAndConnectSocketForInterThreadComm( const char* ip, uint16_t destinationPort, uint16_t& sourcePort )
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
-		struct ::sockaddr_in sa;
-		memset(&sa, 0, sizeof(struct ::sockaddr_in));
-		sourcePort = internal_usage_only::internal_port_of_tcp_socket( s.get() );
 		Ip4 ip4 = Ip4::parse(ip);
+		OSLayer::appConnectSocket(s.get(), ip, destinationPort );
+		sourcePort = internal_usage_only::internal_port_of_tcp_socket( s.get() );
 		if ( sourcePort == 0 )
 			throw Error();
-		OSLayer::appConnectSocket(s.get(), ip, destinationPort );
 		return s.release();
 	}
 #endif // NODECPP_ENABLE_CLUSTERING

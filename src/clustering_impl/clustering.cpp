@@ -45,8 +45,7 @@ static InterThreadCommInitializer interThreadCommInitializer;
 
 void InterThreadCommInitializer::startInitialization()
 {
-	Ip4 ip4;
-	ip4.parse( "127.0.01" );
+	Ip4 ip4 = Ip4::parse( "127.0.01" );
 	acquireSocketAndLetInterThreadCommServerListening( ip4, myServerPort, 128 );
 	commHandles.writeHandle = acquireAndConnectSocketForInterThreadComm( "127.0.01", myServerPort, myServerPort );
 	RequestData rd = {requestIdBase++, 0, commHandles.writeHandle};

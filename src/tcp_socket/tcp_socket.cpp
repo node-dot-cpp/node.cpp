@@ -310,7 +310,14 @@ namespace nodecpp
 			memset(&sa, 0, sizeof(struct ::sockaddr_in));
 			socklen_t addrlen = sizeof(struct ::sockaddr_in);
 			int ret = getsockname( sock, (struct sockaddr *)(&sa), &addrlen);
-			return ret == -1 ? 0 : ntohs(sa.sin_port);
+			if ( ret != -1 )
+				return ntohs(sa.sin_port);
+			else
+			{
+				int error = getSockError();
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"listen() on sock {} failed; error {}", sock, error);
+				return 0;
+			}
 		}
 
 		bool internal_listen_tcp_socket(SOCKET sock, int backlog)
