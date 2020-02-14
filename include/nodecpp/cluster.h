@@ -458,14 +458,14 @@ namespace nodecpp
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socketsToSlaves.size() != 0 ); 
 				// TODO: consider alternative ways selection between Slaves
 				nextStep = nextStep % socketsToSlaves.size();
-				socketsToSlaves[nextStep].socket->sendConnAcceptedEv( socketsToSlaves[nextStep].entryIndex, requestID, socket, remoteIp, remotePort );
+				socketsToSlaves[nextStep].socket->sendConnAcceptedEv( socketsToSlaves[nextStep].entryIndex, requestID, socket, remoteIp, remotePort ); // TODO-ITC: upgrade
 				++nextStep;
 				CO_RETURN;
 			}
 			nodecpp::handler_ret_type onError( nodecpp::Error& e ) { 
 				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"clustering Agent server: onError()!");
 				for ( auto& slaveData : socketsToSlaves )
-					slaveData.socket->sendServerErrorEv( socketsToSlaves[nextStep].entryIndex, requestID, e );
+					slaveData.socket->sendServerErrorEv( socketsToSlaves[nextStep].entryIndex, requestID, e ); // TODO-ITC: upgrade
 
 				CO_RETURN;
 			}
@@ -575,7 +575,7 @@ namespace nodecpp
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, agent != nullptr );
 			agent->close();
 			for ( auto& slave : agent->socketsToSlaves )
-				slave.socket->sendServerCloseNotification( slave.entryIndex, agent->requestID, false );
+				slave.socket->sendServerCloseNotification( slave.entryIndex, agent->requestID, false ); // TODO-ITC: upgrade
 		}
 
 		void acceptRequestForListeningAtSlave(size_t entryIndex, Ip4 ip, uint16_t port, IPFAMILY family, int backlog)

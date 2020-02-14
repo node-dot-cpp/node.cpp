@@ -39,12 +39,17 @@ namespace nodecpp::platform::internal_msg { class InternalMsg; } // forward decl
 
 struct InterThreadMsg
 {
-	uint64_t reincarnation;
-	size_t msgType;
+	uint64_t srcThreadReincarnation = (uint64_t)(-1);
+	uint64_t dstThreadReincarnation = (uint64_t)(-1);
+	size_t srcThreadIdx = (size_t)(-1);
+	size_t dstThreadIdx = (size_t)(-1);
+	size_t msgType = (size_t)(-1);
 	nodecpp::platform::internal_msg::InternalMsg msg;
 
 	InterThreadMsg() {}
-	InterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg_, size_t msgType_, uint64_t reincarnation_) : reincarnation( reincarnation_ ), msgType( msgType_ ), msg( std::move(msg_) )  {}
+	InterThreadMsg( nodecpp::platform::internal_msg::InternalMsg&& msg_, size_t msgType_, uint64_t srcThreadReincarnation_, size_t srcThreadIdx_, uint64_t dstThreadReincarnation_, size_t dstThreadIdx_ ) : 
+		srcThreadReincarnation( srcThreadReincarnation_ ), dstThreadReincarnation( dstThreadReincarnation_ ), 
+		srcThreadIdx( srcThreadIdx_ ), dstThreadIdx( dstThreadIdx_ ), msgType( msgType_ ), msg( std::move(msg_) )  {}
 	InterThreadMsg( const InterThreadMsg& ) = delete;
 	InterThreadMsg& operator = ( const InterThreadMsg& ) = delete;
 	InterThreadMsg( InterThreadMsg&& other ) = default; 
