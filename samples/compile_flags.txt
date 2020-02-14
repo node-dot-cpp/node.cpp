@@ -1,0 +1,15 @@
+-isystem
+../safe_memory/library/src/iibmalloc/src/foundation/include
+-isystem
+../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
+-isystem
+../safe_memory/library/src/iibmalloc/src
+-isystem
+../safe_memory/library/src
+-isystem
+../include
+-isystem
+../src
+-std=c++2a
+-DNDEBUG
+-fcoroutines-ts
