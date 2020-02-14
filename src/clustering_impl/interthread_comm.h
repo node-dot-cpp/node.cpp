@@ -37,19 +37,22 @@
 
 namespace nodecpp::platform::internal_msg { class InternalMsg; } // forward declaration
 
+struct ThreadID
+{
+	size_t slotId = (size_t)(-1);
+	uint64_t reincarnation = (uint64_t)(-1);
+};
+
 struct InterThreadMsg
 {
-	uint64_t srcThreadReincarnation = (uint64_t)(-1);
-	uint64_t dstThreadReincarnation = (uint64_t)(-1);
-	size_t srcThreadIdx = (size_t)(-1);
-	size_t dstThreadIdx = (size_t)(-1);
+	ThreadID sourceThreadID;
+	ThreadID targetThreadID;
 	size_t msgType = (size_t)(-1);
 	nodecpp::platform::internal_msg::InternalMsg msg;
 
 	InterThreadMsg() {}
-	InterThreadMsg( nodecpp::platform::internal_msg::InternalMsg&& msg_, size_t msgType_, uint64_t srcThreadReincarnation_, size_t srcThreadIdx_, uint64_t dstThreadReincarnation_, size_t dstThreadIdx_ ) : 
-		srcThreadReincarnation( srcThreadReincarnation_ ), dstThreadReincarnation( dstThreadReincarnation_ ), 
-		srcThreadIdx( srcThreadIdx_ ), dstThreadIdx( dstThreadIdx_ ), msgType( msgType_ ), msg( std::move(msg_) )  {}
+	InterThreadMsg( nodecpp::platform::internal_msg::InternalMsg&& msg_, size_t msgType_, ThreadID sourceThreadID_, ThreadID targetThreadID_ ) : 
+		sourceThreadID( sourceThreadID_ ), targetThreadID( targetThreadID_ ), msgType( msgType_ ), msg( std::move(msg_) )  {}
 	InterThreadMsg( const InterThreadMsg& ) = delete;
 	InterThreadMsg& operator = ( const InterThreadMsg& ) = delete;
 	InterThreadMsg( InterThreadMsg&& other ) = default; 
@@ -184,12 +187,6 @@ public:
 
 using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<InterThreadMsg, 4>>; // TODO: revise the second param value
 
-struct ThreadID
-{
-	size_t slotId;
-	uint64_t reincarnation;
-};
-
 struct ThreadMsgQueue
 {
 	uintptr_t writeHandle = (uintptr_t)(-1);
@@ -284,7 +281,7 @@ public:
 		MsgQueue& myQueue = threadQueues[threadIdx].queue;
 		for ( size_t i=0; i<buffer.size(); ++i )
 		{
-			auto popRes = std::move( myQueue.pop_front() );
+			/*auto popRes = std::move( myQueue.pop_front() );
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, popRes.first ); // unless we've already killed it
 			InterThreadMsg& msg = popRes.second;
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, msg.reincarnation == reincarnation, "{} vs. {}", msg.reincarnation, reincarnation ); // unless we've already killed it
@@ -292,7 +289,7 @@ public:
 			auto readit = msg.msg.getReadIter();
 			size_t sz = readit.availableSize();
 			const char* text = reinterpret_cast<const char*>( readit.read(sz) );
-			log::default_log::info( log::ModuleID(nodecpp_module_id), "msg = \"{}\"", text );
+			log::default_log::info( log::ModuleID(nodecpp_module_id), "msg = \"{}\"", text );*/
 		}
 
 		CO_RETURN;

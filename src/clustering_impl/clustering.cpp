@@ -67,18 +67,23 @@ InterThreadCommPair generateHandlePair()
 	return interThreadCommInitializer.generateHandlePair();
 }
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID threadId )
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID targetThreadId )
 {
+	// TODO: get my threadID!!!
+	ThreadID myThreadId;
+	myThreadId.reincarnation = (uint64_t)(-1);
+	myThreadId.slotId = (size_t)(-1);
+
 	// validate idx
 	uintptr_t writeHandle;
 	uint64_t reincarnation;
 	
 	{// get socket and reincarnation from under the mutex
-		writeHandle = threadQueues[ threadId.slotId ].writeHandle;
-		reincarnation = threadQueues[ threadId.slotId ].reincarnation;
+		writeHandle = threadQueues[ targetThreadId.slotId ].writeHandle;
+		reincarnation = threadQueues[ targetThreadId.slotId ].reincarnation;
 	}// release mutex
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == threadId.reincarnation ); 
-	threadQueues[ threadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, reincarnation ) );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation ); 
+	threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, myThreadId, targetThreadId ) );
 	// write a byte to writeHandle
 	uint8_t singleByte = 0x1;
 	size_t sentSize = 0;
@@ -94,6 +99,7 @@ extern void workerThreadMain( void* pdata );
 namespace nodecpp
 {
 	thread_local Cluster cluster;
+
 	bool clusterIsMaster() { return cluster.isMaster(); }
 
 	void preinitMasterThreadClusterObject()
