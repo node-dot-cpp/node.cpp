@@ -70,7 +70,7 @@ InterThreadCommPair generateHandlePair()
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID threadId )
 {
 	// validate idx
-	int sock;
+	uintptr_t sock;
 	uint64_t reincarnation;
 	
 	{// get socket and reincarnation from under the mutex

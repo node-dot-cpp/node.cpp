@@ -444,7 +444,7 @@ class Runnable : public RunnableBase
 	owning_ptr<Node> node;
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-	void internalRun( bool isMaster )
+	void internalRun( bool isMaster, ThreadStartupData* startupData )
 #else
 	void internalRun()
 #endif
@@ -469,6 +469,11 @@ class Runnable : public RunnableBase
 				threadQueues[0].reincarnation = 0;
 				threadQueues[0].sock = commPair.writeHandle;
 				infra.ioSockets.setAwakerSocket( commPair.readHandle );
+			}
+			else
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData != nullptr );
+				infra.ioSockets.setAwakerSocket( startupData->readHandle );
 			}
 #endif
 			// from now on all internal structures are ready to use; let's run their "users"
@@ -499,9 +504,9 @@ public:
 	using NodeType = Node;
 	Runnable() {}
 #ifdef NODECPP_ENABLE_CLUSTERING
-	void run(bool isMaster) override
+	void run(bool isMaster, ThreadStartupData* startupData) override
 	{
-		return internalRun(isMaster);
+		return internalRun(isMaster, startupData);
 	}
 #else
 	void run() override

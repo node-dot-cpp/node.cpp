@@ -223,12 +223,16 @@ public:
 	virtual ~NodeBase() {}
 };
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+struct ThreadStartupData; // forward declaration
+#endif
+
 class RunnableBase
 {
 public:
 	RunnableBase() {}
 #ifdef NODECPP_ENABLE_CLUSTERING
-	virtual void run( bool isMaster ) = 0;
+	virtual void run( bool isMaster, ThreadStartupData* startupData ) = 0;
 #else
 	virtual void run() = 0;
 #endif

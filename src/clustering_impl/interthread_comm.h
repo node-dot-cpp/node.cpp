@@ -187,7 +187,7 @@ struct ThreadID
 
 struct ThreadMsgQueue
 {
-	int sock = -1;
+	uintptr_t sock = (uintptr_t)(-1);
 	uint64_t reincarnation = 0;
 	MsgQueue queue;
 };

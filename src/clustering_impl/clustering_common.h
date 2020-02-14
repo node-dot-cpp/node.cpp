@@ -35,7 +35,8 @@
 struct ThreadStartupData
 {
 	size_t assignedThreadID;
-	uint16_t commPort;
+	uintptr_t readHandle;
+	uint16_t commPort; // obsolete
 	nodecpp::log::Log* defaultLog = nullptr;
 };
 
