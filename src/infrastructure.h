@@ -467,7 +467,7 @@ class Runnable : public RunnableBase
 			{
 				auto commPair = initInterThreadCommSystem();
 				threadQueues[0].reincarnation = 0;
-				threadQueues[0].sock = commPair.writeHandle;
+				threadQueues[0].writeHandle = commPair.writeHandle;
 				infra.ioSockets.setAwakerSocket( commPair.readHandle );
 			}
 			else

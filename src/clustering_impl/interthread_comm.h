@@ -187,7 +187,7 @@ struct ThreadID
 
 struct ThreadMsgQueue
 {
-	uintptr_t sock = (uintptr_t)(-1);
+	uintptr_t writeHandle = (uintptr_t)(-1);
 	uint64_t reincarnation = 0;
 	MsgQueue queue;
 };
@@ -308,8 +308,9 @@ public:
 	// published socket
 	nodecpp::handler_ret_type onConnectPublishedSocket(nodecpp::safememory::soft_ptr<PublishedSocket> socket)
 	{
+		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "subject for revision" );
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx < MAX_THREADS, "{} vs. {}", threadIdx, MAX_THREADS ); // unless we've already killed it
-		threadQueues[threadIdx].sock = socket->dataForCommandProcessing.osSocket;
+		threadQueues[threadIdx].writeHandle = socket->dataForCommandProcessing.osSocket;
 		{
 			nodecpp::platform::internal_msg::InternalMsg msg;
 			ThreadID threadId = {0, 0};

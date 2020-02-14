@@ -70,19 +70,19 @@ InterThreadCommPair generateHandlePair()
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID threadId )
 {
 	// validate idx
-	uintptr_t sock;
+	uintptr_t writeHandle;
 	uint64_t reincarnation;
 	
 	{// get socket and reincarnation from under the mutex
-		sock = threadQueues[ threadId.slotId ].sock;
+		writeHandle = threadQueues[ threadId.slotId ].writeHandle;
 		reincarnation = threadQueues[ threadId.slotId ].reincarnation;
 	}// release mutex
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == threadId.reincarnation ); 
 	threadQueues[ threadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, reincarnation ) );
-	// write a byte to sock
+	// write a byte to writeHandle
 	uint8_t singleByte = 0x1;
 	size_t sentSize = 0;
-	auto ret = nodecpp::internal_usage_only::internal_send_packet( &singleByte, 1, sock, sentSize );
+	auto ret = nodecpp::internal_usage_only::internal_send_packet( &singleByte, 1, writeHandle, sentSize );
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == COMMLAYER_RET_OK ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sentSize == 1 ); 
 }
@@ -119,6 +119,9 @@ namespace nodecpp
 		// TODO: init new thread, fill worker
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
+		InterThreadCommPair commPair =  generateHandlePair();
+		threadQueues[internalID].writeHandle = commPair.writeHandle; // TODO: in case of reuse think about asserting the queue is empty
+		startupData->readHandle = commPair.readHandle;
 		startupData->assignedThreadID = worker.id_;
 		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
 		startupData->defaultLog = nodecpp::logging_impl::currentLog;
