@@ -269,7 +269,7 @@ public:
 			nodecpp::platform::internal_msg::InternalMsg msg;
 			ThreadID threadId = {0, 0};
 			auto reportStr = nodecpp::format( "Thread {} has almost initialized interthread comm system ...", threadIdx );
-			msg.append( const_cast<char*>(reportStr.c_str()), reportStr.size() + 1 ); // TODO: update Foundation and remove cast ASAP!!!
+			msg.append( reportStr.c_str(), reportStr.size() + 1 );
 			sendInterThreadMsg( std::move( msg ), 17, threadId );
 		}
 		CO_RETURN;
