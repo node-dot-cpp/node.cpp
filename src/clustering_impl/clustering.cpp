@@ -67,12 +67,14 @@ InterThreadCommPair generateHandlePair()
 	return interThreadCommInitializer.generateHandlePair();
 }
 
+thread_local ThreadID myThreadId;
+
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID targetThreadId )
 {
 	// TODO: get my threadID!!!
-	ThreadID myThreadId;
-	myThreadId.reincarnation = (uint64_t)(-1);
-	myThreadId.slotId = (size_t)(-1);
+//	ThreadID myThreadId;
+//	myThreadId.reincarnation = (uint64_t)(-1);
+//	myThreadId.slotId = (size_t)(-1);
 
 	// validate idx
 	uintptr_t writeHandle;
@@ -129,7 +131,8 @@ namespace nodecpp
 		threadQueues[internalID].writeHandle = commPair.writeHandle; // TODO: in case of reuse think about asserting the queue is empty
 		startupData->readHandle = commPair.readHandle;
 		startupData->assignedThreadID = worker.id_;
-		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
+		startupData->reincarnation = ++(threadQueues[startupData->assignedThreadID].reincarnation);
+//		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
 		startupData->defaultLog = nodecpp::logging_impl::currentLog;
 		// run worker thread
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {}...", worker.id_ );
@@ -166,9 +169,11 @@ namespace nodecpp
 	}
 
 
-	nodecpp::handler_ret_type Cluster::SlaveSocket::processResponse( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
+	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg& imsg )
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size() ); 
+		auto riter = imsg.getReadIter();
+		size_t sz = riter.availableSize();
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize <= sz ); 
 		switch ( mh.type )
 		{
 			case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
@@ -178,26 +183,27 @@ namespace nodecpp
 			}
 			case ClusteringMsgHeader::ClusteringMsgType::ConnAccepted:
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) + sizeof(uint64_t) <= b.size() ); 
-				size_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);
-				uint64_t socket = *reinterpret_cast<uint64_t*>(b.begin() + offset + sizeof(serverIdx));
-				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset + sizeof(serverIdx) + sizeof(socket)) );
-				Port remotePort = Port::fromNetwork( *reinterpret_cast<uint16_t*>(b.begin() + offset + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );
+				const uint8_t* buff = riter.read( mh.bodySize );
+				size_t serverIdx = *reinterpret_cast<const size_t*>(buff);
+				uint64_t socket = *reinterpret_cast<const uint64_t*>(buff + sizeof(serverIdx));
+				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<const uint32_t*>(buff + sizeof(serverIdx) + sizeof(socket)) );
+				Port remotePort = Port::fromNetwork( *reinterpret_cast<const uint16_t*>(buff + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );
 				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
 			case ClusteringMsgHeader::ClusteringMsgType::ServerError:
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) <= b.size() ); 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
 				size_t serverIdx = mh.entryIdx;
 //				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
 			case ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification:
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + 1 <= b.size() ); 
+				const uint8_t* buff = riter.read( mh.bodySize );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, 1 <= sz ); 
 				size_t serverIdx = mh.entryIdx;
-				bool hasError = b.readUInt8( offset + sizeof(size_t) ) != 0;
+				bool hasError = *buff != 0;
 				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( serverIdx );
 				entry.getServerSocket()->closeByWorkingCluster();
 				break;

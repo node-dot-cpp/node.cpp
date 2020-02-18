@@ -319,6 +319,7 @@ public:
 		osSide[awakerSockIdx].events |= POLLIN;
 		osSide[awakerSockIdx].revents = 0;
 		++usedCount;
+		++associatedCount;
 		return;
 	}
 	NetSocketEntry& slaveServerAt(size_t idx) {

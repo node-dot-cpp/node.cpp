@@ -773,6 +773,13 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 
 bool OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
+	return infraGetPacketBytes( buff, buff.capacity(), sock );
+}
+
+bool OSLayer::infraGetPacketBytes(Buffer& buff, size_t szMax, SOCKET sock)
+{
+	if ( szMax < buff.capacity() )
+		szMax = buff.capacity();
 	size_t sz = 0;
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;

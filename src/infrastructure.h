@@ -296,7 +296,53 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 					}
 					else if ( i == ioSockets.awakerSockIdx )
 					{
-						// TODO: ...
+						// TODO: see infraCheckPollFdSet() for more details to be implemented
+						if ( clusterIsMaster() )
+						{
+							if ((revents & POLLIN) != 0)
+							{
+								static constexpr size_t maxMsgCnt = 8;
+								Buffer recvBuffer(maxMsgCnt);
+								bool res = OSLayer::infraGetPacketBytes(recvBuffer, ioSockets.getAwakerSockSocket());
+								if (res)
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
+									InterThreadMsg thq[maxMsgCnt];
+									size_t actual = threadQueues[0].queue.pop_front( thq, recvBuffer.size() );
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
+									for ( size_t i=0; i<actual; ++i )
+										getCluster().onInterthreadMessage( thq[i] );
+								}
+								else
+								{
+									internal_usage_only::internal_getsockopt_so_error(ioSockets.getAwakerSockSocket());
+									// TODO: process error
+								}
+							}
+						}
+						else
+						{
+							if ((revents & POLLIN) != 0)
+							{
+								static constexpr size_t maxMsgCnt = 8;
+								Buffer recvBuffer(maxMsgCnt);
+								bool res = OSLayer::infraGetPacketBytes(recvBuffer, ioSockets.getAwakerSockSocket());
+								if (res)
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
+									InterThreadMsg thq[maxMsgCnt];
+									size_t actual = threadQueues[0].queue.pop_front( thq, recvBuffer.size() );
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
+									for ( size_t i=0; i<actual; ++i )
+										getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
+								}
+								else
+								{
+									internal_usage_only::internal_getsockopt_so_error(ioSockets.getAwakerSockSocket());
+									// TODO: process error
+								}
+							}
+						}
 					}
 				}
 			}
@@ -469,11 +515,13 @@ class Runnable : public RunnableBase
 				threadQueues[0].reincarnation = 0;
 				threadQueues[0].writeHandle = commPair.writeHandle;
 				infra.ioSockets.setAwakerSocket( commPair.readHandle );
+				myThreadId = {0,0};
 			}
 			else
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData != nullptr );
 				infra.ioSockets.setAwakerSocket( startupData->readHandle );
+				myThreadId = {startupData->assignedThreadID, startupData->reincarnation};
 			}
 #endif
 			// from now on all internal structures are ready to use; let's run their "users"
