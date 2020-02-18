@@ -294,7 +294,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 							}
 						}
 					}
-					else if ( i == ioSockets.awakerSockIdx )
+					else if ( 1 + i == ioSockets.awakerSockIdx )
 					{
 						// TODO: see infraCheckPollFdSet() for more details to be implemented
 						if ( clusterIsMaster() )

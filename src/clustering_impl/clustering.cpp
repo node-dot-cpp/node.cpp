@@ -128,7 +128,7 @@ namespace nodecpp
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 		InterThreadCommPair commPair =  generateHandlePair();
-		threadQueues[internalID].writeHandle = commPair.writeHandle; // TODO: in case of reuse think about asserting the queue is empty
+		threadQueues[worker.id_].writeHandle = commPair.writeHandle; // TODO: in case of reuse think about asserting the queue is empty
 		startupData->readHandle = commPair.readHandle;
 		startupData->assignedThreadID = worker.id_;
 		startupData->reincarnation = ++(threadQueues[startupData->assignedThreadID].reincarnation);
