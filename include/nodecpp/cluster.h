@@ -904,6 +904,7 @@ namespace nodecpp
 			}
 			else
 			{
+				slaveProcessor.onConnect();
 //				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Slave thread # {} Cluster is about to setup connection to Master", thisThreadWorker.id());
 				/*nodecpp::net::SocketBase::addHandler<SlaveSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Connect, &SlaveSocket::onConnect>();
 				nodecpp::net::SocketBase::addHandler<SlaveSocket, nodecpp::net::SocketBase::DataForCommandProcessing::UserHandlers::Handler::Data, &SlaveSocket::onData>();
