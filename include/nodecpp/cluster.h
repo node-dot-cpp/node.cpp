@@ -98,18 +98,20 @@ namespace nodecpp
 				sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerListening, targetThreadId );
 			}
 
-			static void sendConnAcceptedEv( ThreadID targetThreadId, size_t requestID, uint64_t socket, Ip4& remoteIp, Port& remotePort )
+			static void sendConnAcceptedEv( ThreadID targetThreadId, size_t internalID, size_t requestID, uint64_t socket, Ip4& remoteIp, Port& remotePort )
 			{
 				ClusteringMsgHeader rhReply;
 				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ConnAccepted;
 		//		rhReply.assignedThreadID = assignedThreadID;
 				rhReply.requestID = requestID;
-				rhReply.bodySize = sizeof(socket) + 4 + 2;
+				rhReply.bodySize = sizeof(internalID) + sizeof(socket) + 4 + 2;
 				nodecpp::Buffer reply;
 				rhReply.serialize( reply );
+				size_t internalID_ = internalID;
 				uint64_t socket_ = socket;
 				uint32_t uip = remoteIp.getNetwork();
 				uint16_t uport = remotePort.getNetwork();
+				reply.append( &internalID_, sizeof(internalID_) );
 				reply.append( &socket_, sizeof(socket) );
 				reply.append( &uip, sizeof(uip) );
 				reply.append( &uport, sizeof(uport) );
@@ -134,11 +136,10 @@ namespace nodecpp
 				sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerError, targetThreadId );
 			}
 
-			static void deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::platform::internal_msg::InternalMsg& msg, size_t bodySz ) {
+			static void deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter, size_t bodySz ) {
 				//nodecpp::Buffer& b, size_t offset, size_t sz
-				auto riter = msg.getReadIter();
 				size_t sz = riter.availableSize();
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > bodySz );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz >= bodySz );
 				const uint8_t* buff = riter.read( bodySz );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > 4 + 2 + sizeof(int) );
 				addr.ip = Ip4::fromNetwork( *reinterpret_cast<const uint32_t*>(buff) );
@@ -170,7 +171,7 @@ namespace nodecpp
 		};
 
 
-		nodecpp::handler_ret_type processInterthreadRequest( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg& imsg )
+		nodecpp::handler_ret_type processInterthreadRequest( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 		{
 	//		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size(), "{} + {} vs. {}", mh.bodySize, offset, b.size() ); 
 			switch ( mh.type )
@@ -188,7 +189,7 @@ namespace nodecpp
 //						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
 					nodecpp::net::Address addr;
 					int backlog;
-					MasterProcessor::deserializeListeningRequestBody( addr, backlog, imsg, mh.bodySize );
+					MasterProcessor::deserializeListeningRequestBody( addr, backlog, riter, mh.bodySize );
 					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerListening({}) request (for thread id: {}). Addr = {}:{}, backlog = {}, entryIndex = {:x}", (size_t)(mh.type), requestingThreadId.slotId, addr.ip.toStr(), addr.port, backlog, mh.entryIdx );
 //					nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
 					bool already = processRequestForListeningAtMaster( requestingThreadId, mh, addr, backlog );
@@ -215,13 +216,13 @@ namespace nodecpp
 		nodecpp::handler_ret_type onInterthreadMessage( InterThreadMsg& msg )
 		{
 			// NOTE: in present quick-and-dirty implementation we assume that the message total size is less than a single page
-			auto riter = msg.msg.getReadIter();
+			nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = msg.msg.getReadIter();
 			size_t sz = riter.availableSize();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ClusteringMsgHeader::serializationSize() <= sz, "indeed: {} vs. {}", ClusteringMsgHeader::serializationSize(), sz ); 
 			const uint8_t* page = riter.read( ClusteringMsgHeader::serializationSize() );
 			ClusteringMsgHeader mh;
 			mh.deserialize( page, ClusteringMsgHeader::serializationSize() );
-			processInterthreadRequest( msg.sourceThreadID, mh, msg.msg );
+			processInterthreadRequest( msg.sourceThreadID, mh, riter );
 			CO_RETURN;
 		}
 
@@ -581,7 +582,7 @@ namespace nodecpp
 				Cluster::serializeAndSendServerCloseRequest( ThreadID({0,0}), ++requestIdBase, entryIndex );
 			}
 
-			nodecpp::handler_ret_type processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg& imsg );
+			nodecpp::handler_ret_type processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
 
 		public:
 			nodecpp::handler_ret_type onConnect()
@@ -612,7 +613,7 @@ namespace nodecpp
 				const uint8_t* page = riter.read( ClusteringMsgHeader::serializationSize() );
 				ClusteringMsgHeader mh;
 				mh.deserialize( page, ClusteringMsgHeader::serializationSize() );
-				processResponse( msg.sourceThreadID, mh, msg.msg );
+				processResponse( msg.sourceThreadID, mh, riter );
 				CO_RETURN;
 			}
 #if 0
@@ -733,7 +734,7 @@ namespace nodecpp
 				// TODO: consider alternative ways selection between Slaves
 				nextStep = nextStep % socketsToSlaves.size();
 //				socketsToSlaves[nextStep].socket->sendConnAcceptedEv( socketsToSlaves[nextStep].entryIndex, requestID, socket, remoteIp, remotePort ); // TODO-ITC: upgrade
-				MasterProcessor::sendConnAcceptedEv( socketsToSlaves[nextStep].targetThreadId, requestID, socket, remoteIp, remotePort ); // TODO-ITC: upgrade
+				MasterProcessor::sendConnAcceptedEv( socketsToSlaves[nextStep].targetThreadId, socketsToSlaves[nextStep].entryIndex, requestID, socket, remoteIp, remotePort ); // TODO-ITC: upgrade
 				++nextStep;
 				CO_RETURN;
 			}

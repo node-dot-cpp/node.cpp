@@ -331,7 +331,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 								{
 									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
 									InterThreadMsg thq[maxMsgCnt];
-									size_t actual = threadQueues[0].queue.pop_front( thq, recvBuffer.size() );
+									size_t actual = threadQueues[getCluster().worker().id()].queue.pop_front( thq, recvBuffer.size() );
 									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
 									for ( size_t i=0; i<actual; ++i )
 										getCluster().slaveProcessor.onInterthreadMessage( thq[i] );

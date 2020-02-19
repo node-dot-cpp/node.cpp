@@ -142,8 +142,7 @@ int main( int argc, char *argv_[] )
 	g_AllocManager.initialize();
 #endif
 	nodecpp::log::Log log;
-	log.level = nodecpp::log::LogLevel::info;
-//	log.add( nodecpp::string_literal( "default_log.txt" ) );
+//	log.level = nodecpp::log::LogLevel::info;
 	log.add( stdout );
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;
