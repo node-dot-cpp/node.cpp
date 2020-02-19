@@ -39,8 +39,6 @@
 
 ThreadMsgQueue threadQueues[MAX_THREADS];
 
-thread_local InterThreadComm interThreadComm;
-
 static InterThreadCommInitializer interThreadCommInitializer;
 
 InterThreadCommPair InterThreadCommInitializer::init()
