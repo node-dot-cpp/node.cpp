@@ -99,9 +99,6 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\http_socket_at_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\clustering_impl\clustering_common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\include\nodecpp\cluster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -115,6 +112,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\clustering_impl\interthread_comm_impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\clustering_impl\clustering_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

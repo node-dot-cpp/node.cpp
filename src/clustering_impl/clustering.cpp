@@ -28,7 +28,7 @@
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 
-#include "clustering_common.h"
+#include "clustering_impl.h"
 #include "../../include/nodecpp/cluster.h"
 #include "../infrastructure.h"
 #include "../tcp_socket/tcp_socket.h"

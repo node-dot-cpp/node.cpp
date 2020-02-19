@@ -477,7 +477,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\server_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\socket_common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
-    <ClInclude Include="..\..\..\..\src\clustering_impl\clustering_common.h" />
+    <ClInclude Include="..\..\..\..\src\clustering_impl\clustering_impl.h" />
     <ClInclude Include="..\..\..\..\src\clustering_impl\interthread_comm.h" />
     <ClInclude Include="..\..\..\..\src\clustering_impl\interthread_comm_impl.h" />
     <ClInclude Include="..\..\..\..\src\ev_queue.h" />
