@@ -32,8 +32,29 @@
 
 #include "net_common.h"
 #include "server_common.h"
-#include "../../src/clustering_impl/clustering_common.h"
 #include "../../src/clustering_impl/interthread_comm.h"
+
+// ad-hoc marchalling between Master and Slave threads
+struct ClusteringMsgHeader
+{
+	enum ClusteringMsgType { ThreadStarted, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification };
+	size_t bodySize;
+	ClusteringMsgType type;
+	size_t requestID;
+	size_t entryIdx;
+	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringMsgHeader ) ); }
+	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringMsgHeader ) <= b.size(), "indeed: {} + {} vs. {}", pos, sizeof( ClusteringMsgHeader ), b.size() ); 
+		memcpy( this, b.begin() + pos, sizeof( ClusteringMsgHeader ) );
+		return pos + sizeof( ClusteringMsgHeader );
+	}
+	void deserialize( const uint8_t* buff, size_t size ) { 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ClusteringMsgHeader ) <= size, "indeed: {} vs. {}", sizeof( ClusteringMsgHeader ), size ); 
+		memcpy( this, buff, sizeof( ClusteringMsgHeader ) );
+	}
+	static bool couldBeDeserialized( const nodecpp::Buffer& b, size_t pos = 0 ) { return b.size() >= pos + sizeof( ClusteringMsgHeader ); }
+	static size_t serializationSize() { return sizeof( ClusteringMsgHeader ); }
+};
 
 namespace nodecpp
 {
@@ -66,7 +87,6 @@ namespace nodecpp
 
 
 	extern void preinitMasterThreadClusterObject();
-	extern void preinitSlaveThreadClusterObject( size_t id);
 	extern void postinitThreadClusterObject();
 
 
@@ -291,9 +311,9 @@ namespace nodecpp
 			nodecpp::handler_ret_type processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
 
 		public:
-			nodecpp::handler_ret_type onConnect()
+			nodecpp::handler_ret_type reportThreadStarted()
 			{
-//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "onConnect() to Master at thread {}", assignedThreadID );
+//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "reportThreadStarted() to Master at thread {}", assignedThreadID );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID != Cluster::InvalidThreadID ); 
 				ClusteringMsgHeader rhReply;
 				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ThreadStarted;
@@ -498,7 +518,6 @@ namespace nodecpp
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isWorker() );
 			Buffer b;
-//			slaveSocket->sendListeningRequest( entryIndex, ip, port, family, backlog );
 			slaveProcessor.sendListeningRequest( entryIndex, ip, port, family, backlog );
 		}
 
@@ -506,7 +525,6 @@ namespace nodecpp
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isWorker() );
 			Buffer b;
-//			slaveSocket->sendServerCloseRequest( entryIndex );
 			slaveProcessor.sendServerCloseRequest( entryIndex );
 		}
 
@@ -522,9 +540,8 @@ namespace nodecpp
 		void preinitMaster() { 
 			thisThreadWorker.id_ = 0; 
 		}
-		void preinitSlave(ThreadStartupData& startupData) { 
-			thisThreadWorker.id_ = startupData.assignedThreadID;
-//			thisThreadWorker.portToMaster = startupData.commPort;
+		void preinitSlave( size_t assignedThreadId ) { 
+			thisThreadWorker.id_ = assignedThreadId;
 		}
 		void postinit() { 
 			if ( isMaster() )
@@ -532,7 +549,7 @@ namespace nodecpp
 			}
 			else
 			{
-				slaveProcessor.onConnect();
+				slaveProcessor.reportThreadStarted();
 			}
 		}
 	public:

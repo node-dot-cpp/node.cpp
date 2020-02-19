@@ -30,37 +30,13 @@
 #define CLUSTERING_COMMON_H
 
 #include "../../include/nodecpp/common.h"
-#include "../../include/nodecpp/net_common.h"
 
 struct ThreadStartupData
 {
 	size_t assignedThreadID;
 	uint64_t reincarnation;
 	uintptr_t readHandle;
-//	uint16_t commPort; // obsolete
 	nodecpp::log::Log* defaultLog = nullptr;
-};
-
-// ad-hoc marchalling between Master and Slave threads
-struct ClusteringMsgHeader
-{
-	enum ClusteringMsgType { ThreadStarted, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification };
-	size_t bodySize;
-	ClusteringMsgType type;
-	size_t requestID;
-	size_t entryIdx;
-	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringMsgHeader ) ); }
-	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringMsgHeader ) <= b.size(), "indeed: {} + {} vs. {}", pos, sizeof( ClusteringMsgHeader ), b.size() ); 
-		memcpy( this, b.begin() + pos, sizeof( ClusteringMsgHeader ) );
-		return pos + sizeof( ClusteringMsgHeader );
-	}
-	void deserialize( const uint8_t* buff, size_t size ) { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ClusteringMsgHeader ) <= size, "indeed: {} vs. {}", sizeof( ClusteringMsgHeader ), size ); 
-		memcpy( this, buff, sizeof( ClusteringMsgHeader ) );
-	}
-	static bool couldBeDeserialized( const nodecpp::Buffer& b, size_t pos = 0 ) { return b.size() >= pos + sizeof( ClusteringMsgHeader ); }
-	static size_t serializationSize() { return sizeof( ClusteringMsgHeader ); }
 };
 
 #endif // CLUSTERING_COMMON_H

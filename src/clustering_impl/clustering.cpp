@@ -39,6 +39,8 @@
 
 static ThreadMsgQueue threadQueues[MAX_THREADS];
 
+static InterThreadCommInitializer interThreadCommInitializer;
+
 struct ThreadDescriptor
 {
 	ThreadID threadID;
@@ -53,16 +55,15 @@ size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
 uint64_t initThreadSlot( size_t threadIdx, uintptr_t writeHandle ) // returns reincarnation
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx < MAX_THREADS, "{} vs. {}", threadIdx, MAX_THREADS ); 
+	auto commPair = interThreadCommInitializer.generateHandlePair();
 	return 0;
 }
-
-static InterThreadCommInitializer interThreadCommInitializer;
 
 uintptr_t InterThreadCommInitializer::init()
 {
 	Ip4 ip4 = Ip4::parse( "127.0.01" );
 	myServerSocket = acquireSocketAndLetInterThreadCommServerListening( ip4, myServerPort, 128 );
-	auto commPair = generateHandlePair();
+	auto commPair = interThreadCommInitializer.generateHandlePair();
 	threadQueues[0].reincarnation = 0;
 	threadQueues[0].writeHandle = commPair.writeHandle;
 	return commPair.readHandle;
@@ -78,11 +79,6 @@ InterThreadCommPair InterThreadCommInitializer::generateHandlePair()
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
 {
 	return interThreadCommInitializer.init();
-}
-
-InterThreadCommPair generateHandlePair()
-{
-	return interThreadCommInitializer.generateHandlePair();
 }
 
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID targetThreadId )
@@ -125,7 +121,7 @@ namespace nodecpp
 
 	void preinitSlaveThreadClusterObject(ThreadStartupData& startupData)
 	{
-		cluster.preinitSlave( startupData );
+		cluster.preinitSlave( startupData.assignedThreadID );
 		thisThreadDescriptor.threadID.slotId = startupData.assignedThreadID;
 		thisThreadDescriptor.threadID.reincarnation = startupData.reincarnation;
 		// TODO: check consistency of startupData.reincarnation with threadQueues[startupData.assignedThreadID].reincarnation
@@ -144,7 +140,7 @@ namespace nodecpp
 		// TODO: init new thread, fill worker
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
-		InterThreadCommPair commPair =  generateHandlePair();
+		InterThreadCommPair commPair = interThreadCommInitializer.generateHandlePair();
 		threadQueues[worker.id_].writeHandle = commPair.writeHandle; // TODO: in case of reuse think about asserting the queue is empty
 		startupData->readHandle = commPair.readHandle;
 		startupData->assignedThreadID = worker.id_;
