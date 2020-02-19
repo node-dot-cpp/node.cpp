@@ -33,9 +33,6 @@
 #include <mutex>
 #include <condition_variable>
 #include "interthread_comm.h"
-#include <nodecpp/socket_common.h>
-#include <nodecpp/server_common.h>
-#include "../tcp_socket/tcp_socket.h"
 
 
 class InterThreadCommInitializer
@@ -47,7 +44,7 @@ class InterThreadCommInitializer
 public:
 	InterThreadCommInitializer() {}
 
-	InterThreadCommPair init();
+	uintptr_t init(); // returns read handle for the main (calling) thread
 
 public:
 	InterThreadCommPair generateHandlePair();

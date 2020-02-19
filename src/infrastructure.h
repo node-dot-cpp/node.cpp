@@ -308,7 +308,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 								{
 									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
 									InterThreadMsg thq[maxMsgCnt];
-									size_t actual = threadQueues[0].queue.pop_front( thq, recvBuffer.size() );
+									size_t actual = popFrontFromThisThreadQueue( thq, recvBuffer.size() );
 									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
 									for ( size_t i=0; i<actual; ++i )
 										getCluster().onInterthreadMessage( thq[i] );
@@ -331,7 +331,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 								{
 									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
 									InterThreadMsg thq[maxMsgCnt];
-									size_t actual = threadQueues[getCluster().worker().id()].queue.pop_front( thq, recvBuffer.size() );
+									size_t actual = popFrontFromThisThreadQueue( thq, recvBuffer.size() );
 									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
 									for ( size_t i=0; i<actual; ++i )
 										getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
@@ -511,23 +511,18 @@ class Runnable : public RunnableBase
 #ifdef NODECPP_ENABLE_CLUSTERING
 			if ( isMaster )
 			{
-				auto commPair = initInterThreadCommSystem();
-				threadQueues[0].reincarnation = 0;
-				threadQueues[0].writeHandle = commPair.writeHandle;
-				infra.ioSockets.setAwakerSocket( commPair.readHandle );
-				myThreadId = {0,0};
+				uintptr_t readHandle = initInterThreadCommSystemAndGetReadHandleForMainThread();
+				infra.ioSockets.setAwakerSocket( readHandle );
 			}
 			else
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData != nullptr );
 				infra.ioSockets.setAwakerSocket( startupData->readHandle );
-				myThreadId = {startupData->assignedThreadID, startupData->reincarnation};
 			}
 #endif
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
-//			interThreadComm.init( nodecpp::cluster.worker().id(), 0 );
 #endif // NODECPP_ENABLE_CLUSTERING
 			node = make_owning<Node>();
 			thisThreadNode = &(*node); 

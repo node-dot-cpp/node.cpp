@@ -214,10 +214,11 @@ struct ThreadMsgQueue
 
 #define MAX_THREADS 128
 
-extern ThreadMsgQueue threadQueues[MAX_THREADS];
-extern thread_local ThreadID myThreadId;
+//extern ThreadMsgQueue threadQueues[MAX_THREADS];
+size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
+uint64_t initThreadSlot( size_t threadIdx, uintptr_t writeHandle ); // returns reincarnation
+//extern thread_local ThreadID myThreadId;
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID threadId );
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -227,7 +228,7 @@ struct InterThreadCommPair
 	uintptr_t writeHandle;
 };
 
-InterThreadCommPair initInterThreadCommSystem();
+uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
 InterThreadCommPair generateHandlePair();
 
 #endif // INTERTHREAD_COMM_H

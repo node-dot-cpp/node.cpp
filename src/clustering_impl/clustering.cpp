@@ -37,15 +37,35 @@
 #include "interthread_comm.h"
 #include "interthread_comm_impl.h"
 
-ThreadMsgQueue threadQueues[MAX_THREADS];
+static ThreadMsgQueue threadQueues[MAX_THREADS];
+
+struct ThreadDescriptor
+{
+	ThreadID threadID;
+};
+static thread_local ThreadDescriptor thisThreadDescriptor;
+
+size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
+{
+	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count );
+}
+
+uint64_t initThreadSlot( size_t threadIdx, uintptr_t writeHandle ) // returns reincarnation
+{
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx < MAX_THREADS, "{} vs. {}", threadIdx, MAX_THREADS ); 
+	return 0;
+}
 
 static InterThreadCommInitializer interThreadCommInitializer;
 
-InterThreadCommPair InterThreadCommInitializer::init()
+uintptr_t InterThreadCommInitializer::init()
 {
 	Ip4 ip4 = Ip4::parse( "127.0.01" );
 	myServerSocket = acquireSocketAndLetInterThreadCommServerListening( ip4, myServerPort, 128 );
-	return generateHandlePair();
+	auto commPair = generateHandlePair();
+	threadQueues[0].reincarnation = 0;
+	threadQueues[0].writeHandle = commPair.writeHandle;
+	return commPair.readHandle;
 }
 
 InterThreadCommPair InterThreadCommInitializer::generateHandlePair()
@@ -55,7 +75,7 @@ InterThreadCommPair InterThreadCommInitializer::generateHandlePair()
 	return InterThreadCommPair({res.first.first, res.second.first});
 }
 
-InterThreadCommPair initInterThreadCommSystem()
+uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
 {
 	return interThreadCommInitializer.init();
 }
@@ -65,15 +85,8 @@ InterThreadCommPair generateHandlePair()
 	return interThreadCommInitializer.generateHandlePair();
 }
 
-thread_local ThreadID myThreadId;
-
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID targetThreadId )
 {
-	// TODO: get my threadID!!!
-//	ThreadID myThreadId;
-//	myThreadId.reincarnation = (uint64_t)(-1);
-//	myThreadId.slotId = (size_t)(-1);
-
 	// validate idx
 	uintptr_t writeHandle;
 	uint64_t reincarnation;
@@ -83,7 +96,7 @@ void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size
 		reincarnation = threadQueues[ targetThreadId.slotId ].reincarnation;
 	}// release mutex
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation ); 
-	threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, myThreadId, targetThreadId ) );
+	threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
 	// write a byte to writeHandle
 	uint8_t singleByte = 0x1;
 	size_t sentSize = 0;
@@ -105,11 +118,17 @@ namespace nodecpp
 	void preinitMasterThreadClusterObject()
 	{
 		cluster.preinitMaster();
+		thisThreadDescriptor.threadID.slotId = 0;
+		thisThreadDescriptor.threadID.reincarnation = 0;
+		// TODO: check consistency of startupData.reincarnation with threadQueues[startupData.assignedThreadID].reincarnation
 	}
 
 	void preinitSlaveThreadClusterObject(ThreadStartupData& startupData)
 	{
 		cluster.preinitSlave( startupData );
+		thisThreadDescriptor.threadID.slotId = startupData.assignedThreadID;
+		thisThreadDescriptor.threadID.reincarnation = startupData.reincarnation;
+		// TODO: check consistency of startupData.reincarnation with threadQueues[startupData.assignedThreadID].reincarnation
 	}
 
 	void postinitThreadClusterObject()
