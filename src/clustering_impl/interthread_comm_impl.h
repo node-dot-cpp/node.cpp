@@ -179,11 +179,43 @@ public:
 
 using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<InterThreadMsg, 4>>; // TODO: revise the second param value
 
-struct ThreadMsgQueue
+class InterThreadCommData
 {
-	uintptr_t writeHandle = (uintptr_t)(-1);
-	uint64_t reincarnation = 0;
+private:
+	std::mutex mx;
+	uintptr_t writeHandle = (uintptr_t)(-1); // mx-protected
+	uint64_t reincarnation = 0; // mx-protected
+	bool terminating = false; // mx-protected
+public:
+	InterThreadCommData() {}
+	InterThreadCommData( const InterThreadCommData& ) = delete;
+	InterThreadCommData& operator = ( const InterThreadCommData& ) = delete;
+	InterThreadCommData( InterThreadCommData&& ) = delete;
+	InterThreadCommData& operator = ( InterThreadCommData&& ) = delete;
+
 	MsgQueue queue;
+	std::pair<bool, std::pair<uint64_t, uintptr_t>> getWriteHandleAndReincarnation() {
+		std::unique_lock<std::mutex> lock(mx);
+		return std::make_pair(terminating, std::make_pair(reincarnation, writeHandle));
+	}
+	void setTerminatingFlag() {
+		std::unique_lock<std::mutex> lock(mx);
+		terminating = true;
+	}
+	uint64_t resetForReuse( uintptr_t writeHandle_ ) {
+		std::unique_lock<std::mutex> lock(mx);
+		++reincarnation;
+		writeHandle = writeHandle_;
+		terminating = false;
+		return reincarnation;
+	}
+	void setWriteHandleForFirstUse( uintptr_t writeHandle_ ) {
+		std::unique_lock<std::mutex> lock(mx);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeHandle == (uintptr_t)(-1) ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !terminating ); 
+		writeHandle = writeHandle_;
+	}
 };
 
 struct InterThreadCommPair

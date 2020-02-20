@@ -37,7 +37,7 @@
 #include "interthread_comm.h"
 #include "interthread_comm_impl.h"
 
-static ThreadMsgQueue threadQueues[MAX_THREADS];
+static InterThreadCommData threadQueues[MAX_THREADS];
 
 static InterThreadCommInitializer interThreadCommInitializer;
 
@@ -64,8 +64,7 @@ uintptr_t InterThreadCommInitializer::init()
 	Ip4 ip4 = Ip4::parse( "127.0.01" );
 	myServerSocket = acquireSocketAndLetInterThreadCommServerListening( ip4, myServerPort, 128 );
 	auto commPair = interThreadCommInitializer.generateHandlePair();
-	threadQueues[0].reincarnation = 0;
-	threadQueues[0].writeHandle = commPair.writeHandle;
+	threadQueues[0].setWriteHandleForFirstUse( commPair.writeHandle );
 	return commPair.readHandle;
 }
 
@@ -83,14 +82,16 @@ uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
 
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID targetThreadId )
 {
-	// validate idx
-	uintptr_t writeHandle;
-	uint64_t reincarnation;
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, targetThreadId.slotId < MAX_THREADS, "{} vs. {}", targetThreadId.slotId, MAX_THREADS );
+	auto writingMeans = threadQueues[ targetThreadId.slotId ].getWriteHandleAndReincarnation();
+	if ( writingMeans.first )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" );
+		// TODO: process error instead
+	}
+	uintptr_t writeHandle = writingMeans.second.second;
+	uint64_t reincarnation = writingMeans.second.first;
 	
-	{// get socket and reincarnation from under the mutex
-		writeHandle = threadQueues[ targetThreadId.slotId ].writeHandle;
-		reincarnation = threadQueues[ targetThreadId.slotId ].reincarnation;
-	}// release mutex
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation ); 
 	threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
 	// write a byte to writeHandle
@@ -141,11 +142,9 @@ namespace nodecpp
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 		InterThreadCommPair commPair = interThreadCommInitializer.generateHandlePair();
-		threadQueues[worker.id_].writeHandle = commPair.writeHandle; // TODO: in case of reuse think about asserting the queue is empty
+		startupData->reincarnation = threadQueues[worker.id_].resetForReuse( commPair.writeHandle );
 		startupData->readHandle = commPair.readHandle;
 		startupData->assignedThreadID = worker.id_;
-		startupData->reincarnation = ++(threadQueues[startupData->assignedThreadID].reincarnation);
-//		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
 		startupData->defaultLog = nodecpp::logging_impl::currentLog;
 		// run worker thread
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {}...", worker.id_ );
