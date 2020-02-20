@@ -623,7 +623,7 @@ public:
 		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
 		sockPtr->dataForCommandProcessing.refed = true;
 		ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
-		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index/*, p*/ );
+		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index );
 		ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting);
 		ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
@@ -700,7 +700,7 @@ public:
 	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets), recvBuffer(recvBufferCapacity) {}
 
 	// to help with 'poll'
-	void infraGetCloseEvent(/*EvQueue& evs*/)
+	void infraGetCloseEvent()
 	{
 		// if there is an issue with a socket, we may need to appClose it,
 		// and push an event here to notify autom later.
@@ -810,19 +810,19 @@ sessionCreationtime += infraGetCurrentTime() - now;
 				if (!current.getClientSocketData()->paused)
 				{
 					//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", begin[i].fd);
-					infraProcessReadEvent/*<Node>*/(current/*, evs*/);
+					infraProcessReadEvent(current);
 				}
 			}
 			else if ((revents & POLLHUP) != 0)
 			{
 //!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLHUP event at {}", current.getClientSocketData()->osSocket);
-				infraProcessRemoteEnded/*<Node>*/(current/*, evs*/);
+				infraProcessRemoteEnded(current);
 			}
 				
 			if ((revents & POLLOUT) != 0)
 			{
 //!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLOUT event at {}", current.getClientSocketData()->osSocket);
-				infraProcessWriteEvent/*<Node>*/(current/*, evs*/);
+				infraProcessWriteEvent(current);
 			}
 		}
 		//else if (revents != 0)
@@ -877,7 +877,7 @@ private:
 						nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 						hr();
 					}
-					infraProcessRemoteEnded/*<Node>*/(entry);
+					infraProcessRemoteEnded(entry);
 				}
 			}
 		}
@@ -897,7 +897,7 @@ private:
 				}
 				else //if (!entry.remoteEnded)
 				{
-					infraProcessRemoteEnded/*<Node>*/(entry);
+					infraProcessRemoteEnded(entry);
 				}
 			}
 			else
@@ -1017,10 +1017,6 @@ protected:
 #endif // NODECPP_ENABLE_CLUSTERING
 
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
-
-public:
-	int typeIndexOfServerO = -1;
-	int typeIndexOfServerL = -1;
 
 public:
 	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
@@ -1175,7 +1171,7 @@ public:
 		/*pollfd p;
 		p.fd = dataForCommandProcessing.osSocket;
 		p.events = POLLIN;*/
-		ioSockets.setAssociated(dataForCommandProcessing.index/*, p*/);
+		ioSockets.setAssociated(dataForCommandProcessing.index);
 		ioSockets.setPollin(dataForCommandProcessing.index);
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
 		pendingListenEvents.push_back( dataForCommandProcessing.index );
@@ -1271,7 +1267,7 @@ public:
 		errorStore.clear();
 	}
 
-	void infraGetCloseEvents(/*EvQueue& evs*/)
+	void infraGetCloseEvents()
 	{
 		// if there is an issue with a socket, we may need to close it,
 		// and push an event here to notify later.
@@ -1359,18 +1355,18 @@ public:
 		{
 //!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
+			infraMakeErrorEventAndClose(current);
 		}
 		else if ((revents & POLLIN) != 0)
 		{
 //!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", current.getServerSocketData()->osSocket);
-			infraProcessAcceptEvent/*<Node>*/(current/*, evs*/);
+			infraProcessAcceptEvent(current);
 		}
 		else if (revents != 0)
 		{
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
+			infraMakeErrorEventAndClose(current);
 		}
 	}
 
@@ -1382,7 +1378,7 @@ public:
 		{
 			auto& entry = ioSockets.slaveServerAt( info.idx );
 			OpaqueSocketData osd = NetSocketManagerBase::createOpaqueSocketData( info.socket );
-			consumeAcceptedSocket/*<Node>*/(entry, osd, info.remoteIp, info.remotePort);
+			consumeAcceptedSocket(entry, osd, info.remoteIp, info.remotePort);
 		}
 		acceptedSockets.clear();
 	}
@@ -1410,12 +1406,12 @@ private:
 		{
 			if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
 				return;
-			consumeAcceptedSocket/*<Node>*/(entry, osd, remoteIp, remotePort);
+			consumeAcceptedSocket(entry, osd, remoteIp, remotePort);
 		}
 #else
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
 			return;
-		consumeAcceptedSocket/*<Node>*/(entry, osd, remoteIp, remotePort);
+		consumeAcceptedSocket(entry, osd, remoteIp, remotePort);
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 
