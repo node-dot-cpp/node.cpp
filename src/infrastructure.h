@@ -144,8 +144,13 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
 
+#include "clustering_impl/interthread_comm.h"
+
 class Infrastructure
 {
+	template<class Node> 
+	friend class Runnable;
+
 	//nodecpp::vector<NetSocketEntry> ioSockets;
 	NetSockets ioSockets;
 	NetSocketManager netSocket;
@@ -269,21 +274,74 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 				{
 #endif
 					++processed;
-					NetSocketEntry& current = ioSockets.at( 1 + i );
-					if ( current.isAssociated() )
+					if ( 1 + i >= ioSockets.reserved_capacity )
 					{
-						switch ( current.emitter.objectType )
+						NetSocketEntry& current = ioSockets.at( 1 + i );
+						if ( current.isAssociated() )
 						{
-							case OpaqueEmitter::ObjectType::ClientSocket:
-								netSocket. infraCheckPollFdSet(current, revents);
-								break;
-							case OpaqueEmitter::ObjectType::ServerSocket:
-							case OpaqueEmitter::ObjectType::AgentServer:
-								netServer. infraCheckPollFdSet(current, revents);
-								break;
-							default:
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
-								break;
+							switch ( current.emitter.objectType )
+							{
+								case OpaqueEmitter::ObjectType::ClientSocket:
+									netSocket. infraCheckPollFdSet(current, revents);
+									break;
+								case OpaqueEmitter::ObjectType::ServerSocket:
+								case OpaqueEmitter::ObjectType::AgentServer:
+									netServer. infraCheckPollFdSet(current, revents);
+									break;
+								default:
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
+									break;
+							}
+						}
+					}
+					else if ( 1 + i == ioSockets.awakerSockIdx )
+					{
+						// TODO: see infraCheckPollFdSet() for more details to be implemented
+						if ( clusterIsMaster() )
+						{
+							if ((revents & POLLIN) != 0)
+							{
+								static constexpr size_t maxMsgCnt = 8;
+								Buffer recvBuffer(maxMsgCnt);
+								bool res = OSLayer::infraGetPacketBytes(recvBuffer, ioSockets.getAwakerSockSocket());
+								if (res)
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
+									InterThreadMsg thq[maxMsgCnt];
+									size_t actual = popFrontFromThisThreadQueue( thq, recvBuffer.size() );
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
+									for ( size_t i=0; i<actual; ++i )
+										getCluster().onInterthreadMessage( thq[i] );
+								}
+								else
+								{
+									internal_usage_only::internal_getsockopt_so_error(ioSockets.getAwakerSockSocket());
+									// TODO: process error
+								}
+							}
+						}
+						else
+						{
+							if ((revents & POLLIN) != 0)
+							{
+								static constexpr size_t maxMsgCnt = 8;
+								Buffer recvBuffer(maxMsgCnt);
+								bool res = OSLayer::infraGetPacketBytes(recvBuffer, ioSockets.getAwakerSockSocket());
+								if (res)
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
+									InterThreadMsg thq[maxMsgCnt];
+									size_t actual = popFrontFromThisThreadQueue( thq, recvBuffer.size() );
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
+									for ( size_t i=0; i<actual; ++i )
+										getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
+								}
+								else
+								{
+									internal_usage_only::internal_getsockopt_so_error(ioSockets.getAwakerSockSocket());
+									// TODO: process error
+								}
+							}
 						}
 					}
 				}
@@ -296,11 +354,15 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 		}
 	}
 
-	void runInfraLoop2()
+	void doBasicInitialization()
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
 
 		ioSockets.reworkIfNecessary();
+	}
+
+	void runStandardLoop()
+	{
 		while (running)
 		{
 
@@ -367,6 +429,16 @@ void registerAgentServer(soft_ptr<Cluster::AgentServer> t)
 {
 	return netServerManagerBase->appAddAgentServer(t);
 }
+inline
+SOCKET acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog)
+{
+	return netServerManagerBase->acquireSocketAndLetInterThreadCommServerListening( ip, port, backlog );
+}
+inline
+std::pair<std::pair<SOCKET, uint16_t>, std::pair<SOCKET, uint16_t>> acquireAndConnectSocketForInterThreadComm( SOCKET interThreadCommServerSock, const char* ip, uint16_t destinationPort )
+{
+	return netServerManagerBase->acquireAndConnectSocketForInterThreadComm( interThreadCommServerSock, ip, destinationPort );
+}
 #endif // NODECPP_ENABLE_CLUSTERING
 
 extern thread_local TimeoutManager* timeoutManager;
@@ -411,14 +483,17 @@ auto a_timeout_impl(uint32_t ms) {
 }
 #endif // NODECPP_NO_COROUTINES
 
-
 extern thread_local NodeBase* thisThreadNode;
 template<class Node>
 class Runnable : public RunnableBase
 {
 	owning_ptr<Node> node;
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void internalRun( bool isMaster, ThreadStartupData* startupData )
+#else
 	void internalRun()
+#endif
 	{
 		interceptNewDeleteOperators(true);
 		{
@@ -432,6 +507,19 @@ class Runnable : public RunnableBase
 			timeoutManager = &infra.getTimeout();
 			inmediateQueue = &infra.getInmediateQueue();
 			netServerManagerBase = reinterpret_cast<NetServerManagerBase*>(&infra.getNetServer());
+			infra.doBasicInitialization();
+#ifdef NODECPP_ENABLE_CLUSTERING
+			if ( isMaster )
+			{
+				uintptr_t readHandle = initInterThreadCommSystemAndGetReadHandleForMainThread();
+				infra.ioSockets.setAwakerSocket( readHandle );
+			}
+			else
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData != nullptr );
+				infra.ioSockets.setAwakerSocket( startupData->readHandle );
+			}
+#endif
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
@@ -444,7 +532,7 @@ class Runnable : public RunnableBase
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
 			node->main();
-			infra. runInfraLoop2();
+			infra.runStandardLoop();
 			node = nullptr;
 
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
@@ -458,10 +546,17 @@ class Runnable : public RunnableBase
 public:
 	using NodeType = Node;
 	Runnable() {}
+#ifdef NODECPP_ENABLE_CLUSTERING
+	void run(bool isMaster, ThreadStartupData* startupData) override
+	{
+		return internalRun(isMaster, startupData);
+	}
+#else
 	void run() override
 	{
 		return internalRun();
 	}
+#endif // NODECPP_ENABLE_CLUSTERING
 };
 
 #endif //INFRASTRUCTURE_H

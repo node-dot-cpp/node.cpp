@@ -95,6 +95,7 @@ int main( int argc, char *argv_[] )
 	log.add( nodecpp::string_literal( "default_log.txt" ) );
 	nodecpp::logging_impl::currentLog = &log;
 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, NodeFactoryMap::getInstance().getFacoryMap()->size() == 1, "Indeed: {}. Current implementation supports exactly 1 node per thread. More nodes is a pending dev", NodeFactoryMap::getInstance().getFacoryMap()->size() );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
 
@@ -105,7 +106,7 @@ int main( int argc, char *argv_[] )
 
 #else
 
-#include "clustering_impl/clustering_common.h"
+#include "clustering_impl/clustering_impl.h"
 
 namespace nodecpp {
 extern void preinitMasterThreadClusterObject();
@@ -126,8 +127,9 @@ void workerThreadMain( void* pdata )
 	nodecpp::logging_impl::instanceId = startupData.assignedThreadID;
 	nodecpp::preinitSlaveThreadClusterObject( startupData );
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Worker thread with threadID = {}", startupData.assignedThreadID );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, NodeFactoryMap::getInstance().getFacoryMap()->size() == 1, "Indeed: {}. Current implementation supports exactly 1 node per thread. More nodes is a pending dev", NodeFactoryMap::getInstance().getFacoryMap()->size() );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-		f.second->create()->run();
+		f.second->create()->run(false, &startupData);
 }
 
 int main( int argc, char *argv_[] )
@@ -139,14 +141,15 @@ int main( int argc, char *argv_[] )
 	g_AllocManager.initialize();
 #endif
 	nodecpp::log::Log log;
-	log.level = nodecpp::log::LogLevel::info;
-	log.add( nodecpp::string_literal( "default_log.txt" ) );
+//	log.level = nodecpp::log::LogLevel::info;
+	log.add( stdout );
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;
 
 	nodecpp::preinitMasterThreadClusterObject();
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, NodeFactoryMap::getInstance().getFacoryMap()->size() == 1, "Indeed: {}. Current implementation supports exactly 1 node per thread. More nodes is a pending dev", NodeFactoryMap::getInstance().getFacoryMap()->size() );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-		f.second->create()->run();
+		f.second->create()->run(true, nullptr );
 
 	nodecpp::logging_impl::currentLog = nullptr; // TODO: this is thread-unsafe. Revise and make sure all other threads using nodecpp::logging_impl::currentLog has already exited
 

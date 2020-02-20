@@ -68,11 +68,6 @@ typedef int ssize_t;
 
 #endif // _MSC_VER
 
-//mb: TODO make enum
-#define COMMLAYER_RET_FAILED 0
-#define COMMLAYER_RET_OK 1
-#define COMMLAYER_RET_PENDING 2
-
 using namespace std;
 
 /////////////////////////////////////////////     COMMUNICATION     ///////////////////////////////////////////
@@ -315,7 +310,14 @@ namespace nodecpp
 			memset(&sa, 0, sizeof(struct ::sockaddr_in));
 			socklen_t addrlen = sizeof(struct ::sockaddr_in);
 			int ret = getsockname( sock, (struct sockaddr *)(&sa), &addrlen);
-			return ret == -1 ? 0 : ntohs(sa.sin_port);
+			if ( ret != -1 )
+				return ntohs(sa.sin_port);
+			else
+			{
+				int error = getSockError();
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"listen() on sock {} failed; error {}", sock, error);
+				return 0;
+			}
 		}
 
 		bool internal_listen_tcp_socket(SOCKET sock, int backlog)
@@ -397,7 +399,6 @@ namespace nodecpp
 			return true;
 		}
 
-		static
 		uint8_t internal_send_packet(const uint8_t* data, size_t size, SOCKET sock, size_t& sentSize)
 		{
 			const char* ptr = reinterpret_cast<const char*>(data); //windows uses char*, linux void*
@@ -772,6 +773,13 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 
 bool OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
+	return infraGetPacketBytes( buff, buff.capacity(), sock );
+}
+
+bool OSLayer::infraGetPacketBytes(Buffer& buff, size_t szMax, SOCKET sock)
+{
+	if ( szMax < buff.capacity() )
+		szMax = buff.capacity();
 	size_t sz = 0;
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;

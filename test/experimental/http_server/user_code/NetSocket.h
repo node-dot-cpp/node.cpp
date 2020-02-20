@@ -16,8 +16,8 @@ using namespace nodecpp;
 using namespace fmt;
 
 //#define IMPL_VERSION 1 // main() is a single coro
-//#define IMPL_VERSION 12 // main() is a single coro (with clustering)
-#define IMPL_VERSION 2 // onRequest is a coro
+#define IMPL_VERSION 12 // main() is a single coro (with clustering)
+//#define IMPL_VERSION 2 // onRequest is a coro
 
 class MySampleTNode : public NodeBase
 {
@@ -169,29 +169,6 @@ public:
 				to = nodecpp::setTimeout(  [this]() {stopResponding = true;}, 3000 );
 			}, 3000 );
 #endif
-
-#ifdef NODECPP_ENABLE_CLUSTERING
-			for ( size_t i=0; i<1000; ++i )
-			{
-				if ( i&1 )
-					log.warning( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
-				else
-					log.warning( "[{}] some silly msg with data {}", getCluster().worker().id(), i );
-//				if ( i&7 )
-//					log.info( nodecpp::ModuleID( "node" ), "[{}] some silly msg with data {}", getCluster().worker().id(), i );
-			}
-static int logfin = 0;
-++logfin;
-nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
-log.debug( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
-log.fatal( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "    ++++!!+!!++++ Thread {} ({}) has logged all!", getCluster().worker().id(), logfin );
-#else
-			for ( size_t i=0; i<100; ++i )
-				if ( i&1 )
-					log.warning( nodecpp::ModuleID( "node" ), "some silly msg with data {}", i );
-				else
-					log.warning( "some silly msg with data {}", i );
-#endif // #ifdef NODECPP_ENABLE_CLUSTERING
 
 			nodecpp::safememory::soft_ptr<nodecpp::net::IncomingHttpMessageAtServer> request;
 			nodecpp::safememory::soft_ptr<nodecpp::net::HttpServerResponse> response;

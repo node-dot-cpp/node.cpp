@@ -46,6 +46,11 @@ const SOCKET INVALID_SOCKET = -1;
 struct pollfd;
 #endif
 
+//mb: TODO make enum
+#define COMMLAYER_RET_FAILED 0
+#define COMMLAYER_RET_OK 1
+#define COMMLAYER_RET_PENDING 2
+
 
 
 namespace nodecpp {
@@ -170,6 +175,8 @@ namespace nodecpp
 		bool internal_linger_zero_socket(SOCKET sock);
 		void internal_close(SOCKET sock);
 
+		uint8_t internal_send_packet(const uint8_t* data, size_t size, SOCKET sock, size_t& sentSize);
+
 		SOCKET internal_tcp_accept(Ip4& ip, Port& port, SOCKET sock);
 	} // internal_usage_only
 } // nodecpp
@@ -208,6 +215,7 @@ public:
 	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
 	static bool infraGetPacketBytes(Buffer& buff, SOCKET sock);
+	static bool infraGetPacketBytes(Buffer& buff, size_t szMax, SOCKET sock);
 	static bool infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz);
 
 	//enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };

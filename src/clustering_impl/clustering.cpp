@@ -28,27 +28,104 @@
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 
-#include "clustering_common.h"
+#include "clustering_impl.h"
 #include "../../include/nodecpp/cluster.h"
-#include "../../src/infrastructure.h"
-#include "../../src/tcp_socket/tcp_socket.h"
+#include "../infrastructure.h"
+#include "../tcp_socket/tcp_socket.h"
 #include <thread>
+
+#include "interthread_comm.h"
+#include "interthread_comm_impl.h"
+
+static InterThreadCommData threadQueues[MAX_THREADS];
+
+static InterThreadCommInitializer interThreadCommInitializer;
+
+struct ThreadDescriptor
+{
+	ThreadID threadID;
+};
+static thread_local ThreadDescriptor thisThreadDescriptor;
+
+size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
+{
+	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count );
+}
+
+uint64_t initThreadSlot( size_t threadIdx, uintptr_t writeHandle ) // returns reincarnation
+{
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx < MAX_THREADS, "{} vs. {}", threadIdx, MAX_THREADS ); 
+	auto commPair = interThreadCommInitializer.generateHandlePair();
+	return 0;
+}
+
+uintptr_t InterThreadCommInitializer::init()
+{
+	Ip4 ip4 = Ip4::parse( "127.0.01" );
+	myServerSocket = acquireSocketAndLetInterThreadCommServerListening( ip4, myServerPort, 128 );
+	auto commPair = interThreadCommInitializer.generateHandlePair();
+	threadQueues[0].setWriteHandleForFirstUse( commPair.writeHandle );
+	return commPair.readHandle;
+}
+
+InterThreadCommPair InterThreadCommInitializer::generateHandlePair()
+{
+	auto res = acquireAndConnectSocketForInterThreadComm( myServerSocket, "127.0.01", myServerPort );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, res.first.second == res.second.second ); 
+	return InterThreadCommPair({res.first.first, res.second.first});
+}
+
+uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
+{
+	return interThreadCommInitializer.init();
+}
+
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID targetThreadId )
+{
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, targetThreadId.slotId < MAX_THREADS, "{} vs. {}", targetThreadId.slotId, MAX_THREADS );
+	auto writingMeans = threadQueues[ targetThreadId.slotId ].getWriteHandleAndReincarnation();
+	if ( writingMeans.first )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" );
+		// TODO: process error instead
+	}
+	uintptr_t writeHandle = writingMeans.second.second;
+	uint64_t reincarnation = writingMeans.second.first;
+	
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation ); 
+	threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
+	// write a byte to writeHandle
+	uint8_t singleByte = 0x1;
+	size_t sentSize = 0;
+	auto ret = nodecpp::internal_usage_only::internal_send_packet( &singleByte, 1, writeHandle, sentSize );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == COMMLAYER_RET_OK ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sentSize == 1 ); 
+}
+
+
 
 extern void workerThreadMain( void* pdata );
 
 namespace nodecpp
 {
 	thread_local Cluster cluster;
+
 	bool clusterIsMaster() { return cluster.isMaster(); }
 
 	void preinitMasterThreadClusterObject()
 	{
 		cluster.preinitMaster();
+		thisThreadDescriptor.threadID.slotId = 0;
+		thisThreadDescriptor.threadID.reincarnation = 0;
+		// TODO: check consistency of startupData.reincarnation with threadQueues[startupData.assignedThreadID].reincarnation
 	}
 
 	void preinitSlaveThreadClusterObject(ThreadStartupData& startupData)
 	{
-		cluster.preinitSlave( startupData );
+		cluster.preinitSlave( startupData.assignedThreadID );
+		thisThreadDescriptor.threadID.slotId = startupData.assignedThreadID;
+		thisThreadDescriptor.threadID.reincarnation = startupData.reincarnation;
+		// TODO: check consistency of startupData.reincarnation with threadQueues[startupData.assignedThreadID].reincarnation
 	}
 
 	void postinitThreadClusterObject()
@@ -64,8 +141,10 @@ namespace nodecpp
 		// TODO: init new thread, fill worker
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
+		InterThreadCommPair commPair = interThreadCommInitializer.generateHandlePair();
+		startupData->reincarnation = threadQueues[worker.id_].resetForReuse( commPair.writeHandle );
+		startupData->readHandle = commPair.readHandle;
 		startupData->assignedThreadID = worker.id_;
-		startupData->commPort = ctrlServer->dataForCommandProcessing.localAddress.port;
 		startupData->defaultLog = nodecpp::logging_impl::currentLog;
 		// run worker thread
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {}...", worker.id_ );
@@ -102,9 +181,10 @@ namespace nodecpp
 	}
 
 
-	nodecpp::handler_ret_type Cluster::SlaveSocket::processResponse( ClusteringMsgHeader& mh, nodecpp::Buffer& b, size_t offset )
+	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size() ); 
+		size_t sz = riter.availableSize();
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize <= sz ); 
 		switch ( mh.type )
 		{
 			case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
@@ -114,26 +194,27 @@ namespace nodecpp
 			}
 			case ClusteringMsgHeader::ClusteringMsgType::ConnAccepted:
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) + sizeof(uint64_t) <= b.size() ); 
-				size_t serverIdx = *reinterpret_cast<size_t*>(b.begin() + offset);
-				uint64_t socket = *reinterpret_cast<uint64_t*>(b.begin() + offset + sizeof(serverIdx));
-				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<uint32_t*>(b.begin() + offset + sizeof(serverIdx) + sizeof(socket)) );
-				Port remotePort = Port::fromNetwork( *reinterpret_cast<uint16_t*>(b.begin() + offset + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );
+				const uint8_t* buff = riter.read( mh.bodySize );
+				size_t serverIdx = *reinterpret_cast<const size_t*>(buff);
+				uint64_t socket = *reinterpret_cast<const uint64_t*>(buff + sizeof(serverIdx));
+				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<const uint32_t*>(buff + sizeof(serverIdx) + sizeof(socket)) );
+				Port remotePort = Port::fromNetwork( *reinterpret_cast<const uint16_t*>(buff + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );
 				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
 			case ClusteringMsgHeader::ClusteringMsgType::ServerError:
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + sizeof(size_t) <= b.size() ); 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
 				size_t serverIdx = mh.entryIdx;
 //				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
 			case ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification:
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + 1 <= b.size() ); 
+				const uint8_t* buff = riter.read( mh.bodySize );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, 1 <= sz ); 
 				size_t serverIdx = mh.entryIdx;
-				bool hasError = b.readUInt8( offset + sizeof(size_t) ) != 0;
+				bool hasError = *buff != 0;
 				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( serverIdx );
 				entry.getServerSocket()->closeByWorkingCluster();
 				break;

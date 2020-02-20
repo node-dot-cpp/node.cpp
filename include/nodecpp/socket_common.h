@@ -421,7 +421,6 @@ namespace nodecpp {
 
 		public:
 
-			const Address& address() const { return dataForCommandProcessing._local; }
 
 			size_t bufferSize() const { return dataForCommandProcessing.writeBuffer.used_size(); }
 			size_t bytesRead() const { return _bytesRead; }
@@ -431,11 +430,14 @@ namespace nodecpp {
 			void destroy();
 			bool destroyed() const { return !(dataForCommandProcessing.state == DataForCommandProcessing::State::Connecting || dataForCommandProcessing.state == DataForCommandProcessing::State::Connected); };
 			void end();
-			nodecpp::string localAddress() const { return dataForCommandProcessing._local.ip.toStr(); }
+
+			const Address& localAddress() const { return dataForCommandProcessing._local; }
+			nodecpp::string localIP() const { return dataForCommandProcessing._local.ip.toStr(); }
 			uint16_t localPort() const { return dataForCommandProcessing._local.port; }
 
 
-			nodecpp::string remoteAddress() const { return dataForCommandProcessing._remote.ip.toStr(); }
+			const Address& remoteAddress() const { return dataForCommandProcessing._remote; }
+			nodecpp::string remoteIP() const { return dataForCommandProcessing._remote.ip.toStr(); }
 			const nodecpp::IPFAMILY remoteFamily() const { return dataForCommandProcessing._remote.family; }
 			uint16_t remotePort() const { return dataForCommandProcessing._remote.port; }
 
