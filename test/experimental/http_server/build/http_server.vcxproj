@@ -458,6 +458,7 @@
     <ClCompile Include="..\..\..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\..\src\net.cpp" />
+    <ClCompile Include="..\..\..\..\src\tcp_socket\listener_thread.cpp" />
     <ClCompile Include="..\..\..\..\src\tcp_socket\tcp_socket.cpp" />
     <ClCompile Include="..\user_code\NetSocket.cpp" />
   </ItemGroup>
@@ -484,6 +485,7 @@
     <ClInclude Include="..\..\..\..\src\infrastructure.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket_base.h" />
+    <ClInclude Include="..\..\..\..\src\tcp_socket\listener_thread_impl.h" />
     <ClInclude Include="..\user_code\NetSocket.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
