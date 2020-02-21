@@ -372,7 +372,7 @@ public:
 		makeCompactIfNecessary();
 	}
 
-	void setAssociated( size_t idx/*, pollfd p*/ ) {
+	void setAssociated( size_t idx ) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
@@ -547,9 +547,6 @@ protected:
 	NetSockets& ioSockets; // TODO: improve
 	nodecpp::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 	nodecpp::vector<size_t> pendingAcceptedEvents;
-
-public:
-	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 
 public:
 	NetSocketManagerBase(NetSockets& ioSockets_) : ioSockets( ioSockets_) {}
@@ -1019,7 +1016,6 @@ protected:
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
-	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
 	template<class DataForCommandProcessing>
@@ -1168,9 +1164,6 @@ public:
 		dataForCommandProcessing.localAddress.port = port;
 		dataForCommandProcessing.localAddress.family = family;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dataForCommandProcessing.index != 0 );
-		/*pollfd p;
-		p.fd = dataForCommandProcessing.osSocket;
-		p.events = POLLIN;*/
 		ioSockets.setAssociated(dataForCommandProcessing.index);
 		ioSockets.setPollin(dataForCommandProcessing.index);
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
@@ -1252,8 +1245,6 @@ extern thread_local NetServerManagerBase* netServerManagerBase;
 
 class NetServerManager : public NetServerManagerBase
 {
-	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
-
 public:
 	NetServerManager(NetSockets& ioSockets) : NetServerManagerBase(ioSockets) {}
 
