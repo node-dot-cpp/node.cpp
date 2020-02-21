@@ -148,6 +148,7 @@ class NetSocketManagerBase; // forward declaration
 class OpaqueSocketData
 {
 	friend class NetSocketManagerBase;
+	friend class NetServerManagerForListenerThread;
 	SocketRiia s;
 	OpaqueSocketData( SOCKET s_ ) : s(s_) {};
 	OpaqueSocketData( SocketRiia s_ ) : s(s_.release()) {};

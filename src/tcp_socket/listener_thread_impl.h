@@ -162,6 +162,7 @@ private:
 		CO_RETURN;
 	}
 
+
 public:
 	class AgentServer
 	{
@@ -274,7 +275,7 @@ public:
 		return ret;
 	}
 
-private:
+//private:
 
 	friend void preinitMasterThreadClusterObject();
 	friend void preinitSlaveThreadClusterObject(ThreadStartupData& startupData);
@@ -1100,7 +1101,7 @@ private:
 		ioSockets.reworkIfNecessary();
 	}
 
-	void runStandardLoop()
+	void runLoop()
 	{
 		while (running)
 		{
@@ -1121,9 +1122,16 @@ private:
 			ioSockets.reworkIfNecessary();
 		}
 	}
+
+	void run()
+	{
+		listenerThreadWorker.postinit();
+		doBasicInitialization();
+		runLoop();
+	}
 };
 
-extern thread_local NetServerManagerForListenerThread* netServerManagerBase;
+extern thread_local NetServerManagerForListenerThread netServerManagerBase;
 
 
 #endif // NODECPP_ENABLE_CLUSTERING
