@@ -301,7 +301,7 @@ extern thread_local ListenerThreadWorker listenerThreadWorker;
 
 static constexpr uint64_t TimeOutNever = std::numeric_limits<uint64_t>::max();
 
-class NetSocketEntry {
+class NetSocketEntryForListenerThread {
 	// TODO: revise everything around being 'refed'
 	enum State { Unused, SockIssued, SockAssociated, SockClosed }; // TODO: revise!
 	State state = State::Unused;
@@ -311,14 +311,14 @@ public:
 	size_t index;
 	bool refed = false;
 
-	NetSocketEntry(size_t index) : state(State::Unused), index(index) {}
-	NetSocketEntry(size_t index, nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr_) : state(State::SockIssued), index(index), ptr( ptr_ ) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntryForListenerThread(size_t index) : state(State::Unused), index(index) {}
+	NetSocketEntryForListenerThread(size_t index, nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr_) : state(State::SockIssued), index(index), ptr( ptr_ ) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
-	NetSocketEntry(const NetSocketEntry& other) = delete;
-	NetSocketEntry& operator=(const NetSocketEntry& other) = delete;
+	NetSocketEntryForListenerThread(const NetSocketEntryForListenerThread& other) = delete;
+	NetSocketEntryForListenerThread& operator=(const NetSocketEntryForListenerThread& other) = delete;
 
-	NetSocketEntry(NetSocketEntry&& other) = default;
-	NetSocketEntry& operator=(NetSocketEntry&& other) = default;
+	NetSocketEntryForListenerThread(NetSocketEntryForListenerThread&& other) = default;
+	NetSocketEntryForListenerThread& operator=(NetSocketEntryForListenerThread&& other) = default;
 
 	bool isUsed() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (state == State::Unused) || (state != State::Unused && ptr != nullptr) ); return state != State::Unused; }
 	bool isAssociated() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (state == State::Unused) || (state != State::Unused && ptr != nullptr) ); return state == State::SockAssociated; }
@@ -337,10 +337,10 @@ public:
 	}
 };
 
-class NetSockets
+class NetSocketsForListenerThread
 {
 private:
-	using NetSocketEntryVectorT = nodecpp::vector<NetSocketEntry>;
+	using NetSocketEntryVectorT = nodecpp::vector<NetSocketEntryForListenerThread>;
 	NetSocketEntryVectorT ourSide;
 	NetSocketEntryVectorT ourSideAccum;
 	nodecpp::vector<pollfd> osSide;
@@ -391,7 +391,7 @@ private:
 
 public:
 
-	NetSockets() {
+	NetSocketsForListenerThread() {
 		ourSide.reserve(capacity_); 
 		osSide.reserve(capacity_);
 		ourSide.emplace_back(0);
@@ -415,7 +415,7 @@ public:
 			return ourSideAccum.at(idx).isUsed();
 		}
 	}
-	NetSocketEntry& at(size_t idx) {
+	NetSocketEntryForListenerThread& at(size_t idx) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
@@ -431,7 +431,7 @@ public:
 			return ourSideAccum.at(idx);
 		}
 	}
-	const NetSocketEntry& at(size_t idx) const {
+	const NetSocketEntryForListenerThread& at(size_t idx) const {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
@@ -488,7 +488,7 @@ public:
 		{
 			if (!ourSide[i].isUsed())
 			{
-				NetSocketEntry entry(i, ptr);
+				NetSocketEntryForListenerThread entry(i, ptr);
 				ourSide[i] = std::move(entry);
 				osSide[i].fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));
 				osSide[i].events = 0;
@@ -714,7 +714,7 @@ class NetServerManagerForListenerThread : protected OSLayer
 	friend class ListenerThreadWorker;
 
 protected:
-	NetSockets ioSockets; // TODO: improve
+	NetSocketsForListenerThread ioSockets; // TODO: improve
 	//nodecpp::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 	nodecpp::vector<size_t> pendingAcceptedEvents;
 	//mb: ioSockets[0] is always reserved and invalid.
@@ -797,10 +797,10 @@ public:
 	}
 
 protected:
-	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
-	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }
+	NetSocketEntryForListenerThread& appGetEntry(size_t id) { return ioSockets.at(id); }
+	const NetSocketEntryForListenerThread& appGetEntry(size_t id) const { return ioSockets.at(id); }
 
-	void closeSocket(NetSocketEntry& entry) //app-infra neutral
+	void closeSocket(NetSocketEntryForListenerThread& entry) //app-infra neutral
 	{
 		/*if ( !( entry.getAgentServerData()->state == net::SocketBase::DataForCommandProcessing::Closing ||
 				entry.getAgentServerData()->state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
@@ -810,7 +810,7 @@ protected:
 			pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
 		}*/
 	}
-	void errorCloseSocket(NetSocketEntry& entry, Error& err) //app-infra neutral
+	void errorCloseSocket(NetSocketEntryForListenerThread& entry, Error& err) //app-infra neutral
 	{
 		/*if ( !( entry.getAgentServerData()->state == net::SocketBase::DataForCommandProcessing::Closing ||
 				entry.getAgentServerData()->state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
@@ -965,7 +965,7 @@ public:
 		}
 	}
 
-	void infraCheckPollFdSet(NetSocketEntry& current, short revents)
+	void infraCheckPollFdSet(NetSocketEntryForListenerThread& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first
 		{
@@ -987,7 +987,7 @@ public:
 	}
 
 private:
-	void infraProcessAcceptEvent(NetSocketEntry& entry) //TODO:CLUSTERING alt impl
+	void infraProcessAcceptEvent(NetSocketEntryForListenerThread& entry) //TODO:CLUSTERING alt impl
 	{
 		OpaqueSocketData osd( false );
 
@@ -1000,7 +1000,7 @@ private:
 		return;
 	}
 
-	void infraMakeErrorEventAndClose(NetSocketEntry& entry)
+	void infraMakeErrorEventAndClose(NetSocketEntryForListenerThread& entry)
 	{
 		Error e;
 		// TODO: special Clustering treatment
@@ -1057,7 +1057,7 @@ private:
 					++processed;
 					if ( 1 + i >= ioSockets.reserved_capacity )
 					{
-						NetSocketEntry& current = ioSockets.at( 1 + i );
+						NetSocketEntryForListenerThread& current = ioSockets.at( 1 + i );
 						if ( current.isAssociated() )
 						{
 							infraCheckPollFdSet(current, revents);
