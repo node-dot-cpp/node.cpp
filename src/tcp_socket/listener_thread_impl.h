@@ -275,10 +275,7 @@ public:
 		return ret;
 	}
 
-//private:
-
 	friend void preinitMasterThreadClusterObject();
-	friend void preinitSlaveThreadClusterObject(ThreadStartupData& startupData);
 	friend void postinitThreadClusterObject();
 
 	void preinit() { 
@@ -349,8 +346,7 @@ private:
 	size_t usedCount = 0;
 public:
 	//mb: xxxSide[0] is always reserved and invalid.
-	//di: in clustering mode xxxSide[1] is always reserved and invalid (separate handling for awaker socket)
-	//di: in clustering mode xxxSide[2] is always reserved and invalid (separate handling for InterThreadCommServer socket)
+	//di: xxxSide[1] is always reserved (separate handling for awaker socket)
 	static constexpr size_t awakerSockIdx = 1;
 	static constexpr size_t reserved_capacity = 2;
 private:
@@ -480,8 +476,7 @@ public:
 	size_t size() const {return ourSide.size() - 1; }
 	bool isValidId( size_t idx ) { return idx >= reserved_capacity && idx < ourSide.size() + ourSideAccum.size(); }
 
-	template<class SocketType>
-	void addEntry(nodecpp::safememory::soft_ptr<SocketType> ptr) {
+	void addEntry(nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 		for (size_t i = reserved_capacity; i != ourSide.size(); ++i) // skip ourSide[0]
@@ -710,16 +705,12 @@ public:
 
 class NetServerManagerForListenerThread : protected OSLayer
 {
-//	friend class OSLayer;
 	friend class ListenerThreadWorker;
 
 protected:
 	NetSocketsForListenerThread ioSockets; // TODO: improve
-	//nodecpp::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 	nodecpp::vector<size_t> pendingAcceptedEvents;
 	//mb: ioSockets[0] is always reserved and invalid.
-	//nodecpp::vector<std::pair<size_t, bool>> pendingCloseEvents;
-	PendingEvQueue pendingEvents;
 	nodecpp::vector<Error> errorStore;
 	nodecpp::vector<size_t> pendingListenEvents;
 	bool running;
@@ -763,14 +754,6 @@ public:
 	{
 		return sdata.s.release();
 	}
-
-private:
-	/*void registerAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr, SocketRiia& s)
-	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
-		ptr->dataForCommandProcessing.osSocket = s.release();
-		ioSockets.addEntry<net::SocketBase>(ptr);
-	}*/
 
 public:
 	void appConnectSocket(net::SocketBase* sockPtr, const char* ip, uint16_t port)
@@ -846,8 +829,7 @@ protected:
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
-	template<class DataForCommandProcessing>
-	void appClose(DataForCommandProcessing& serverData) {
+	void appClose(ListenerThreadWorker::AgentServer::DataForCommandProcessing& serverData) {
 		size_t id = serverData.index;
 		auto& entry = appGetEntry(id);
 		if (!entry.isUsed())
@@ -859,7 +841,7 @@ public:
 		ioSockets.setSocketClosed( entry.index );
 		//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
 	}
-	void appReportAllAceptedConnectionsEnded(net::ServerBase::DataForCommandProcessing& serverData) {
+/*	void appReportAllAceptedConnectionsEnded(net::ServerBase::DataForCommandProcessing& serverData) {
 		size_t id = serverData.index;
 		auto& entry = appGetEntry(id);
 		if (!entry.isUsed())
@@ -868,7 +850,7 @@ public:
 			return;
 		}
 		//pendingCloseEvents.emplace_back(id, false);
-	}
+	}*/
 
 	void appAddAgentServer(nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
@@ -877,11 +859,10 @@ public:
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		addAgentServerEntry(ptr);
+		ioSockets.addEntry( ptr );
 	}
 
-	template<class DataForCommandProcessing>
-	void appListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
+	void appListen(ListenerThreadWorker::AgentServer::DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) {
 		Port myPort = Port::fromHost(port);
 		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, ip, myPort)) {
 			throw Error();
@@ -900,29 +881,17 @@ public:
 		dataForCommandProcessing.localAddress.port = port;
 		dataForCommandProcessing.localAddress.family = family;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dataForCommandProcessing.index != 0 );
-		/*pollfd p;
-		p.fd = dataForCommandProcessing.osSocket;
-		p.events = POLLIN;*/
 		ioSockets.setAssociated(dataForCommandProcessing.index/*, p*/);
 		ioSockets.setPollin(dataForCommandProcessing.index);
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
 		pendingListenEvents.push_back( dataForCommandProcessing.index );
 	}
-	template<class DataForCommandProcessing>
-	void appListen(DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
+
+	void appListen(ListenerThreadWorker::AgentServer::DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) {
 		Ip4 ip4 = Ip4::parse(ip);
-		appListen<DataForCommandProcessing>(dataForCommandProcessing, ip4, port, backlog);
+		appListen(dataForCommandProcessing, ip4, port, backlog);
 	}
-	template<class DataForCommandProcessing>
-	void appRef(DataForCommandProcessing& dataForCommandProcessing) { 
-		dataForCommandProcessing.refed = true;
-	}
-	template<class DataForCommandProcessing>
-	void appUnref(DataForCommandProcessing& dataForCommandProcessing) { 
-		dataForCommandProcessing.refed = true;
-	}
-	template<class DataForCommandProcessing>
-	void appReportBeingDestructed(DataForCommandProcessing& dataForCommandProcessing) {
+	void appReportBeingDestructed(ListenerThreadWorker::AgentServer::DataForCommandProcessing& dataForCommandProcessing) {
 		size_t id = dataForCommandProcessing.index;
 			ioSockets.setUnused(id); 
 	}
@@ -936,13 +905,6 @@ public:
 	void infraClearStores() {
 		errorStore.clear();
 	}
-
-	// to help with 'poll'
-	//size_t infraGetPollFdSetSize() const { return ioSockets.size(); }
-	void infraGetPendingEvents(EvQueue& evs) { pendingEvents.toQueue(evs); }
-
-protected:
-	void addAgentServerEntry(nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr);
 
 public:
 	void infraEmitListeningEvents()
@@ -1094,39 +1056,25 @@ private:
 		}
 	}
 
-	void doBasicInitialization()
-	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
-
-		ioSockets.reworkIfNecessary();
-	}
-
 	void runLoop()
 	{
 		while (running)
 		{
-			EvQueue queue;
-
-			infraGetPendingEvents(queue);
+			ioSockets.reworkIfNecessary();
 			infraEmitListeningEvents();
-			queue.emit();
 
 			bool refed = pollPhase2();
 			if(!refed)
 				return;
 
-			queue.emit();
-
 			infraClearStores();
-
-			ioSockets.reworkIfNecessary();
 		}
 	}
 
 	void run()
 	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
 		listenerThreadWorker.postinit();
-		doBasicInitialization();
 		runLoop();
 	}
 };
