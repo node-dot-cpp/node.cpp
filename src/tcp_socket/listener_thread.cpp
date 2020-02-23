@@ -57,5 +57,36 @@ void listenerThreadMain( void* pdata )
 	listenerThreadWorker.preinit();
 }
 
+void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+{
+	size_t sz = riter.availableSize();
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize <= sz ); 
+	switch ( mh.type )
+	{
+		case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
+		{
+			// TODO: ...
+			break;
+		}
+		case ClusteringMsgHeader::ClusteringMsgType::ServerError:
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
+			size_t serverIdx = mh.entryIdx;
+//				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+			break;
+		}
+		case ClusteringMsgHeader::ClusteringMsgType::ServerCloseRequest:
+		{
+//					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), requestingThreadId.slotId, mh.entryIdx );
+//					nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
+//				processRequestForServerCloseAtMaster( requestingThreadId, mh );
+			break;
+		}
+		default:
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
+			break;
+	}
+}
 
 #endif // NODECPP_ENABLE_CLUSTERING

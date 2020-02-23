@@ -46,7 +46,9 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\tcp_socket\listener_thread.cpp" />
+    <ClCompile Include="..\..\..\..\src\tcp_socket\listener_thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h">
