@@ -112,41 +112,6 @@ private:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
-
-	/*nodecpp::handler_ret_type onInterthreadMessage( InterThreadMsg& msg )
-	{
-		// NOTE: in present quick-and-dirty implementation we assume that the message total size is less than a single page
-		auto riter = msg.msg.getReadIter();
-		size_t sz = riter.availableSize();
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ClusteringMsgHeader::serializationSize() <= sz, "indeed: {} vs. {}", ClusteringMsgHeader::serializationSize(), sz ); 
-		const uint8_t* page = riter.read( ClusteringMsgHeader::serializationSize() );
-		ClusteringMsgHeader mh;
-		mh.deserialize( page, ClusteringMsgHeader::serializationSize() );
-		processResponse( msg.sourceThreadID, mh, riter );
-		CO_RETURN;
-	}*/
-
-
-	nodecpp::handler_ret_type processInterthreadRequest( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
-	{
-//		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size(), "{} + {} vs. {}", mh.bodySize, offset, b.size() ); 
-		switch ( mh.type )
-		{
-			case ClusteringMsgHeader::ClusteringMsgType::ServerCloseRequest:
-			{
-//					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
-				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), requestingThreadId.slotId, mh.entryIdx );
-//					nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-//				processRequestForServerCloseAtMaster( requestingThreadId, mh );
-				break;
-			}
-			default:
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
-				break;
-		}
-		CO_RETURN;
-	}
 
 	public:
 	nodecpp::handler_ret_type onInterthreadMessage( InterThreadMsg& msg )
@@ -167,7 +132,6 @@ public:
 	class AgentServer
 	{
 		friend class ListenerThreadWorker;
-//			Cluster& myCluster;
 		struct SlaveServerData
 		{
 			size_t entryIndex;
@@ -182,7 +146,6 @@ public:
 			size_t index;
 			bool refed = false;
 			short fdEvents = 0;
-			//SOCKET osSocket = INVALID_SOCKET;
 			unsigned long long osSocket = 0;
 
 			enum State { Unused, Listening, BeingClosed, Closed }; // TODO: revise!
