@@ -130,8 +130,7 @@ private:
 	size_t usedCount = 0;
 public:
 	//mb: xxxSide[0] is always reserved and invalid.
-	//di: in clustering mode xxxSide[1] is always reserved and invalid (separate handling for awaker socket)
-	//di: in clustering mode xxxSide[2] is always reserved and invalid (separate handling for InterThreadCommServer socket)
+	//di: in clustering mode xxxSide[1] is always reserved (separate handling for awaker socket)
 #ifdef NODECPP_ENABLE_CLUSTERING
 	static constexpr size_t awakerSockIdx = 1;
 	static constexpr size_t reserved_capacity = 2;
