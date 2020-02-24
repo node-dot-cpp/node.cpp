@@ -55,6 +55,7 @@ void listenerThreadMain( void* pdata )
 	thisThreadDescriptor.threadID.reincarnation = startupData.reincarnation;
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Listener thread with threadID = {}", startupData.assignedThreadID );
 	listenerThreadWorker.preinit();
+	netServerManagerBase.runLoop( startupData.readHandle );
 }
 
 void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
@@ -87,6 +88,24 @@ void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadI
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
 			break;
 	}
+}
+
+void ListenerThreadWorker::AgentServer::registerServer() { 
+	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
+	netServerManagerBase.appAddAgentServer(myPtr); 
+}
+void ListenerThreadWorker::AgentServer::listen(uint16_t port, nodecpp::Ip4 ip, int backlog)
+{
+	netServerManagerBase.appListen(dataForCommandProcessing, ip, port, backlog);
+}
+void ListenerThreadWorker::AgentServer::ref() { netServerManagerBase.appRef(dataForCommandProcessing.index); }
+void ListenerThreadWorker::AgentServer::unref() { netServerManagerBase.appUnref(dataForCommandProcessing.index); }
+void ListenerThreadWorker::AgentServer::reportBeingDestructed() { netServerManagerBase.appReportBeingDestructed(dataForCommandProcessing); }
+
+void ListenerThreadWorker::AgentServer::close()
+{
+	netServerManagerBase.appClose(dataForCommandProcessing);
+	dataForCommandProcessing.state = DataForCommandProcessing::State::BeingClosed;
 }
 
 #endif // NODECPP_ENABLE_CLUSTERING

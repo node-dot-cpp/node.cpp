@@ -123,7 +123,7 @@ public:
 	}
 
 
-public:
+private:
 	class AgentServer
 	{
 		friend class ListenerThreadWorker;
@@ -184,7 +184,7 @@ public:
 		void registerServer();
 
 	public:
-		AgentServer(ListenerThreadWorker& myCluster_) /*: myCluster( myCluster_ )*/ {
+		AgentServer() {
 			nodecpp::safememory::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
 		}
 		virtual ~AgentServer() {
@@ -212,7 +212,7 @@ public:
 	nodecpp::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
 
 	nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
-		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>(*this);
+		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
 		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
 		newServer->registerServer();
 		for ( size_t i=0; i<agentServers.size(); ++i )
