@@ -80,7 +80,7 @@ uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
 	return interThreadCommInitializer.init();
 }
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID targetThreadId )
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, ThreadID targetThreadId )
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, targetThreadId.slotId < MAX_THREADS, "{} vs. {}", targetThreadId.slotId, MAX_THREADS );
 	auto writingMeans = threadQueues[ targetThreadId.slotId ].getWriteHandleAndReincarnation();
@@ -181,18 +181,18 @@ namespace nodecpp
 	}
 
 
-	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, InterThreadMsgType msgType, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 	{
 		size_t sz = riter.availableSize();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize <= sz ); 
-		switch ( mh.type )
+		switch ( msgType )
 		{
-			case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
+			case InterThreadMsgType::ServerListening:
 			{
 				// TODO: ...
 				break;
 			}
-			case ClusteringMsgHeader::ClusteringMsgType::ConnAccepted:
+			case InterThreadMsgType::ConnAccepted:
 			{
 				const uint8_t* buff = riter.read( mh.bodySize );
 				size_t serverIdx = *reinterpret_cast<const size_t*>(buff);
@@ -202,14 +202,14 @@ namespace nodecpp
 				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
-			case ClusteringMsgHeader::ClusteringMsgType::ServerError:
+			case InterThreadMsgType::ServerError:
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
 				size_t serverIdx = mh.entryIdx;
 //				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
-			case ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification:
+			case InterThreadMsgType::ServerClosedNotification:
 			{
 				const uint8_t* buff = riter.read( mh.bodySize );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, 1 <= sz ); 
@@ -220,7 +220,7 @@ namespace nodecpp
 				break;
 			}
 			default:
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(msgType) ); 
 				break;
 		}
 		CO_RETURN;

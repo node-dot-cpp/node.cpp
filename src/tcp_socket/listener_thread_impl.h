@@ -44,7 +44,6 @@ private:
 	static void sendConnAcceptedEv( ThreadID targetThreadId, size_t internalID, uint64_t socket, Ip4& remoteIp, Port& remotePort )
 	{
 		ClusteringMsgHeader rhReply;
-		rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ConnAccepted;
 		rhReply.requestID = 0;
 		rhReply.bodySize = sizeof(internalID) + sizeof(socket) + 4 + 2;
 		nodecpp::Buffer reply;
@@ -60,13 +59,12 @@ private:
 
 		nodecpp::platform::internal_msg::InternalMsg msg;
 		msg.append( reply.begin(), reply.size() );
-		sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ConnAccepted, targetThreadId );
+		sendInterThreadMsg( std::move( msg ), InterThreadMsgType::ConnAccepted, targetThreadId );
 	}
 
 	static void sendServerErrorEv( ThreadID targetThreadId, Error e )
 	{
 		ClusteringMsgHeader rhReply;
-		rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerError;
 		rhReply.requestID = 0;
 		rhReply.bodySize = 0;
 		nodecpp::Buffer reply;
@@ -74,13 +72,12 @@ private:
 
 		nodecpp::platform::internal_msg::InternalMsg msg;
 		msg.append( reply.begin(), reply.size() );
-		sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerError, targetThreadId );
+		sendInterThreadMsg( std::move( msg ), InterThreadMsgType::ServerError, targetThreadId );
 	}
 
 	static void sendServerCloseNotification( ThreadID targetThreadId, size_t entryIdx, bool hasError )
 	{
 		ClusteringMsgHeader rhReply;
-		rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification;
 		rhReply.requestID = 0;
 		rhReply.entryIdx = entryIdx;
 		rhReply.bodySize = 1;
@@ -90,13 +87,12 @@ private:
 
 		nodecpp::platform::internal_msg::InternalMsg msg;
 		msg.append( reply.begin(), reply.size() );
-		sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification, targetThreadId );
+		sendInterThreadMsg( std::move( msg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
 	}
 
 	void reportThreadStarted()
 	{
 		ClusteringMsgHeader rhReply;
-		rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ThreadStarted;
 		rhReply.requestID = 0;
 		rhReply.bodySize = 0;
 		nodecpp::Buffer reply;
@@ -104,10 +100,10 @@ private:
 
 		nodecpp::platform::internal_msg::InternalMsg msg;
 		msg.append( reply.begin(), reply.size() );
-		sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ThreadStarted, ThreadID({0, 0}) );
+		sendInterThreadMsg( std::move( msg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
 	}
 
-	void processInterthreadRequest( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
+	void processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgType, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
 
 public:
 	void onInterthreadMessage( InterThreadMsg& msg )
