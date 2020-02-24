@@ -119,11 +119,9 @@ public:
 		const uint8_t* page = riter.read( ClusteringMsgHeader::serializationSize() );
 		ClusteringMsgHeader mh;
 		mh.deserialize( page, ClusteringMsgHeader::serializationSize() );
-		processInterthreadRequest( msg.sourceThreadID, mh, riter );
+		processInterthreadRequest( msg.sourceThreadID, msg.msgType, mh, riter );
 	}
 
-
-private:
 	class AgentServer
 	{
 		friend class ListenerThreadWorker;
@@ -209,6 +207,8 @@ private:
 
 
 	};
+
+private:
 	nodecpp::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
 
 	nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
@@ -225,23 +225,32 @@ private:
 		return ret;
 	}
 
-	friend void preinitMasterThreadClusterObject();
-	friend void postinitThreadClusterObject();
+	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithExistingSocket( SOCKET sock ) {
+		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
+		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
+		newServer->registerServer();
+		for ( size_t i=0; i<agentServers.size(); ++i )
+			if ( agentServers[i] == nullptr )
+			{
+				agentServers[i] = std::move( newServer );
+				return ret;
+			}
+		agentServers.push_back( std::move( newServer ) );
+		return ret;
+	}
 
-	void preinit() { 
-		//thisThreadWorker.id_ = 0; 
-	}
-	void postinit() { 
-		reportThreadStarted();
-	}
 public:
 	ListenerThreadWorker() {}
 	ListenerThreadWorker(const ListenerThreadWorker&) = delete;
 	ListenerThreadWorker& operator = (const ListenerThreadWorker&) = delete;
 	ListenerThreadWorker(ListenerThreadWorker&&) = delete;
 	ListenerThreadWorker& operator = (ListenerThreadWorker&&) = delete;
-
-	// event handling (awaitable)
+	void preinit() { 
+		//thisThreadWorker.id_ = 0; 
+	}
+	void postinit() { 
+		reportThreadStarted();
+	}
 };
 extern thread_local ListenerThreadWorker listenerThreadWorker;
 

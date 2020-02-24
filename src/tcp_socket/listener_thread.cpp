@@ -58,11 +58,11 @@ void listenerThreadMain( void* pdata )
 	netServerManagerBase.runLoop( startupData.readHandle );
 }
 
-void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgType, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 {
 	size_t sz = riter.availableSize();
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize <= sz ); 
-	switch ( mh.type )
+	switch ( msgType )
 	{
 		case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
 		{
