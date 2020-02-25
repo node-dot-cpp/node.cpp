@@ -30,6 +30,83 @@
 #include "listener_thread_impl.h"
 #include "../clustering_impl/clustering_impl.h"
 
+struct WorkerLoad
+{
+	size_t usedSlotCnt;
+	struct Worker
+	{
+		size_t load = 0;
+		size_t idx = (size_t)(-1);
+	};
+	static constexpr size_t workerMax = MAX_THREADS; // to awoid dyn allocation
+	Worker workers[MAX_THREADS];
+	size_t totalLoadCtr = 0;
+
+	size_t current = 0;
+
+	void addWorker( size_t idx )
+	{
+		// TODO: mx-protect
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, usedSlotCnt < MAX_THREADS, "{} vs. {}", usedSlotCnt, MAX_THREADS );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0, "indeed: {}", idx );
+		workers[usedSlotCnt].idx = idx;
+		++usedSlotCnt;
+	}
+
+	void incrementLoadCtr( size_t idx )
+	{
+		// TODO: mx-protect
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < usedSlotCnt, "{} vs. {}", idx, usedSlotCnt ); 
+		++( workers[ idx ].load );
+		++totalLoadCtr;
+	};
+
+	void decrementLoadCtr( size_t idx )
+	{
+		// TODO: mx-protect
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < usedSlotCnt, "{} vs. {}", idx, usedSlotCnt ); 
+		++( workers[ idx ].load );
+		++totalLoadCtr;
+	};
+
+	size_t calcTolerableLoad()
+	{
+		if ( usedSlotCnt )
+		{
+			return ((totalLoadCtr << 28) + (totalLoadCtr << 32)) / usedSlotCnt;
+		}
+		else
+			return 0;
+	}
+
+	size_t getCandidate() // updates 'current'; current is always set to a valid value (if at all possible)
+	{
+		// TODO: mx-protect
+//		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, usedSlotCnt != 0 ); 
+		if ( usedSlotCnt )
+		{
+			size_t comparisonBase = ((totalLoadCtr << 28) + (totalLoadCtr << 32)) / usedSlotCnt;
+			size_t presentCurrent = current++;
+			do
+			{
+				if ( current != usedSlotCnt )
+				{
+					if ( (workers[current].load << 32) < comparisonBase )
+						return workers[current].idx;
+					else
+						++current;
+				}
+				else
+					current = 0;
+
+			}
+			while ( current != presentCurrent );
+		}
+		else
+			return (size_t)(-1);
+	}
+};
+
 thread_local ListenerThreadWorker listenerThreadWorker;
 thread_local NetServerManagerForListenerThread netServerManagerBase;
 
@@ -70,6 +147,7 @@ void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadI
 			switch ( msg->type )
 			{
 				case RequestToListenerThread::Type::AddServerSocket:
+					listenerThreadWorker.createAgentServerWithExistingSocket( msg->socket, msg->ip, msg->port.getHost() );
 					break;
 			}
 			// TODO: ...
