@@ -181,10 +181,9 @@ namespace nodecpp
 	}
 
 
-	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, InterThreadMsgType msgType, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 	{
 		size_t sz = riter.availableSize();
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize <= sz ); 
 		switch ( msgType )
 		{
 			case InterThreadMsgType::ServerListening:
@@ -194,28 +193,35 @@ namespace nodecpp
 			}
 			case InterThreadMsgType::ConnAccepted:
 			{
-				const uint8_t* buff = riter.read( mh.bodySize );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ConnAcceptedEvMsg ) <= sz, "{} vs. {}", sizeof( ConnAcceptedEvMsg ), sz ); 
+				const ConnAcceptedEvMsg* msg = reinterpret_cast<const ConnAcceptedEvMsg*>( riter.read( sizeof( ConnAcceptedEvMsg ) ) );
+
+				/*const uint8_t* buff = riter.read( mh.bodySize );
 				size_t serverIdx = *reinterpret_cast<const size_t*>(buff);
 				uint64_t socket = *reinterpret_cast<const uint64_t*>(buff + sizeof(serverIdx));
 				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<const uint32_t*>(buff + sizeof(serverIdx) + sizeof(socket)) );
-				Port remotePort = Port::fromNetwork( *reinterpret_cast<const uint16_t*>(buff + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );
-				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				Port remotePort = Port::fromNetwork( *reinterpret_cast<const uint16_t*>(buff + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );*/
+				netServerManagerBase->addAcceptedSocket( msg->serverIdx, (SOCKET)(msg->socket), msg->ip, msg->uport );
 				break;
 			}
 			case InterThreadMsgType::ServerError:
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
-				size_t serverIdx = mh.entryIdx;
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerErrorEvMsg ) <= sz, "{} vs. {}", sizeof( ServerErrorEvMsg ), sz ); 
+				const ServerErrorEvMsg* msg = reinterpret_cast<const ServerErrorEvMsg*>( riter.read( sizeof( ServerErrorEvMsg ) ) );
+				/*NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
+				size_t serverIdx = mh.entryIdx;*/
 //				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
 				break;
 			}
 			case InterThreadMsgType::ServerClosedNotification:
 			{
-				const uint8_t* buff = riter.read( mh.bodySize );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerCloseNotificationMsg ) <= sz, "{} vs. {}", sizeof( ServerCloseNotificationMsg ), sz ); 
+				const ServerCloseNotificationMsg* msg = reinterpret_cast<const ServerCloseNotificationMsg*>( riter.read( sizeof( ServerCloseNotificationMsg ) ) );
+				/*const uint8_t* buff = riter.read( mh.bodySize );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, 1 <= sz ); 
 				size_t serverIdx = mh.entryIdx;
-				bool hasError = *buff != 0;
-				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( serverIdx );
+				bool hasError = *buff != 0;*/
+				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( msg->entryIdx );
 				entry.getServerSocket()->closeByWorkingCluster();
 				break;
 			}

@@ -43,7 +43,14 @@ class ListenerThreadWorker
 private:
 	static void sendConnAcceptedEv( ThreadID targetThreadId, size_t internalID, uint64_t socket, Ip4& remoteIp, Port& remotePort )
 	{
-		ClusteringMsgHeader rhReply;
+		ConnAcceptedEvMsg msg;
+		msg.requestID = 0; // TODO:
+		msg.serverIdx = internalID;
+		msg.socket = socket;
+		msg.ip = remoteIp;
+		msg.uport = remotePort;
+
+		/*ClusteringMsgHeader rhReply;
 		rhReply.requestID = 0;
 		rhReply.bodySize = sizeof(internalID) + sizeof(socket) + 4 + 2;
 		nodecpp::Buffer reply;
@@ -55,67 +62,75 @@ private:
 		reply.append( &internalID_, sizeof(internalID_) );
 		reply.append( &socket_, sizeof(socket) );
 		reply.append( &uip, sizeof(uip) );
-		reply.append( &uport, sizeof(uport) );
+		reply.append( &uport, sizeof(uport) );*/
 
-		nodecpp::platform::internal_msg::InternalMsg msg;
-		msg.append( reply.begin(), reply.size() );
-		sendInterThreadMsg( std::move( msg ), InterThreadMsgType::ConnAccepted, targetThreadId );
+		nodecpp::platform::internal_msg::InternalMsg imsg;
+//		msg.append( reply.begin(), reply.size() );
+		imsg.append( &msg, sizeof(msg) );
+		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
 	}
 
 	static void sendServerErrorEv( ThreadID targetThreadId, Error e )
 	{
-		ClusteringMsgHeader rhReply;
+		ServerErrorEvMsg msg;
+		msg.requestID = 0; // TODO:
+		msg.e = e;
+		/*ClusteringMsgHeader rhReply;
 		rhReply.requestID = 0;
 		rhReply.bodySize = 0;
 		nodecpp::Buffer reply;
-		rhReply.serialize( reply );
+		rhReply.serialize( reply );*/
 
-		nodecpp::platform::internal_msg::InternalMsg msg;
-		msg.append( reply.begin(), reply.size() );
-		sendInterThreadMsg( std::move( msg ), InterThreadMsgType::ServerError, targetThreadId );
+		nodecpp::platform::internal_msg::InternalMsg imsg;
+//		msg.append( reply.begin(), reply.size() );
+		imsg.append( &msg, sizeof(msg) );
+		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerError, targetThreadId );
 	}
 
 	static void sendServerCloseNotification( ThreadID targetThreadId, size_t entryIdx, bool hasError )
 	{
-		ClusteringMsgHeader rhReply;
+		ServerCloseNotificationMsg msg;
+		msg.requestID = 0; // TODO:
+		msg.entryIdx = entryIdx;
+		msg.hasError = hasError;
+		/*ClusteringMsgHeader rhReply;
 		rhReply.requestID = 0;
 		rhReply.entryIdx = entryIdx;
 		rhReply.bodySize = 1;
 		nodecpp::Buffer reply;
 		rhReply.serialize( reply );
-		reply.appendUint8( hasError ? 1 : 0 );
+		reply.appendUint8( hasError ? 1 : 0 );*/
 
-		nodecpp::platform::internal_msg::InternalMsg msg;
-		msg.append( reply.begin(), reply.size() );
-		sendInterThreadMsg( std::move( msg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
+		nodecpp::platform::internal_msg::InternalMsg imsg;
+//		msg.append( reply.begin(), reply.size() );
+		imsg.append( &msg, sizeof(msg) );
+		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
 	}
 
 	void reportThreadStarted()
 	{
-		ClusteringMsgHeader rhReply;
+		ThreadStartedReportMsg msg;
+		msg.requestID = 0;
+		/*ClusteringMsgHeader rhReply;
 		rhReply.requestID = 0;
 		rhReply.bodySize = 0;
 		nodecpp::Buffer reply;
-		rhReply.serialize( reply );
+		rhReply.serialize( reply );*/
 
-		nodecpp::platform::internal_msg::InternalMsg msg;
-		msg.append( reply.begin(), reply.size() );
-		sendInterThreadMsg( std::move( msg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
+		nodecpp::platform::internal_msg::InternalMsg imsg;
+//		msg.append( reply.begin(), reply.size() );
+		imsg.append( &msg, sizeof(msg) );
+		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
 	}
 
-	void processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgType, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
+	void processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
 
 public:
 	void onInterthreadMessage( InterThreadMsg& msg )
 	{
 		// NOTE: in present quick-and-dirty implementation we assume that the message total size is less than a single page
 		nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = msg.msg.getReadIter();
-		size_t sz = riter.availableSize();
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ClusteringMsgHeader::serializationSize() <= sz, "indeed: {} vs. {}", ClusteringMsgHeader::serializationSize(), sz ); 
-		const uint8_t* page = riter.read( ClusteringMsgHeader::serializationSize() );
-		ClusteringMsgHeader mh;
-		mh.deserialize( page, ClusteringMsgHeader::serializationSize() );
-		processInterthreadRequest( msg.sourceThreadID, msg.msgType, mh, riter );
+		processInterthreadRequest( msg.sourceThreadID, msg.msgType, riter );
 	}
 
 	class AgentServer
