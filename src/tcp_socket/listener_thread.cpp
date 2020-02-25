@@ -72,9 +72,7 @@ void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadI
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerErrorEvMsg ) <= sz, "{} vs. {}", sizeof( ServerErrorEvMsg ), sz ); 
 			const ServerErrorEvMsg* msg = reinterpret_cast<const ServerErrorEvMsg*>( riter.read( sizeof( ServerErrorEvMsg ) ) );
-			/*NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
-			size_t serverIdx = mh.entryIdx;
-//				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );*/
+			// TODO: ...
 			break;
 		}
 		case InterThreadMsgType::ServerCloseRequest:
@@ -82,8 +80,7 @@ void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadI
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerCloseRequest ) <= sz, "{} vs. {}", sizeof( ServerCloseRequest ), sz ); 
 			const ServerCloseRequest* msg = reinterpret_cast<const ServerCloseRequest*>( riter.read( sizeof( ServerCloseRequest ) ) );
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(msgType), requestingThreadId.slotId, msg->entryIdx );
-//					nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-//				processRequestForServerCloseAtMaster( requestingThreadId, mh );
+			// TODO: ...
 			break;
 		}
 		default:

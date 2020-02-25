@@ -195,12 +195,6 @@ namespace nodecpp
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ConnAcceptedEvMsg ) <= sz, "{} vs. {}", sizeof( ConnAcceptedEvMsg ), sz ); 
 				const ConnAcceptedEvMsg* msg = reinterpret_cast<const ConnAcceptedEvMsg*>( riter.read( sizeof( ConnAcceptedEvMsg ) ) );
-
-				/*const uint8_t* buff = riter.read( mh.bodySize );
-				size_t serverIdx = *reinterpret_cast<const size_t*>(buff);
-				uint64_t socket = *reinterpret_cast<const uint64_t*>(buff + sizeof(serverIdx));
-				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<const uint32_t*>(buff + sizeof(serverIdx) + sizeof(socket)) );
-				Port remotePort = Port::fromNetwork( *reinterpret_cast<const uint16_t*>(buff + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );*/
 				netServerManagerBase->addAcceptedSocket( msg->serverIdx, (SOCKET)(msg->socket), msg->ip, msg->uport );
 				break;
 			}
@@ -208,21 +202,15 @@ namespace nodecpp
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerErrorEvMsg ) <= sz, "{} vs. {}", sizeof( ServerErrorEvMsg ), sz ); 
 				const ServerErrorEvMsg* msg = reinterpret_cast<const ServerErrorEvMsg*>( riter.read( sizeof( ServerErrorEvMsg ) ) );
-				/*NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
-				size_t serverIdx = mh.entryIdx;*/
-//				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				// TODO: ...
 				break;
 			}
 			case InterThreadMsgType::ServerClosedNotification:
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerCloseNotificationMsg ) <= sz, "{} vs. {}", sizeof( ServerCloseNotificationMsg ), sz ); 
 				const ServerCloseNotificationMsg* msg = reinterpret_cast<const ServerCloseNotificationMsg*>( riter.read( sizeof( ServerCloseNotificationMsg ) ) );
-				/*const uint8_t* buff = riter.read( mh.bodySize );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, 1 <= sz ); 
-				size_t serverIdx = mh.entryIdx;
-				bool hasError = *buff != 0;*/
 				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( msg->entryIdx );
-				entry.getServerSocket()->closeByWorkingCluster();
+				entry.getServerSocket()->closeByWorkingCluster(); // TODO: revise
 				break;
 			}
 			default:

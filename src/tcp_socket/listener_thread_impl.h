@@ -50,22 +50,7 @@ private:
 		msg.ip = remoteIp;
 		msg.uport = remotePort;
 
-		/*ClusteringMsgHeader rhReply;
-		rhReply.requestID = 0;
-		rhReply.bodySize = sizeof(internalID) + sizeof(socket) + 4 + 2;
-		nodecpp::Buffer reply;
-		rhReply.serialize( reply );
-		size_t internalID_ = internalID;
-		uint64_t socket_ = socket;
-		uint32_t uip = remoteIp.getNetwork();
-		uint16_t uport = remotePort.getNetwork();
-		reply.append( &internalID_, sizeof(internalID_) );
-		reply.append( &socket_, sizeof(socket) );
-		reply.append( &uip, sizeof(uip) );
-		reply.append( &uport, sizeof(uport) );*/
-
 		nodecpp::platform::internal_msg::InternalMsg imsg;
-//		msg.append( reply.begin(), reply.size() );
 		imsg.append( &msg, sizeof(msg) );
 		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
 	}
@@ -75,14 +60,8 @@ private:
 		ServerErrorEvMsg msg;
 		msg.requestID = 0; // TODO:
 		msg.e = e;
-		/*ClusteringMsgHeader rhReply;
-		rhReply.requestID = 0;
-		rhReply.bodySize = 0;
-		nodecpp::Buffer reply;
-		rhReply.serialize( reply );*/
 
 		nodecpp::platform::internal_msg::InternalMsg imsg;
-//		msg.append( reply.begin(), reply.size() );
 		imsg.append( &msg, sizeof(msg) );
 		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerError, targetThreadId );
 	}
@@ -93,16 +72,8 @@ private:
 		msg.requestID = 0; // TODO:
 		msg.entryIdx = entryIdx;
 		msg.hasError = hasError;
-		/*ClusteringMsgHeader rhReply;
-		rhReply.requestID = 0;
-		rhReply.entryIdx = entryIdx;
-		rhReply.bodySize = 1;
-		nodecpp::Buffer reply;
-		rhReply.serialize( reply );
-		reply.appendUint8( hasError ? 1 : 0 );*/
 
 		nodecpp::platform::internal_msg::InternalMsg imsg;
-//		msg.append( reply.begin(), reply.size() );
 		imsg.append( &msg, sizeof(msg) );
 		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
 	}
@@ -111,14 +82,8 @@ private:
 	{
 		ThreadStartedReportMsg msg;
 		msg.requestID = 0;
-		/*ClusteringMsgHeader rhReply;
-		rhReply.requestID = 0;
-		rhReply.bodySize = 0;
-		nodecpp::Buffer reply;
-		rhReply.serialize( reply );*/
 
 		nodecpp::platform::internal_msg::InternalMsg imsg;
-//		msg.append( reply.begin(), reply.size() );
 		imsg.append( &msg, sizeof(msg) );
 		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
 	}
