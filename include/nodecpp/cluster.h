@@ -84,6 +84,16 @@ namespace nodecpp
 		size_t requestID;
 	};
 
+	struct RequestToListenerThread
+	{
+		enum Type { Undefined, AddServerSocket, CreateServerSocket, RemoveServerSocket, CloseServerSocket };
+		Type type = Type::Undefined;
+		uintptr_t socket;
+		Ip4 ip;
+		Port port;
+		int backlog;
+	};
+
 	class Cluster; // forward declaration
 	class Worker
 	{

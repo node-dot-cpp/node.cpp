@@ -63,8 +63,15 @@ void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadI
 	size_t sz = riter.availableSize();
 	switch ( msgType )
 	{
-		case InterThreadMsgType::ListeningThreadAddServer:
+		case InterThreadMsgType::RequestToListeningThread:
 		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( RequestToListenerThread ) <= sz, "{} vs. {}", sizeof( RequestToListenerThread ), sz ); 
+			const RequestToListenerThread* msg = reinterpret_cast<const RequestToListenerThread*>( riter.read( sizeof( RequestToListenerThread ) ) );
+			switch ( msg->type )
+			{
+				case RequestToListenerThread::Type::AddServerSocket:
+					break;
+			}
 			// TODO: ...
 			break;
 		}
@@ -89,6 +96,10 @@ void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadI
 	}
 }
 
+void ListenerThreadWorker::AgentServer::addServerSocketAndStartListening( SOCKET socket) { 
+	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
+	netServerManagerBase.appAddAgentServerSocketAndStartListening(myPtr, socket); 
+}
 void ListenerThreadWorker::AgentServer::registerServer() { 
 	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
 	netServerManagerBase.appAddAgentServer(myPtr); 

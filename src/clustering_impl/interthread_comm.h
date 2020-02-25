@@ -39,7 +39,7 @@ struct ThreadID
 	uint64_t reincarnation = (uint64_t)(-1);
 };
 
-enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, ListeningThreadAddServer, Undefined };
+enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Undefined };
 
 struct InterThreadMsg
 {

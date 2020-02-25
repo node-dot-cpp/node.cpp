@@ -156,6 +156,7 @@ public:
 
 	public:
 		void registerServer();
+		void addServerSocketAndStartListening( SOCKET socket);
 
 	public:
 		AgentServer() {
@@ -201,10 +202,12 @@ private:
 		return ret;
 	}
 
-	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithExistingSocket( SOCKET sock ) {
+	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithExistingSocket( SOCKET sock, nodecpp::Ip4 ip, uint16_t port ) {
 		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
 		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
-		newServer->registerServer();
+		newServer->dataForCommandProcessing.localAddress.ip = ip;
+		newServer->dataForCommandProcessing.localAddress.port = port;
+		newServer->addServerSocketAndStartListening(sock);
 		for ( size_t i=0; i<agentServers.size(); ++i )
 			if ( agentServers[i] == nullptr )
 			{
@@ -572,6 +575,18 @@ public:
 		}
 		//pendingCloseEvents.emplace_back(id, false);
 	}*/
+
+	void appAddAgentServerSocketAndStartListening( nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr, SOCKET socket)
+	{
+		ptr->dataForCommandProcessing.osSocket = socket;
+		ioSockets.addEntry( ptr );
+		ptr->dataForCommandProcessing.refed = true;
+		ptr->dataForCommandProcessing.localAddress.family = family;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.index != 0 );
+		ioSockets.setAssociated(ptr->dataForCommandProcessing.index);
+		ioSockets.setPollin(ptr->dataForCommandProcessing.index);
+		ioSockets.setRefed(ptr->dataForCommandProcessing.index, true);
+	}
 
 	void appAddAgentServer(nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
