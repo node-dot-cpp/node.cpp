@@ -61,9 +61,9 @@ uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, ThreadID threadId );
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
 
-void addWorkerEntryForLoadTracking( size_t idx );
+void addWorkerEntryForLoadTracking( ThreadID id );
 void incrementWorkerLoadCtr( size_t idx );
 void decrementWorkerLoadCtr( size_t idx );
-size_t getLeastLoadedWorker();
+ThreadID getLeastLoadedWorker();
 
 #endif // INTERTHREAD_COMM_H

@@ -38,7 +38,7 @@ private:
 	struct Worker
 	{
 		size_t load = 0;
-		size_t idx = (size_t)(-1);
+		ThreadID id;
 	};
 	static constexpr size_t workerMax = MAX_THREADS; // to awoid dyn allocation
 	Worker workers[MAX_THREADS];
@@ -47,13 +47,15 @@ private:
 	size_t current = 0;
 
 public:
-	void addWorker( size_t idx )
+	void addWorker( ThreadID id_ )
 	{
+		size_t assignedIdx;
 		std::unique_lock<std::mutex> lock(mx);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, usedSlotCnt < MAX_THREADS, "{} vs. {}", usedSlotCnt, MAX_THREADS );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx != 0, "indeed: {}", idx );
-		workers[usedSlotCnt].idx = idx;
+		workers[usedSlotCnt].id = id_;
+		assignedIdx = usedSlotCnt;
 		++usedSlotCnt;
+		lock.unlock();
 	}
 
 	void incrementLoadCtr( size_t idx )
@@ -72,7 +74,7 @@ public:
 		++totalLoadCtr;
 	}
 
-	size_t getCandidate() // updates 'current'; current is always set to a valid value (if at all possible)
+	ThreadID getCandidate() // updates 'current'; current is always set to a valid value (if at all possible)
 	{
 		std::unique_lock<std::mutex> lock(mx);
 //		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, usedSlotCnt != 0 ); 
@@ -85,7 +87,7 @@ public:
 				if ( current != usedSlotCnt )
 				{
 					if ( (workers[current].load << 32) < comparisonBase )
-						return workers[current].idx;
+						return workers[current].id;
 					else
 						++current;
 				}
@@ -95,15 +97,15 @@ public:
 			while ( current != presentCurrent );
 		}
 		else
-			return (size_t)(-1);
+			return ThreadID();
 	}
 };
 static WorkerLoad workerLoad;
 
-void addWorkerEntryForLoadTracking( size_t idx ) { workerLoad.addWorker( idx ); }
+void addWorkerEntryForLoadTracking( ThreadID id ) { workerLoad.addWorker( id ); }
 void incrementWorkerLoadCtr( size_t idx ) { workerLoad.incrementLoadCtr( idx ); }
 void decrementWorkerLoadCtr( size_t idx ) { workerLoad.decrementLoadCtr( idx ); }
-size_t getLeastLoadedWorker() { return workerLoad.getCandidate(); }
+ThreadID getLeastLoadedWorker() { return workerLoad.getCandidate(); }
 
 thread_local ListenerThreadWorker listenerThreadWorker;
 thread_local NetServerManagerForListenerThread netServerManagerBase;
