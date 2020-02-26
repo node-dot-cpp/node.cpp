@@ -30,13 +30,17 @@
 #define CLUSTERING_COMMON_H
 
 #include "../../include/nodecpp/common.h"
+#include "interthread_comm.h"
+#include "interthread_comm_impl.h"
 
 struct ThreadStartupData
 {
-	size_t assignedThreadID;
-	uint64_t reincarnation;
+	ThreadID threadCommID;
 	uintptr_t readHandle;
 	nodecpp::log::Log* defaultLog = nullptr;
+	size_t IdWithinGroup;
 };
+
+void preinitThreadStartupData( ThreadStartupData& startupData );
 
 #endif // CLUSTERING_COMMON_H

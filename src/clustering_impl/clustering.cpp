@@ -34,8 +34,6 @@
 #include "../tcp_socket/tcp_socket.h"
 #include <thread>
 
-#include "interthread_comm.h"
-#include "interthread_comm_impl.h"
 
 static InterThreadCommData threadQueues[MAX_THREADS];
 
@@ -52,12 +50,24 @@ size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
 	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count );
 }
 
-uint64_t initThreadSlot( size_t threadIdx, uintptr_t writeHandle ) // returns reincarnation
+void preinitThreadStartupData( ThreadStartupData& startupData )
 {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx < MAX_THREADS, "{} vs. {}", threadIdx, MAX_THREADS ); 
-	auto commPair = interThreadCommInitializer.generateHandlePair();
-	return 0;
+	InterThreadCommPair commPair = interThreadCommInitializer.generateHandlePair();
+	for ( size_t slotIdx = 1; slotIdx < MAX_THREADS; ++slotIdx )
+	{
+		auto ret = threadQueues[slotIdx].acquireForReuse( commPair.writeHandle );
+		if ( ret.first )
+		{
+			startupData.threadCommID.reincarnation = ret.second;
+			startupData.threadCommID.slotId = slotIdx;
+			break;
+		}
+	}
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData.threadCommID.slotId != ThreadID::InvalidSlotID ); 
+	startupData.readHandle = commPair.readHandle;
+	startupData.defaultLog = nodecpp::logging_impl::currentLog;
 }
+	
 
 uintptr_t InterThreadCommInitializer::init()
 {
@@ -122,9 +132,8 @@ namespace nodecpp
 
 	void preinitSlaveThreadClusterObject(ThreadStartupData& startupData)
 	{
-		cluster.preinitSlave( startupData.assignedThreadID );
-		thisThreadDescriptor.threadID.slotId = startupData.assignedThreadID;
-		thisThreadDescriptor.threadID.reincarnation = startupData.reincarnation;
+		cluster.preinitSlave( startupData.IdWithinGroup );
+		thisThreadDescriptor.threadID = startupData.threadCommID;
 		// TODO: check consistency of startupData.reincarnation with threadQueues[startupData.assignedThreadID].reincarnation
 	}
 
@@ -135,17 +144,13 @@ namespace nodecpp
 	
 	Worker& Cluster::fork()
 	{
+		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
+		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
+		preinitThreadStartupData( *startupData );
 		size_t internalID = workers_.size();
 		Worker worker;
 		worker.id_ = ++coreCtr; // TODO: assign an actual value
-		// TODO: init new thread, fill worker
-		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
-		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
-		InterThreadCommPair commPair = interThreadCommInitializer.generateHandlePair();
-		startupData->reincarnation = threadQueues[worker.id_].resetForReuse( commPair.writeHandle );
-		startupData->readHandle = commPair.readHandle;
-		startupData->assignedThreadID = worker.id_;
-		startupData->defaultLog = nodecpp::logging_impl::currentLog;
+		startupData->IdWithinGroup = worker.id_;
 		// run worker thread
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {}...", worker.id_ );
 		std::thread t1( workerThreadMain, (void*)(startupData) );

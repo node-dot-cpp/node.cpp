@@ -30,6 +30,48 @@
 #include "listener_thread_impl.h"
 #include "../clustering_impl/clustering_impl.h"
 
+struct ListenerThreadDescriptor
+{
+	ThreadID threadID;
+};
+
+class Listeners
+{
+	ListenerThreadDescriptor listeners[MAX_THREADS];
+	size_t maxUsed = 0;
+
+public:
+	size_t add( ThreadID id ) {
+		for ( size_t i=0; i< maxUsed; ++i )
+			if ( listeners[i].threadID.slotId == ThreadID::InvalidSlotID )
+			{
+				listeners[i].threadID = id;
+				return i;
+			}
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, maxUsed < MAX_THREADS, "{} vs. {}", maxUsed, MAX_THREADS ); 
+		listeners[maxUsed].threadID = id;
+		return maxUsed++;
+	}
+	bool remove( ThreadID id ) {
+		for ( size_t i=0; i< maxUsed; ++i )
+			if ( listeners[i].threadID.slotId == id.slotId && listeners[i].threadID.reincarnation == id.reincarnation )
+			{
+				listeners[i].threadID = ThreadID();
+				if ( i + 1 == maxUsed )
+					--maxUsed;
+				return true;
+			}
+		return false;
+	}
+	void notifyAll( nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType )
+	{
+		for ( size_t i=0; i< maxUsed; ++i )
+			if ( listeners[i].threadID.slotId == ThreadID::InvalidSlotID )
+				sendInterThreadMsg( std::move( msg ), msgType, listeners[i].threadID );
+	}
+};
+static Listeners listeners;
+
 class WorkerLoad
 {
 private:
@@ -47,7 +89,7 @@ private:
 	size_t current = 0;
 
 public:
-	void addWorker( ThreadID id_ )
+	size_t addWorker( ThreadID id_ )
 	{
 		size_t assignedIdx;
 		std::unique_lock<std::mutex> lock(mx);
@@ -56,6 +98,7 @@ public:
 		assignedIdx = usedSlotCnt;
 		++usedSlotCnt;
 		lock.unlock();
+		return assignedIdx;
 	}
 
 	void incrementLoadCtr( size_t idx )
@@ -115,24 +158,37 @@ struct ThreadDescriptor
 	ThreadID threadID;
 };
 static thread_local ThreadDescriptor thisThreadDescriptor;
-
+	
 void listenerThreadMain( void* pdata )
 {
 	ThreadStartupData* sd = reinterpret_cast<ThreadStartupData*>(pdata);
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->assignedThreadID != 0 ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->threadCommID.slotId != 0 ); 
 	ThreadStartupData startupData = *sd;
 	nodecpp::stddealloc( sd, 1 );
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
 	nodecpp::logging_impl::currentLog = startupData.defaultLog;
-	nodecpp::logging_impl::instanceId = startupData.assignedThreadID;
-	thisThreadDescriptor.threadID.slotId = startupData.assignedThreadID;
-	thisThreadDescriptor.threadID.reincarnation = startupData.reincarnation;
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Listener thread with threadID = {}", startupData.assignedThreadID );
+	nodecpp::logging_impl::instanceId = startupData.threadCommID.slotId;
+	thisThreadDescriptor.threadID = startupData.threadCommID;
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Listener thread with threadID = {}", startupData.threadCommID.slotId );
 	listenerThreadWorker.preinit();
 	netServerManagerBase.runLoop( startupData.readHandle );
+}
+
+void createListenerThread()
+{
+	// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
+	ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
+	preinitThreadStartupData( *startupData );
+	startupData->IdWithinGroup = listeners.add( startupData->threadCommID );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", startupData->threadCommID.slotId );
+	std::thread t1( listenerThreadMain, (void*)(startupData) );
+	// startupData is no longer valid
+	startupData = nullptr;
+	t1.detach();
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", startupData->threadCommID.slotId );
 }
 
 void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )

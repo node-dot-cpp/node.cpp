@@ -35,8 +35,10 @@
 
 struct ThreadID
 {
-	size_t slotId = (size_t)(-1);
-	uint64_t reincarnation = (uint64_t)(-1);
+	static constexpr size_t InvalidSlotID = (size_t)(-1);
+	static constexpr size_t InvalidReincarnation = (uint64_t)(-1);
+	size_t slotId = InvalidSlotID;
+	uint64_t reincarnation = InvalidReincarnation;
 };
 
 enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Undefined };
@@ -65,5 +67,6 @@ void addWorkerEntryForLoadTracking( ThreadID id );
 void incrementWorkerLoadCtr( size_t idx );
 void decrementWorkerLoadCtr( size_t idx );
 ThreadID getLeastLoadedWorker();
+void createListenerThread();
 
 #endif // INTERTHREAD_COMM_H

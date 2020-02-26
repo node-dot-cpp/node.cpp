@@ -117,16 +117,16 @@ void workerThreadMain( void* pdata )
 {
 	ThreadStartupData* sd = reinterpret_cast<ThreadStartupData*>(pdata);
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->assignedThreadID != 0 ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->threadCommID.slotId != 0 ); 
 	ThreadStartupData startupData = *sd;
 	nodecpp::stddealloc( sd, 1 );
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
 	nodecpp::logging_impl::currentLog = startupData.defaultLog;
-	nodecpp::logging_impl::instanceId = startupData.assignedThreadID;
+	nodecpp::logging_impl::instanceId = startupData.threadCommID.slotId;
 	nodecpp::preinitSlaveThreadClusterObject( startupData );
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Worker thread with threadID = {}", startupData.assignedThreadID );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Worker thread with threadID = {}", startupData.threadCommID.slotId );
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, NodeFactoryMap::getInstance().getFacoryMap()->size() == 1, "Indeed: {}. Current implementation supports exactly 1 node per thread. More nodes is a pending dev", NodeFactoryMap::getInstance().getFacoryMap()->size() );
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run(false, &startupData);

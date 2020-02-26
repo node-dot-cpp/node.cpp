@@ -185,7 +185,9 @@ private:
 	std::mutex mx;
 	uintptr_t writeHandle = (uintptr_t)(-1); // mx-protected
 	uint64_t reincarnation = 0; // mx-protected
-	bool terminating = false; // mx-protected
+	enum Status {unused, acquired, running, terminating};
+	Status status = unused;
+
 public:
 	InterThreadCommData() {}
 	InterThreadCommData( const InterThreadCommData& ) = delete;
@@ -198,16 +200,26 @@ public:
 		std::unique_lock<std::mutex> lock(mx);
 		return std::make_pair(terminating, std::make_pair(reincarnation, writeHandle));
 	}
-	void setTerminatingFlag() {
+	void setTerminating() {
 		std::unique_lock<std::mutex> lock(mx);
-		terminating = true;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, status == Status::running, "indeed: {}", status ); 
+		status = Status::terminating;
 	}
-	uint64_t resetForReuse( uintptr_t writeHandle_ ) {
+	void setUnused( uintptr_t writeHandle_ ) {
 		std::unique_lock<std::mutex> lock(mx);
-		++reincarnation;
-		writeHandle = writeHandle_;
-		terminating = false;
-		return reincarnation;
+		status = Status::running;
+	}
+	std::pair<bool, uint64_t> acquireForReuse( uintptr_t writeHandle_ ) {
+		std::unique_lock<std::mutex> lock(mx);
+		if ( status == Status::unused )
+		{
+			++reincarnation;
+			writeHandle = writeHandle_;
+			status = Status::acquired;
+			return std::make_pair( true, reincarnation );
+		}
+		else
+			return std::make_pair( false, (uint64_t)(-1) );
 	}
 	void setWriteHandleForFirstUse( uintptr_t writeHandle_ ) {
 		std::unique_lock<std::mutex> lock(mx);
@@ -215,6 +227,10 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeHandle == (uintptr_t)(-1) ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !terminating ); 
 		writeHandle = writeHandle_;
+	}
+	bool isUnused() {
+		std::unique_lock<std::mutex> lock(mx);
+		return status == Status::unused;
 	}
 };
 
@@ -228,7 +244,7 @@ class InterThreadCommInitializer
 {
 	bool isInitialized_ = false;
 	uint16_t myServerPort;
-	SOCKET myServerSocket;
+	uintptr_t myServerSocket;
 
 public:
 	InterThreadCommInitializer() {}
