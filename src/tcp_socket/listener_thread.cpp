@@ -183,12 +183,13 @@ void createListenerThread()
 	ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 	preinitThreadStartupData( *startupData );
 	startupData->IdWithinGroup = listeners.add( startupData->threadCommID );
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", startupData->threadCommID.slotId );
+	size_t threadIdx = startupData->threadCommID.slotId;
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {} and listenerID = {}...", threadIdx, startupData->IdWithinGroup );
 	std::thread t1( listenerThreadMain, (void*)(startupData) );
 	// startupData is no longer valid
 	startupData = nullptr;
 	t1.detach();
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", startupData->threadCommID.slotId );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
 }
 
 void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )

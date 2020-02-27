@@ -490,7 +490,7 @@ protected:
 	//mb: ioSockets[0] is always reserved and invalid.
 	nodecpp::vector<Error> errorStore;
 	nodecpp::vector<size_t> pendingListenEvents;
-	bool running;
+	bool running = true;
 
 
 public:

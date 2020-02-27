@@ -94,7 +94,7 @@ void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, targetThreadId.slotId < MAX_THREADS, "{} vs. {}", targetThreadId.slotId, MAX_THREADS );
 	auto writingMeans = threadQueues[ targetThreadId.slotId ].getWriteHandleAndReincarnation();
-	if ( writingMeans.first )
+	if ( !writingMeans.first )
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" );
 		// TODO: process error instead
@@ -147,17 +147,18 @@ namespace nodecpp
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 		preinitThreadStartupData( *startupData );
+		size_t threadIdx = startupData->threadCommID.slotId;
 		size_t internalID = workers_.size();
 		Worker worker;
 		worker.id_ = ++coreCtr; // TODO: assign an actual value
 		startupData->IdWithinGroup = worker.id_;
 		// run worker thread
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {}...", worker.id_ );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {} and WorkerID = {}...", threadIdx, worker.id_ );
 		std::thread t1( workerThreadMain, (void*)(startupData) );
 		// startupData is no longer valid
 		startupData = nullptr;
 		t1.detach();
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Worker thread with threadID = {} completed at Master thread side", worker.id_ );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Worker thread with threadID = {} and WorkerID = {} completed at Master thread side", threadIdx, worker.id_ );
 		workers_.push_back( std::move(worker) );
 		return workers_[internalID];
 	}

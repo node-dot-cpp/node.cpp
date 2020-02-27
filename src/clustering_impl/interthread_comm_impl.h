@@ -198,7 +198,7 @@ public:
 	MsgQueue queue;
 	std::pair<bool, std::pair<uint64_t, uintptr_t>> getWriteHandleAndReincarnation() {
 		std::unique_lock<std::mutex> lock(mx);
-		return std::make_pair(terminating, std::make_pair(reincarnation, writeHandle));
+		return std::make_pair(status != Status::terminating && status != Status::unused, std::make_pair(reincarnation, writeHandle));
 	}
 	void setTerminating() {
 		std::unique_lock<std::mutex> lock(mx);
@@ -225,7 +225,7 @@ public:
 		std::unique_lock<std::mutex> lock(mx);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == 0 ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeHandle == (uintptr_t)(-1) ); 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !terminating ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, status == Status::unused || status == Status::acquired ); 
 		writeHandle = writeHandle_;
 	}
 	bool isUnused() {
