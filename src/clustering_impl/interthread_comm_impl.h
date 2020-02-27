@@ -225,7 +225,8 @@ public:
 		std::unique_lock<std::mutex> lock(mx);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == 0 ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeHandle == (uintptr_t)(-1) ); 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, status == Status::unused || status == Status::acquired ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, status == Status::unused ); 
+		status = Status::acquired;
 		writeHandle = writeHandle_;
 	}
 	bool isUnused() {

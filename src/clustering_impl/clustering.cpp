@@ -44,6 +44,7 @@ struct ThreadDescriptor
 	ThreadID threadID;
 };
 static thread_local ThreadDescriptor thisThreadDescriptor;
+void setThisThreadDescriptor(ThreadStartupData& startupData) { thisThreadDescriptor.threadID = startupData.threadCommID; }
 
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
 {

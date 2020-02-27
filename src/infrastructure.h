@@ -303,7 +303,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 							{
 								static constexpr size_t maxMsgCnt = 8;
 								Buffer recvBuffer(maxMsgCnt);
-								bool res = OSLayer::infraGetPacketBytes(recvBuffer, ioSockets.getAwakerSockSocket());
+								bool res = OSLayer::infraGetPacketBytes(recvBuffer, maxMsgCnt, ioSockets.getAwakerSockSocket());
 								if (res)
 								{
 									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );

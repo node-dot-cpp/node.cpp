@@ -120,6 +120,7 @@ void workerThreadMain( void* pdata )
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->threadCommID.slotId != 0 ); 
 	ThreadStartupData startupData = *sd;
 	nodecpp::stddealloc( sd, 1 );
+	setThisThreadDescriptor( startupData );
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif

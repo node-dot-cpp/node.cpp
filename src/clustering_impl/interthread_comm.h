@@ -61,6 +61,7 @@ struct InterThreadMsg
 
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, ThreadID threadId );
+void setThisThreadDescriptor(ThreadStartupData& startupData);
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
 
 void addWorkerEntryForLoadTracking( ThreadID id );

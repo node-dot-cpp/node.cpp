@@ -153,12 +153,6 @@ ThreadID getLeastLoadedWorker() { return workerLoad.getCandidate(); }
 thread_local ListenerThreadWorker listenerThreadWorker;
 thread_local NetServerManagerForListenerThread netServerManagerBase;
 
-struct ThreadDescriptor
-{
-	ThreadID threadID;
-};
-static thread_local ThreadDescriptor thisThreadDescriptor;
-	
 void listenerThreadMain( void* pdata )
 {
 	ThreadStartupData* sd = reinterpret_cast<ThreadStartupData*>(pdata);
@@ -166,12 +160,12 @@ void listenerThreadMain( void* pdata )
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->threadCommID.slotId != 0 ); 
 	ThreadStartupData startupData = *sd;
 	nodecpp::stddealloc( sd, 1 );
+	setThisThreadDescriptor( startupData );
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
 	nodecpp::logging_impl::currentLog = startupData.defaultLog;
 	nodecpp::logging_impl::instanceId = startupData.threadCommID.slotId;
-	thisThreadDescriptor.threadID = startupData.threadCommID;
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Listener thread with threadID = {}", startupData.threadCommID.slotId );
 	listenerThreadWorker.preinit();
 	netServerManagerBase.runLoop( startupData.readHandle );
