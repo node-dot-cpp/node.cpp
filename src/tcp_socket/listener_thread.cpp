@@ -123,7 +123,7 @@ public:
 //		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, usedSlotCnt != 0 ); 
 		if ( usedSlotCnt )
 		{
-			size_t comparisonBase = ((totalLoadCtr << 28) + (totalLoadCtr << 32)) / usedSlotCnt;
+			size_t comparisonBase = (totalLoadCtr << 32) + (totalLoadCtr << 28) / usedSlotCnt + 1;
 			size_t presentCurrent = current++;
 			do
 			{
@@ -198,7 +198,7 @@ void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadI
 			switch ( msg->type )
 			{
 				case RequestToListenerThread::Type::AddServerSocket:
-					listenerThreadWorker.createAgentServerWithExistingSocket( msg->socket, msg->ip, msg->port.getHost() );
+					listenerThreadWorker.createAgentServerWithExistingSocket( msg->entryIndex, msg->socket, msg->ip, msg->port.getHost() );
 					break;
 			}
 			// TODO: ...

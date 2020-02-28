@@ -88,6 +88,7 @@ namespace nodecpp
 	{
 		enum Type { Undefined, AddServerSocket, CreateServerSocket, RemoveServerSocket, CloseServerSocket };
 		Type type = Type::Undefined;
+		size_t entryIndex;
 		uintptr_t socket;
 		Ip4 ip;
 		Port port;
@@ -471,6 +472,7 @@ namespace nodecpp
 			// now, unles an error happened, we have a socket alredy good for ploing
 			RequestToListenerThread rq;
 			rq.type = RequestToListenerThread::Type::AddServerSocket;
+			rq.entryIndex = entryIndex;
 			rq.ip = address.ip;
 			rq.port.fromHost( address.port );
 			rq.backlog = backlog;
@@ -481,7 +483,7 @@ namespace nodecpp
 			{
 				nodecpp::platform::internal_msg::InternalMsg imsg;
 				imsg.append( &rq, sizeof(rq) );
-				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, listeners.first[ i ].threadID );
+				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::RequestToListeningThread, listeners.first[ i ].threadID );
 			}
 			return false;
 		}

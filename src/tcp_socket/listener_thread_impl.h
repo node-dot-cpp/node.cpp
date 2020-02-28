@@ -207,12 +207,13 @@ private:
 		return ret;
 	}
 
-	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithExistingSocket( SOCKET sock, nodecpp::Ip4 ip, uint16_t port ) {
+	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithExistingSocket( size_t entryIndex, SOCKET sock, nodecpp::Ip4 ip, uint16_t port ) {
 		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
 		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
 		newServer->dataForCommandProcessing.localAddress.ip = ip;
 		newServer->dataForCommandProcessing.localAddress.port = port;
 		newServer->addServerSocketAndStartListening(sock);
+		newServer->entryIndexAtSlave = entryIndex;
 		for ( size_t i=0; i<agentServers.size(); ++i )
 			if ( agentServers[i] == nullptr )
 			{
@@ -359,7 +360,7 @@ public:
 		}
 
 		size_t ix = ourSide.size();
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ix < ourSide.capacity() ); // just a temporary workaround to prevent reallocation
+//		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ix < ourSide.capacity() ); // just a temporary workaround to prevent reallocation
 		ourSide.emplace_back(ix, ptr);
 		pollfd p;
 		p.fd = (SOCKET)(-((int64_t)(ptr->dataForCommandProcessing.osSocket)));

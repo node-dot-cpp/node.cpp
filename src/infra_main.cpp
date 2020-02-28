@@ -121,6 +121,7 @@ void workerThreadMain( void* pdata )
 	ThreadStartupData startupData = *sd;
 	nodecpp::stddealloc( sd, 1 );
 	setThisThreadDescriptor( startupData );
+	addWorkerEntryForLoadTracking( startupData.threadCommID );
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
