@@ -30,11 +30,6 @@
 #include "listener_thread_impl.h"
 #include "../clustering_impl/clustering_impl.h"
 
-struct ListenerThreadDescriptor
-{
-	ThreadID threadID;
-};
-
 class Listeners
 {
 	ListenerThreadDescriptor listeners[MAX_THREADS];
@@ -63,14 +58,19 @@ public:
 			}
 		return false;
 	}
-	void notifyAll( nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType )
+	/*void notifyAll( nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType )
 	{
 		for ( size_t i=0; i< maxUsed; ++i )
-			if ( listeners[i].threadID.slotId == ThreadID::InvalidSlotID )
+			if ( listeners[i].threadID.slotId != ThreadID::InvalidSlotID )
 				sendInterThreadMsg( std::move( msg ), msgType, listeners[i].threadID );
+	}*/
+	std::pair<const ListenerThreadDescriptor*, size_t> getListeners()
+	{
+		return std::make_pair( listeners, maxUsed );
 	}
 };
 static Listeners listeners;
+std::pair<const ListenerThreadDescriptor*, size_t> getListeners() { return listeners.getListeners(); }
 
 class WorkerLoad
 {

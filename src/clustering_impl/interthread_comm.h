@@ -64,6 +64,12 @@ void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 void setThisThreadDescriptor(ThreadStartupData& startupData);
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
 
+struct ListenerThreadDescriptor
+{
+	ThreadID threadID;
+};
+std::pair<const ListenerThreadDescriptor*, size_t> getListeners();
+
 void addWorkerEntryForLoadTracking( ThreadID id );
 void incrementWorkerLoadCtr( size_t idx );
 void decrementWorkerLoadCtr( size_t idx );

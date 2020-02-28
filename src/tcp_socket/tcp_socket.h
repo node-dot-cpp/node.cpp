@@ -1093,7 +1093,7 @@ public:
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		addAgentServerEntry(ptr);
+//		addAgentServerEntry(ptr);
 	}
 
 	SOCKET acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog) {
@@ -1133,6 +1133,30 @@ public:
 		return std::make_pair( std::make_pair( s.release(), sourcePort ), std::make_pair( newSock.release(), addr.port ) );
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
+
+#ifdef NODECPP_ENABLE_CLUSTERING
+	template<class DataForCommandProcessing>
+	void appAgentAtMasterListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
+		Port myPort = Port::fromHost(port);
+		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, ip, myPort)) {
+			throw Error();
+		}
+		if ( port == 0 )
+		{
+			port = internal_usage_only::internal_port_of_tcp_socket(dataForCommandProcessing.osSocket);
+			if ( port == 0 )
+				throw Error();
+		}
+		if (!internal_usage_only::internal_listen_tcp_socket(dataForCommandProcessing.osSocket, backlog)) {
+			throw Error();
+		}
+		dataForCommandProcessing.refed = true;
+		dataForCommandProcessing.localAddress.ip = ip;
+		dataForCommandProcessing.localAddress.port = port;
+		dataForCommandProcessing.localAddress.family = family;
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
+
 	template<class DataForCommandProcessing>
 	void appListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Port myPort = Port::fromHost(port);

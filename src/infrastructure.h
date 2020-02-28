@@ -523,7 +523,14 @@ class Runnable : public RunnableBase
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
+			if ( isMaster )
+			{
+				constexpr size_t defaultListenerCount = 2;
+				for ( size_t i=0; i<defaultListenerCount; ++i )
+					createListenerThread();
+			}
 #endif // NODECPP_ENABLE_CLUSTERING
+
 			node = make_owning<Node>();
 			thisThreadNode = &(*node); 
 			// NOTE!!! 

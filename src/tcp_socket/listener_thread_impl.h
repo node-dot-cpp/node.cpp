@@ -101,12 +101,15 @@ public:
 	class AgentServer
 	{
 		friend class ListenerThreadWorker;
-		struct SlaveServerData
+		size_t entryIndexAtSlave; // temporary solution TODO: further elaboration!!!
+		/*struct SlaveServerData
 		{
 			size_t entryIndex;
 			ThreadID targetThreadId;
 		};
 		nodecpp::vector<SlaveServerData> socketsToSlaves;
+		size_t nextStep = 0;*/
+
 	public:
 		nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
 	public:
@@ -130,7 +133,6 @@ public:
 			net::Address localAddress;
 		};
 		DataForCommandProcessing dataForCommandProcessing;
-		size_t nextStep = 0;
 
 	public:
 		void onListening() { 
@@ -139,16 +141,19 @@ public:
 		void onConnection(uint64_t socket, Ip4& remoteIp, Port& remotePort) { 
 //				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"clustering Agent server: onConnection()!");
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != 0 ); 
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socketsToSlaves.size() != 0 ); 
+			/*NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socketsToSlaves.size() != 0 ); 
 			// TODO: consider alternative ways selection between Slaves
 			nextStep = nextStep % socketsToSlaves.size();
 			sendConnAcceptedEv( socketsToSlaves[nextStep].targetThreadId, socketsToSlaves[nextStep].entryIndex, socket, remoteIp, remotePort ); // TODO-ITC: upgrade
-			++nextStep;
+			++nextStep;*/
+			ThreadID id = getLeastLoadedWorker();
+			sendConnAcceptedEv( id, entryIndexAtSlave, socket, remoteIp, remotePort );
+			// TODO: assert is good
 		}
 		void onError( nodecpp::Error& e ) { 
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"clustering Agent server: onError()!");
-			for ( auto& slaveData : socketsToSlaves )
-				sendServerErrorEv( socketsToSlaves[nextStep].targetThreadId, e ); // TODO-ITC: upgrade
+			/*for ( auto& slaveData : socketsToSlaves )
+				sendServerErrorEv( socketsToSlaves[nextStep].targetThreadId, e ); // TODO-ITC: upgrade*/
 		}
 		void onEnd(bool hasError) { 
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"clustering Agent server: onEnd({})!", hasError);

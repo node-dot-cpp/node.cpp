@@ -467,6 +467,22 @@ namespace nodecpp
 			server->socketsToSlaves.push_back( slaveData );
 			server->listen( address.port, address.ip, backlog );
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "processRequestForListeningAtMaster(): new Agent Server for Addr {}:{}, and RequestID {}", server->dataForCommandProcessing.localAddress.ip.toStr(), server->dataForCommandProcessing.localAddress.port, server->requestID );
+
+			// now, unles an error happened, we have a socket alredy good for ploing
+			RequestToListenerThread rq;
+			rq.type = RequestToListenerThread::Type::AddServerSocket;
+			rq.ip = address.ip;
+			rq.port.fromHost( address.port );
+			rq.backlog = backlog;
+			rq.socket = server->dataForCommandProcessing.osSocket;
+
+			auto listeners = getListeners();
+			for ( size_t i=0; i<listeners.second; ++i )
+			{
+				nodecpp::platform::internal_msg::InternalMsg imsg;
+				imsg.append( &rq, sizeof(rq) );
+				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, listeners.first[ i ].threadID );
+			}
 			return false;
 		}
 

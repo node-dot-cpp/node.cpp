@@ -134,7 +134,6 @@ namespace nodecpp
 	void preinitSlaveThreadClusterObject(ThreadStartupData& startupData)
 	{
 		cluster.preinitSlave( startupData.IdWithinGroup );
-		thisThreadDescriptor.threadID = startupData.threadCommID;
 		// TODO: check consistency of startupData.reincarnation with threadQueues[startupData.assignedThreadID].reincarnation
 	}
 
@@ -175,7 +174,7 @@ namespace nodecpp
 	}
 	void Cluster::AgentServer::listen(uint16_t port, nodecpp::Ip4 ip, int backlog)
 	{
-		netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
+		netServerManagerBase->appAgentAtMasterListen(dataForCommandProcessing, ip, port, backlog);
 	}
 	void Cluster::AgentServer::ref() { netServerManagerBase->appRef(dataForCommandProcessing); }
 	void Cluster::AgentServer::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }
