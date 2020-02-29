@@ -160,7 +160,7 @@ public:
 		}
 
 	public:
-		void registerServer();
+		//void registerServer();
 		void addServerSocketAndStartListening( SOCKET socket);
 
 	public:
@@ -168,7 +168,7 @@ public:
 			nodecpp::safememory::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
 		}
 		virtual ~AgentServer() {
-			reportBeingDestructed();
+			//reportBeingDestructed();
 		}
 
 		void internalCleanupBeforeClosing()
@@ -180,12 +180,12 @@ public:
 
 		const net::Address& address() const { return dataForCommandProcessing.localAddress; }
 
-		void listen(uint16_t port, nodecpp::Ip4 ip, int backlog);
-		void close();
+		//void listen(uint16_t port, nodecpp::Ip4 ip, int backlog);
+		//void close();
 		void ref();
 		void unref();
 		bool listening() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Listening; }
-		void reportBeingDestructed();
+		//void reportBeingDestructed();
 
 
 	};
@@ -193,7 +193,7 @@ public:
 private:
 	nodecpp::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
 
-	nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
+	/*nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
 		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
 		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
 		newServer->registerServer();
@@ -205,7 +205,7 @@ private:
 			}
 		agentServers.push_back( std::move( newServer ) );
 		return ret;
-	}
+	}*/
 
 	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithExistingSocket( size_t entryIndex, SOCKET sock, nodecpp::Ip4 ip, uint16_t port ) {
 		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
@@ -264,8 +264,8 @@ public:
 	bool isUsed() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (state == State::Unused) || (state != State::Unused && ptr != nullptr) ); return state != State::Unused; }
 	bool isAssociated() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (state == State::Unused) || (state != State::Unused && ptr != nullptr) ); return state == State::SockAssociated; }
 	void setAssociated() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, state == State::SockIssued && ptr != nullptr ); state = State::SockAssociated;}
-	void setSocketClosed() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, state != State::Unused ); state = State::SockClosed;}
-	void setUnused() {state = State::Unused; index = 0;}
+//	void setSocketClosed() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, state != State::Unused ); state = State::SockClosed;}
+//	void setUnused() {state = State::Unused; index = 0;}
 
 	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> getAgentServer() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr != nullptr); return ptr; }
 	ListenerThreadWorker::AgentServer::DataForCommandProcessing* getAgentServerData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr != nullptr); return ptr != nullptr ? &( ptr->dataForCommandProcessing ) : nullptr; }
@@ -425,7 +425,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, osSide[idx].fd > 0 );
 		++associatedCount;
 	}
-	void setPollout( size_t idx ) {
+	/*void setPollout( size_t idx ) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSide.size() );
 		osSide[idx].events |= POLLOUT; 
@@ -434,7 +434,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSide.size() );
 		osSide[idx].events &= ~POLLOUT; 
-	}
+	}*/
 	void setPollin( size_t idx ) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSide.size() );
@@ -451,7 +451,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !refed || ourSide[idx].isUsed() ); 
 		ourSide[idx].refed = refed;
 	}
-	void setUnused( size_t idx ) {
+	/*void setUnused( size_t idx ) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSide.size() );
 		if ( osSide[idx].fd != INVALID_SOCKET )
@@ -470,7 +470,7 @@ public:
 			--associatedCount;
 		osSide[idx].fd = INVALID_SOCKET; 
 		ourSide[idx].setSocketClosed();
-	}
+	}*/
 	std::pair<pollfd*, size_t> getPollfd() { 
 		return osSide.size() > 1 ? ( associatedCount > 0 ? std::make_pair( &(osSide[1]), osSide.size() - 1 ) : std::make_pair( nullptr, 0 ) ) : std::make_pair( nullptr, 0 ); 
 	}
@@ -541,9 +541,9 @@ public:
 	void appUnref(size_t id) { 
 		ioSockets.setRefed( id, false );
 	}
-	void appReportBeingDestructed(size_t id) { 
+	/*void appReportBeingDestructed(size_t id) { 
 		ioSockets.setUnused( id );
-	}
+	}*/
 
 protected:
 	struct AcceptedSocketData
@@ -559,7 +559,7 @@ protected:
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
-	void appClose(ListenerThreadWorker::AgentServer::DataForCommandProcessing& serverData) {
+	/*void appClose(ListenerThreadWorker::AgentServer::DataForCommandProcessing& serverData) {
 		size_t id = serverData.index;
 		auto& entry = ioSockets.at(id);
 		if (!entry.isUsed())
@@ -570,7 +570,7 @@ public:
 		internal_usage_only::internal_close(serverData.osSocket);
 		ioSockets.setSocketClosed( entry.index );
 		//pendingCloseEvents.emplace_back(entry.index, false); note: it will be finally closed only after all accepted connections are ended
-	}
+	}*/
 /*	void appReportAllAceptedConnectionsEnded(net::ServerBase::DataForCommandProcessing& serverData) {
 		size_t id = serverData.index;
 		auto& entry = ioSockets.at(id);
@@ -594,7 +594,7 @@ public:
 		ioSockets.setRefed(ptr->dataForCommandProcessing.index, true);
 	}
 
-	void appAddAgentServer(nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr) {
+	/*void appAddAgentServer(nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
@@ -623,7 +623,7 @@ public:
 		dataForCommandProcessing.localAddress.port = port;
 		dataForCommandProcessing.localAddress.family = family;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dataForCommandProcessing.index != 0 );
-		ioSockets.setAssociated(dataForCommandProcessing.index/*, p*/);
+		ioSockets.setAssociated(dataForCommandProcessing.index);
 		ioSockets.setPollin(dataForCommandProcessing.index);
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
 		pendingListenEvents.push_back( dataForCommandProcessing.index );
@@ -632,8 +632,8 @@ public:
 	void appListen(ListenerThreadWorker::AgentServer::DataForCommandProcessing& dataForCommandProcessing, const char* ip, uint16_t port, int backlog) {
 		Ip4 ip4 = Ip4::parse(ip);
 		appListen(dataForCommandProcessing, ip4, port, backlog);
-	}
-	void appReportBeingDestructed(ListenerThreadWorker::AgentServer::DataForCommandProcessing& dataForCommandProcessing) {
+	}*/
+	/*void appReportBeingDestructed(ListenerThreadWorker::AgentServer::DataForCommandProcessing& dataForCommandProcessing) {
 		size_t id = dataForCommandProcessing.index;
 			ioSockets.setUnused(id); 
 	}
@@ -646,9 +646,9 @@ public:
 
 	void infraClearStores() {
 		errorStore.clear();
-	}
+	}*/
 
-	void infraEmitListeningEvents()
+	/*void infraEmitListeningEvents()
 	{
 		while ( pendingListenEvents.size() )
 		{
@@ -666,7 +666,7 @@ public:
 				}
 			}
 		}
-	}
+	}*/
 
 	void infraCheckPollFdSet(NetSocketEntryForListenerThread& current, short revents)
 	{
@@ -674,7 +674,9 @@ public:
 		{
 //!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getAgentServerData()->osSocket);
-			infraMakeErrorEventAndClose(current);
+			nodecpp::Error e;
+			current.getAgentServer()->onError( e );
+			// TODO: consider removing socket
 		}
 		else if ((revents & POLLIN) != 0)
 		{
@@ -685,7 +687,9 @@ public:
 		{
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected event at {}, value {:x}", current.getAgentServerData()->osSocket, revents);
 			internal_usage_only::internal_getsockopt_so_error(current.getAgentServerData()->osSocket);
-			infraMakeErrorEventAndClose(current);
+			nodecpp::Error e;
+			current.getAgentServer()->onError( e );
+			// TODO: consider removing socket
 		}
 	}
 
@@ -708,12 +712,12 @@ private:
 		return;
 	}
 
-	void infraMakeErrorEventAndClose(NetSocketEntryForListenerThread& entry)
+	/*void infraMakeErrorEventAndClose(NetSocketEntryForListenerThread& entry)
 	{
 		Error e;
 		// TODO: special Clustering treatment
 		return;
-	}
+	}*/
 
 	bool pollPhase2()
 	{
@@ -811,13 +815,13 @@ public:
 		while (running)
 		{
 			ioSockets.makeCompactIfNecessary();
-			infraEmitListeningEvents();
+//			infraEmitListeningEvents();
 
 			bool refed = pollPhase2();
 			if(!refed)
 				return;
 
-			infraClearStores();
+//			infraClearStores();
 		}
 	}
 };
