@@ -160,7 +160,6 @@ public:
 		}
 
 	public:
-		//void registerServer();
 		void addServerSocketAndStartListening( SOCKET socket);
 
 	public:
@@ -180,12 +179,7 @@ public:
 
 		const net::Address& address() const { return dataForCommandProcessing.localAddress; }
 
-		//void listen(uint16_t port, nodecpp::Ip4 ip, int backlog);
-		//void close();
-		void ref();
-		void unref();
 		bool listening() const { return dataForCommandProcessing.state == DataForCommandProcessing::State::Listening; }
-		//void reportBeingDestructed();
 
 
 	};
@@ -481,25 +475,7 @@ public:
 		return true;
 	}
 
-public:
-	void appRef(size_t id) { 
-		ioSockets.setRefed( id, true );
-	}
-	void appUnref(size_t id) { 
-		ioSockets.setRefed( id, false );
-	}
-
 protected:
-	struct AcceptedSocketData
-	{
-		size_t idx;
-		SOCKET socket;
-		Ip4 remoteIp;
-		Port remotePort;
-	};
-	nodecpp::vector<AcceptedSocketData> acceptedSockets;
-	nodecpp::vector<size_t> receivedListeningEvs;
-
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
@@ -538,7 +514,13 @@ public:
 		else if ((revents & POLLIN) != 0)
 		{
 //!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", current.getServerSocketData()->osSocket);
-			infraProcessAcceptEvent(current);
+			OpaqueSocketData osd( false );
+			Ip4 remoteIp;
+			Port remotePort;
+			if ( !getAcceptedSockData(current.getAgentServerData()->osSocket, osd, remoteIp, remotePort) )
+				return;
+			SOCKET osSocket = osd.s.release();
+			current.getAgentServer()->onConnection( osSocket, remoteIp, remotePort );
 		}
 		else if (revents != 0)
 		{
@@ -548,25 +530,6 @@ public:
 			current.getAgentServer()->onError( e );
 			// TODO: consider removing socket
 		}
-	}
-
-private:
-	static SocketRiia extractSocket(OpaqueSocketData& sdata)
-	{
-		return sdata.s.release();
-	}
-
-	void infraProcessAcceptEvent(NetSocketEntryForListenerThread& entry) //TODO:CLUSTERING alt impl
-	{
-		OpaqueSocketData osd( false );
-
-		Ip4 remoteIp;
-		Port remotePort;
-		if ( !getAcceptedSockData(entry.getAgentServerData()->osSocket, osd, remoteIp, remotePort) )
-			return;
-		SOCKET osSocket = extractSocket( osd ).release();
-		entry.getAgentServer()->onConnection( osSocket, remoteIp, remotePort );
-		return;
 	}
 
 	bool pollPhase2()

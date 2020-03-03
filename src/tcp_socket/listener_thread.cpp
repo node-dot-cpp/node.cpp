@@ -229,22 +229,8 @@ void ListenerThreadWorker::AgentServer::addServerSocketAndStartListening( SOCKET
 	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
 	netServerManagerBase.appAddAgentServerSocketAndStartListening(myPtr, socket); 
 }
-/*void ListenerThreadWorker::AgentServer::registerServer() { 
 	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
 	netServerManagerBase.appAddAgentServer(myPtr); 
 }
-void ListenerThreadWorker::AgentServer::listen(uint16_t port, nodecpp::Ip4 ip, int backlog)
-{
-	netServerManagerBase.appListen(dataForCommandProcessing, ip, port, backlog);
-}*/
-void ListenerThreadWorker::AgentServer::ref() { netServerManagerBase.appRef(dataForCommandProcessing.index); }
-void ListenerThreadWorker::AgentServer::unref() { netServerManagerBase.appUnref(dataForCommandProcessing.index); }
-//void ListenerThreadWorker::AgentServer::reportBeingDestructed() { netServerManagerBase.appReportBeingDestructed(dataForCommandProcessing); }
-
-/*void ListenerThreadWorker::AgentServer::close()
-{
-	netServerManagerBase.appClose(dataForCommandProcessing);
-	dataForCommandProcessing.state = DataForCommandProcessing::State::BeingClosed;
-}*/
 
 #endif // NODECPP_ENABLE_CLUSTERING
