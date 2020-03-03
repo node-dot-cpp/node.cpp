@@ -30,6 +30,8 @@
 #ifndef CLUSTER_H
 #define CLUSTER_H
 
+//#define NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
+
 #include "net_common.h"
 #include "server_common.h"
 #include "../../src/clustering_impl/interthread_comm.h"
@@ -432,7 +434,9 @@ namespace nodecpp
 		nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
 			nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>(*this);
 			nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
+#ifndef NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 			newServer->registerServer();
+#endif // NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 			for ( size_t i=0; i<agentServers.size(); ++i )
 				if ( agentServers[i] == nullptr )
 				{
@@ -466,12 +470,23 @@ namespace nodecpp
 			nodecpp::safememory::soft_ptr<AgentServer> server = createAgentServer();
 			server->requestID = requestID;
 			server->socketsToSlaves.push_back( slaveData );
+#ifdef NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
+			server->dataForCommandProcessing.localAddress.ip = address.ip;
+			server->dataForCommandProcessing.localAddress.port = address.port;
+			server->dataForCommandProcessing.localAddress.family = address.family;
+			server->dataForCommandProcessing.state = nodecpp::Cluster::AgentServer::DataForCommandProcessing::State::Listening;
+#else
 			server->listen( address.port, address.ip, backlog );
+#endif // NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "processRequestForListeningAtMaster(): new Agent Server for Addr {}:{}, and RequestID {}", server->dataForCommandProcessing.localAddress.ip.toStr(), server->dataForCommandProcessing.localAddress.port, server->requestID );
 
-			// now, unles an error happened, we have a socket alredy good for ploing
+			// now, unless an error happened, we have a socket alredy good for polling
 			RequestToListenerThread rq;
+#ifdef NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
+			rq.type = RequestToListenerThread::Type::CreateSharedServerSocket;
+#else
 			rq.type = RequestToListenerThread::Type::AddServerSocket;
+#endif // NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 			rq.entryIndex = entryIndex;
 			rq.ip = address.ip;
 			rq.port = Port::fromHost( address.port );
@@ -481,6 +496,7 @@ namespace nodecpp
 			auto listeners = getListeners();
 			for ( size_t i=0; i<listeners.second; ++i )
 			{
+nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "sending CreateSharedServerSocket request (for thread id: {}), entryIndex = {:x}, ip = {} port: {}", listeners.first[ i ].threadID.slotId, rq.entryIndex, rq.ip.toStr(), rq.port.toStr() );
 				nodecpp::platform::internal_msg::InternalMsg imsg;
 				imsg.append( &rq, sizeof(rq) );
 				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::RequestToListeningThread, listeners.first[ i ].threadID );

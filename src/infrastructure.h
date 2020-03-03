@@ -525,8 +525,14 @@ class Runnable : public RunnableBase
 			nodecpp::postinitThreadClusterObject();
 			if ( isMaster )
 			{
-				constexpr size_t defaultListenerCount = 2;
-				for ( size_t i=0; i<defaultListenerCount; ++i )
+				size_t listenerCnt = 1;
+				auto argv = getArgv();
+				for ( size_t i=1; i<argv.size(); ++i )
+				{
+					if ( argv[i].size() > 13 && argv[i].substr(0,13) == "numlisteners=" )
+						listenerCnt = atol(argv[i].c_str() + 13);
+				}
+				for ( size_t i=0; i<listenerCnt; ++i )
 					createListenerThread();
 			}
 #endif // NODECPP_ENABLE_CLUSTERING
