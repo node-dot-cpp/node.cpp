@@ -86,7 +86,7 @@ namespace nodecpp
 
 	struct RequestToListenerThread
 	{
-		enum Type { Undefined, AddServerSocket, CreateServerSocket, RemoveServerSocket, CloseServerSocket };
+		enum Type { Undefined, AddServerSocket, CreateSharedServerSocket, RemoveServerSocket, CloseSharedServerSocket };
 		Type type = Type::Undefined;
 		size_t entryIndex;
 		uintptr_t socket;
@@ -474,7 +474,7 @@ namespace nodecpp
 			rq.type = RequestToListenerThread::Type::AddServerSocket;
 			rq.entryIndex = entryIndex;
 			rq.ip = address.ip;
-			rq.port.fromHost( address.port );
+			rq.port = Port::fromHost( address.port );
 			rq.backlog = backlog;
 			rq.socket = server->dataForCommandProcessing.osSocket;
 

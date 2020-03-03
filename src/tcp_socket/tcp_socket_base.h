@@ -167,6 +167,7 @@ namespace nodecpp
 	namespace internal_usage_only
 	{
 		SOCKET internal_make_tcp_socket();
+		SOCKET internal_make_shared_tcp_socket();
 		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self);
 		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port);
 		uint16_t internal_port_of_tcp_socket(SOCKET sock);

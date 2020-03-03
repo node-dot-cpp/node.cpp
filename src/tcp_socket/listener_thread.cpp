@@ -200,6 +200,15 @@ void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadI
 				case RequestToListenerThread::Type::AddServerSocket:
 					listenerThreadWorker.createAgentServerWithExistingSocket( msg->entryIndex, msg->socket, msg->ip, msg->port.getHost() );
 					break;
+				case RequestToListenerThread::Type::CreateSharedServerSocket:
+					// for some internal details see
+					// SO_REUSEPORT socket option
+					// http://man7.org/linux/man-pages/man7/socket.7.html
+					// https://stackoverflow.com/questions/14388706/how-do-so-reuseaddr-and-so-reuseport-differ
+					// https://docs.microsoft.com/en-us/windows/win32/winsock/using-so-reuseaddr-and-so-exclusiveaddruse?redirectedfrom=MSDN
+nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "processing CreateSharedServerSocket request (for thread id: {}), entryIndex = {:x}, ip = {} port: {}", requestingThreadId.slotId, msg->entryIndex, msg->ip.toStr(), msg->port.toStr() );
+					listenerThreadWorker.createAgentServerWithSharedSocket( msg->entryIndex, msg->ip, msg->port.getHost(), msg->backlog );
+					break;
 			}
 			// TODO: ...
 			break;
@@ -229,8 +238,10 @@ void ListenerThreadWorker::AgentServer::addServerSocketAndStartListening( SOCKET
 	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
 	netServerManagerBase.appAddAgentServerSocketAndStartListening(myPtr, socket); 
 }
+
+void ListenerThreadWorker::AgentServer::acquireSharedServerSocketAndStartListening(int backlog) { 
 	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
-	netServerManagerBase.appAddAgentServer(myPtr); 
+	netServerManagerBase.acquireSharedServerSocketAndStartListening(myPtr, backlog); 
 }
 
 #endif // NODECPP_ENABLE_CLUSTERING

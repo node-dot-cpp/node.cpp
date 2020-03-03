@@ -147,6 +147,7 @@ public:
 			sendConnAcceptedEv( socketsToSlaves[nextStep].targetThreadId, socketsToSlaves[nextStep].entryIndex, socket, remoteIp, remotePort ); // TODO-ITC: upgrade
 			++nextStep;*/
 			ThreadID id = getLeastLoadedWorker();
+			//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"listener thread: accepted connection is being sent to thread id {}", id.slotId);
 			sendConnAcceptedEv( id, entryIndexAtSlave, socket, remoteIp, remotePort );
 			// TODO: assert is good
 		}
@@ -161,6 +162,7 @@ public:
 
 	public:
 		void addServerSocketAndStartListening( SOCKET socket);
+		void acquireSharedServerSocketAndStartListening(int backlog);
 
 	public:
 		AgentServer() {
@@ -187,10 +189,13 @@ public:
 private:
 	nodecpp::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
 
-	/*nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
+	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithSharedSocket(size_t entryIndex, nodecpp::Ip4 ip, uint16_t port, int backlog) {
 		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
 		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
-		newServer->registerServer();
+		newServer->entryIndexAtSlave = entryIndex;
+		newServer->dataForCommandProcessing.localAddress.ip = ip;
+		newServer->dataForCommandProcessing.localAddress.port = port;
+		newServer->acquireSharedServerSocketAndStartListening(backlog);
 		for ( size_t i=0; i<agentServers.size(); ++i )
 			if ( agentServers[i] == nullptr )
 			{
@@ -199,15 +204,15 @@ private:
 			}
 		agentServers.push_back( std::move( newServer ) );
 		return ret;
-	}*/
+	}
 
 	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithExistingSocket( size_t entryIndex, SOCKET sock, nodecpp::Ip4 ip, uint16_t port ) {
 		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
 		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
+		newServer->entryIndexAtSlave = entryIndex;
 		newServer->dataForCommandProcessing.localAddress.ip = ip;
 		newServer->dataForCommandProcessing.localAddress.port = port;
 		newServer->addServerSocketAndStartListening(sock);
-		newServer->entryIndexAtSlave = entryIndex;
 		for ( size_t i=0; i<agentServers.size(); ++i )
 			if ( agentServers[i] == nullptr )
 			{
@@ -423,11 +428,11 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSide.size() );
 		osSide[idx].events |= POLLIN; 
 	}
-	void unsetPollin( size_t idx ) {
+	/*void unsetPollin( size_t idx ) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSide.size() );
 		osSide[idx].events &= ~POLLIN; 
-	}
+	}*/
 	void setRefed( size_t idx, bool refed ) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < ourSide.size() );
@@ -491,16 +496,32 @@ public:
 		ioSockets.setRefed(ptr->dataForCommandProcessing.index, true);
 	}
 
-	/*void appAddAgentServer(nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr) {
-		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
+	void acquireSharedServerSocketAndStartListening( nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr, int backlog)
+	{
+		SocketRiia s(internal_usage_only::internal_make_shared_tcp_socket());
 		if (!s)
 		{
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
 
+		Port myPort = Port::fromHost(ptr->dataForCommandProcessing.localAddress.port);
+		if (!internal_usage_only::internal_bind_socket(ptr->dataForCommandProcessing.osSocket, ptr->dataForCommandProcessing.localAddress.ip, myPort)) {
+			throw Error();
+		}
+		if (!internal_usage_only::internal_listen_tcp_socket(ptr->dataForCommandProcessing.osSocket, backlog)) {
+			throw Error();
+		}
+		ioSockets.addEntry( ptr );
+		ptr->dataForCommandProcessing.refed = true;
+		ptr->dataForCommandProcessing.localAddress.family = family;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.index != 0 );
+		ioSockets.setAssociated(ptr->dataForCommandProcessing.index);
+		ioSockets.setPollin(ptr->dataForCommandProcessing.index);
+		ioSockets.setRefed(ptr->dataForCommandProcessing.index, true);
 	}
 
+private:
 	void infraCheckPollFdSet(NetSocketEntryForListenerThread& current, short revents)
 	{
 		if ((revents & (POLLERR | POLLNVAL)) != 0) // check errors first

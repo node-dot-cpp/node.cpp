@@ -162,7 +162,27 @@ namespace nodecpp
 			if (0 != res2)
 			{
 				int error = getSockError();
-				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"async on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"making sock async {} failed; error {}", sock, error);
+				return false;
+			}
+
+			return true;
+		}
+
+		static
+		bool internal_shared_socket(SOCKET sock)
+		{
+		#if defined _MSC_VER || defined __MINGW32__
+			char one = 1;
+			int res2 = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, 1);
+		#else
+			int one = 1;
+			int res2 = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &one, 1);
+		#endif
+			if (0 != res2)
+			{
+				int error = getSockError();
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"making sock shared {} failed; error {}", sock, error);
 				return false;
 			}
 
@@ -252,6 +272,23 @@ namespace nodecpp
 				return INVALID_SOCKET;
 			}
 	
+			return sock;
+		}
+
+		SOCKET internal_make_shared_tcp_socket()
+		{
+			SOCKET sock = internal_make_tcp_socket();
+			if (INVALID_SOCKET != sock)
+			{
+				if (!internal_shared_socket(sock))
+				{
+					internal_close(sock);
+					return INVALID_SOCKET;
+				}
+			}
+			else
+				return INVALID_SOCKET;
+
 			return sock;
 		}
 
