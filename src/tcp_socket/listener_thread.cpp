@@ -117,7 +117,7 @@ public:
 		++totalLoadCtr;
 	}
 
-	ThreadID getCandidate() // updates 'current'; current is always set to a valid value (if at all possible)
+	ThreadID getCandidateAndIncrementLoad() // updates 'current'; current is always set to a valid value (if at all possible)
 	{
 		std::unique_lock<std::mutex> lock(mx);
 //		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, usedSlotCnt != 0 ); 
@@ -145,10 +145,10 @@ public:
 };
 static WorkerLoad workerLoad;
 
-void addWorkerEntryForLoadTracking( ThreadID id ) { workerLoad.addWorker( id ); }
+size_t addWorkerEntryForLoadTracking( ThreadID id ) { return workerLoad.addWorker( id ); }
 void incrementWorkerLoadCtr( size_t idx ) { workerLoad.incrementLoadCtr( idx ); }
 void decrementWorkerLoadCtr( size_t idx ) { workerLoad.decrementLoadCtr( idx ); }
-ThreadID getLeastLoadedWorker() { return workerLoad.getCandidate(); }
+ThreadID getLeastLoadedWorkerAndIncrementLoad() { return workerLoad.getCandidateAndIncrementLoad(); }
 
 thread_local ListenerThreadWorker listenerThreadWorker;
 thread_local NetServerManagerForListenerThread netServerManagerBaseForListenerThread;

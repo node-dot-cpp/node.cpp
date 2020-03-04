@@ -43,6 +43,9 @@ struct ThreadID
 
 enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Undefined };
 
+extern thread_local size_t workerIdxInLoadCollector;
+
+
 struct InterThreadMsg
 {
 	ThreadID sourceThreadID;
@@ -70,10 +73,10 @@ struct ListenerThreadDescriptor
 };
 std::pair<const ListenerThreadDescriptor*, size_t> getListeners();
 
-void addWorkerEntryForLoadTracking( ThreadID id );
+size_t addWorkerEntryForLoadTracking( ThreadID id );
 void incrementWorkerLoadCtr( size_t idx );
 void decrementWorkerLoadCtr( size_t idx );
-ThreadID getLeastLoadedWorker();
+ThreadID getLeastLoadedWorkerAndIncrementLoad();
 void createListenerThread();
 
 #endif // INTERTHREAD_COMM_H

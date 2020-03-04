@@ -46,6 +46,8 @@ struct ThreadDescriptor
 static thread_local ThreadDescriptor thisThreadDescriptor;
 void setThisThreadDescriptor(ThreadStartupData& startupData) { thisThreadDescriptor.threadID = startupData.threadCommID; }
 
+thread_local size_t workerIdxInLoadCollector = (size_t)(-1);
+
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
 {
 	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count );
@@ -97,7 +99,7 @@ void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 	auto writingMeans = threadQueues[ targetThreadId.slotId ].getWriteHandleAndReincarnation();
 	if ( !writingMeans.first )
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "getWriteHandleAndReincarnation() for ID {} failed; handling not implemented", targetThreadId.slotId );
 		// TODO: process error instead
 	}
 	uintptr_t writeHandle = writingMeans.second.second;

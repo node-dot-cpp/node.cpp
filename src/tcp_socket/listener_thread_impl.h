@@ -146,7 +146,7 @@ public:
 			nextStep = nextStep % socketsToSlaves.size();
 			sendConnAcceptedEv( socketsToSlaves[nextStep].targetThreadId, socketsToSlaves[nextStep].entryIndex, socket, remoteIp, remotePort ); // TODO-ITC: upgrade
 			++nextStep;*/
-			ThreadID id = getLeastLoadedWorker();
+			ThreadID id = getLeastLoadedWorkerAndIncrementLoad();
 			//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"listener thread: accepted connection is being sent to thread id {}", id.slotId);
 			sendConnAcceptedEv( id, entryIndexAtSlave, socket, remoteIp, remotePort );
 			// TODO: assert is good

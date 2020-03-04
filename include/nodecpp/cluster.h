@@ -30,7 +30,7 @@
 #ifndef CLUSTER_H
 #define CLUSTER_H
 
-//#define NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
+#define NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 
 #include "net_common.h"
 #include "server_common.h"
