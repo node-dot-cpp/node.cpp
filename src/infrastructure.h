@@ -302,15 +302,16 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 							if ((revents & POLLIN) != 0)
 							{
 								static constexpr size_t maxMsgCnt = 8;
-								Buffer recvBuffer(maxMsgCnt);
-								bool res = OSLayer::infraGetPacketBytes(recvBuffer, maxMsgCnt, ioSockets.getAwakerSockSocket());
+								uint8_t recvBuffer[maxMsgCnt];
+								size_t actaulFromSock = 0;
+								bool res = OSLayer::infraGetPacketBytes(recvBuffer, maxMsgCnt, actaulFromSock, ioSockets.getAwakerSockSocket());
 								if (res)
 								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actaulFromSock <= maxMsgCnt, "{} vs. {}", actaulFromSock, maxMsgCnt );
 									InterThreadMsg thq[maxMsgCnt];
-									size_t actual = popFrontFromThisThreadQueue( thq, recvBuffer.size() );
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
-									for ( size_t i=0; i<actual; ++i )
+									size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock );
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
+									for ( size_t i=0; i<actualFromQueue; ++i )
 										getCluster().onInterthreadMessage( thq[i] );
 								}
 								else
@@ -325,15 +326,16 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 							if ((revents & POLLIN) != 0)
 							{
 								static constexpr size_t maxMsgCnt = 8;
-								Buffer recvBuffer(maxMsgCnt);
-								bool res = OSLayer::infraGetPacketBytes(recvBuffer, ioSockets.getAwakerSockSocket());
+								uint8_t recvBuffer[maxMsgCnt];
+								size_t actaulFromSock = 0;
+								bool res = OSLayer::infraGetPacketBytes(recvBuffer, maxMsgCnt, actaulFromSock, ioSockets.getAwakerSockSocket());
 								if (res)
 								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actaulFromSock <= maxMsgCnt, "{} vs. {}", actaulFromSock, maxMsgCnt );
 									InterThreadMsg thq[maxMsgCnt];
-									size_t actual = popFrontFromThisThreadQueue( thq, recvBuffer.size() );
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
-									for ( size_t i=0; i<actual; ++i )
+									size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock );
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
+									for ( size_t i=0; i<actualFromQueue; ++i )
 										getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
 								}
 								else
