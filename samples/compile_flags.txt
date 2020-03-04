@@ -12,4 +12,5 @@
 ../src
 -std=c++2a
 -DNDEBUG
+-DNODECPP_ENABLE_CLUSTERING
 -fcoroutines-ts
