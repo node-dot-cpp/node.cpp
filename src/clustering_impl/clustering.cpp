@@ -83,7 +83,7 @@ InterThreadCommPair InterThreadCommInitializer::generateHandlePair()
 {
 	auto res = acquireAndConnectSocketForInterThreadComm( myServerSocket, "127.0.01", myServerPort );
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, res.first.second == res.second.second ); 
-	return InterThreadCommPair({res.first.first, res.second.first});
+	return InterThreadCommPair({(uintptr_t)(res.first.first), (uintptr_t)(res.second.first)});
 }
 
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
