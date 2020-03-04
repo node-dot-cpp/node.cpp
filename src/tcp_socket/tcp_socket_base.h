@@ -217,7 +217,7 @@ public:
 	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
 	static bool infraGetPacketBytes(Buffer& buff, SOCKET sock);
-	static bool infraGetPacketBytes(Buffer& buff, size_t szMax, SOCKET sock);
+	static bool infraGetPacketBytes(uint8_t* buff, size_t szMax, size_t& bytesRead, SOCKET sock);
 	static bool infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz);
 
 	//enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };

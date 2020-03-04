@@ -151,7 +151,7 @@ void decrementWorkerLoadCtr( size_t idx ) { workerLoad.decrementLoadCtr( idx ); 
 ThreadID getLeastLoadedWorker() { return workerLoad.getCandidate(); }
 
 thread_local ListenerThreadWorker listenerThreadWorker;
-thread_local NetServerManagerForListenerThread netServerManagerBase;
+thread_local NetServerManagerForListenerThread netServerManagerBaseForListenerThread;
 
 void listenerThreadMain( void* pdata )
 {
@@ -168,7 +168,7 @@ void listenerThreadMain( void* pdata )
 	nodecpp::logging_impl::instanceId = startupData.threadCommID.slotId;
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"starting Listener thread with threadID = {}", startupData.threadCommID.slotId );
 	listenerThreadWorker.preinit();
-	netServerManagerBase.runLoop( startupData.readHandle );
+	netServerManagerBaseForListenerThread.runLoop( startupData.readHandle );
 }
 
 void createListenerThread()
@@ -236,12 +236,12 @@ nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_
 
 void ListenerThreadWorker::AgentServer::addServerSocketAndStartListening( SOCKET socket) { 
 	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
-	netServerManagerBase.appAddAgentServerSocketAndStartListening(myPtr, socket); 
+	netServerManagerBaseForListenerThread.appAddAgentServerSocketAndStartListening(myPtr, socket); 
 }
 
 void ListenerThreadWorker::AgentServer::acquireSharedServerSocketAndStartListening(int backlog) { 
 	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
-	netServerManagerBase.acquireSharedServerSocketAndStartListening(myPtr, backlog); 
+	netServerManagerBaseForListenerThread.acquireSharedServerSocketAndStartListening(myPtr, backlog); 
 }
 
 #endif // NODECPP_ENABLE_CLUSTERING

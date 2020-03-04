@@ -177,7 +177,7 @@ namespace nodecpp
 			int res2 = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, 1);
 		#else
 			int one = 1;
-			int res2 = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &one, 1);
+			int res2 = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(int));
 		#endif
 			if (0 != res2)
 			{
@@ -810,18 +810,20 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 
 bool OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
-	return infraGetPacketBytes( buff, buff.capacity(), sock );
-}
-
-bool OSLayer::infraGetPacketBytes(Buffer& buff, size_t szMax, SOCKET sock)
-{
-	if ( szMax < buff.capacity() )
-		szMax = buff.capacity();
 	size_t sz = 0;
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;
 	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
 	buff.set_size( sz );
+
+	return ret == COMMLAYER_RET_OK;
+}
+
+bool OSLayer::infraGetPacketBytes(uint8_t* buff, size_t szMax, size_t& bytesRead, SOCKET sock)
+{
+	socklen_t fromlen = sizeof(struct ::sockaddr_in);
+	struct ::sockaddr_in sa_other;
+	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff, szMax, bytesRead, sa_other, fromlen);
 
 	return ret == COMMLAYER_RET_OK;
 }
