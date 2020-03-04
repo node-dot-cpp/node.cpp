@@ -38,7 +38,7 @@ namespace nodecpp {
 	namespace net {
 
 		class ServerBase; // forward declaration
-		class [[nodecpp::owning_only]] SocketBase
+		class SocketBase
 		{
 		public:
 			using NodeType = void;
@@ -455,8 +455,8 @@ namespace nodecpp {
 			void connect(uint16_t port, const char* ip);
 			void connect(uint16_t port, string ip) { connect( port, ip.c_str() ); }
 			void connect(uint16_t port, string_literal ip) { connect( port, ip.c_str() ); };
-			void connect(uint16_t port, string ip, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) { connect( port, ip.c_str(), std::move(cb) ); }
-			void connect(uint16_t port, string_literal ip, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) { connect( port, ip.c_str(), std::move(cb) ); };
+			void connect(uint16_t port, string ip, event::Connect::callback cb NODECPP_MAY_EXTEND_TO_THIS) { connect( port, ip.c_str(), std::move(cb) ); }
+			void connect(uint16_t port, string_literal ip, event::Connect::callback cb NODECPP_MAY_EXTEND_TO_THIS) { connect( port, ip.c_str(), std::move(cb) ); };
 
 			bool write(Buffer& buff) { return write( buff.begin(), (uint32_t)(buff.size()) ); }
 
@@ -875,7 +875,7 @@ namespace nodecpp {
 				once_( std::move(sl) );
 			}
 
-			void on( string_literal name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on( string_literal name, event::Close::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert( !std::is_same< event::Close::callback, event::Connect::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Data::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Drain::callback >::value );
@@ -884,7 +884,7 @@ namespace nodecpp {
 				assert( name == string_literal(event::Close::name) );
 				eClose.on(std::move(cb));
 			}
-			void on( string_literal name, event::Data::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on( string_literal name, event::Data::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert( !std::is_same< event::Data::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Connect::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Drain::callback >::value );
@@ -893,7 +893,7 @@ namespace nodecpp {
 				assert( name == string_literal(event::Data::name) );
 				eData.on(std::move(cb));
 			}
-			void on(string_literal name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on(string_literal name, event::Error::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Connect::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Drain::callback >::value);
@@ -902,7 +902,7 @@ namespace nodecpp {
 				assert( name == string_literal(event::Error::name) );
 				eError.on(std::move(cb));
 			}
-			void on( string_literal name, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on( string_literal name, event::Connect::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert( !std::is_same< event::Connect::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Data::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Error::callback >::value);
@@ -920,7 +920,7 @@ namespace nodecpp {
 					assert(false);
 			}
 
-			void once( string_literal name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once( string_literal name, event::Close::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert( !std::is_same< event::Close::callback, event::Connect::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Data::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Drain::callback >::value );
@@ -929,7 +929,7 @@ namespace nodecpp {
 				assert( name == string_literal(event::Close::name) );
 				eClose.once(std::move(cb));
 			}
-			void once( string_literal name, event::Data::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once( string_literal name, event::Data::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert( !std::is_same< event::Data::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Connect::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Drain::callback >::value );
@@ -938,7 +938,7 @@ namespace nodecpp {
 				assert( name == string_literal(event::Data::name) );
 				eData.once(std::move(cb));
 			}
-			void once(string_literal name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once(string_literal name, event::Error::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Connect::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Drain::callback >::value);
@@ -947,7 +947,7 @@ namespace nodecpp {
 				assert(name == string_literal(event::Error::name));
 				eError.once(std::move(cb));
 			}
-			void once( string_literal name, event::Connect::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once( string_literal name, event::Connect::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert( !std::is_same< event::Connect::callback, event::Close::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Data::callback >::value );
 				static_assert( !std::is_same< event::Connect::callback, event::Error::callback >::value);
@@ -966,7 +966,7 @@ namespace nodecpp {
 			}
 
 			template<class EV>
-			void on( EV, typename EV::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on( EV, typename EV::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				if constexpr ( std::is_same< EV, event::Close >::value ) { eClose.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Connect >::value ) { eConnect.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Data >::value ) { eData.on(std::move(cb)); }
@@ -978,7 +978,7 @@ namespace nodecpp {
 			}
 
 			template<class EV>
-			void once( EV, typename EV::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once( EV, typename EV::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				if constexpr ( std::is_same< EV, event::Close >::value ) { eClose.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Connect >::value ) { eConnect.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Data >::value ) { eData.once(std::move(cb)); }

@@ -203,7 +203,7 @@ namespace nodecpp {
 
 		public:
 			HttpServerBase() {}
-			HttpServerBase(event::HttpRequest::callback cb [[nodecpp::may_extend_to_this]]) {
+			HttpServerBase(event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				eHttpRequest.on(std::move(cb));
 			}
 			virtual ~HttpServerBase() {}
@@ -328,7 +328,7 @@ namespace nodecpp {
 			}
 
 			EventEmitter<event::HttpRequest> eHttpRequest;
-			void on(nodecpp::string_literal name, event::HttpRequest::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on(nodecpp::string_literal name, event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				assert(name == event::HttpRequest::name);
 				eHttpRequest.on(std::move(cb));
 			}
@@ -341,9 +341,9 @@ namespace nodecpp {
 		public:
 			using DataParentType = DataParentT;
 			HttpServer<DataParentT>() {};
-			HttpServer(event::HttpRequest::callback cb [[nodecpp::may_extend_to_this]]) : HttpServerBase(std::move(cb)) {}
+			HttpServer(event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS) : HttpServerBase(std::move(cb)) {}
 			HttpServer<DataParentT>(DataParentT* dataParent ) : HttpServerBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
-			HttpServer<DataParentT>(DataParentT* dataParent, event::HttpRequest::callback cb [[nodecpp::may_extend_to_this]] ) : HttpServerBase(std::move(cb)), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			HttpServer<DataParentT>(DataParentT* dataParent, event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS ) : HttpServerBase(std::move(cb)), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
 			virtual ~HttpServer<DataParentT>() {}
 		};
 
@@ -353,7 +353,7 @@ namespace nodecpp {
 		public:
 			using DataParentType = void;
 			HttpServer() {};
-			HttpServer(event::HttpRequest::callback cb [[nodecpp::may_extend_to_this]]) : HttpServerBase(std::move(cb)) {}
+			HttpServer(event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS) : HttpServerBase(std::move(cb)) {}
 			virtual ~HttpServer() {}
 		};
 

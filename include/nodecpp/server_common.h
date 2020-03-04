@@ -625,7 +625,7 @@ namespace nodecpp {
 				once( sl );
 			}
 #endif
-			void on(nodecpp::string_literal name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on(nodecpp::string_literal name, event::Close::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Error::callback >::value);
@@ -633,7 +633,7 @@ namespace nodecpp {
 				eClose.on(std::move(cb));
 			}
 
-			void on(nodecpp::string_literal name, event::Connection::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on(nodecpp::string_literal name, event::Connection::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Connection::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Connection::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Connection::callback, event::Error::callback >::value);
@@ -641,7 +641,7 @@ namespace nodecpp {
 				eConnection.on(std::move(cb));
 			}
 
-			void on(nodecpp::string_literal name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on(nodecpp::string_literal name, event::Error::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Connection::callback >::value);
@@ -649,7 +649,7 @@ namespace nodecpp {
 				eError.on(std::move(cb));
 			}
 
-			void on(nodecpp::string_literal name, event::Listening::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on(nodecpp::string_literal name, event::Listening::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Error::callback >::value);
@@ -657,7 +657,7 @@ namespace nodecpp {
 				eListening.on(std::move(cb));
 			}
 
-			void once(nodecpp::string_literal name, event::Close::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once(nodecpp::string_literal name, event::Close::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Error::callback >::value);
@@ -665,7 +665,7 @@ namespace nodecpp {
 				eClose.once(std::move(cb));
 			}
 
-			void once(nodecpp::string_literal name, event::Connection::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once(nodecpp::string_literal name, event::Connection::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Connection::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Connection::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Connection::callback, event::Error::callback >::value);
@@ -673,7 +673,7 @@ namespace nodecpp {
 				eConnection.once(std::move(cb));
 			}
 
-			void once(nodecpp::string_literal name, event::Error::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once(nodecpp::string_literal name, event::Error::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Connection::callback >::value);
@@ -681,7 +681,7 @@ namespace nodecpp {
 				eError.once(std::move(cb));
 			}
 
-			void once(nodecpp::string_literal name, event::Listening::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once(nodecpp::string_literal name, event::Listening::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Error::callback >::value);
@@ -691,7 +691,7 @@ namespace nodecpp {
 
 
 			template<class EV>
-			void on(EV, typename EV::callback cb [[nodecpp::may_extend_to_this]]) {
+			void on(EV, typename EV::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				if constexpr (std::is_same< EV, event::Close >::value) { eClose.on(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.on(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.on(std::move(cb)); }
@@ -700,7 +700,7 @@ namespace nodecpp {
 			}
 
 			template<class EV>
-			void once(EV, typename EV::callback cb [[nodecpp::may_extend_to_this]]) {
+			void once(EV, typename EV::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
 				if constexpr (std::is_same< EV, event::Close >::value) { eClose.once(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.once(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.once(std::move(cb)); }
