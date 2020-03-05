@@ -42,5 +42,6 @@ struct ThreadStartupData
 };
 
 void preinitThreadStartupData( ThreadStartupData& startupData );
+void decrementThisWorkerLoadCtr();
 
 #endif // CLUSTERING_COMMON_H

@@ -34,6 +34,8 @@
 #include "tcp_socket_base.h"
 #include "../clustering_impl/clustering_impl.h"
 #include "../clustering_impl/interthread_comm.h"
+#include "../../include/nodecpp/timers.h"
+
 
 using namespace nodecpp;
 
@@ -555,7 +557,14 @@ private:
 
 	bool pollPhase2()
 	{
+#ifdef USE_TEMP_PERF_CTRS
+extern thread_local size_t waitTime;
+size_t now1 = infraGetCurrentTime();
 		auto ret = ioSockets.wait( TimeOutNever );
+waitTime += infraGetCurrentTime() - now1;
+#else
+		auto ret = ioSockets.wait( TimeOutNever );
+#endif
 
 		if ( !ret.first )
 		{
@@ -649,6 +658,8 @@ public:
 		listenerThreadWorker.postinit();
 		while (running)
 		{
+			uint64_t now = infraGetCurrentTime();
+			reportTimes( now );
 			ioSockets.makeCompactIfNecessary();
 			bool refed = pollPhase2();
 			if(!refed)

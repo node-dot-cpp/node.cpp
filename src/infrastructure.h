@@ -49,6 +49,8 @@
 
 static constexpr uint64_t TimeOutNever = std::numeric_limits<uint64_t>::max();
 
+void reportTimes( uint64_t currentT);
+
 struct TimeoutEntryHandlerData
 {
 	std::function<void()> cb = nullptr; // is assumed to be self-contained in terms of required action
@@ -141,7 +143,6 @@ public:
 
 
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
-uint64_t infraGetCurrentTime();
 
 
 #include "clustering_impl/interthread_comm.h"
@@ -206,6 +207,8 @@ public:
 		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
 #ifdef USE_TEMP_PERF_CTRS
 extern thread_local size_t waitTime;
+extern thread_local int eventCnt;
+extern thread_local uint64_t eventProcTime;
 size_t now1 = infraGetCurrentTime();
 		auto ret = ioSockets.wait( timeoutToUse );
 waitTime += infraGetCurrentTime() - now1;
@@ -282,7 +285,16 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 							switch ( current.emitter.objectType )
 							{
 								case OpaqueEmitter::ObjectType::ClientSocket:
+#ifdef USE_TEMP_PERF_CTRS
+{
+++eventCnt;
+size_t now2 = infraGetCurrentTime();
 									netSocket. infraCheckPollFdSet(current, revents);
+eventProcTime += infraGetCurrentTime() - now2;
+}
+#else
+									netSocket. infraCheckPollFdSet(current, revents);
+#endif
 									break;
 								case OpaqueEmitter::ObjectType::ServerSocket:
 								case OpaqueEmitter::ObjectType::AgentServer:
@@ -375,6 +387,7 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 			queue.emit();
 
 			uint64_t now = infraGetCurrentTime();
+			reportTimes( now );
 			timeout.infraTimeoutEvents(now, queue);
 			queue.emit();
 

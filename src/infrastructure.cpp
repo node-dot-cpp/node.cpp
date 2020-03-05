@@ -32,6 +32,17 @@
 
 #ifndef _MSC_VER
 #include <poll.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/time.h>
+#include <sys/syscall.h>
+/* pid_t */
+#include <sys/types.h>
+/* open */
+#include <sys/stat.h>
+#include <fcntl.h>
+/* strrchr */
+#include <string.h>
 #endif
 
 
@@ -223,6 +234,55 @@ namespace nodecpp {
 #error not implemented for this compiler
 #endif
 		}
+
+		std::pair<long, long> get_thread_time()
+		{
+#if defined NODECPP_MSVC || ( (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG) )
+			FILETIME creationTime;
+			FILETIME exitTime;
+			FILETIME kernelTime;
+			FILETIME userTime;
+			BOOL ok = GetThreadTimes( GetCurrentThread(),&creationTime, &exitTime, &kernelTime, &userTime );
+			uint64_t user = userTime.dwHighDateTime;
+			user <<= 32;
+			user += userTime.dwLowDateTime;
+			uint64_t kernel = kernelTime.dwHighDateTime;
+			kernel <<= 32;
+			kernel += kernelTime.dwLowDateTime;
+			return std::make_pair( (long)(user/10), (long)(kernel/10) );
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+			int i;
+			char proc_filename[256];
+			char buffer[4096];
+
+			pid_t pid = getpid();
+			pid_t tid = gettid();
+
+			sprintf(proc_filename, "/proc/%d/task/%d/stat",pid,tid);
+			int fd, num_read;
+			fd = open(proc_filename, O_RDONLY, 0);
+			num_read = read(fd, buffer, 4095);
+			close(fd);
+			buffer[num_read] = '\0';
+
+			char* ptr_usr = strrchr(buffer, ')') + 1;
+			for(i = 3; i != 14; ++i) {
+				ptr_usr = strchr(ptr_usr+1, ' ');
+			}
+
+			ptr_usr++;
+			uint64_t user = atol(ptr_usr);
+			user *= 1000000;
+			user /= sysconf(_SC_CLK_TCK);
+			uint64_t kernel = atol(strchr(ptr_usr,' ') + 1);
+			kernel *= 1000000;
+			kernel /= sysconf(_SC_CLK_TCK);
+
+			return std::make_pair(user, kernel);
+#else
+#error not implemented for this compiler
+#endif
+		}	
 	} // namespace time
 
 } // namespace nodecpp
@@ -232,7 +292,51 @@ namespace nodecpp {
 thread_local int pollCnt = 0;
 thread_local int pollRetCnt = 0;
 thread_local int pollRetMax = 0;
-thread_local int sessionCnt = 0;
 thread_local size_t sessionCreationtime = 0;
-thread_local size_t waitTime = 0;
+thread_local int sessionCnt = 0;
+#endif // USE_TEMP_PERF_CTRS
+thread_local uint64_t waitTime = 0;
+thread_local uint64_t lastWaitTime = 0;
+
+thread_local int eventCnt = 0;
+thread_local int lastEventCnt = 0;
+
+thread_local uint64_t eventProcTime = 0;
+thread_local uint64_t lastEventProcTime = 0;
+
+#define USE_TEMP_PERF_CTRS_2
+#ifdef USE_TEMP_PERF_CTRS_2
+thread_local long lastUserT = 0;
+thread_local long lastKernelT = 0;
+thread_local uint64_t lastTimeReportT = 0;
+void reportTimes( uint64_t currentT)
+{
+	if ( currentT > lastTimeReportT + 1000000 )
+	{
+		uint64_t wallClockDelta = currentT - lastTimeReportT;
+		lastTimeReportT = currentT;
+		auto times = nodecpp::time::get_thread_time();
+		long userDelta = times.first - lastUserT;
+		lastUserT = times.first;
+		long kernelDelta = times.second - lastKernelT;
+		lastKernelT = times.second;
+		long totalT = userDelta + kernelDelta;
+		uint64_t waitDelta = waitTime - lastWaitTime;
+		lastWaitTime = waitTime;
+
+		int eventDelta = eventCnt - lastEventCnt;
+		lastEventCnt = eventCnt;
+			
+		uint64_t eventProcTimeDelta = eventProcTime - lastEventProcTime;
+		lastEventProcTime = eventProcTime;
+
+		if ( totalT )
+//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "thread times: user: {}%, kernel: {}%, wait: {}%", userDelta * 100 / totalT, kernelDelta * 100 / totalT, waitDelta * 100 / wallClockDelta );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "thread times: user: {}%, kernel: {}%, wait: {}%; events: {} ({}), events proc time: {} ({})", 
+				userDelta * 100 / wallClockDelta, kernelDelta * 100 / wallClockDelta, waitDelta * 100 / wallClockDelta, eventDelta, eventCnt, eventProcTimeDelta/1000, eventProcTime/1000 );
+		else
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "thread times: user: 0%, kernel: 0%, wait: {}%; events: {} ({}), events proc time: {} ({})",
+				waitDelta * 100 / wallClockDelta, eventDelta, eventCnt, eventProcTimeDelta/1000, eventProcTime/1000 );
+	}
+}
 #endif // USE_TEMP_PERF_CTRS

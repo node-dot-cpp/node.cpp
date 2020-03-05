@@ -88,6 +88,14 @@ private:
 
 	size_t current = 0;
 
+	void _validate()
+	{
+		/*size_t sum = 0;
+		for ( size_t i=0; i<usedSlotCnt; ++i )
+			sum += workers[i].load;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, totalLoadCtr == sum, "{} vs. {}", totalLoadCtr, sum );*/
+	}
+
 public:
 	size_t addWorker( ThreadID id_ )
 	{
@@ -98,55 +106,59 @@ public:
 		assignedIdx = usedSlotCnt;
 		++usedSlotCnt;
 		lock.unlock();
+_validate();
 		return assignedIdx;
-	}
-
-	void incrementLoadCtr( size_t idx )
-	{
-		std::unique_lock<std::mutex> lock(mx);
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < usedSlotCnt, "{} vs. {}", idx, usedSlotCnt ); 
-		++( workers[ idx ].load );
-		++totalLoadCtr;
 	}
 
 	void decrementLoadCtr( size_t idx )
 	{
 		std::unique_lock<std::mutex> lock(mx);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx < usedSlotCnt, "{} vs. {}", idx, usedSlotCnt ); 
-		++( workers[ idx ].load );
-		++totalLoadCtr;
+_validate();
+		--( workers[ idx ].load );
+		--totalLoadCtr;
+_validate();
 	}
 
 	ThreadID getCandidateAndIncrementLoad() // updates 'current'; current is always set to a valid value (if at all possible)
 	{
 		std::unique_lock<std::mutex> lock(mx);
 //		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, usedSlotCnt != 0 ); 
+_validate();
 		if ( usedSlotCnt )
 		{
 			size_t comparisonBase = (totalLoadCtr << 32) + (totalLoadCtr << 28) / usedSlotCnt + 1;
-			size_t presentCurrent = current++;
-			do
-			{
-				if ( current != usedSlotCnt )
+			size_t presentCurrent = current;
+			++current;
+			for ( ; current < usedSlotCnt; ++current )
+				if ( (workers[current].load << 32) < comparisonBase )
 				{
-					if ( (workers[current].load << 32) < comparisonBase )
-						return workers[current].id;
-					else
-						++current;
+					++( workers[current].load );
+					++totalLoadCtr;
+_validate();
+					return workers[current].id;
 				}
-				else
-					current = 0;
-			}
-			while ( current != presentCurrent );
+			for ( current=0; current <= presentCurrent; ++current )
+				if ( (workers[current].load << 32) < comparisonBase )
+				{
+					++( workers[current].load );
+					++totalLoadCtr;
+_validate();
+					return workers[current].id;
+				}
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "failed to find a candidate out of {} used slots", usedSlotCnt ); 
+			return ThreadID();
 		}
 		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "failed to find a candidate: no used slots" ); 
 			return ThreadID();
+		}
 	}
 };
 static WorkerLoad workerLoad;
 
 size_t addWorkerEntryForLoadTracking( ThreadID id ) { return workerLoad.addWorker( id ); }
-void incrementWorkerLoadCtr( size_t idx ) { workerLoad.incrementLoadCtr( idx ); }
 void decrementWorkerLoadCtr( size_t idx ) { workerLoad.decrementLoadCtr( idx ); }
 ThreadID getLeastLoadedWorkerAndIncrementLoad() { return workerLoad.getCandidateAndIncrementLoad(); }
 

@@ -47,6 +47,8 @@ static thread_local ThreadDescriptor thisThreadDescriptor;
 void setThisThreadDescriptor(ThreadStartupData& startupData) { thisThreadDescriptor.threadID = startupData.threadCommID; }
 
 thread_local size_t workerIdxInLoadCollector = (size_t)(-1);
+extern void decrementWorkerLoadCtr( size_t idx );
+void decrementThisWorkerLoadCtr() { decrementWorkerLoadCtr(workerIdxInLoadCollector); }
 
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
 {
@@ -105,7 +107,7 @@ void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 	uintptr_t writeHandle = writingMeans.second.second;
 	uint64_t reincarnation = writingMeans.second.first;
 	
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation, "for idx = {}: {} vs. {}", targetThreadId.slotId, reincarnation, targetThreadId.reincarnation ); 
 	threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
 	// write a byte to writeHandle
 	uint8_t singleByte = 0x1;
@@ -203,6 +205,7 @@ namespace nodecpp
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ConnAcceptedEvMsg ) <= sz, "{} vs. {}", sizeof( ConnAcceptedEvMsg ), sz ); 
 				const ConnAcceptedEvMsg* msg = reinterpret_cast<const ConnAcceptedEvMsg*>( riter.read( sizeof( ConnAcceptedEvMsg ) ) );
+//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "conn accepted from threadID = {}...", requestingThreadId.slotId );
 				netServerManagerBase->addAcceptedSocket( msg->serverIdx, (SOCKET)(msg->socket), msg->ip, msg->uport );
 				break;
 			}

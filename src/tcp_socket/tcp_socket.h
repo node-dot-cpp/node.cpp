@@ -507,6 +507,10 @@ public:
 			osSideAccum[idx].fd = INVALID_SOCKET; 
 			ourSideAccum[idx].setSocketClosed();
 		}
+#ifdef NODECPP_ENABLE_CLUSTERING
+		if ( cluster.isWorker() )
+			decrementThisWorkerLoadCtr();
+#endif // NODECPP_ENABLE_CLUSTERING
 	}
 #ifdef NODECPP_ENABLE_CLUSTERING
 	void setSlaveSocketClosed( size_t idx ) {
@@ -1439,7 +1443,7 @@ extern thread_local size_t sessionCreationtime;
 extern uint64_t infraGetCurrentTime();
 ++sessionCnt;
 size_t now = infraGetCurrentTime();
-		auto ptr = entry.getServerSocket()->makeSocket(, osd);
+		auto ptr = entry.getServerSocket()->makeSocket(osd);
 sessionCreationtime += infraGetCurrentTime() - now;
 #else
 		auto ptr = entry.getServerSocket()->makeSocket( osd);
