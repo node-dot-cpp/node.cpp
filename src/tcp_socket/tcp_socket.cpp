@@ -120,6 +120,7 @@ bool netInitialize()
 
 #ifdef USE_TEMP_PERF_CTRS
 extern thread_local size_t waitTime;
+extern thread_local size_t writeTime;
 #endif // USE_TEMP_PERF_CTRS
 namespace nodecpp
 {
@@ -442,7 +443,7 @@ namespace nodecpp
 #ifdef USE_TEMP_PERF_CTRS
 size_t now1 = infraGetCurrentTime();
 			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
-waitTime += infraGetCurrentTime() - now1;
+writeTime += infraGetCurrentTime() - now1;
 #else
 			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
 #endif // USE_TEMP_PERF_CTRS
