@@ -170,6 +170,10 @@ namespace nodecpp {
 		class Socket {};
 
 		class SocketBase {
+
+			static
+			void addHandler();
+			
 			void bufferSize();
 			void bytesRead();
 			void bytesWritten();
@@ -316,7 +320,8 @@ namespace nodecpp {
 			}
 
 
-			static void addHttpHandler();
+			static
+			void addHttpHandler();
 
 			void on();
 
@@ -421,6 +426,9 @@ namespace nodecpp {
 		//from nodecpp/server_common.h
 		class ServerBase
 		{
+			static
+			void addHandler();
+
 			void registerServer();
 
 
