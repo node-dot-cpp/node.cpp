@@ -336,6 +336,8 @@ namespace nodecpp {
 					hr();
 				}
 			}
+			::nodecpp::awaitable<char> skipSpaces(char ch);
+			nodecpp::handler_ret_type readToken( nodecpp::string& str );
 			nodecpp::handler_ret_type parseMethod( IncomingHttpMessageAtServer& message );
 			nodecpp::handler_ret_type parseHeaderEntry( IncomingHttpMessageAtServer& message );
 #else
@@ -836,6 +838,20 @@ dbgTrace();
 			}
 			while ( message.parseHeaderEntry( line ) );
 
+			CO_RETURN;
+		}
+
+		inline
+		::nodecpp::awaitable<char> HttpSocketBase::skipSpaces(char ch)
+		{
+			while ( ch == ' ' || ch == '\t' )
+				ch = co_await a_readByte();
+			CO_RETURN ch;
+		}
+
+		inline
+		nodecpp::handler_ret_type HttpSocketBase::readToken( nodecpp::string& str )
+		{
 			CO_RETURN;
 		}
 
