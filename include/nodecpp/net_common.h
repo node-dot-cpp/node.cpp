@@ -488,6 +488,32 @@ namespace nodecpp {
 				}
 			}
 		}
+
+		std::pair<bool, uint8_t> try_read_byte()
+		{
+			if (!empty())
+			{
+				auto ret = std::make_pair( true, *begin );
+				++begin;
+				if ( begin != buff.get() + alloc_size() )
+					return ret;
+				begin = buff.get();
+				return ret;
+			}
+			else
+				return std::make_pair(false, 0 );
+		}
+
+		uint8_t read_byte()
+		{
+			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin != end );
+			auto ret = *begin;
+			++begin;
+			if ( begin != buff.get() + alloc_size() )
+				return ret;
+			begin = buff.get();
+			return ret;
+		}
 	};
 
 	template <class ItemT>

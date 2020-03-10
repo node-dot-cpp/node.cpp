@@ -52,6 +52,7 @@ namespace nodecpp {
 			friend class HttpServerResponse;
 
 			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
+			nodecpp::handler_ret_type getRequest2( IncomingHttpMessageAtServer& message );
 
 			struct RRPair
 			{
@@ -138,6 +139,40 @@ namespace nodecpp {
 					}
 				};
 				return continue_getting_awaiter(*this);
+			}
+
+			auto a_readByte() { 
+
+				struct read_byte {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					SocketBase& socket;
+
+					read_byte(SocketBase& socket_) : socket( socket_ ) {
+					}
+
+					read_byte(const read_byte &) = delete;
+					read_byte &operator = (const read_byte &) = delete;
+	
+					~read_byte() {
+					}
+
+					bool await_ready() {
+						return !socket.dataForCommandProcessing.readBuffer.empty();
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						socket.dataForCommandProcessing.ahd_read.h = awaiting;
+						myawaiting = awaiting;
+					}
+
+					auto await_resume() {
+						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+						return socket.dataForCommandProcessing.readBuffer.read_byte();
+					}
+				};
+				return read_byte(*this);
 			}
 
 			auto a_dataAvailable( CircularByteBuffer::AvailableDataDescriptor& d, size_t minBytes = 1 ) { 
@@ -301,6 +336,8 @@ namespace nodecpp {
 					hr();
 				}
 			}
+			nodecpp::handler_ret_type parseMethod( IncomingHttpMessageAtServer& message );
+			nodecpp::handler_ret_type parseHeaderEntry( IncomingHttpMessageAtServer& message );
 #else
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
@@ -341,7 +378,7 @@ namespace nodecpp {
 			Method method;
 
 			nodecpp::Buffer body;
-			enum ReadStatus { noinit, in_hdr, in_body, completed };
+			enum ReadStatus { noinit, in_hdr, in_body, completed, err };
 			ReadStatus readStatus = ReadStatus::noinit;
 			size_t bodyBytesRetrieved = 0;
 
@@ -697,7 +734,7 @@ namespace nodecpp {
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 					header.insert( std::make_pair( "Content-Length", format( "{}", b.size() ) ) );
 				}
-//dbgTrace();
+dbgTrace();
 				co_await writeBodyPart(b);
 
 				myRequest->clear();
@@ -751,7 +788,7 @@ namespace nodecpp {
 					clear();
 					CO_RETURN;
 				}
-
+dbgTrace();
 				clear();
 				sock->release( idx );
 				sock->proceedToNext();
@@ -780,9 +817,8 @@ namespace nodecpp {
 		}
 
 		inline
-		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
+		nodecpp::handler_ret_type HttpSocketBase::getRequest2( IncomingHttpMessageAtServer& message )
 		{
-			bool ready = false;
 			nodecpp::string line;
 			co_await readLine(line);
 //			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
@@ -800,6 +836,232 @@ namespace nodecpp {
 			}
 			while ( message.parseHeaderEntry( line ) );
 
+			CO_RETURN;
+		}
+
+		inline
+		nodecpp::handler_ret_type HttpSocketBase::parseMethod( IncomingHttpMessageAtServer& message )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::noinit ); 
+			bool done = false;
+			do
+			{
+				char ch = co_await a_readByte();
+				switch ( ch )
+				{
+					case ' ':
+					case'\t':
+						if ( message.method.name.size() )
+							done = true;
+						break;
+					case '\r':
+						break;
+					case '\n':
+						message.readStatus = IncomingHttpMessageAtServer::ReadStatus::err;
+						CO_RETURN;
+					default:
+						message.method.name += ch;
+				}
+			}
+			while ( !done );
+
+			done = false;
+			do
+			{
+				char ch = co_await a_readByte();
+				switch ( ch )
+				{
+					case ' ':
+					case'\t':
+						if ( message.method.url.size() )
+							done = true;
+						break;
+					case '\r':
+						break;
+					case '\n':
+						message.readStatus = IncomingHttpMessageAtServer::ReadStatus::err;
+						CO_RETURN;
+					default:
+						message.method.url += ch;
+				}
+			}
+			while ( !done );
+
+			done = false;
+			do
+			{
+				char ch = co_await a_readByte();
+				switch ( ch )
+				{
+					case ' ':
+					case'\t':
+						if ( message.method.version.size() )
+							done = true;
+						break;
+					case '\r':
+						break;
+					case '\n':
+						message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_hdr;
+						CO_RETURN;
+					default:
+						message.method.version += ch;
+				}
+			}
+			while ( !done );
+
+			// TODO: rework lines below
+			if ( memcmp( message.method.version.c_str(), "HTTP/", 5 ) == 0 )
+				message.method.version = message.method.version.substr( 5 );
+			else
+			{
+				message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_hdr;
+				CO_RETURN;
+			}
+
+			for (;;)
+			{
+				char ch = co_await a_readByte();
+				switch ( ch )
+				{
+					case ' ':
+					case'\t':
+					case '\r':
+						break;
+					case '\n':
+						CO_RETURN;
+					default:
+						message.readStatus = IncomingHttpMessageAtServer::ReadStatus::err;
+						CO_RETURN;
+				}
+			}
+
+			/*size_t start = line.find_first_not_of( " \t" );
+			if ( start == nodecpp::string::npos || line[start] == '\r' || line[start] == '\n' )
+				return false;
+			bool found = false;
+			// Method name
+			for ( size_t i=0; i<MethodCount; ++i )
+				if ( line.size() > MethodNames[i].second + start && memcmp( line.c_str() + start, MethodNames[i].first, MethodNames[i].second ) == 0 && line.c_str()[ MethodNames[i].second] == ' ' ) // TODO: cthink about rfind(*,0)
+				{
+					method.name = MethodNames[i].first;
+					start += MethodNames[i].second + 1;
+					start = line.find_first_not_of( " \t", start );
+					found = true;
+					break;
+				}
+			if ( !found )
+				return false;
+			// URI
+			size_t endOfURI = line.find_first_of(" \t\r\n", start + 1 );
+			method.url = line.substr( start, endOfURI - start );
+			if ( method.url.size() == 0 )
+				return false;
+			start = line.find_first_not_of( " \t", endOfURI );
+			// HTTP version
+			size_t end = line.find_last_not_of(" \t\r\n" );
+			if ( memcmp( line.c_str() + start, "HTTP/", 5 ) != 0 )
+				return false;
+			start += 5;
+			method.version = line.substr( start, end - start + 1 );*/
+			message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_hdr;
+			CO_RETURN;
+		}
+
+		inline
+		nodecpp::handler_ret_type HttpSocketBase::parseHeaderEntry( IncomingHttpMessageAtServer& message )
+		{
+			// TODO: strip out leading/trailing spaces
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr ); 
+			nodecpp::string key;
+			nodecpp::string value;
+			bool done = false;
+			do
+			{
+				char ch = co_await a_readByte();
+				switch ( ch )
+				{
+					case ' ':
+					case'\t':
+						break;
+					case '\r':
+						break;
+					case '\n':
+						if ( key == "" )
+						{
+							message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_body;
+							CO_RETURN;
+						}
+						message.header.insert( std::make_pair( message.makeLower( key ), "" ));
+						CO_RETURN;
+					case ':':
+						done = true;
+						break;
+					default:
+						key += ch;
+				}
+			}
+			while ( !done );
+
+			for (;;)
+			{
+				char ch = co_await a_readByte();
+				switch ( ch )
+				{
+					case ' ':
+					case'\t':
+						if ( value.size() )
+							value += ch;
+						break;
+					case '\r':
+						break;
+					case '\n':
+						message.header.insert( std::make_pair( message.makeLower( key ), message.makeLower( value ) ));
+						CO_RETURN;
+					default:
+						value += ch;
+				}
+			}
+
+			/*size_t end = line.find_last_not_of(" \t\r\n" );
+			if ( end == nodecpp::string::npos )
+			{
+				if ( !( line.size() == 2 && line[0] == '\r' && line[1] == '\n' ) ) // last empty line
+					return true; // TODO: what should we do with this line of spaces? - just ignore or report a parsing error?
+				parseContentLength();
+				readStatus = contentLength ? ReadStatus::in_body : ReadStatus::completed;
+				return false;
+			}
+			size_t start = line.find_first_not_of( " \t" );
+			size_t idx = line.find(':', start);
+			if ( idx >= end )
+				return false;
+			size_t valStart = line.find_first_not_of( " \t", idx + 1 );
+			nodecpp::string key = line.substr( start, idx-start );
+			header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
+			return true;*/
+		}
+
+		inline
+		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
+		{
+			co_await parseMethod( message );
+			do
+			{
+				co_await parseHeaderEntry( message );
+			}
+			while ( message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr );
+			if ( message.readStatus != IncomingHttpMessageAtServer::ReadStatus::err )
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body, "indeed {}", message.readStatus );
+				message.parseContentLength();
+				message.readStatus = message.contentLength ? IncomingHttpMessageAtServer::ReadStatus::in_body : IncomingHttpMessageAtServer::ReadStatus::completed;
+				message.parseConnStatus();
+			}
+			else
+			{
+				// TODO: report/process error
+				end();
+			}
 			CO_RETURN;
 		}
 
