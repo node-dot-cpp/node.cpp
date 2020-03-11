@@ -933,6 +933,7 @@ namespace nodecpp {
 		inline
 		nodecpp::handler_ret_type HttpSocketBase::parseHeaderEntry( IncomingHttpMessageAtServer& message )
 		{
+			// for details see https://tools.ietf.org/html/rfc2616#page-17
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr ); 
 			nodecpp::string key;
 			nodecpp::string value;
