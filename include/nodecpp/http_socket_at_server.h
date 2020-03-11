@@ -822,7 +822,7 @@ namespace nodecpp {
 		}
 
 		inline
-		nodecpp::handler_ret_type HttpSocketBase::getRequest2( IncomingHttpMessageAtServer& message )
+		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
 			nodecpp::string line;
 			co_await readLine(line);
@@ -966,7 +966,7 @@ namespace nodecpp {
 		}
 
 		inline
-		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
+		nodecpp::handler_ret_type HttpSocketBase::getRequest2( IncomingHttpMessageAtServer& message )
 		{
 			try
 			{

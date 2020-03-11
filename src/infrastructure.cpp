@@ -42,6 +42,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 /* strrchr */
+#ifndef gettid
+#define gettid() syscall(SYS_gettid)
+#endif
 #include <string.h>
 #endif
 
