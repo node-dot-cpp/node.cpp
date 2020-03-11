@@ -337,7 +337,10 @@ namespace nodecpp {
 				}
 			}
 			::nodecpp::awaitable<char> skipSpaces(char ch);
-			nodecpp::handler_ret_type readToken( nodecpp::string& str );
+			::nodecpp::awaitable<char> readToken( char firstCh, nodecpp::string& str );
+			::nodecpp::awaitable<char> readTokenWithExpectedSeparator( char firstCh, char separator, nodecpp::string& str );
+			::nodecpp::awaitable<char> readHeaderValueTokens( char firstCh, nodecpp::string& str );
+			::nodecpp::awaitable<void> readEOL( char firstCh );
 			nodecpp::handler_ret_type parseMethod( IncomingHttpMessageAtServer& message );
 			nodecpp::handler_ret_type parseHeaderEntry( IncomingHttpMessageAtServer& message );
 #else
@@ -380,7 +383,7 @@ namespace nodecpp {
 			Method method;
 
 			nodecpp::Buffer body;
-			enum ReadStatus { noinit, in_hdr, in_body, completed, err };
+			enum ReadStatus { noinit, in_hdr, in_body, completed };
 			ReadStatus readStatus = ReadStatus::noinit;
 			size_t bodyBytesRetrieved = 0;
 
@@ -841,6 +844,8 @@ dbgTrace();
 			CO_RETURN;
 		}
 
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 		inline
 		::nodecpp::awaitable<char> HttpSocketBase::skipSpaces(char ch)
 		{
@@ -850,8 +855,52 @@ dbgTrace();
 		}
 
 		inline
-		nodecpp::handler_ret_type HttpSocketBase::readToken( nodecpp::string& str )
+		::nodecpp::awaitable<char> HttpSocketBase::readToken( char firstCh, nodecpp::string& str )
 		{
+			while ( !(firstCh == ' ' || firstCh == '\t' || firstCh == '\r' || firstCh == '\n') )
+			{
+				str += firstCh;
+				firstCh = co_await a_readByte();
+			}
+			CO_RETURN firstCh;
+		}
+
+		inline
+		::nodecpp::awaitable<char> HttpSocketBase::readHeaderValueTokens( char firstCh, nodecpp::string& str )
+		{
+			firstCh = co_await skipSpaces( firstCh );
+			firstCh = co_await readToken( firstCh, str );
+			while ( firstCh != '\r' && firstCh != '\n' )
+			{
+				str += ' ';
+				firstCh = co_await skipSpaces( firstCh );
+				firstCh = co_await readToken( firstCh, str );
+			}
+			CO_RETURN firstCh;
+		}
+
+		inline
+		::nodecpp::awaitable<char> HttpSocketBase::readTokenWithExpectedSeparator( char firstCh, char separator, nodecpp::string& str )
+		{
+			while ( !(firstCh == separator || firstCh == ' ' || firstCh == '\t' || firstCh == '\r' || firstCh == '\n') )
+			{
+				str += firstCh;
+				firstCh = co_await a_readByte();
+			}
+			if ( firstCh == separator )
+				firstCh = co_await a_readByte();
+			else
+				throw Error();
+			CO_RETURN firstCh;
+		}
+
+		inline
+		::nodecpp::awaitable<void> HttpSocketBase::readEOL( char firstCh )
+		{
+			if ( firstCh == '\r' )
+				firstCh = co_await a_readByte();
+			if ( firstCh != '\n' )
+				throw Error();
 			CO_RETURN;
 		}
 
@@ -859,10 +908,10 @@ dbgTrace();
 		nodecpp::handler_ret_type HttpSocketBase::parseMethod( IncomingHttpMessageAtServer& message )
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::noinit ); 
-			bool done = false;
+			char ch = co_await a_readByte();
+			/*bool done = false;
 			do
 			{
-				char ch = co_await a_readByte();
 				switch ( ch )
 				{
 					case ' ':
@@ -878,13 +927,17 @@ dbgTrace();
 					default:
 						message.method.name += ch;
 				}
+				ch = co_await a_readByte();
 			}
-			while ( !done );
+			while ( !done );*/
+			ch = co_await readToken( ch, message.method.name );
+			if ( ch == '\r' || ch == '\n' )
+				throw Error();
+			ch = co_await skipSpaces( ch );
 
-			done = false;
+			/*done = false;
 			do
 			{
-				char ch = co_await a_readByte();
 				switch ( ch )
 				{
 					case ' ':
@@ -900,13 +953,17 @@ dbgTrace();
 					default:
 						message.method.url += ch;
 				}
+				ch = co_await a_readByte();
 			}
-			while ( !done );
+			while ( !done );*/
+			ch = co_await readToken( ch, message.method.url );
+			if ( ch == '\r' || ch == '\n' )
+				throw Error();
+			ch = co_await skipSpaces( ch );
 
-			done = false;
+			/*done = false;
 			do
 			{
-				char ch = co_await a_readByte();
 				switch ( ch )
 				{
 					case ' ':
@@ -917,16 +974,27 @@ dbgTrace();
 					case '\r':
 						break;
 					case '\n':
+						if ( memcmp( message.method.version.c_str(), "HTTP/", 5 ) == 0 )
+							message.method.version = message.method.version.substr( 5 );
 						message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_hdr;
 						CO_RETURN;
 					default:
 						message.method.version += ch;
 				}
+				ch = co_await a_readByte();
 			}
-			while ( !done );
+			while ( !done );*/
+			ch = co_await readToken( ch, message.method.version );
+			ch = co_await skipSpaces( ch );
+			if ( memcmp( message.method.version.c_str(), "HTTP/", 5 ) == 0 )
+				message.method.version = message.method.version.substr( 5 );
+
+			co_await readEOL( ch );
+			message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_hdr;
+			CO_RETURN;
 
 			// TODO: rework lines below
-			if ( memcmp( message.method.version.c_str(), "HTTP/", 5 ) == 0 )
+			/*if ( memcmp( message.method.version.c_str(), "HTTP/", 5 ) == 0 )
 				message.method.version = message.method.version.substr( 5 );
 			else
 			{
@@ -936,7 +1004,6 @@ dbgTrace();
 
 			for (;;)
 			{
-				char ch = co_await a_readByte();
 				switch ( ch )
 				{
 					case ' ':
@@ -949,7 +1016,8 @@ dbgTrace();
 						message.readStatus = IncomingHttpMessageAtServer::ReadStatus::err;
 						CO_RETURN;
 				}
-			}
+				ch = co_await a_readByte();
+			}*/
 
 			/*size_t start = line.find_first_not_of( " \t" );
 			if ( start == nodecpp::string::npos || line[start] == '\r' || line[start] == '\n' )
@@ -990,10 +1058,22 @@ dbgTrace();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr ); 
 			nodecpp::string key;
 			nodecpp::string value;
-			bool done = false;
+			char ch = co_await a_readByte();
+			if ( ch == '\r' || ch == '\n' )
+			{
+				co_await readEOL( ch );
+				message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_body;
+				CO_RETURN;
+			}
+			else if ( ch == ' ' || ch == '\t' )
+			{
+				// TODO: it's a continuation of a header - implement!
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "parsing header continuation is not implemented" );
+			}
+
+			/*bool done = false;
 			do
 			{
-				char ch = co_await a_readByte();
 				switch ( ch )
 				{
 					case ' ':
@@ -1015,12 +1095,21 @@ dbgTrace();
 					default:
 						key += ch;
 				}
+				ch = co_await a_readByte();
 			}
-			while ( !done );
-
-			for (;;)
+			while ( !done );*/
+			ch = co_await readTokenWithExpectedSeparator( ch, ':', key );
+			if ( ch == '\r' || ch == '\n' )
 			{
-				char ch = co_await a_readByte();
+				co_await readEOL( ch );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, key.size() );
+				message.header.insert( std::make_pair( message.makeLower( key ), "" ));
+				CO_RETURN;
+			}
+			ch = co_await skipSpaces( ch );
+
+			/*for (;;)
+			{
 				switch ( ch )
 				{
 					case ' ':
@@ -1036,7 +1125,11 @@ dbgTrace();
 					default:
 						value += ch;
 				}
-			}
+				ch = co_await a_readByte();
+			}*/
+
+			ch = co_await readHeaderValueTokens( ch, value );
+			message.header.insert( std::make_pair( message.makeLower( key ), message.makeLower( value ) ));
 
 			/*size_t end = line.find_last_not_of(" \t\r\n" );
 			if ( end == nodecpp::string::npos )
@@ -1055,29 +1148,32 @@ dbgTrace();
 			nodecpp::string key = line.substr( start, idx-start );
 			header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
 			return true;*/
+
+			co_await readEOL( ch );
 		}
 
 		inline
 		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
-			co_await parseMethod( message );
-			do
+			try
 			{
-				co_await parseHeaderEntry( message );
+				co_await parseMethod( message );
+				do
+				{
+					co_await parseHeaderEntry( message );
+				}
+				while ( message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr );
 			}
-			while ( message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr );
-			if ( message.readStatus != IncomingHttpMessageAtServer::ReadStatus::err )
-			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body, "indeed {}", message.readStatus );
-				message.parseContentLength();
-				message.readStatus = message.contentLength ? IncomingHttpMessageAtServer::ReadStatus::in_body : IncomingHttpMessageAtServer::ReadStatus::completed;
-				message.parseConnStatus();
-			}
-			else
+			catch (...)
 			{
 				// TODO: report/process error
 				end();
 			}
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body, "indeed {}", message.readStatus );
+			message.parseContentLength();
+			message.readStatus = message.contentLength ? IncomingHttpMessageAtServer::ReadStatus::in_body : IncomingHttpMessageAtServer::ReadStatus::completed;
+			message.parseConnStatus();
+
 			CO_RETURN;
 		}
 
