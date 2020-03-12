@@ -268,14 +268,14 @@ namespace nodecpp {
 			fd = open(proc_filename, O_RDONLY, 0);
 			if ( fd < 0 )
 			{
-				printf( "failed to open /proc/%d/task/%d/stat \n", pid, tid);
+//				printf( "failed to open /proc/%d/task/%d/stat \n", pid, tid);
 				return std::make_pair(0, 0);
 			}
 			num_read = read(fd, buffer, 1023);
 			close(fd);
 			if ( num_read < 0 )
 			{
-				printf( "failed to read /proc/%d/task/%d/stat \n", pid, tid);
+//				printf( "failed to read /proc/%d/task/%d/stat \n", pid, tid);
 				return std::make_pair(0, 0);
 			}
 			buffer[num_read] = '\0';
@@ -285,7 +285,7 @@ namespace nodecpp {
 				ptr_usr = strchr(ptr_usr+1, ' ');
 				if ( ptr_usr == nullptr )
 				{
-					printf( "%s\n", buffer );
+//					printf( "%s\n", buffer );
 					return std::make_pair(0, 0);
 				}
 			}
@@ -351,11 +351,18 @@ void reportTimes( uint64_t currentT)
 	{
 		uint64_t wallClockDelta = currentT - lastTimeReportT;
 		lastTimeReportT = currentT;
+
 		auto times = nodecpp::time::get_thread_time();
-		long userDelta = times.first - lastUserT;
-		lastUserT = times.first;
-		long kernelDelta = times.second - lastKernelT;
-		lastKernelT = times.second;
+		bool userAndKernelTimeOK = times.first + times.second != 0;
+		long userDelta = 0;
+		long kernelDelta = 0;
+		if ( userAndKernelTimeOK )
+		{
+			userDelta = times.first - lastUserT;
+			kernelDelta = times.second - lastKernelT;
+			lastUserT = times.first;
+			lastKernelT = times.second;
+		}
 		long totalT = userDelta + kernelDelta;
 
 		uint64_t waitDelta = waitTime - lastWaitTime;
@@ -379,9 +386,14 @@ void reportTimes( uint64_t currentT)
 		int zeroSockDelta = zeroSockCnt - lastZeroSockCnt;
 		lastZeroSockCnt = zeroSockCnt;
 
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "[{}ms] user: {}%, kernel: {}%, wait: {} ({}%), write: {} ({}%); events: {} ({}), ev proc time: {} ({}%); polls: {}, pollRetAvg: {}, ZeroSockCnt: {}", 
-			wallClockDelta / 1000, userDelta * 100 / wallClockDelta, kernelDelta * 100 / wallClockDelta, waitDelta / 1000, waitDelta * 100 / wallClockDelta, writeDelta / 1000, writeDelta * 100 / wallClockDelta, 
-			eventDelta, eventCnt, eventProcTimeDelta/1000, eventProcTimeDelta * 100 / wallClockDelta, pollCntDelta, pollCntDelta ? pollRetCntDelta / pollCntDelta : 0, zeroSockDelta );
+		if ( userAndKernelTimeOK )
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "[{}ms] user: {}%, kernel: {}%, wait: {} ({}%), write: {} ({}%); events: {} ({}), ev proc time: {} ({}%); polls: {}, pollRetAvg: {}, ZeroSockCnt: {}", 
+				wallClockDelta / 1000, userDelta * 100 / wallClockDelta, kernelDelta * 100 / wallClockDelta, waitDelta / 1000, waitDelta * 100 / wallClockDelta, writeDelta / 1000, writeDelta * 100 / wallClockDelta, 
+				eventDelta, eventCnt, eventProcTimeDelta/1000, eventProcTimeDelta * 100 / wallClockDelta, pollCntDelta, pollCntDelta ? pollRetCntDelta / pollCntDelta : 0, zeroSockDelta );
+		else
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "[{}ms] user: --%, kernel: --%, wait: {} ({}%), write: {} ({}%); events: {} ({}), ev proc time: {} ({}%); polls: {}, pollRetAvg: {}, ZeroSockCnt: {}", 
+				wallClockDelta / 1000, waitDelta / 1000, waitDelta * 100 / wallClockDelta, writeDelta / 1000, writeDelta * 100 / wallClockDelta, 
+				eventDelta, eventCnt, eventProcTimeDelta/1000, eventProcTimeDelta * 100 / wallClockDelta, pollCntDelta, pollCntDelta ? pollRetCntDelta / pollCntDelta : 0, zeroSockDelta );
 	}
 }
 #endif // USE_TEMP_PERF_CTRS
