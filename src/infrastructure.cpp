@@ -31,6 +31,7 @@
 #include <climits>
 
 #ifndef _MSC_VER
+#define _GNU_SOURCE
 #include <poll.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -42,10 +43,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 /* strrchr */
+#include <string.h>
 #ifndef gettid
 #define gettid() syscall(SYS_gettid)
 #endif
-#include <string.h>
+#include <sys/resource.h>
 #endif
 
 
@@ -255,7 +257,7 @@ namespace nodecpp {
 			kernel += kernelTime.dwLowDateTime;
 			return std::make_pair( (long)(user/10), (long)(kernel/10) );
 #elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
-			int i;
+			/*int i;
 			char proc_filename[256];
 			char buffer[1024];
 
@@ -304,7 +306,21 @@ namespace nodecpp {
 			kernel *= 1000000;
 			kernel /= sysconf(_SC_CLK_TCK);
 
-			return std::make_pair(user, kernel);
+			return std::make_pair(user, kernel);*/
+			struct rusage usage;
+			int ret = getrusage( RUSAGE_THREAD, &usage);
+			if ( ret == 0 )
+			{
+				uint64_t user = usage.ru_utime.tv_sec;
+				user *= 1000000;
+				user += usage.ru_utime.tv_usec;
+				uint64_t kernel = usage.ru_stime.tv_sec;
+				kernel *= 1000000;
+				kernel += usage.ru_stime.tv_usec;
+				return std::make_pair( (long)(user), (long)(kernel) );
+			}
+			else
+				return std::make_pair(0, 0);
 #else
 #error not implemented for this compiler
 #endif
