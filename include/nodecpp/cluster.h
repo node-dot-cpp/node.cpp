@@ -30,34 +30,73 @@
 #ifndef CLUSTER_H
 #define CLUSTER_H
 
+//#define NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
+
 #include "net_common.h"
 #include "server_common.h"
 #include "../../src/clustering_impl/interthread_comm.h"
 
-// ad-hoc marchalling between Master and Slave threads
-struct ClusteringMsgHeader
-{
-	enum ClusteringMsgType { ThreadStarted, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification };
-	size_t bodySize;
-	ClusteringMsgType type;
-	size_t requestID;
-	size_t entryIdx;
-	void serialize( nodecpp::Buffer& b ) { b.append( this, sizeof( ClusteringMsgHeader ) ); }
-	size_t deserialize( const nodecpp::Buffer& b, size_t pos ) { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pos + sizeof( ClusteringMsgHeader ) <= b.size(), "indeed: {} + {} vs. {}", pos, sizeof( ClusteringMsgHeader ), b.size() ); 
-		memcpy( this, b.begin() + pos, sizeof( ClusteringMsgHeader ) );
-		return pos + sizeof( ClusteringMsgHeader );
-	}
-	void deserialize( const uint8_t* buff, size_t size ) { 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ClusteringMsgHeader ) <= size, "indeed: {} vs. {}", sizeof( ClusteringMsgHeader ), size ); 
-		memcpy( this, buff, sizeof( ClusteringMsgHeader ) );
-	}
-	static bool couldBeDeserialized( const nodecpp::Buffer& b, size_t pos = 0 ) { return b.size() >= pos + sizeof( ClusteringMsgHeader ); }
-	static size_t serializationSize() { return sizeof( ClusteringMsgHeader ); }
-};
-
 namespace nodecpp
 {
+	struct ListeningEvMsg
+	{
+		size_t requestID;
+	};
+
+	struct ConnAcceptedEvMsg
+	{
+		size_t requestID;
+		size_t serverIdx;
+		uintptr_t socket;
+		Ip4 ip;
+		Port uport;
+	};
+
+	struct ServerErrorEvMsg
+	{
+		size_t requestID;
+		Error e;
+	};
+
+	struct ServerCloseNotificationMsg
+	{
+		size_t requestID;
+		size_t entryIdx;
+		bool hasError;
+	};
+
+	struct ListeningRequestMsg
+	{
+		size_t requestID;
+		size_t entryIndex;
+		Ip4 ip;
+		uint16_t port;
+		int backlog;
+		IPFAMILY family;
+	};
+
+	struct ServerCloseRequest
+	{
+		size_t requestID;
+		size_t entryIdx;
+	};
+
+	struct ThreadStartedReportMsg
+	{
+		size_t requestID;
+	};
+
+	struct RequestToListenerThread
+	{
+		enum Type { Undefined, AddServerSocket, CreateSharedServerSocket, RemoveServerSocket, CloseSharedServerSocket };
+		Type type = Type::Undefined;
+		size_t entryIndex;
+		uintptr_t socket;
+		Ip4 ip;
+		Port port;
+		int backlog;
+	};
+
 	class Cluster; // forward declaration
 	class Worker
 	{
@@ -102,55 +141,39 @@ namespace nodecpp
 			MasterProcessor() {}
 			virtual ~MasterProcessor() {}
 
-//		private:
 			static void sendListeningEv( ThreadID targetThreadId, size_t requestID )
 			{
-				ClusteringMsgHeader rhReply;
-				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
-				rhReply.requestID = requestID;
-				rhReply.bodySize = 0;
-				nodecpp::Buffer reply;
-				rhReply.serialize( reply );
+				ListeningEvMsg msg;
+				msg.requestID = requestID;
 
-				nodecpp::platform::internal_msg::InternalMsg msg;
-				msg.append( reply.begin(), reply.size() );
-				sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerListening, targetThreadId );
+				nodecpp::platform::internal_msg::InternalMsg imsg;
+				imsg.append( &msg, sizeof(msg) );
+				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
 			}
 
-			static void sendConnAcceptedEv( ThreadID targetThreadId, size_t internalID, size_t requestID, uint64_t socket, Ip4& remoteIp, Port& remotePort )
+			static void sendConnAcceptedEv( ThreadID targetThreadId, size_t internalID, size_t requestID, uintptr_t socket, Ip4& remoteIp, Port& remotePort )
 			{
-				ClusteringMsgHeader rhReply;
-				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ConnAccepted;
-				rhReply.requestID = requestID;
-				rhReply.bodySize = sizeof(internalID) + sizeof(socket) + 4 + 2;
-				nodecpp::Buffer reply;
-				rhReply.serialize( reply );
-				size_t internalID_ = internalID;
-				uint64_t socket_ = socket;
-				uint32_t uip = remoteIp.getNetwork();
-				uint16_t uport = remotePort.getNetwork();
-				reply.append( &internalID_, sizeof(internalID_) );
-				reply.append( &socket_, sizeof(socket) );
-				reply.append( &uip, sizeof(uip) );
-				reply.append( &uport, sizeof(uport) );
+				ConnAcceptedEvMsg msg;
+				msg.requestID = requestID;
+				msg.serverIdx = internalID;
+				msg.socket = socket;
+				msg.ip = remoteIp;
+				msg.uport = remotePort;
 
-				nodecpp::platform::internal_msg::InternalMsg msg;
-				msg.append( reply.begin(), reply.size() );
-				sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ConnAccepted, targetThreadId );
+				nodecpp::platform::internal_msg::InternalMsg imsg;
+				imsg.append( &msg, sizeof(msg) );
+				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
 			}
 
 			static void sendServerErrorEv( ThreadID targetThreadId, size_t requestID, Error e )
 			{
-				ClusteringMsgHeader rhReply;
-				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerError;
-				rhReply.requestID = requestID;
-				rhReply.bodySize = 0;
-				nodecpp::Buffer reply;
-				rhReply.serialize( reply );
+				ServerErrorEvMsg msg;
+				msg.requestID = requestID;
+				msg.e = e;
 
-				nodecpp::platform::internal_msg::InternalMsg msg;
-				msg.append( reply.begin(), reply.size() );
-				sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerError, targetThreadId );
+				nodecpp::platform::internal_msg::InternalMsg imsg;
+				imsg.append( &msg, sizeof(msg) );
+				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerError, targetThreadId );
 			}
 
 			static void deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter, size_t bodySz ) {
@@ -169,60 +192,57 @@ namespace nodecpp
 		public:
 			static void sendServerCloseNotification( ThreadID targetThreadId, size_t entryIdx, size_t requestID, bool hasError )
 			{
-				ClusteringMsgHeader rhReply;
-				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification;
-				rhReply.requestID = requestID;
-				rhReply.entryIdx = entryIdx;
-				rhReply.bodySize = 1;
-				nodecpp::Buffer reply;
-				rhReply.serialize( reply );
-				reply.appendUint8( hasError ? 1 : 0 );
+				ServerCloseNotificationMsg msg;
+				msg.requestID = requestID;
+				msg.entryIdx = entryIdx;
+				msg.hasError = hasError;
 
-				nodecpp::platform::internal_msg::InternalMsg msg;
-				msg.append( reply.begin(), reply.size() );
-				sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification, targetThreadId );
+				nodecpp::platform::internal_msg::InternalMsg imsg;
+				imsg.append( &msg, sizeof(msg) );
+				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
 			}
 
 		public:
 		};
 
 
-		nodecpp::handler_ret_type processInterthreadRequest( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+		nodecpp::handler_ret_type processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgtype, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 		{
-	//		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize + offset <= b.size(), "{} + {} vs. {}", mh.bodySize, offset, b.size() ); 
-			switch ( mh.type )
+			size_t sz = riter.availableSize();
+			switch ( msgtype )
 			{
-				case ClusteringMsgHeader::ClusteringMsgType::ThreadStarted:
+				case InterThreadMsgType::ThreadStarted:
 				{
-					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ThreadStarted({}) request (for thread id: {})", (size_t)(mh.type), requestingThreadId.slotId );
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ThreadStarted({}) request (for thread id: {})", (size_t)(msgtype), requestingThreadId.slotId );
 //						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID == Cluster::InvalidThreadID, "indeed: {}", assignedThreadID ); 
 //						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID != Cluster::InvalidThreadID ); 
-	//				assignedThreadID = mh.assignedThreadID;
 					break;
 				}
-				case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
+				case InterThreadMsgType::ServerListening:
 				{
-//						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ListeningRequestMsg ) <= sz, "{} vs. {}", sizeof( ListeningRequestMsg ), sz ); 
+					const ListeningRequestMsg* msg = reinterpret_cast<const ListeningRequestMsg*>( riter.read( sizeof( ListeningRequestMsg ) ) );
+
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerListening({}) request (for thread id: {}). Addr = {}:{}, backlog = {}, entryIndex = {:x}", (size_t)(msgtype), requestingThreadId.slotId, msg->ip.toStr(), msg->port, msg->backlog, msg->entryIndex );
 					nodecpp::net::Address addr;
-					int backlog;
-					MasterProcessor::deserializeListeningRequestBody( addr, backlog, riter, mh.bodySize );
-					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerListening({}) request (for thread id: {}). Addr = {}:{}, backlog = {}, entryIndex = {:x}", (size_t)(mh.type), requestingThreadId.slotId, addr.ip.toStr(), addr.port, backlog, mh.entryIdx );
-//					nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-					bool already = processRequestForListeningAtMaster( requestingThreadId, mh, addr, backlog );
+					addr.ip = msg->ip;
+					addr.port = msg->port;
+					addr.family = msg->family;
+					bool already = processRequestForListeningAtMaster( requestingThreadId, msg->entryIndex, msg->requestID, addr, msg->backlog );
 					if ( already )
-						MasterProcessor::sendListeningEv( requestingThreadId, mh.requestID );
+						MasterProcessor::sendListeningEv( requestingThreadId, msg->requestID );
 					break;
 				}
-				case ClusteringMsgHeader::ClusteringMsgType::ServerCloseRequest:
+				case InterThreadMsgType::ServerCloseRequest:
 				{
-//					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.assignedThreadID == assignedThreadID ); 
-					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(mh.type), requestingThreadId.slotId, mh.entryIdx );
-//					nodecpp::safememory::soft_ptr<MasterSocket> me = myThis.getSoftPtr<MasterSocket>(this);
-					processRequestForServerCloseAtMaster( requestingThreadId, mh );
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerCloseRequest ) <= sz, "{} vs. {}", sizeof( ServerCloseRequest ), sz ); 
+					const ServerCloseRequest* msg = reinterpret_cast<const ServerCloseRequest*>( riter.read( sizeof( ServerCloseRequest ) ) );
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(msgtype), requestingThreadId.slotId, msg->entryIdx );
+					processRequestForServerCloseAtMaster( requestingThreadId, *msg );
 					break;
 				}
 				default:
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(msgtype) ); 
 					break;
 			}
 			CO_RETURN;
@@ -233,57 +253,37 @@ namespace nodecpp
 		{
 			// NOTE: in present quick-and-dirty implementation we assume that the message total size is less than a single page
 			nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = msg.msg.getReadIter();
-			size_t sz = riter.availableSize();
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ClusteringMsgHeader::serializationSize() <= sz, "indeed: {} vs. {}", ClusteringMsgHeader::serializationSize(), sz ); 
-			const uint8_t* page = riter.read( ClusteringMsgHeader::serializationSize() );
-			ClusteringMsgHeader mh;
-			mh.deserialize( page, ClusteringMsgHeader::serializationSize() );
-			processInterthreadRequest( msg.sourceThreadID, mh, riter );
+			processInterthreadRequest( msg.sourceThreadID, msg.msgType, riter );
 			CO_RETURN;
 		}
 
-
-
-
 		static void serializeAndSendListeningRequest( ThreadID targetThreadId, size_t requestID, size_t entryIndex, Ip4 ip, uint16_t port, int backlog, IPFAMILY family ) {
-			nodecpp::Buffer b;
 //			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "Slave id = {}: serializing listening request for Addr = {}:{}, backlog = {}, entryIndex = {:x}", threadID, ip.toStr(), port, backlog, entryIndex );
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "Slave id = [...]: serializing listening request for Addr = {}:{}, backlog = {}, entryIndex = {:x}", ip.toStr(), port, backlog, entryIndex );
-			ClusteringMsgHeader h;
-			h.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
-			h.requestID = requestID;
-			h.entryIdx = entryIndex;
-			h.bodySize = 4 + 2 + sizeof(int) + 4;
-			h.serialize( b );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, sizeof( ClusteringMsgHeader ) == b.size() );
 
-			uint32_t uip = ip.getNetwork();
-			b.append( &uip, 4 );
-			b.append( &port, 2 );
-			b.append( &backlog, sizeof(int) );
-			uint32_t familyNum = (uint32_t)(family.value());
-			b.append( &familyNum, 4 );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, sizeof( ClusteringMsgHeader ) + h.bodySize == b.size() );
+			ListeningRequestMsg msg;
+			msg.requestID = requestID;
+			msg.entryIndex = entryIndex;
+			msg.ip = ip;
+			msg.port = port;
+			msg.backlog = backlog;
+			msg.family = family;
 
-			nodecpp::platform::internal_msg::InternalMsg msg;
-			msg.append( b.begin(), b.size() );
-			sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerListening, targetThreadId );
+			nodecpp::platform::internal_msg::InternalMsg imsg;
+			imsg.append( &msg, sizeof(msg) );
+			sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
 		}
 
 		static void serializeAndSendServerCloseRequest( ThreadID targetThreadId, size_t requestID, size_t entryIndex ) {
 //			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "Slave id = {}: serializing ServerCloseRequest request for entryIndex = {:x}", threadID, entryIndex );
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "Slave id = [...]: serializing ServerCloseRequest request for entryIndex = {:x}", entryIndex );
-			nodecpp::Buffer b;
-			ClusteringMsgHeader h;
-			h.type = ClusteringMsgHeader::ClusteringMsgType::ServerListening;
-			h.requestID = requestID;
-			h.entryIdx = entryIndex;
-			h.bodySize = 0;
-			h.serialize( b );
+			ServerCloseRequest msg;
+			msg.requestID = requestID;
+			msg.entryIdx = entryIndex;
 
-			nodecpp::platform::internal_msg::InternalMsg msg;
-			msg.append( b.begin(), b.size() );
-			sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ServerListening, targetThreadId );
+			nodecpp::platform::internal_msg::InternalMsg imsg;
+			imsg.append( &msg, sizeof(msg) );
+			sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
 		}
 
 
@@ -308,23 +308,19 @@ namespace nodecpp
 				Cluster::serializeAndSendServerCloseRequest( ThreadID({0,0}), ++requestIdBase, entryIndex );
 			}
 
-			nodecpp::handler_ret_type processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
+			nodecpp::handler_ret_type processResponse( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );
 
 		public:
 			nodecpp::handler_ret_type reportThreadStarted()
 			{
 //				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "reportThreadStarted() to Master at thread {}", assignedThreadID );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, assignedThreadID != Cluster::InvalidThreadID ); 
-				ClusteringMsgHeader rhReply;
-				rhReply.type = ClusteringMsgHeader::ClusteringMsgType::ThreadStarted;
-				rhReply.requestID = 0;
-				rhReply.bodySize = 0;
-				nodecpp::Buffer reply;
-				rhReply.serialize( reply );
+				ThreadStartedReportMsg msg;
+				msg.requestID = 0;
 
-				nodecpp::platform::internal_msg::InternalMsg msg;
-				msg.append( reply.begin(), reply.size() );
-				sendInterThreadMsg( std::move( msg ), ClusteringMsgHeader::ClusteringMsgType::ThreadStarted, ThreadID({0, 0}) );
+				nodecpp::platform::internal_msg::InternalMsg imsg;
+				imsg.append( &msg, sizeof(msg) );
+				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
 				CO_RETURN;
 			}
 
@@ -333,12 +329,7 @@ namespace nodecpp
 			{
 				// NOTE: in present quick-and-dirty implementation we assume that the message total size is less than a single page
 				auto riter = msg.msg.getReadIter();
-				size_t sz = riter.availableSize();
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ClusteringMsgHeader::serializationSize() <= sz, "indeed: {} vs. {}", ClusteringMsgHeader::serializationSize(), sz ); 
-				const uint8_t* page = riter.read( ClusteringMsgHeader::serializationSize() );
-				ClusteringMsgHeader mh;
-				mh.deserialize( page, ClusteringMsgHeader::serializationSize() );
-				processResponse( msg.sourceThreadID, mh, riter );
+				processResponse( msg.sourceThreadID, msg.msgType, riter );
 				CO_RETURN;
 			}
 		};
@@ -347,7 +338,6 @@ namespace nodecpp
 		class AgentServer
 		{
 			friend class Cluster;
-//			Cluster& myCluster;
 			struct SlaveServerData
 			{
 				size_t entryIndex;
@@ -444,7 +434,9 @@ namespace nodecpp
 		nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
 			nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>(*this);
 			nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
+#ifndef NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 			newServer->registerServer();
+#endif // NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 			for ( size_t i=0; i<agentServers.size(); ++i )
 				if ( agentServers[i] == nullptr )
 				{
@@ -455,11 +447,10 @@ namespace nodecpp
 			return ret;
 		}
 
-		bool processRequestForListeningAtMaster(ThreadID targetThreadId, ClusteringMsgHeader& mh, nodecpp::net::Address address, int backlog)
+		bool processRequestForListeningAtMaster(ThreadID targetThreadId, size_t entryIndex, size_t requestID, nodecpp::net::Address address, int backlog)
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isMaster() );
 			bool alreadyListening = false;
-			size_t entryIndex = mh.entryIdx;
 			AgentServer::SlaveServerData slaveData;
 			slaveData.entryIndex = entryIndex;
 			slaveData.targetThreadId = targetThreadId;
@@ -469,22 +460,51 @@ namespace nodecpp
 					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "processRequestForListeningAtMaster(): comparing to Addr {}:{}, and RequestID {}", server->dataForCommandProcessing.localAddress.ip.toStr(), server->dataForCommandProcessing.localAddress.port, server->requestID );
 				if ( server != nullptr && 
 					server->dataForCommandProcessing.localAddress == address &&
-					server->requestID == mh.requestID )
+					server->requestID == requestID )
 				{
 					server->socketsToSlaves.push_back( slaveData );
 					return server->listening();
 				}
 			}
-			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "processRequestForListeningAtMaster() for thread id: {} Addr {}:{}, requestID {}, and entryIndex = {:x} requires actually creating a new Agent server (curr num of Agent servers: {})", targetThreadId.slotId, address.ip.toStr(), address.port, mh.requestID, entryIndex, agentServers.size() );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "processRequestForListeningAtMaster() for thread id: {} Addr {}:{}, requestID {}, and entryIndex = {:x} requires actually creating a new Agent server (curr num of Agent servers: {})", targetThreadId.slotId, address.ip.toStr(), address.port, requestID, entryIndex, agentServers.size() );
 			nodecpp::safememory::soft_ptr<AgentServer> server = createAgentServer();
-			server->requestID = mh.requestID;
+			server->requestID = requestID;
 			server->socketsToSlaves.push_back( slaveData );
+#ifdef NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
+			server->dataForCommandProcessing.localAddress.ip = address.ip;
+			server->dataForCommandProcessing.localAddress.port = address.port;
+			server->dataForCommandProcessing.localAddress.family = address.family;
+			server->dataForCommandProcessing.state = nodecpp::Cluster::AgentServer::DataForCommandProcessing::State::Listening;
+#else
 			server->listen( address.port, address.ip, backlog );
+#endif // NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "processRequestForListeningAtMaster(): new Agent Server for Addr {}:{}, and RequestID {}", server->dataForCommandProcessing.localAddress.ip.toStr(), server->dataForCommandProcessing.localAddress.port, server->requestID );
+
+			// now, unless an error happened, we have a socket alredy good for polling
+			RequestToListenerThread rq;
+#ifdef NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
+			rq.type = RequestToListenerThread::Type::CreateSharedServerSocket;
+#else
+			rq.type = RequestToListenerThread::Type::AddServerSocket;
+#endif // NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
+			rq.entryIndex = entryIndex;
+			rq.ip = address.ip;
+			rq.port = Port::fromHost( address.port );
+			rq.backlog = backlog;
+			rq.socket = server->dataForCommandProcessing.osSocket;
+
+			auto listeners = getListeners();
+			for ( size_t i=0; i<listeners.second; ++i )
+			{
+nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "sending CreateSharedServerSocket request (for thread id: {}), entryIndex = {:x}, ip = {} port: {}", listeners.first[ i ].threadID.slotId, rq.entryIndex, rq.ip.toStr(), rq.port.toStr() );
+				nodecpp::platform::internal_msg::InternalMsg imsg;
+				imsg.append( &rq, sizeof(rq) );
+				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::RequestToListeningThread, listeners.first[ i ].threadID );
+			}
 			return false;
 		}
 
-		void processRequestForServerCloseAtMaster(ThreadID targetThreadId, ClusteringMsgHeader& mh)
+		void processRequestForServerCloseAtMaster(ThreadID targetThreadId, const ServerCloseRequest& mh)
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isMaster() );
 			bool alreadyListening = false;

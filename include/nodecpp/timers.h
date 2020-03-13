@@ -70,6 +70,9 @@ namespace nodecpp
 	void setInmediate(std::function<void()> cb);
 } // namespace nodecpp
 
+uint64_t infraGetCurrentTime();
+
+void reportTimes( uint64_t currentT);
 
 
 #endif //TIMERS_H

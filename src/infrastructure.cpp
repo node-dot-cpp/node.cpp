@@ -32,6 +32,20 @@
 
 #ifndef _MSC_VER
 #include <poll.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/time.h>
+#include <sys/syscall.h>
+/* pid_t */
+#include <sys/types.h>
+/* open */
+#include <sys/stat.h>
+#include <fcntl.h>
+/* strrchr */
+#ifndef gettid
+#define gettid() syscall(SYS_gettid)
+#endif
+#include <string.h>
 #endif
 
 
@@ -41,7 +55,8 @@ uint64_t infraGetCurrentTime()
 	return GetTickCount64() * 1000; // mks
 #else
     struct timespec ts;
-    timespec_get(&ts, TIME_UTC);
+//    timespec_get(&ts, TIME_UTC);
+	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return (uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000; // mks
 #endif
 }
@@ -223,16 +238,163 @@ namespace nodecpp {
 #error not implemented for this compiler
 #endif
 		}
+
+		std::pair<long, long> get_thread_time()
+		{
+#if defined NODECPP_MSVC || ( (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG) )
+			FILETIME creationTime;
+			FILETIME exitTime;
+			FILETIME kernelTime;
+			FILETIME userTime;
+			BOOL ok = GetThreadTimes( GetCurrentThread(),&creationTime, &exitTime, &kernelTime, &userTime );
+			uint64_t user = userTime.dwHighDateTime;
+			user <<= 32;
+			user += userTime.dwLowDateTime;
+			uint64_t kernel = kernelTime.dwHighDateTime;
+			kernel <<= 32;
+			kernel += kernelTime.dwLowDateTime;
+			return std::make_pair( (long)(user/10), (long)(kernel/10) );
+#elif (defined NODECPP_CLANG) || (defined NODECPP_GCC)
+			int i;
+			char proc_filename[256];
+			char buffer[1024];
+
+			pid_t pid = getpid();
+			pid_t tid = gettid();
+
+			sprintf(proc_filename, "/proc/%d/task/%d/stat",pid,tid);
+			int fd;
+			int num_read = 0;
+			fd = open(proc_filename, O_RDONLY, 0);
+			if ( fd < 0 )
+			{
+//				printf( "failed to open /proc/%d/task/%d/stat \n", pid, tid);
+				return std::make_pair(0, 0);
+			}
+			num_read = read(fd, buffer, 1023);
+			close(fd);
+			if ( num_read < 0 )
+			{
+//				printf( "failed to read /proc/%d/task/%d/stat \n", pid, tid);
+				return std::make_pair(0, 0);
+			}
+			buffer[num_read] = '\0';
+
+			char* ptr_usr = strrchr(buffer, ')') + 1;
+			for(i = 3; i != 14; ++i) {
+				ptr_usr = strchr(ptr_usr+1, ' ');
+				if ( ptr_usr == nullptr )
+				{
+//					printf( "%s\n", buffer );
+					return std::make_pair(0, 0);
+				}
+			}
+
+			ptr_usr++;
+			uint64_t user = atol(ptr_usr);
+			user *= 1000000;
+			user /= sysconf(_SC_CLK_TCK);
+			ptr_usr = strchr(ptr_usr,' ');
+			if ( ptr_usr == nullptr )
+			{
+				printf( "%s\n", buffer );
+				return std::make_pair(0, 0);
+			}
+			uint64_t kernel = atol(ptr_usr + 1);
+			kernel *= 1000000;
+			kernel /= sysconf(_SC_CLK_TCK);
+
+			return std::make_pair(user, kernel);
+#else
+#error not implemented for this compiler
+#endif
+		}	
 	} // namespace time
 
 } // namespace nodecpp
 
 
 #ifdef USE_TEMP_PERF_CTRS
-thread_local int pollCnt = 0;
-thread_local int pollRetCnt = 0;
 thread_local int pollRetMax = 0;
-thread_local int sessionCnt = 0;
 thread_local size_t sessionCreationtime = 0;
-thread_local size_t waitTime = 0;
+thread_local int sessionCnt = 0;
 #endif // USE_TEMP_PERF_CTRS
+thread_local uint64_t waitTime = 0;
+thread_local uint64_t lastWaitTime = 0;
+
+thread_local uint64_t writeTime = 0;
+thread_local uint64_t lastWriteTime = 0;
+
+thread_local int eventCnt = 0;
+thread_local int lastEventCnt = 0;
+
+thread_local uint64_t eventProcTime = 0;
+thread_local uint64_t lastEventProcTime = 0;
+
+thread_local int pollCnt = 0;
+thread_local int lastPollCnt = 0;
+
+thread_local int pollRetCnt = 0;
+thread_local int lastPollRetCnt = 0;
+
+thread_local int zeroSockCnt = 0;
+thread_local int lastZeroSockCnt = 0;
+
+#define USE_TEMP_PERF_CTRS_2
+#ifdef USE_TEMP_PERF_CTRS_2
+thread_local long lastUserT = 0;
+thread_local long lastKernelT = 0;
+thread_local uint64_t lastTimeReportT = 0;
+void reportTimes( uint64_t currentT)
+{
+	if ( currentT > lastTimeReportT + 1000000 )
+	{
+		uint64_t wallClockDelta = currentT - lastTimeReportT;
+		lastTimeReportT = currentT;
+
+		auto times = nodecpp::time::get_thread_time();
+		bool userAndKernelTimeOK = times.first + times.second != 0;
+		long userDelta = 0;
+		long kernelDelta = 0;
+		if ( userAndKernelTimeOK )
+		{
+			userDelta = times.first - lastUserT;
+			kernelDelta = times.second - lastKernelT;
+			lastUserT = times.first;
+			lastKernelT = times.second;
+		}
+		long totalT = userDelta + kernelDelta;
+
+		uint64_t waitDelta = waitTime - lastWaitTime;
+		lastWaitTime = waitTime;
+
+		uint64_t writeDelta = writeTime - lastWriteTime;
+		lastWriteTime = writeTime;
+
+		int eventDelta = eventCnt - lastEventCnt;
+		lastEventCnt = eventCnt;
+			
+		uint64_t eventProcTimeDelta = eventProcTime - lastEventProcTime;
+		lastEventProcTime = eventProcTime;
+
+		int pollCntDelta = pollCnt - lastPollCnt;
+		lastPollCnt = pollCnt;
+
+		int pollRetCntDelta = pollRetCnt - lastPollRetCnt;
+		lastPollRetCnt = pollRetCnt;
+
+		int zeroSockDelta = zeroSockCnt - lastZeroSockCnt;
+		lastZeroSockCnt = zeroSockCnt;
+
+		if ( userAndKernelTimeOK )
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "[{}ms] user: {}%, kernel: {}%, wait: {} ({}%), write: {} ({}%); events: {} ({}), ev proc time: {} ({}%); polls: {}, pollRetAvg: {}, ZeroSockCnt: {}", 
+				wallClockDelta / 1000, userDelta * 100 / wallClockDelta, kernelDelta * 100 / wallClockDelta, waitDelta / 1000, waitDelta * 100 / wallClockDelta, writeDelta / 1000, writeDelta * 100 / wallClockDelta, 
+				eventDelta, eventCnt, eventProcTimeDelta/1000, eventProcTimeDelta * 100 / wallClockDelta, pollCntDelta, pollCntDelta ? pollRetCntDelta / pollCntDelta : 0, zeroSockDelta );
+		else
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "[{}ms] user: --%, kernel: --%, wait: {} ({}%), write: {} ({}%); events: {} ({}), ev proc time: {} ({}%); polls: {}, pollRetAvg: {}, ZeroSockCnt: {}", 
+				wallClockDelta / 1000, waitDelta / 1000, waitDelta * 100 / wallClockDelta, writeDelta / 1000, writeDelta * 100 / wallClockDelta, 
+				eventDelta, eventCnt, eventProcTimeDelta/1000, eventProcTimeDelta * 100 / wallClockDelta, pollCntDelta, pollCntDelta ? pollRetCntDelta / pollCntDelta : 0, zeroSockDelta );
+	}
+}
+#endif // USE_TEMP_PERF_CTRS
+

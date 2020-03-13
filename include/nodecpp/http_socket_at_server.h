@@ -52,6 +52,7 @@ namespace nodecpp {
 			friend class HttpServerResponse;
 
 			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
+			nodecpp::handler_ret_type getRequest2( IncomingHttpMessageAtServer& message );
 
 			struct RRPair
 			{
@@ -138,6 +139,40 @@ namespace nodecpp {
 					}
 				};
 				return continue_getting_awaiter(*this);
+			}
+
+			auto a_readByte() { 
+
+				struct read_byte {
+					std::experimental::coroutine_handle<> myawaiting = nullptr;
+					SocketBase& socket;
+
+					read_byte(SocketBase& socket_) : socket( socket_ ) {
+					}
+
+					read_byte(const read_byte &) = delete;
+					read_byte &operator = (const read_byte &) = delete;
+	
+					~read_byte() {
+					}
+
+					bool await_ready() {
+						return !socket.dataForCommandProcessing.readBuffer.empty();
+					}
+
+					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+						nodecpp::setNoException(awaiting);
+						socket.dataForCommandProcessing.ahd_read.h = awaiting;
+						myawaiting = awaiting;
+					}
+
+					auto await_resume() {
+						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							throw nodecpp::getException(myawaiting);
+						return socket.dataForCommandProcessing.readBuffer.read_byte();
+					}
+				};
+				return read_byte(*this);
 			}
 
 			auto a_dataAvailable( CircularByteBuffer::AvailableDataDescriptor& d, size_t minBytes = 1 ) { 
@@ -301,6 +336,13 @@ namespace nodecpp {
 					hr();
 				}
 			}
+			::nodecpp::awaitable<char> skipSpaces(char ch);
+			::nodecpp::awaitable<char> readToken( char firstCh, nodecpp::string& str );
+			::nodecpp::awaitable<char> readTokenWithExpectedSeparator( char firstCh, char separator, nodecpp::string& str );
+			::nodecpp::awaitable<char> readHeaderValueTokens( char firstCh, nodecpp::string& str );
+			::nodecpp::awaitable<void> readEOL( char firstCh );
+			nodecpp::handler_ret_type parseMethod( IncomingHttpMessageAtServer& message );
+			nodecpp::handler_ret_type parseHeaderEntry( IncomingHttpMessageAtServer& message );
 #else
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
@@ -751,7 +793,7 @@ namespace nodecpp {
 					clear();
 					CO_RETURN;
 				}
-
+//dbgTrace();
 				clear();
 				sock->release( idx );
 				sock->proceedToNext();
@@ -782,7 +824,6 @@ namespace nodecpp {
 		inline
 		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
-			bool ready = false;
 			nodecpp::string line;
 			co_await readLine(line);
 //			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
@@ -799,6 +840,153 @@ namespace nodecpp {
 //				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
 			while ( message.parseHeaderEntry( line ) );
+
+			CO_RETURN;
+		}
+
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		inline
+		::nodecpp::awaitable<char> HttpSocketBase::skipSpaces(char ch)
+		{
+			while ( ch == ' ' || ch == '\t' )
+				ch = co_await a_readByte();
+			CO_RETURN ch;
+		}
+
+		inline
+		::nodecpp::awaitable<char> HttpSocketBase::readToken( char firstCh, nodecpp::string& str )
+		{
+			while ( !(firstCh == ' ' || firstCh == '\t' || firstCh == '\r' || firstCh == '\n') )
+			{
+				str += firstCh;
+				firstCh = co_await a_readByte();
+			}
+			CO_RETURN firstCh;
+		}
+
+		inline
+		::nodecpp::awaitable<char> HttpSocketBase::readHeaderValueTokens( char firstCh, nodecpp::string& str )
+		{
+			firstCh = co_await skipSpaces( firstCh );
+			firstCh = co_await readToken( firstCh, str );
+			while ( firstCh != '\r' && firstCh != '\n' )
+			{
+				str += ' ';
+				firstCh = co_await skipSpaces( firstCh );
+				firstCh = co_await readToken( firstCh, str );
+			}
+			CO_RETURN firstCh;
+		}
+
+		inline
+		::nodecpp::awaitable<char> HttpSocketBase::readTokenWithExpectedSeparator( char firstCh, char separator, nodecpp::string& str )
+		{
+			while ( !(firstCh == separator || firstCh == ' ' || firstCh == '\t' || firstCh == '\r' || firstCh == '\n') )
+			{
+				str += firstCh;
+				firstCh = co_await a_readByte();
+			}
+			if ( firstCh == separator )
+				firstCh = co_await a_readByte();
+			else
+				throw Error();
+			CO_RETURN firstCh;
+		}
+
+		inline
+		::nodecpp::awaitable<void> HttpSocketBase::readEOL( char firstCh )
+		{
+			if ( firstCh == '\r' )
+				firstCh = co_await a_readByte();
+			if ( firstCh != '\n' )
+				throw Error();
+			CO_RETURN;
+		}
+
+		inline
+		nodecpp::handler_ret_type HttpSocketBase::parseMethod( IncomingHttpMessageAtServer& message )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::noinit ); 
+			char ch = co_await a_readByte();
+
+			ch = co_await readToken( ch, message.method.name );
+			if ( ch == '\r' || ch == '\n' )
+				throw Error();
+			ch = co_await skipSpaces( ch );
+
+			ch = co_await readToken( ch, message.method.url );
+			if ( ch == '\r' || ch == '\n' )
+				throw Error();
+			ch = co_await skipSpaces( ch );
+
+			ch = co_await readToken( ch, message.method.version );
+			ch = co_await skipSpaces( ch );
+			if ( memcmp( message.method.version.c_str(), "HTTP/", 5 ) == 0 )
+				message.method.version = message.method.version.substr( 5 );
+
+			co_await readEOL( ch );
+			message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_hdr;
+			CO_RETURN;
+		}
+
+		inline
+		nodecpp::handler_ret_type HttpSocketBase::parseHeaderEntry( IncomingHttpMessageAtServer& message )
+		{
+			// for details see https://tools.ietf.org/html/rfc2616#page-17
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr ); 
+			nodecpp::string key;
+			nodecpp::string value;
+			char ch = co_await a_readByte();
+			if ( ch == '\r' || ch == '\n' )
+			{
+				co_await readEOL( ch );
+				message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_body;
+				CO_RETURN;
+			}
+			else if ( ch == ' ' || ch == '\t' )
+			{
+				// TODO: it's a continuation of a header - implement!
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "parsing header continuation is not implemented" );
+			}
+
+			ch = co_await readTokenWithExpectedSeparator( ch, ':', key );
+			if ( ch == '\r' || ch == '\n' )
+			{
+				co_await readEOL( ch );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, key.size() );
+				message.header.insert( std::make_pair( message.makeLower( key ), "" ));
+				CO_RETURN;
+			}
+			ch = co_await skipSpaces( ch );
+
+			ch = co_await readHeaderValueTokens( ch, value );
+			message.header.insert( std::make_pair( message.makeLower( key ), message.makeLower( value ) ));
+
+			co_await readEOL( ch );
+		}
+
+		inline
+		nodecpp::handler_ret_type HttpSocketBase::getRequest2( IncomingHttpMessageAtServer& message )
+		{
+			try
+			{
+				co_await parseMethod( message );
+				do
+				{
+					co_await parseHeaderEntry( message );
+				}
+				while ( message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr );
+			}
+			catch (...)
+			{
+				// TODO: report/process error
+				end();
+			}
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body, "indeed {}", message.readStatus );
+			message.parseContentLength();
+			message.readStatus = message.contentLength ? IncomingHttpMessageAtServer::ReadStatus::in_body : IncomingHttpMessageAtServer::ReadStatus::completed;
+			message.parseConnStatus();
 
 			CO_RETURN;
 		}

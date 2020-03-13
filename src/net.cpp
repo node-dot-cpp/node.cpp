@@ -86,7 +86,6 @@ void SocketBase::connect(uint16_t port, const char* ip) {
 
 ServerBase::ServerBase() {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
 //	registerServer(this->node, p);
 }
 
@@ -97,14 +96,12 @@ ServerBase::ServerBase() {
 
 /*ServerBase::ServerBase(acceptedSocketCreationRoutineType socketCreationCB) {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-	//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
 	acceptedSocketCreationRoutine = std::move( socketCreationCB );
 	//	registerServer(this->node, p);
 }*/
 
 /*ServerBase::ServerBase(int typeID, acceptedSocketCreationRoutineType socketCreationCB) {
 	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
-	//	registerServer(this->node, p, netServerManagerBase->typeIndexOfServerO);
 	acceptedSocketCreationRoutine = std::move( socketCreationCB );
 	registerServerByID(this->node, p, typeID);
 }*/

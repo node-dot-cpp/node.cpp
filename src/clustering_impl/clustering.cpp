@@ -34,8 +34,6 @@
 #include "../tcp_socket/tcp_socket.h"
 #include <thread>
 
-#include "interthread_comm.h"
-#include "interthread_comm_impl.h"
 
 static InterThreadCommData threadQueues[MAX_THREADS];
 
@@ -46,18 +44,35 @@ struct ThreadDescriptor
 	ThreadID threadID;
 };
 static thread_local ThreadDescriptor thisThreadDescriptor;
+void setThisThreadDescriptor(ThreadStartupData& startupData) { thisThreadDescriptor.threadID = startupData.threadCommID; }
+
+thread_local size_t workerIdxInLoadCollector = (size_t)(-1);
+extern void decrementWorkerLoadCtr( size_t idx );
+void decrementThisWorkerLoadCtr() { decrementWorkerLoadCtr(workerIdxInLoadCollector); }
 
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
 {
 	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count );
 }
 
-uint64_t initThreadSlot( size_t threadIdx, uintptr_t writeHandle ) // returns reincarnation
+void preinitThreadStartupData( ThreadStartupData& startupData )
 {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadIdx < MAX_THREADS, "{} vs. {}", threadIdx, MAX_THREADS ); 
-	auto commPair = interThreadCommInitializer.generateHandlePair();
-	return 0;
+	InterThreadCommPair commPair = interThreadCommInitializer.generateHandlePair();
+	for ( size_t slotIdx = 1; slotIdx < MAX_THREADS; ++slotIdx )
+	{
+		auto ret = threadQueues[slotIdx].acquireForReuse( commPair.writeHandle );
+		if ( ret.first )
+		{
+			startupData.threadCommID.reincarnation = ret.second;
+			startupData.threadCommID.slotId = slotIdx;
+			break;
+		}
+	}
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData.threadCommID.slotId != ThreadID::InvalidSlotID ); 
+	startupData.readHandle = commPair.readHandle;
+	startupData.defaultLog = nodecpp::logging_impl::currentLog;
 }
+	
 
 uintptr_t InterThreadCommInitializer::init()
 {
@@ -72,7 +87,7 @@ InterThreadCommPair InterThreadCommInitializer::generateHandlePair()
 {
 	auto res = acquireAndConnectSocketForInterThreadComm( myServerSocket, "127.0.01", myServerPort );
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, res.first.second == res.second.second ); 
-	return InterThreadCommPair({res.first.first, res.second.first});
+	return InterThreadCommPair({(uintptr_t)(res.first.first), (uintptr_t)(res.second.first)});
 }
 
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
@@ -80,19 +95,19 @@ uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
 	return interThreadCommInitializer.init();
 }
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t msgType, ThreadID targetThreadId )
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, ThreadID targetThreadId )
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, targetThreadId.slotId < MAX_THREADS, "{} vs. {}", targetThreadId.slotId, MAX_THREADS );
 	auto writingMeans = threadQueues[ targetThreadId.slotId ].getWriteHandleAndReincarnation();
-	if ( writingMeans.first )
+	if ( !writingMeans.first )
 	{
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "getWriteHandleAndReincarnation() for ID {} failed; handling not implemented", targetThreadId.slotId );
 		// TODO: process error instead
 	}
 	uintptr_t writeHandle = writingMeans.second.second;
 	uint64_t reincarnation = writingMeans.second.first;
 	
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation, "for idx = {}: {} vs. {}", targetThreadId.slotId, reincarnation, targetThreadId.reincarnation ); 
 	threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
 	// write a byte to writeHandle
 	uint8_t singleByte = 0x1;
@@ -122,9 +137,7 @@ namespace nodecpp
 
 	void preinitSlaveThreadClusterObject(ThreadStartupData& startupData)
 	{
-		cluster.preinitSlave( startupData.assignedThreadID );
-		thisThreadDescriptor.threadID.slotId = startupData.assignedThreadID;
-		thisThreadDescriptor.threadID.reincarnation = startupData.reincarnation;
+		cluster.preinitSlave( startupData.IdWithinGroup );
 		// TODO: check consistency of startupData.reincarnation with threadQueues[startupData.assignedThreadID].reincarnation
 	}
 
@@ -135,24 +148,21 @@ namespace nodecpp
 	
 	Worker& Cluster::fork()
 	{
+		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
+		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
+		preinitThreadStartupData( *startupData );
+		size_t threadIdx = startupData->threadCommID.slotId;
 		size_t internalID = workers_.size();
 		Worker worker;
 		worker.id_ = ++coreCtr; // TODO: assign an actual value
-		// TODO: init new thread, fill worker
-		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
-		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
-		InterThreadCommPair commPair = interThreadCommInitializer.generateHandlePair();
-		startupData->reincarnation = threadQueues[worker.id_].resetForReuse( commPair.writeHandle );
-		startupData->readHandle = commPair.readHandle;
-		startupData->assignedThreadID = worker.id_;
-		startupData->defaultLog = nodecpp::logging_impl::currentLog;
+		startupData->IdWithinGroup = worker.id_;
 		// run worker thread
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {}...", worker.id_ );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Worker thread with threadID = {} and WorkerID = {}...", threadIdx, worker.id_ );
 		std::thread t1( workerThreadMain, (void*)(startupData) );
 		// startupData is no longer valid
 		startupData = nullptr;
 		t1.detach();
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Worker thread with threadID = {} completed at Master thread side", worker.id_ );
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Worker thread with threadID = {} and WorkerID = {} completed at Master thread side", threadIdx, worker.id_ );
 		workers_.push_back( std::move(worker) );
 		return workers_[internalID];
 	}
@@ -168,7 +178,7 @@ namespace nodecpp
 	}
 	void Cluster::AgentServer::listen(uint16_t port, nodecpp::Ip4 ip, int backlog)
 	{
-		netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
+		netServerManagerBase->appAgentAtMasterListen(dataForCommandProcessing, ip, port, backlog);
 	}
 	void Cluster::AgentServer::ref() { netServerManagerBase->appRef(dataForCommandProcessing); }
 	void Cluster::AgentServer::unref() { netServerManagerBase->appUnref(dataForCommandProcessing); }
@@ -181,46 +191,41 @@ namespace nodecpp
 	}
 
 
-	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, ClusteringMsgHeader& mh, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 	{
 		size_t sz = riter.availableSize();
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mh.bodySize <= sz ); 
-		switch ( mh.type )
+		switch ( msgType )
 		{
-			case ClusteringMsgHeader::ClusteringMsgType::ServerListening:
+			case InterThreadMsgType::ServerListening:
 			{
 				// TODO: ...
 				break;
 			}
-			case ClusteringMsgHeader::ClusteringMsgType::ConnAccepted:
+			case InterThreadMsgType::ConnAccepted:
 			{
-				const uint8_t* buff = riter.read( mh.bodySize );
-				size_t serverIdx = *reinterpret_cast<const size_t*>(buff);
-				uint64_t socket = *reinterpret_cast<const uint64_t*>(buff + sizeof(serverIdx));
-				Ip4 remoteIp = Ip4::fromNetwork( *reinterpret_cast<const uint32_t*>(buff + sizeof(serverIdx) + sizeof(socket)) );
-				Port remotePort = Port::fromNetwork( *reinterpret_cast<const uint16_t*>(buff + sizeof(serverIdx) + sizeof(socket) + sizeof(uint32_t)) );
-				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ConnAcceptedEvMsg ) <= sz, "{} vs. {}", sizeof( ConnAcceptedEvMsg ), sz ); 
+				const ConnAcceptedEvMsg* msg = reinterpret_cast<const ConnAcceptedEvMsg*>( riter.read( sizeof( ConnAcceptedEvMsg ) ) );
+//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "conn accepted from threadID = {}...", requestingThreadId.slotId );
+				netServerManagerBase->addAcceptedSocket( msg->serverIdx, (SOCKET)(msg->socket), msg->ip, msg->uport );
 				break;
 			}
-			case ClusteringMsgHeader::ClusteringMsgType::ServerError:
+			case InterThreadMsgType::ServerError:
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof(size_t) <= sz ); 
-				size_t serverIdx = mh.entryIdx;
-//				netServerManagerBase->addAcceptedSocket( serverIdx, (SOCKET)socket, remoteIp, remotePort );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerErrorEvMsg ) <= sz, "{} vs. {}", sizeof( ServerErrorEvMsg ), sz ); 
+				const ServerErrorEvMsg* msg = reinterpret_cast<const ServerErrorEvMsg*>( riter.read( sizeof( ServerErrorEvMsg ) ) );
+				// TODO: ...
 				break;
 			}
-			case ClusteringMsgHeader::ClusteringMsgType::ServerClosedNotification:
+			case InterThreadMsgType::ServerClosedNotification:
 			{
-				const uint8_t* buff = riter.read( mh.bodySize );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, 1 <= sz ); 
-				size_t serverIdx = mh.entryIdx;
-				bool hasError = *buff != 0;
-				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( serverIdx );
-				entry.getServerSocket()->closeByWorkingCluster();
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerCloseNotificationMsg ) <= sz, "{} vs. {}", sizeof( ServerCloseNotificationMsg ), sz ); 
+				const ServerCloseNotificationMsg* msg = reinterpret_cast<const ServerCloseNotificationMsg*>( riter.read( sizeof( ServerCloseNotificationMsg ) ) );
+				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( msg->entryIdx );
+				entry.getServerSocket()->closeByWorkingCluster(); // TODO: revise
 				break;
 			}
 			default:
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(mh.type) ); 
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(msgType) ); 
 				break;
 		}
 		CO_RETURN;

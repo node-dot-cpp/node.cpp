@@ -247,105 +247,118 @@ waitTime += infraGetCurrentTime() - now1;
 extern thread_local int pollCnt;
 extern thread_local int pollRetCnt;	
 extern thread_local int pollRetMax;	
-extern thread_local int sessionCnt;
-extern thread_local size_t sessionCreationtime;
-extern thread_local size_t waitTime;
+extern thread_local int pollRetCnt;
+extern thread_local int zeroSockCnt;
+extern thread_local uint64_t eventProcTime;
+extern thread_local int eventCnt;
+
 ++pollCnt;
 pollRetCnt += retval;
-if ( pollRetMax < retval ) pollRetMax = retval;
-if ( (pollCnt &0xFFFF) == 0 )
-#ifdef NODECPP_ENABLE_CLUSTERING
-printf( "[thread %zd] pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd, sessionCnt = %d, sessionCreationtime = %zd, waitTime = %zd\n", getCluster().isMaster() ? 0 : getCluster().worker().id(), pollCnt, pollRetCnt, pollRetMax, ioSockets.size(), sessionCnt, sessionCreationtime, waitTime );
-#else
-printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd, sessionCnt = %d, sessionCreationtime = %zd, waitTime = %zd\n", pollCnt, pollRetCnt, pollRetMax, ioSockets.size(), sessionCnt, sessionCreationtime, waitTime );
-#endif // NODECPP_ENABLE_CLUSTERING
+if ( pollRetMax < retval ) 
+	pollRetMax = retval;
+
 #endif // USE_TEMP_PERF_CTRS
 			int processed = 0;
-			for ( size_t i=0; processed<retval; ++i)
+			short revents = ioSockets.reventsAt(ioSockets.awakerSockIdx);
+			if ( revents && (int64_t)(ioSockets.socketsAt(ioSockets.awakerSockIdx)) > 0 )
 			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, i<ioSockets.size() );
-				short revents = ioSockets.reventsAt( 1 + i );
-#ifdef NODECPP_LINUX
-				if ( revents )
+#ifdef NODECPP_ENABLE_CLUSTERING
+++zeroSockCnt;
+#endif // USE_TEMP_PERF_CTRS
+				++processed;
+				// TODO: see infraCheckPollFdSet() for more details to be implemented
+				if ( clusterIsMaster() )
 				{
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, (int64_t)(ioSockets.socketsAt(i + 1)) > 0, "indeed: {}", (int64_t)(ioSockets.socketsAt(i + 1)) );
-#else
-				if ( revents && (int64_t)(ioSockets.socketsAt(i + 1)) > 0 ) // on Windows WSAPoll() may set revents to a non-zero value despite the socket is invalid
-				{
-#endif
-					++processed;
-					if ( 1 + i >= ioSockets.reserved_capacity )
+					if ((revents & POLLIN) != 0)
 					{
-						NetSocketEntry& current = ioSockets.at( 1 + i );
-						if ( current.isAssociated() )
+						static constexpr size_t maxMsgCnt = 8;
+						uint8_t recvBuffer[maxMsgCnt];
+						size_t actaulFromSock = 0;
+						bool res = OSLayer::infraGetPacketBytes(recvBuffer, maxMsgCnt, actaulFromSock, ioSockets.getAwakerSockSocket());
+						if (res)
 						{
-							switch ( current.emitter.objectType )
-							{
-								case OpaqueEmitter::ObjectType::ClientSocket:
-									netSocket. infraCheckPollFdSet(current, revents);
-									break;
-								case OpaqueEmitter::ObjectType::ServerSocket:
-								case OpaqueEmitter::ObjectType::AgentServer:
-									netServer. infraCheckPollFdSet(current, revents);
-									break;
-								default:
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
-									break;
-							}
-						}
-					}
-					else if ( 1 + i == ioSockets.awakerSockIdx )
-					{
-						// TODO: see infraCheckPollFdSet() for more details to be implemented
-						if ( clusterIsMaster() )
-						{
-							if ((revents & POLLIN) != 0)
-							{
-								static constexpr size_t maxMsgCnt = 8;
-								Buffer recvBuffer(maxMsgCnt);
-								bool res = OSLayer::infraGetPacketBytes(recvBuffer, ioSockets.getAwakerSockSocket());
-								if (res)
-								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
-									InterThreadMsg thq[maxMsgCnt];
-									size_t actual = popFrontFromThisThreadQueue( thq, recvBuffer.size() );
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
-									for ( size_t i=0; i<actual; ++i )
-										getCluster().onInterthreadMessage( thq[i] );
-								}
-								else
-								{
-									internal_usage_only::internal_getsockopt_so_error(ioSockets.getAwakerSockSocket());
-									// TODO: process error
-								}
-							}
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actaulFromSock <= maxMsgCnt, "{} vs. {}", actaulFromSock, maxMsgCnt );
+							InterThreadMsg thq[maxMsgCnt];
+							size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock );
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
+							for ( size_t i=0; i<actualFromQueue; ++i )
+								getCluster().onInterthreadMessage( thq[i] );
 						}
 						else
 						{
-							if ((revents & POLLIN) != 0)
-							{
-								static constexpr size_t maxMsgCnt = 8;
-								Buffer recvBuffer(maxMsgCnt);
-								bool res = OSLayer::infraGetPacketBytes(recvBuffer, ioSockets.getAwakerSockSocket());
-								if (res)
-								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.size() <= maxMsgCnt, "{} vs. {}", recvBuffer.size(), maxMsgCnt );
-									InterThreadMsg thq[maxMsgCnt];
-									size_t actual = popFrontFromThisThreadQueue( thq, recvBuffer.size() );
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actual == recvBuffer.size(), "{} vs. {}", actual, recvBuffer.size() );
-									for ( size_t i=0; i<actual; ++i )
-										getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
-								}
-								else
-								{
-									internal_usage_only::internal_getsockopt_so_error(ioSockets.getAwakerSockSocket());
-									// TODO: process error
-								}
-							}
+							internal_usage_only::internal_getsockopt_so_error(ioSockets.getAwakerSockSocket());
+							// TODO: process error
+						}
+					}
+				}
+				else
+				{
+					if ((revents & POLLIN) != 0)
+					{
+						static constexpr size_t maxMsgCnt = 8;
+						uint8_t recvBuffer[maxMsgCnt];
+						size_t actaulFromSock = 0;
+						bool res = OSLayer::infraGetPacketBytes(recvBuffer, maxMsgCnt, actaulFromSock, ioSockets.getAwakerSockSocket());
+						if (res)
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actaulFromSock <= maxMsgCnt, "{} vs. {}", actaulFromSock, maxMsgCnt );
+							InterThreadMsg thq[maxMsgCnt];
+							size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock );
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
+							for ( size_t i=0; i<actualFromQueue; ++i )
+								getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
+						}
+						else
+						{
+							internal_usage_only::internal_getsockopt_so_error(ioSockets.getAwakerSockSocket());
+							// TODO: process error
 						}
 					}
 				}
 			}
+				
+#ifdef USE_TEMP_PERF_CTRS
+size_t now2 = infraGetCurrentTime();
+#endif
+			for ( size_t i=ioSockets.reserved_capacity; processed<retval; ++i)
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, i<=ioSockets.size(), "i={}, processed={}, retval={}, ioSockets.size()={}", i, processed, retval, ioSockets.size());
+				short revents = ioSockets.reventsAt( i );
+#ifdef NODECPP_LINUX
+				if ( revents )
+				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, (int64_t)(ioSockets.socketsAt(i)) > 0, "indeed: {}", (int64_t)(ioSockets.socketsAt(i)) );
+#else
+				if ( revents && (int64_t)(ioSockets.socketsAt(i)) > 0 ) // on Windows WSAPoll() may set revents to a non-zero value despite the socket is invalid
+				{
+#endif
+#ifdef NODECPP_ENABLE_CLUSTERING
+++eventCnt;
+#endif // USE_TEMP_PERF_CTRS
+					++processed;
+					NetSocketEntry& current = ioSockets.at( i );
+					if ( current.isAssociated() )
+					{
+						switch ( current.emitter.objectType )
+						{
+							case OpaqueEmitter::ObjectType::ClientSocket:
+								netSocket. infraCheckPollFdSet(current, revents);
+								break;
+							case OpaqueEmitter::ObjectType::ServerSocket:
+							case OpaqueEmitter::ObjectType::AgentServer:
+								netServer. infraCheckPollFdSet(current, revents);
+								break;
+							default:
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected value {}", (int)(current.emitter.objectType) );
+								break;
+						}
+					}
+				}
+			}
+#ifdef USE_TEMP_PERF_CTRS
+eventProcTime += infraGetCurrentTime() - now2;
+#endif
+
 #ifdef NODECPP_ENABLE_CLUSTERING
 			if ( getCluster().isWorker() )
 				netServer. infraEmitAcceptedSocketEventsReceivedfromMaster();
@@ -363,6 +376,10 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 
 	void runStandardLoop()
 	{
+extern thread_local uint64_t eventProcTime;
+#ifdef USE_TEMP_PERF_CTRS
+size_t now2 = infraGetCurrentTime();
+#endif
 		while (running)
 		{
 
@@ -373,14 +390,21 @@ printf( "pollCnt = %d, pollRetCnt = %d, pollRetMax = %d, ioSockets.size() = %zd,
 			queue.emit();
 
 			uint64_t now = infraGetCurrentTime();
+			reportTimes( now );
 			timeout.infraTimeoutEvents(now, queue);
 			queue.emit();
 
+#ifdef USE_TEMP_PERF_CTRS
+eventProcTime += infraGetCurrentTime() - now2;
+#endif
 			now = infraGetCurrentTime();
 			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now/*, queue*/);
 			if(!refed)
 				return;
 
+#ifdef USE_TEMP_PERF_CTRS
+now2 = infraGetCurrentTime();
+#endif
 			queue.emit();
 			emitInmediates();
 
@@ -523,7 +547,20 @@ class Runnable : public RunnableBase
 			// from now on all internal structures are ready to use; let's run their "users"
 #ifdef NODECPP_ENABLE_CLUSTERING
 			nodecpp::postinitThreadClusterObject();
+			if ( isMaster )
+			{
+				size_t listenerCnt = 1;
+				auto argv = getArgv();
+				for ( size_t i=1; i<argv.size(); ++i )
+				{
+					if ( argv[i].size() > 13 && argv[i].substr(0,13) == "numlisteners=" )
+						listenerCnt = atol(argv[i].c_str() + 13);
+				}
+				for ( size_t i=0; i<listenerCnt; ++i )
+					createListenerThread();
+			}
 #endif // NODECPP_ENABLE_CLUSTERING
+
 			node = make_owning<Node>();
 			thisThreadNode = &(*node); 
 			// NOTE!!! 

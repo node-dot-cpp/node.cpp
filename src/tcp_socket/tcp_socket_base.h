@@ -148,6 +148,7 @@ class NetSocketManagerBase; // forward declaration
 class OpaqueSocketData
 {
 	friend class NetSocketManagerBase;
+	friend class NetServerManagerForListenerThread;
 	SocketRiia s;
 	OpaqueSocketData( SOCKET s_ ) : s(s_) {};
 	OpaqueSocketData( SocketRiia s_ ) : s(s_.release()) {};
@@ -166,6 +167,7 @@ namespace nodecpp
 	namespace internal_usage_only
 	{
 		SOCKET internal_make_tcp_socket();
+		SOCKET internal_make_shared_tcp_socket();
 		bool internal_bind_socket(SOCKET sock, struct sockaddr_in& sa_self);
 		bool internal_bind_socket(SOCKET sock, Ip4 ip, Port port);
 		uint16_t internal_port_of_tcp_socket(SOCKET sock);
@@ -215,7 +217,7 @@ public:
 	static void appSetNoDelay(net::SocketBase::DataForCommandProcessing& sockData, bool noDelay);
 
 	static bool infraGetPacketBytes(Buffer& buff, SOCKET sock);
-	static bool infraGetPacketBytes(Buffer& buff, size_t szMax, SOCKET sock);
+	static bool infraGetPacketBytes(uint8_t* buff, size_t szMax, size_t& bytesRead, SOCKET sock);
 	static bool infraGetPacketBytes2(CircularByteBuffer& buff, SOCKET sock, size_t target_sz);
 
 	//enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };

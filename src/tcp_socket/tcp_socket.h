@@ -130,8 +130,7 @@ private:
 	size_t usedCount = 0;
 public:
 	//mb: xxxSide[0] is always reserved and invalid.
-	//di: in clustering mode xxxSide[1] is always reserved and invalid (separate handling for awaker socket)
-	//di: in clustering mode xxxSide[2] is always reserved and invalid (separate handling for InterThreadCommServer socket)
+	//di: in clustering mode xxxSide[1] is always reserved (separate handling for awaker socket)
 #ifdef NODECPP_ENABLE_CLUSTERING
 	static constexpr size_t awakerSockIdx = 1;
 	static constexpr size_t reserved_capacity = 2;
@@ -372,7 +371,7 @@ public:
 		makeCompactIfNecessary();
 	}
 
-	void setAssociated( size_t idx/*, pollfd p*/ ) {
+	void setAssociated( size_t idx ) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, idx >= reserved_capacity ); 
 		if ( idx < ourSide.size() )
 		{
@@ -508,6 +507,10 @@ public:
 			osSideAccum[idx].fd = INVALID_SOCKET; 
 			ourSideAccum[idx].setSocketClosed();
 		}
+#ifdef NODECPP_ENABLE_CLUSTERING
+		if ( cluster.isWorker() )
+			decrementThisWorkerLoadCtr();
+#endif // NODECPP_ENABLE_CLUSTERING
 	}
 #ifdef NODECPP_ENABLE_CLUSTERING
 	void setSlaveSocketClosed( size_t idx ) {
@@ -547,9 +550,6 @@ protected:
 	NetSockets& ioSockets; // TODO: improve
 	nodecpp::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
 	nodecpp::vector<size_t> pendingAcceptedEvents;
-
-public:
-	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 
 public:
 	NetSocketManagerBase(NetSockets& ioSockets_) : ioSockets( ioSockets_) {}
@@ -623,7 +623,7 @@ public:
 		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
 		sockPtr->dataForCommandProcessing.refed = true;
 		ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
-		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index/*, p*/ );
+		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index );
 		ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting);
 		ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
@@ -700,7 +700,7 @@ public:
 	NetSocketManager(NetSockets& ioSockets) : NetSocketManagerBase(ioSockets), recvBuffer(recvBufferCapacity) {}
 
 	// to help with 'poll'
-	void infraGetCloseEvent(/*EvQueue& evs*/)
+	void infraGetCloseEvent()
 	{
 		// if there is an issue with a socket, we may need to appClose it,
 		// and push an event here to notify autom later.
@@ -810,19 +810,19 @@ sessionCreationtime += infraGetCurrentTime() - now;
 				if (!current.getClientSocketData()->paused)
 				{
 					//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", begin[i].fd);
-					infraProcessReadEvent/*<Node>*/(current/*, evs*/);
+					infraProcessReadEvent(current);
 				}
 			}
 			else if ((revents & POLLHUP) != 0)
 			{
 //!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLHUP event at {}", current.getClientSocketData()->osSocket);
-				infraProcessRemoteEnded/*<Node>*/(current/*, evs*/);
+				infraProcessRemoteEnded(current);
 			}
 				
 			if ((revents & POLLOUT) != 0)
 			{
 //!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLOUT event at {}", current.getClientSocketData()->osSocket);
-				infraProcessWriteEvent/*<Node>*/(current/*, evs*/);
+				infraProcessWriteEvent(current);
 			}
 		}
 		//else if (revents != 0)
@@ -877,7 +877,7 @@ private:
 						nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 						hr();
 					}
-					infraProcessRemoteEnded/*<Node>*/(entry);
+					infraProcessRemoteEnded(entry);
 				}
 			}
 		}
@@ -897,7 +897,7 @@ private:
 				}
 				else //if (!entry.remoteEnded)
 				{
-					infraProcessRemoteEnded/*<Node>*/(entry);
+					infraProcessRemoteEnded(entry);
 				}
 			}
 			else
@@ -1019,11 +1019,6 @@ protected:
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
-	int typeIndexOfServerO = -1;
-	int typeIndexOfServerL = -1;
-
-public:
-	static constexpr size_t MAX_SOCKETS = 100; //arbitrary limit
 	NetServerManagerBase(NetSockets& ioSockets_ ) : ioSockets( ioSockets_) {}
 
 	template<class DataForCommandProcessing>
@@ -1102,7 +1097,7 @@ public:
 			throw Error();
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
-		addAgentServerEntry(ptr);
+//		addAgentServerEntry(ptr);
 	}
 
 	SOCKET acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog) {
@@ -1142,6 +1137,30 @@ public:
 		return std::make_pair( std::make_pair( s.release(), sourcePort ), std::make_pair( newSock.release(), addr.port ) );
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
+
+#ifdef NODECPP_ENABLE_CLUSTERING
+	template<class DataForCommandProcessing>
+	void appAgentAtMasterListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
+		Port myPort = Port::fromHost(port);
+		if (!internal_usage_only::internal_bind_socket(dataForCommandProcessing.osSocket, ip, myPort)) {
+			throw Error();
+		}
+		if ( port == 0 )
+		{
+			port = internal_usage_only::internal_port_of_tcp_socket(dataForCommandProcessing.osSocket);
+			if ( port == 0 )
+				throw Error();
+		}
+		if (!internal_usage_only::internal_listen_tcp_socket(dataForCommandProcessing.osSocket, backlog)) {
+			throw Error();
+		}
+		dataForCommandProcessing.refed = true;
+		dataForCommandProcessing.localAddress.ip = ip;
+		dataForCommandProcessing.localAddress.port = port;
+		dataForCommandProcessing.localAddress.family = family;
+	}
+#endif // NODECPP_ENABLE_CLUSTERING
+
 	template<class DataForCommandProcessing>
 	void appListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
 		Port myPort = Port::fromHost(port);
@@ -1172,10 +1191,7 @@ public:
 		dataForCommandProcessing.localAddress.port = port;
 		dataForCommandProcessing.localAddress.family = family;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dataForCommandProcessing.index != 0 );
-		/*pollfd p;
-		p.fd = dataForCommandProcessing.osSocket;
-		p.events = POLLIN;*/
-		ioSockets.setAssociated(dataForCommandProcessing.index/*, p*/);
+		ioSockets.setAssociated(dataForCommandProcessing.index);
 		ioSockets.setPollin(dataForCommandProcessing.index);
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
 		pendingListenEvents.push_back( dataForCommandProcessing.index );
@@ -1256,8 +1272,6 @@ extern thread_local NetServerManagerBase* netServerManagerBase;
 
 class NetServerManager : public NetServerManagerBase
 {
-	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
-
 public:
 	NetServerManager(NetSockets& ioSockets) : NetServerManagerBase(ioSockets) {}
 
@@ -1271,7 +1285,7 @@ public:
 		errorStore.clear();
 	}
 
-	void infraGetCloseEvents(/*EvQueue& evs*/)
+	void infraGetCloseEvents()
 	{
 		// if there is an issue with a socket, we may need to close it,
 		// and push an event here to notify later.
@@ -1359,18 +1373,18 @@ public:
 		{
 //!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLERR event at {}", current.getServerSocketData()->osSocket);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
+			infraMakeErrorEventAndClose(current);
 		}
 		else if ((revents & POLLIN) != 0)
 		{
 //!!//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"POLLIN event at {}", current.getServerSocketData()->osSocket);
-			infraProcessAcceptEvent/*<Node>*/(current/*, evs*/);
+			infraProcessAcceptEvent(current);
 		}
 		else if (revents != 0)
 		{
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected event at {}, value {:x}", current.getServerSocketData()->osSocket, revents);
 			internal_usage_only::internal_getsockopt_so_error(current.getServerSocketData()->osSocket);
-			infraMakeErrorEventAndClose/*<Node>*/(current/*, evs*/);
+			infraMakeErrorEventAndClose(current);
 		}
 	}
 
@@ -1382,7 +1396,7 @@ public:
 		{
 			auto& entry = ioSockets.slaveServerAt( info.idx );
 			OpaqueSocketData osd = NetSocketManagerBase::createOpaqueSocketData( info.socket );
-			consumeAcceptedSocket/*<Node>*/(entry, osd, info.remoteIp, info.remotePort);
+			consumeAcceptedSocket(entry, osd, info.remoteIp, info.remotePort);
 		}
 		acceptedSockets.clear();
 	}
@@ -1410,12 +1424,12 @@ private:
 		{
 			if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
 				return;
-			consumeAcceptedSocket/*<Node>*/(entry, osd, remoteIp, remotePort);
+			consumeAcceptedSocket(entry, osd, remoteIp, remotePort);
 		}
 #else
 		if ( !netSocketManagerBase->getAcceptedSockData(entry.getServerSocketData()->osSocket, osd, remoteIp, remotePort) )
 			return;
-		consumeAcceptedSocket/*<Node>*/(entry, osd, remoteIp, remotePort);
+		consumeAcceptedSocket(entry, osd, remoteIp, remotePort);
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 
@@ -1429,7 +1443,7 @@ extern thread_local size_t sessionCreationtime;
 extern uint64_t infraGetCurrentTime();
 ++sessionCnt;
 size_t now = infraGetCurrentTime();
-		auto ptr = entry.getServerSocket()->makeSocket(, osd);
+		auto ptr = entry.getServerSocket()->makeSocket(osd);
 sessionCreationtime += infraGetCurrentTime() - now;
 #else
 		auto ptr = entry.getServerSocket()->makeSocket( osd);

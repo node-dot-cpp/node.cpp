@@ -120,6 +120,7 @@ bool netInitialize()
 
 #ifdef USE_TEMP_PERF_CTRS
 extern thread_local size_t waitTime;
+extern thread_local size_t writeTime;
 #endif // USE_TEMP_PERF_CTRS
 namespace nodecpp
 {
@@ -162,7 +163,27 @@ namespace nodecpp
 			if (0 != res2)
 			{
 				int error = getSockError();
-				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"async on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"making sock async {} failed; error {}", sock, error);
+				return false;
+			}
+
+			return true;
+		}
+
+		static
+		bool internal_shared_socket(SOCKET sock)
+		{
+		#if defined _MSC_VER || defined __MINGW32__
+			char one = 1;
+			int res2 = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, 1);
+		#else
+			int one = 1;
+			int res2 = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(int));
+		#endif
+			if (0 != res2)
+			{
+				int error = getSockError();
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"making sock shared {} failed; error {}", sock, error);
 				return false;
 			}
 
@@ -252,6 +273,23 @@ namespace nodecpp
 				return INVALID_SOCKET;
 			}
 	
+			return sock;
+		}
+
+		SOCKET internal_make_shared_tcp_socket()
+		{
+			SOCKET sock = internal_make_tcp_socket();
+			if (INVALID_SOCKET != sock)
+			{
+				if (!internal_shared_socket(sock))
+				{
+					internal_close(sock);
+					return INVALID_SOCKET;
+				}
+			}
+			else
+				return INVALID_SOCKET;
+
 			return sock;
 		}
 
@@ -405,7 +443,7 @@ namespace nodecpp
 #ifdef USE_TEMP_PERF_CTRS
 size_t now1 = infraGetCurrentTime();
 			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
-waitTime += infraGetCurrentTime() - now1;
+writeTime += infraGetCurrentTime() - now1;
 #else
 			ssize_t bytes_sent = sendto(sock, ptr, (int)size, 0, nullptr, 0);
 #endif // USE_TEMP_PERF_CTRS
@@ -773,18 +811,20 @@ bool NetSocketManagerBase::appWrite2(net::SocketBase::DataForCommandProcessing& 
 
 bool OSLayer::infraGetPacketBytes(Buffer& buff, SOCKET sock)
 {
-	return infraGetPacketBytes( buff, buff.capacity(), sock );
-}
-
-bool OSLayer::infraGetPacketBytes(Buffer& buff, size_t szMax, SOCKET sock)
-{
-	if ( szMax < buff.capacity() )
-		szMax = buff.capacity();
 	size_t sz = 0;
 	socklen_t fromlen = sizeof(struct ::sockaddr_in);
 	struct ::sockaddr_in sa_other;
 	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff.begin(), buff.capacity(), sz, sa_other, fromlen);
 	buff.set_size( sz );
+
+	return ret == COMMLAYER_RET_OK;
+}
+
+bool OSLayer::infraGetPacketBytes(uint8_t* buff, size_t szMax, size_t& bytesRead, SOCKET sock)
+{
+	socklen_t fromlen = sizeof(struct ::sockaddr_in);
+	struct ::sockaddr_in sa_other;
+	uint8_t ret = internal_usage_only::internal_get_packet_bytes2(sock, buff, szMax, bytesRead, sa_other, fromlen);
 
 	return ret == COMMLAYER_RET_OK;
 }
