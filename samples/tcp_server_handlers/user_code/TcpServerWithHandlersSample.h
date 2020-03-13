@@ -61,7 +61,7 @@ public:
 		{
 			//log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket idx = %d", *extra );
 			socket->end();
-			return;
+			CO_RETURN;
 		}
 	
 		if ( buffer.size() == 2 + 2 && buffer.readUInt8(2) == 0xfe && buffer.readUInt8(2) == 0xfe )
@@ -76,7 +76,7 @@ public:
 		{
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "Corrupted data on socket idx = [??]: received {}, expected: {} bytes", receivedSz, buffer.size() );
 			socket->unref();
-			return;
+			CO_RETURN;
 		}
 	
 		size_t requestedSz = buffer.readUInt8(1);
