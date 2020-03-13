@@ -280,4 +280,18 @@ namespace nodecpp {
 }
 #endif // NODECPP_ENABLE_CLUSTERING
 
+// NODECPP_CHECKER_EXTENSIONS is defined internally by nodecpp-checker tool
+#ifdef NODECPP_CHECKER_EXTENSIONS
+#define NODECPP_MAY_EXTEND_TO_THIS [[nodecpp::may_extend_to_this]]
+#define NODECPP_NO_AWAIT [[nodecpp::no_await]]
+#define NODECPP_NAKED_STRUCT [[nodecpp::naked_struct]]
+#else
+#define NODECPP_MAY_EXTEND_TO_THIS
+#define NODECPP_NO_AWAIT
+#define NODECPP_NAKED_STRUCT
+#endif
+
+
+
+
 #endif //COMMON_H

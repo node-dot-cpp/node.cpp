@@ -732,6 +732,7 @@ namespace nodecpp {
 				CO_RETURN;
 			}
 
+			NODECPP_NO_AWAIT
 			nodecpp::handler_ret_type end(Buffer& b)
 			{
 				if ( writeStatus != WriteStatus::in_body )
@@ -756,6 +757,7 @@ namespace nodecpp {
 				CO_RETURN;
 			}
 
+			NODECPP_NO_AWAIT
 			nodecpp::handler_ret_type end(const char* s)
 			{
 				// TODO: potentially, quite temporary implementation
@@ -766,6 +768,7 @@ namespace nodecpp {
 				CO_RETURN;
 			}
 
+			NODECPP_NO_AWAIT
 			nodecpp::handler_ret_type end(nodecpp::string s)
 			{
 				// TODO: potentially, quite temporary implementation
@@ -774,6 +777,7 @@ namespace nodecpp {
 				co_await end( b );
 			}
 
+			NODECPP_NO_AWAIT
 			nodecpp::handler_ret_type end(nodecpp::string_literal s)
 			{
 				// TODO: potentially, quite temporary implementation
@@ -782,6 +786,7 @@ namespace nodecpp {
 				co_await end( b );
 			}
 
+			NODECPP_NO_AWAIT
 			nodecpp::handler_ret_type end()
 			{
 				if ( writeStatus != WriteStatus::hdr_flushed )
