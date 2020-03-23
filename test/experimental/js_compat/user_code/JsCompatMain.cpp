@@ -7,7 +7,34 @@
 void test_one()
 {
 	//nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "test_one()" );
-	printf( "test_one()" );
+	printf( "test_one()\n" );
+
+	auto arr1 = nodecpp::js::JSArray::makeJSArray({
+		nodecpp::js::JSVar::makeJSVar({1.}),
+		nodecpp::js::JSVar::makeJSVar({2.}),
+		nodecpp::js::JSVar::makeJSVar({3.})
+		});
+	auto arr2 = nodecpp::js::JSArray::makeJSArray({
+		4,
+		5,
+		6
+		});
+
+	printf( "%s\n", arr1->toString().c_str() );
+	printf( "%s\n", arr2->toString().c_str() );
+
+	auto var1 = nodecpp::js::JSVar::makeJSVar( std::move(arr1) );
+	auto var2 = nodecpp::js::JSVar::makeJSVar( std::move(arr2) );
+	printf( "%s\n", var1->toString().c_str() );
+
+	auto obj1 = nodecpp::js::JSObject::makeJSObject( { std::make_pair( nodecpp::string("one"), std::move(var1) ), std::make_pair( nodecpp::string("two"), std::move(var2) ) } );
+	printf( "%s\n", obj1->toString().c_str() );
+
+	auto obj2 = nodecpp::js::JSObject::makeJSObject( { 
+		std::make_pair( nodecpp::string("one"), nodecpp::js::JSVar::makeJSVar( nodecpp::js::JSArray::makeJSArray({ 11, 12, 13 }) ) ), 
+		std::make_pair( nodecpp::string("two"), nodecpp::js::JSVar::makeJSVar( nodecpp::js::JSArray::makeJSArray({ 21, 22, 23 }) ) )
+		} );
+	printf( "%s\n", obj2->toString().c_str() );
 }
 
 int main( int argc, char *argv_[] )

@@ -88,6 +88,17 @@ namespace nodecpp::js {
 				*_asNum() = d;
 			}
 		}
+		/*void init( int d )
+		{
+			if ( type == Type::num )
+				*_asNum() = d;
+			else
+			{
+				deinit();
+				type = Type::num;
+				*_asNum() = d;
+			}
+		}*/
 		void init( const nodecpp::string& str )
 		{
 			if ( type == Type::string )
@@ -110,7 +121,7 @@ namespace nodecpp::js {
 				new(_asOwn())owningptr2jsobj( std::move( ptr ) );
 			}
 		}
-		void init( softptr2jsobj ptr )
+		void init( const softptr2jsobj ptr )
 		{
 			if ( type == Type::softptr )
 				*_asSoft() = ptr;
@@ -121,13 +132,22 @@ namespace nodecpp::js {
 				new(_asSoft())softptr2jsobj( ptr );
 			}
 		}
+
 	public:
 		JSVar() {}
 		JSVar( bool b ) { init( b ); }
 		JSVar( double d ) { init( d ); }
 		JSVar( const nodecpp::string& str ) { init( str ); }
 		JSVar( owningptr2jsobj&& ptr ) { init( std::move( ptr ) ); }
-		JSVar( softptr2jsobj ptr ) { init( ptr ); }
+		JSVar( const softptr2jsobj ptr ) { init( ptr ); }
+
+	public:
+		static owning_ptr<JSVar> makeJSVar(bool b) { return make_owning<JSVar>(b); }
+		static owning_ptr<JSVar> makeJSVar(double l) { return make_owning<JSVar>(l); }
+		static owning_ptr<JSVar> makeJSVar(const nodecpp::string& str) { return make_owning<JSVar>(str); }
+		static owning_ptr<JSVar> makeJSVar(owningptr2jsobj&& ptr) { return make_owning<JSVar>( std::move( ptr ) ); }
+//		static owning_ptr<JSVar> makeJSVar(const softptr2jsobj ptr) { return make_owning<JSVar>(ptr); }
+//		static owning_ptr<JSVar> makeJSVar(std::initializer_list<int> l) { return make_owning<JSVar>(l); }
 
 		JSVar& operator = ( bool b ) { init( b ); }
 		JSVar& operator = ( double d ) { init( d ); }
@@ -140,11 +160,33 @@ namespace nodecpp::js {
 
 	class JSObject
 	{
+	protected:
 		nodecpp::map<nodecpp::string, owning_ptr<JSVar>> pairs;
+
 		owning_ptr<JSVar> none;
 	
+		void toString_( nodecpp::string& ret, const nodecpp::string separator ) { 
+			if ( pairs.size() == 0 )
+				return;
+			for ( auto& entry : pairs )
+			{
+				nodecpp::string entrystr = nodecpp::format( "  {}: {}{}", entry.first, entry.second->toString(), separator );
+				ret += entrystr;
+			}
+			ret.erase( ret.size() - separator.size(), separator.size() );
+		}
+
 	public:
-		static owning_ptr<JSObject> create() { return make_owning<JSObject>(); }
+		JSObject() {}
+		JSObject(std::initializer_list<std::pair<nodecpp::string, owning_ptr<JSVar>>> l)
+		{
+			for ( auto& p : l )
+				pairs.insert( std::move(*const_cast<std::pair<nodecpp::string, owning_ptr<JSVar>>*>(&p)) );
+		}
+	public:
+		virtual ~JSObject() {}
+		static owning_ptr<JSObject> makeJSObject() { return make_owning<JSObject>(); }
+		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, owning_ptr<JSVar>>> l) { return make_owning<JSObject>(l); }
 		soft_ptr<JSVar> operator [] ( const nodecpp::string& key )
 		{
 			auto f = pairs.find( key );
@@ -166,13 +208,54 @@ namespace nodecpp::js {
 				return f->second;
 			return none;
 		}
-		nodecpp::string toString() { 
-			nodecpp::string ret = "{ ";
-			for ( auto& entry : pairs )
+		virtual nodecpp::string toString() { 
+			nodecpp::string ret = "{ \n";
+			toString_( ret, ",\n" );
+			ret += "\n}";
+			return ret; 
+		}
+	};
+
+	class JSArray : public JSObject
+	{
+		nodecpp::vector<owning_ptr<JSVar>> elems;
+	public:
+		JSArray() {}
+		JSArray(std::initializer_list<owning_ptr<JSVar>> l)
+		{
+			for ( auto& p : l )
+				elems.push_back( std::move(*const_cast<owning_ptr<JSVar>*>(&p)) );
+		}
+		JSArray(std::initializer_list<double> l)
+		{
+			for ( auto& d : l )
+				elems.push_back( std::move( JSVar::makeJSVar( d ) ) );
+		}
+	public:
+		static owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
+		static owning_ptr<JSArray> makeJSArray(std::initializer_list<owning_ptr<JSVar>> l) { return make_owning<JSArray>(l); }
+		static owning_ptr<JSArray> makeJSArray(std::initializer_list<double> l) { return make_owning<JSArray>(l); }
+		soft_ptr<JSVar> operator [] ( size_t idx )
+		{
+			if ( idx < elems.size() )
+				return elems[ idx ];
+			return none;
+		}
+		virtual nodecpp::string toString() { 
+			nodecpp::string ret = "[ ";
+			if ( pairs.size() )
 			{
-				nodecpp::string entrystr = nodecpp::format( "  {}: {}\n", entry.first, entry.second->toString() );
-				ret += entrystr;
+				toString_( ret, ", " );
+				for ( auto& x : elems )
+					ret += nodecpp::format( ", {}", x->toString() );
 			}
+			else if ( elems.size() )
+			{
+				for ( auto& x : elems )
+					ret += nodecpp::format( "{}, ", x->toString() );
+				ret.erase( ret.end() - 2 );
+			}
+			ret += "]";
 			return ret; 
 		}
 	};
@@ -196,6 +279,7 @@ namespace nodecpp::js {
 				return (*_asSoft())->toString();
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return nodecpp::string( "undefined" );
 				break;
 		}
 	}
