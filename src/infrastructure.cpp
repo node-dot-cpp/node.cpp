@@ -241,6 +241,7 @@ namespace nodecpp {
 #endif
 		}
 
+#ifdef USE_TEMP_PERF_CTRS
 		std::pair<long, long> get_thread_time()
 		{
 #if defined NODECPP_MSVC || ( (defined NODECPP_WINDOWS) && (defined NODECPP_CLANG) )
@@ -325,16 +326,16 @@ namespace nodecpp {
 #error not implemented for this compiler
 #endif
 		}	
+#endif // USE_TEMP_PERF_CTRS
 	} // namespace time
 
 } // namespace nodecpp
 
 
 #ifdef USE_TEMP_PERF_CTRS
-thread_local int pollRetMax = 0;
-thread_local size_t sessionCreationtime = 0;
-thread_local int sessionCnt = 0;
-#endif // USE_TEMP_PERF_CTRS
+//thread_local int pollRetMax = 0;
+//thread_local size_t sessionCreationtime = 0;
+//thread_local int sessionCnt = 0;
 thread_local uint64_t waitTime = 0;
 thread_local uint64_t lastWaitTime = 0;
 
@@ -356,8 +357,6 @@ thread_local int lastPollRetCnt = 0;
 thread_local int zeroSockCnt = 0;
 thread_local int lastZeroSockCnt = 0;
 
-#define USE_TEMP_PERF_CTRS_2
-#ifdef USE_TEMP_PERF_CTRS_2
 thread_local long lastUserT = 0;
 thread_local long lastKernelT = 0;
 thread_local uint64_t lastTimeReportT = 0;

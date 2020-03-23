@@ -28,6 +28,9 @@
 #ifndef INTERTHREAD_COMM_IMPL_H
 #define INTERTHREAD_COMM_IMPL_H
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -255,5 +258,7 @@ public:
 public:
 	InterThreadCommPair generateHandlePair();
 };
+
+#endif // NODECPP_ENABLE_CLUSTERING
 
 #endif // INTERTHREAD_COMM_IMPL_H
