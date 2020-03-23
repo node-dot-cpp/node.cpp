@@ -72,7 +72,9 @@ namespace nodecpp
 
 uint64_t infraGetCurrentTime();
 
+#ifdef USE_TEMP_PERF_CTRS
 void reportTimes( uint64_t currentT);
+#endif
 
 
 #endif //TIMERS_H

@@ -29,6 +29,9 @@
 #ifndef CLUSTERING_COMMON_H
 #define CLUSTERING_COMMON_H
 
+#ifdef NODECPP_ENABLE_CLUSTERING
+
+
 #include "../../include/nodecpp/common.h"
 #include "interthread_comm.h"
 #include "interthread_comm_impl.h"
@@ -43,5 +46,7 @@ struct ThreadStartupData
 
 void preinitThreadStartupData( ThreadStartupData& startupData );
 void decrementThisWorkerLoadCtr();
+
+#endif // NODECPP_ENABLE_CLUSTERING
 
 #endif // CLUSTERING_COMMON_H

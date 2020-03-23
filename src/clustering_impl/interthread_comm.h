@@ -27,6 +27,7 @@
 
 #ifndef INTERTHREAD_COMM_H
 #define INTERTHREAD_COMM_H
+#ifdef NODECPP_ENABLE_CLUSTERING
 
 #include <internal_msg.h>
 
@@ -79,4 +80,5 @@ void decrementWorkerLoadCtr( size_t idx );
 ThreadID getLeastLoadedWorkerAndIncrementLoad();
 void createListenerThread();
 
+#endif // NODECPP_ENABLE_CLUSTERING
 #endif // INTERTHREAD_COMM_H

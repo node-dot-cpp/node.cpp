@@ -259,6 +259,7 @@ if ( pollRetMax < retval )
 
 #endif // USE_TEMP_PERF_CTRS
 			int processed = 0;
+#ifdef NODECPP_ENABLE_CLUSTERING
 			short revents = ioSockets.reventsAt(ioSockets.awakerSockIdx);
 			if ( revents && (int64_t)(ioSockets.socketsAt(ioSockets.awakerSockIdx)) > 0 )
 			{
@@ -316,10 +317,12 @@ if ( pollRetMax < retval )
 					}
 				}
 			}
+#endif // NODECPP_ENABLE_CLUSTERING
 				
 #ifdef USE_TEMP_PERF_CTRS
 size_t now2 = infraGetCurrentTime();
-#endif
+
+#endif // #ifdef NODECPP_ENABLE_CLUSTERING
 			for ( size_t i=ioSockets.reserved_capacity; processed<retval; ++i)
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, i<=ioSockets.size(), "i={}, processed={}, retval={}, ioSockets.size()={}", i, processed, retval, ioSockets.size());
@@ -390,7 +393,9 @@ size_t now2 = infraGetCurrentTime();
 			queue.emit();
 
 			uint64_t now = infraGetCurrentTime();
+#ifdef USE_TEMP_PERF_CTRS
 			reportTimes( now );
+#endif
 			timeout.infraTimeoutEvents(now, queue);
 			queue.emit();
 
