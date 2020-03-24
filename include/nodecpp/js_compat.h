@@ -33,6 +33,7 @@
 namespace nodecpp::js {
 
 	class JSObject;
+	class JSArray;
 	class JSVar
 	{
 		enum Type { undef, boolean, num, string, ownptr, softptr };
@@ -139,7 +140,7 @@ namespace nodecpp::js {
 		JSVar( double d ) { init( d ); }
 		JSVar( const nodecpp::string& str ) { init( str ); }
 		JSVar( owningptr2jsobj&& ptr ) { init( std::move( ptr ) ); }
-		JSVar( const softptr2jsobj ptr ) { init( ptr ); }
+//		JSVar( const softptr2jsobj ptr ) { init( ptr ); }
 
 	public:
 		static owning_ptr<JSVar> makeJSVar(bool b) { return make_owning<JSVar>(b); }
@@ -148,6 +149,7 @@ namespace nodecpp::js {
 		static owning_ptr<JSVar> makeJSVar(owningptr2jsobj&& ptr) { return make_owning<JSVar>( std::move( ptr ) ); }
 //		static owning_ptr<JSVar> makeJSVar(const softptr2jsobj ptr) { return make_owning<JSVar>(ptr); }
 //		static owning_ptr<JSVar> makeJSVar(std::initializer_list<int> l) { return make_owning<JSVar>(l); }
+		static owning_ptr<JSVar> makeJSVar(std::initializer_list<double> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }
 
 		JSVar& operator = ( bool b ) { init( b ); }
 		JSVar& operator = ( double d ) { init( d ); }

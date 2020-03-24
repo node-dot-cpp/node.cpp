@@ -35,6 +35,18 @@ void test_one()
 		std::make_pair( nodecpp::string("two"), nodecpp::js::JSVar::makeJSVar( nodecpp::js::JSArray::makeJSArray({ 21, 22, 23 }) ) )
 		} );
 	printf( "%s\n", obj2->toString().c_str() );
+
+	auto obj3 = nodecpp::js::JSObject::makeJSObject( { 
+		std::make_pair( "one", nodecpp::js::JSVar::makeJSVar( { 31, 32, 33 } ) ), 
+		std::make_pair( "two", nodecpp::js::JSVar::makeJSVar( { 41, 42, 43 } ) )
+		} );
+	printf( "%s\n", obj3->toString().c_str() );
+
+	auto obj4 = nodecpp::js::JSObject::makeJSObject( { 
+		{ "one", nodecpp::js::JSVar::makeJSVar( { 131, 132, 133 } ) }, 
+		{ "two", nodecpp::js::JSVar::makeJSVar( { 141, 142, 143 } ) }
+		} );
+	printf( "%s\n", obj4->toString().c_str() );
 }
 
 int main( int argc, char *argv_[] )
