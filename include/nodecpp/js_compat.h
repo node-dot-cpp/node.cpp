@@ -43,6 +43,8 @@ namespace nodecpp::js {
 
 		using owningptr2jsobj = nodecpp::safememory::owning_ptr<JSObject>;
 		using softptr2jsobj = nodecpp::safememory::soft_ptr<JSObject>;
+		using owningptr2jsarr = nodecpp::safememory::owning_ptr<JSArray>;
+		using softptr2jsarr = nodecpp::safememory::soft_ptr<JSArray>;
 
 		bool* _asBool() { return reinterpret_cast<bool*>( basemem ); }
 		double* _asNum() { return reinterpret_cast<double*>( basemem ); }
@@ -133,6 +135,28 @@ namespace nodecpp::js {
 				new(_asSoft())softptr2jsobj( ptr );
 			}
 		}
+		void init( owningptr2jsarr&& ptr )
+		{
+			if ( type == Type::ownptr )
+				*_asOwn() = std::move( ptr );
+			else
+			{
+				deinit();
+				type = Type::ownptr;
+				new(_asOwn())owningptr2jsarr( std::move( ptr ) );
+			}
+		}
+		void init( const softptr2jsarr ptr )
+		{
+			if ( type == Type::softptr )
+				*_asSoft() = ptr;
+			else
+			{
+				deinit();
+				type = Type::softptr;
+				new(_asSoft())softptr2jsarr( ptr );
+			}
+		}
 
 	public:
 		JSVar() {}
@@ -140,14 +164,18 @@ namespace nodecpp::js {
 		JSVar( double d ) { init( d ); }
 		JSVar( const nodecpp::string& str ) { init( str ); }
 		JSVar( owningptr2jsobj&& ptr ) { init( std::move( ptr ) ); }
-//		JSVar( const softptr2jsobj ptr ) { init( ptr ); }
+		JSVar( const softptr2jsobj ptr ) { init( ptr ); }
+		JSVar( owningptr2jsarr&& ptr ) { init( std::move( ptr ) ); }
+		JSVar( const softptr2jsarr ptr ) { init( ptr ); }
 
 	public:
 		static owning_ptr<JSVar> makeJSVar(bool b) { return make_owning<JSVar>(b); }
 		static owning_ptr<JSVar> makeJSVar(double l) { return make_owning<JSVar>(l); }
 		static owning_ptr<JSVar> makeJSVar(const nodecpp::string& str) { return make_owning<JSVar>(str); }
 		static owning_ptr<JSVar> makeJSVar(owningptr2jsobj&& ptr) { return make_owning<JSVar>( std::move( ptr ) ); }
-//		static owning_ptr<JSVar> makeJSVar(const softptr2jsobj ptr) { return make_owning<JSVar>(ptr); }
+		static owning_ptr<JSVar> makeJSVar(const softptr2jsobj ptr) { return make_owning<JSVar>(ptr); }
+		static owning_ptr<JSVar> makeJSVar(owningptr2jsarr&& ptr) { return make_owning<JSVar>( std::move( ptr ) ); }
+		static owning_ptr<JSVar> makeJSVar(const softptr2jsarr ptr) { return make_owning<JSVar>(ptr); }
 //		static owning_ptr<JSVar> makeJSVar(std::initializer_list<int> l) { return make_owning<JSVar>(l); }
 		static owning_ptr<JSVar> makeJSVar(std::initializer_list<double> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }
 
@@ -156,6 +184,8 @@ namespace nodecpp::js {
 		JSVar& operator = ( const nodecpp::string& str ) { init( str ); }
 		JSVar& operator = ( owningptr2jsobj&& ptr ) { init( std::move( ptr ) ); }
 		JSVar& operator = ( softptr2jsobj ptr ) { init( ptr ); }
+		JSVar& operator = ( owningptr2jsarr&& ptr ) { init( std::move( ptr ) ); }
+		JSVar& operator = ( softptr2jsarr ptr ) { init( ptr ); }
 
 		nodecpp::string toString();
 	};
@@ -216,6 +246,16 @@ namespace nodecpp::js {
 			ret += "\n}";
 			return ret; 
 		}
+		void add( nodecpp::string s, owning_ptr<JSVar>&& var )
+		{
+			pairs.insert( std::make_pair( s, std::move( var ) ) );
+			// TODO: check ret val and modify insted of ins
+		}
+		virtual void forEach( std::function<void(nodecpp::string)> cb )
+		{
+			for ( auto& e: pairs )
+				cb( e.first );
+		}
 	};
 
 	class JSArray : public JSObject
@@ -243,6 +283,15 @@ namespace nodecpp::js {
 				return elems[ idx ];
 			return none;
 		}
+		soft_ptr<JSVar> operator [] ( const nodecpp::string& strIdx )
+		{
+			if ( strIdx.size() && strIdx[0] >= '0' && strIdx[0] <= '9' )
+			{
+				size_t idx = atol( strIdx.c_str() );
+				return idx < elems.size() ? elems[idx] : none;
+			}
+			return JSObject::operator[](strIdx);
+		}
 		virtual nodecpp::string toString() { 
 			nodecpp::string ret = "[ ";
 			if ( pairs.size() )
@@ -259,6 +308,13 @@ namespace nodecpp::js {
 			}
 			ret += "]";
 			return ret; 
+		}
+		virtual void forEach( std::function<void(nodecpp::string)> cb )
+		{
+			for ( size_t i=0; i<elems.size(); ++i )
+				cb( nodecpp::format("{}", i ) );
+			for ( auto& e: pairs )
+				cb( e.first );
 		}
 	};
 
