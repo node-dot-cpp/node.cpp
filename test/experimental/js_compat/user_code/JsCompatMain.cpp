@@ -94,7 +94,8 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;*/
 
-	test_one();
+//	test_one();
+	test2();
 
 	return 0;
 }

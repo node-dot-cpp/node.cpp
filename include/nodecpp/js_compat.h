@@ -187,6 +187,27 @@ namespace nodecpp::js {
 		JSVar& operator = ( owningptr2jsarr&& ptr ) { init( std::move( ptr ) ); }
 		JSVar& operator = ( softptr2jsarr ptr ) { init( ptr ); }
 
+		soft_ptr<JSVar> operator [] ( size_t idx );
+
+		soft_ptr<JSVar> operator [] ( const nodecpp::string& key );
+
+		/*soft_ptr<JSVar> operator [] ( const nodecpp::string_literal& key ) {
+			nodecpp::string s( key.c_str() );
+			auto f = pairs.find( s );
+			if ( f != pairs.end() )
+				return f->second;
+			return none;
+		}
+		soft_ptr<JSVar> operator [] ( const char* key ) {
+			nodecpp::string s( key );
+			auto f = pairs.find( s );
+			if ( f != pairs.end() )
+				return f->second;
+			return none;
+		}*/
+
+		void add( nodecpp::string s, owning_ptr<JSVar>&& var );
+
 		nodecpp::string toString();
 	};
 
@@ -197,12 +218,12 @@ namespace nodecpp::js {
 
 		owning_ptr<JSVar> none;
 	
-		void toString_( nodecpp::string& ret, const nodecpp::string separator ) { 
+		void toString_( nodecpp::string& ret, const nodecpp::string offset, const nodecpp::string separator ) { 
 			if ( pairs.size() == 0 )
 				return;
 			for ( auto& entry : pairs )
 			{
-				nodecpp::string entrystr = nodecpp::format( "  {}: {}{}", entry.first, entry.second->toString(), separator );
+				nodecpp::string entrystr = nodecpp::format( "{}{}: {}{}", offset, entry.first, entry.second->toString(), separator );
 				ret += entrystr;
 			}
 			ret.erase( ret.size() - separator.size(), separator.size() );
@@ -219,21 +240,25 @@ namespace nodecpp::js {
 		virtual ~JSObject() {}
 		static owning_ptr<JSObject> makeJSObject() { return make_owning<JSObject>(); }
 		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, owning_ptr<JSVar>>> l) { return make_owning<JSObject>(l); }
-		soft_ptr<JSVar> operator [] ( const nodecpp::string& key )
+		virtual soft_ptr<JSVar> operator [] ( size_t idx )
+		{
+			return none;
+		}
+		virtual soft_ptr<JSVar> operator [] ( const nodecpp::string& key )
 		{
 			auto f = pairs.find( key );
 			if ( f != pairs.end() )
 				return f->second;
 			return none;
 		}
-		soft_ptr<JSVar> operator [] ( const nodecpp::string_literal& key ) {
+		virtual soft_ptr<JSVar> operator [] ( const nodecpp::string_literal& key ) {
 			nodecpp::string s( key.c_str() );
 			auto f = pairs.find( s );
 			if ( f != pairs.end() )
 				return f->second;
 			return none;
 		}
-		soft_ptr<JSVar> operator [] ( const char* key ) {
+		virtual soft_ptr<JSVar> operator [] ( const char* key ) {
 			nodecpp::string s( key );
 			auto f = pairs.find( s );
 			if ( f != pairs.end() )
@@ -242,8 +267,8 @@ namespace nodecpp::js {
 		}
 		virtual nodecpp::string toString() { 
 			nodecpp::string ret = "{ \n";
-			toString_( ret, ",\n" );
-			ret += "\n}";
+			toString_( ret, "  ", ",\n" );
+			ret += " }";
 			return ret; 
 		}
 		void add( nodecpp::string s, owning_ptr<JSVar>&& var )
@@ -277,18 +302,20 @@ namespace nodecpp::js {
 		static owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
 		static owning_ptr<JSArray> makeJSArray(std::initializer_list<owning_ptr<JSVar>> l) { return make_owning<JSArray>(l); }
 		static owning_ptr<JSArray> makeJSArray(std::initializer_list<double> l) { return make_owning<JSArray>(l); }
-		soft_ptr<JSVar> operator [] ( size_t idx )
+		virtual soft_ptr<JSVar> operator [] ( size_t idx )
 		{
 			if ( idx < elems.size() )
 				return elems[ idx ];
 			return none;
 		}
-		soft_ptr<JSVar> operator [] ( const nodecpp::string& strIdx )
+		virtual soft_ptr<JSVar> operator [] ( const nodecpp::string& strIdx )
 		{
 			if ( strIdx.size() && strIdx[0] >= '0' && strIdx[0] <= '9' )
 			{
-				size_t idx = atol( strIdx.c_str() );
-				return idx < elems.size() ? elems[idx] : none;
+				char* end;
+				size_t idx = strtol( strIdx.c_str(), &end, 10 );
+				if ( end - strIdx.c_str() == strIdx.size() )
+					return idx < elems.size() ? elems[idx] : none;
 			}
 			return JSObject::operator[](strIdx);
 		}
@@ -296,7 +323,7 @@ namespace nodecpp::js {
 			nodecpp::string ret = "[ ";
 			if ( pairs.size() )
 			{
-				toString_( ret, ", " );
+				toString_( ret, "", ", " );
 				for ( auto& x : elems )
 					ret += nodecpp::format( ", {}", x->toString() );
 			}
@@ -306,7 +333,7 @@ namespace nodecpp::js {
 					ret += nodecpp::format( "{}, ", x->toString() );
 				ret.erase( ret.end() - 2 );
 			}
-			ret += "]";
+			ret += " ]";
 			return ret; 
 		}
 		virtual void forEach( std::function<void(nodecpp::string)> cb )
@@ -317,6 +344,77 @@ namespace nodecpp::js {
 				cb( e.first );
 		}
 	};
+
+	inline
+	soft_ptr<JSVar> JSVar::operator [] ( size_t idx )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+				return make_owning<JSVar>();
+			case string:
+			{
+				auto pstr = _asStr();
+				if ( idx < pstr->size() )
+					return make_owning<JSVar>( nodecpp::string( pstr->substr( idx, 1 ) ) );
+				else
+					return make_owning<JSVar>();
+			}
+			case ownptr:
+				return (*_asOwn())->operator[]( idx );
+			case softptr:
+				return (*_asSoft())->operator[]( idx );
+		}
+	}
+
+	inline
+	soft_ptr<JSVar> JSVar::operator [] ( const nodecpp::string& key )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+				return make_owning<JSVar>();
+			case string:
+			{
+				if ( key.size() && key[0] >= '0' && key[0] <= '9' )
+				{
+					auto pstr = _asStr();
+					char* end;
+					size_t idx = strtol( key.c_str(), &end, 10 );
+					if ( end - key.c_str() == key.size() )
+						return make_owning<JSVar>( nodecpp::string( pstr->substr( idx, 1 ) ) );
+				}
+				else
+					return make_owning<JSVar>();
+			}
+			case ownptr:
+				return (*_asOwn())->operator[]( key );
+			case softptr:
+				return (*_asSoft())->operator[]( key );
+		}
+	}
+
+	inline
+	void JSVar::add( nodecpp::string s, owning_ptr<JSVar>&& var )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+			case string:
+				throw std::exception( ".add() is unexpected" );
+				break;
+			case ownptr:
+				(*_asOwn())->add( s, std::move( var ) );
+			case softptr:
+				(*_asSoft())->add( s, std::move( var ) );
+		}
+	}
 
 	inline
 	nodecpp::string JSVar::toString()
