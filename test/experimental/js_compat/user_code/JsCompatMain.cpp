@@ -95,7 +95,10 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::instanceId = 0;*/
 
 //	test_one();
-	test2();
+//	test2();
+
+	auto styles_ = require<Styles>();
+	styles_->toString();
 
 	return 0;
 }

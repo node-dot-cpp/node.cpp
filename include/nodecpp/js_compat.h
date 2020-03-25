@@ -29,6 +29,8 @@
 #define NODECPP_JS_COMPAT_H
 
 #include "common.h"
+#include <typeinfo>
+#include <typeindex>
 
 namespace nodecpp::js {
 
@@ -438,6 +440,72 @@ namespace nodecpp::js {
 				return nodecpp::string( "undefined" );
 				break;
 		}
+	}
+
+	class JSModuleMap
+	{
+		using MapType = nodecpp::map<std::type_index, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar>>;
+#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+		MapType _classModuleMap;
+		MapType& classModuleMap() { return _classModuleMap; }
+#else
+		uint8_t mapbytes[sizeof(MapType)];
+		MapType& classModuleMap() { return *reinterpret_cast<MapType*>(mapbytes); }
+#endif
+		std::pair<bool, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>> getJsModuleExported_( std::type_index idx )
+		{
+			auto pattern = classModuleMap().find( idx );
+			if ( pattern != classModuleMap().end() )
+			{
+				nodecpp::safememory::soft_ptr<nodecpp::js::JSVar> svar = pattern->second;
+				return std::make_pair( true, svar );
+			}
+			else
+				return std::make_pair( false, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>() );
+		}
+		std::pair<bool, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>> addJsModuleExported_( std::type_index idx, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar>&& pvar )
+		{
+			auto check = classModuleMap().insert( std::make_pair( idx, std::move( pvar ) ) );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, check.second, "failed to insert exported value to map; insertion already done for this type" ); 
+			nodecpp::safememory::soft_ptr<nodecpp::js::JSVar> svar = check.first->second;
+			return std::make_pair( true, svar );
+		}
+	public:
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+		void init()
+		{
+			new(&(classModuleMap()))MapType();
+		}
+		void destroy()
+		{
+			classModuleMap().~MapType();
+		}
+#endif
+		template<class UserClass>
+		std::pair<bool, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>> getJsModuleExported()
+		{
+			return getJsModuleExported_( std::type_index(typeid(UserClass)) );
+		}
+		template<class UserClass>
+		std::pair<bool, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>> addJsModuleExported( nodecpp::safememory::owning_ptr<nodecpp::js::JSVar>&& pvar )
+		{
+			return addJsModuleExported_( std::type_index(typeid(UserClass)), std::move( pvar ) );
+		}
+	};
+	extern thread_local JSModuleMap jsModuleMap;
+
+
+	template<class T>
+	nodecpp::safememory::soft_ptr<nodecpp::js::JSVar> require()
+	{
+		auto trial = jsModuleMap.getJsModuleExported<T>();
+		if ( trial.first )
+			return trial.second;
+//		owning_ptr<T> pt = nodecpp::safememory::make_owning<T>();
+//		auto ret = jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
+		auto ret = jsModuleMap.addJsModuleExported<T>( T::getExported() );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
+		return ret.second;
 	}
 
 } //namespace nodecpp::js
