@@ -531,6 +531,7 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\safe_ptr.cpp" />
     <ClCompile Include="..\user_code\JsCompatMain.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -540,6 +541,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\logging.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
+    <ClInclude Include="..\user_code\styles.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

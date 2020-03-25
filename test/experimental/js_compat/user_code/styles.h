@@ -201,6 +201,18 @@ auto codes = nodecpp::js::JSObject::makeJSObject({
   
 });
 
+codes->forEach([&codes, &styles](nodecpp::string key) {
+  auto val = (*codes)[key];
+  styles->add( key, std::move( nodecpp::js::JSVar::makeJSVar( std::move( nodecpp::js::JSArray::makeJSArray() ) ) ) );
+  auto style = (*styles)[key];
+//  style->add( "open", nodecpp::js::JSVar::makeJSVar( nodecpp::format("\\u001b[{}m", (*val)[0]->toString() ) ) );
+//  style->add( "close", nodecpp::js::JSVar::makeJSVar( nodecpp::format("\\u001b[{}m", (*val)[0]->toString() ) ) );
+  style->add( "open", std::move( nodecpp::js::JSVar::makeJSVar( nodecpp::format("\\u001b[{}m", (*val)[0]->toString() ) ) ) );
+  style->add( "close", std::move( nodecpp::js::JSVar::makeJSVar( nodecpp::format("\\u001b[{}m", (*val)[1]->toString() ) ) ) );
+});
+
+printf( "%s\n", styles->toString().c_str() );
+
 }
 
 
