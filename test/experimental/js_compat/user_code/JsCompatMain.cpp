@@ -94,7 +94,7 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;*/
 
-	auto styles_4 = require3<Styles>();	
+	auto styles_4 = require<Styles>();	
 	printf( "%s\n", styles_4->toString().c_str() );
 
 	return 0;

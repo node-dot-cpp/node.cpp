@@ -333,6 +333,11 @@ namespace nodecpp::js {
 			for ( auto& d : l )
 				elems.push_back( std::move( JSVar::makeJSVar( d ) ) );
 		}
+		JSArray(std::initializer_list<nodecpp::string> l)
+		{
+			for ( auto& str : l )
+				elems.push_back( std::move( JSVar::makeJSVar( str ) ) );
+		}
 	public:
 		static owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
 		static owning_ptr<JSArray> makeJSArray(std::initializer_list<owning_ptr<JSVar>> l) { return make_owning<JSArray>(l); }
