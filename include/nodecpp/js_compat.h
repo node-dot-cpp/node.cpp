@@ -430,8 +430,7 @@ namespace nodecpp::js {
 					if ( end - key.c_str() == key.size() )
 						return make_owning<JSVar>( nodecpp::string( pstr->substr( idx, 1 ) ) );
 				}
-				else
-					return make_owning<JSVar>();
+				return make_owning<JSVar>();
 			}
 			case ownptr:
 				return (*_asOwn())->operator[]( key );
@@ -458,8 +457,10 @@ namespace nodecpp::js {
 				break;
 			case ownptr:
 				(*_asOwn())->add( s, std::move( var ) );
+				break;
 			case softptr:
 				(*_asSoft())->add( s, std::move( var ) );
+				break;
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
