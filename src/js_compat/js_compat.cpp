@@ -28,4 +28,5 @@
 #include "js_compat.h"
 
 thread_local nodecpp::js::JSModuleMap nodecpp::js::jsModuleMap;
+thread_local nodecpp::js::JSModuleMap2 nodecpp::js::jsModuleMap2;
 

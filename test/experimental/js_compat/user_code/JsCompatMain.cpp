@@ -97,8 +97,15 @@ int main( int argc, char *argv_[] )
 //	test_one();
 //	test2();
 
-	auto styles_ = require<Styles>();
-	styles_->toString();
+	printf( "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+
+	auto styles_ = require<Styles>();	
+	printf( "%s\n", styles_->toString().c_str() );
+
+	printf( "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+
+	auto styles_1 = require2<Styles2>();	
+	printf( "%s\n", styles_1->styles->toString().c_str() );
 
 	return 0;
 }
