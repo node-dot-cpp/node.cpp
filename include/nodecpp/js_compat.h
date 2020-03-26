@@ -54,6 +54,12 @@ namespace nodecpp::js {
 		owningptr2jsobj* _asOwn() { return reinterpret_cast<owningptr2jsobj*>( basemem ); }
 		softptr2jsobj* _asSoft() { return reinterpret_cast<softptr2jsobj*>( basemem ); }
 
+		const bool* _asBool() const { return reinterpret_cast<const bool*>( basemem ); }
+		const double* _asNum() const { return reinterpret_cast<const double*>( basemem ); }
+		const nodecpp::string* _asStr() const { return reinterpret_cast<const nodecpp::string*>( basemem ); }
+		const owningptr2jsobj* _asOwn() const { return reinterpret_cast<const owningptr2jsobj*>( basemem ); }
+		const softptr2jsobj* _asSoft() const { return reinterpret_cast<const softptr2jsobj*>( basemem ); }
+
 		void deinit()
 		{
 			switch ( type )
@@ -64,12 +70,46 @@ namespace nodecpp::js {
 					break;
 				case string:
 					_asStr()->~basic_string();
+					break;
 				case ownptr:
 					_asOwn()->~owningptr2jsobj();
+					break;
 				case softptr:
 					_asSoft()->~softptr2jsobj();
+					break;
+				default:
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 			}
 			type = Type::undef;
+		}
+		void init( const JSVar& other )
+		{
+			deinit();
+			type = other.type;
+			switch ( other.type )
+			{
+				case Type::undef:
+					break;
+				case Type::boolean:
+					*_asBool() = *(other._asBool());
+					break;
+				case Type::num:
+					*_asNum() = *(other._asNum());
+					break;
+				case string:
+					*_asStr() = *(other._asStr());
+					break;
+				case ownptr:
+					_asOwn()->~owningptr2jsobj();
+					*_asSoft() = *(other._asOwn());
+					type = Type::softptr;
+					break;
+				case softptr:
+					*_asSoft() = *(other._asSoft());
+					break;
+				default:
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+			}
 		}
 		void init( bool b )
 		{
@@ -93,17 +133,6 @@ namespace nodecpp::js {
 				*_asNum() = d;
 			}
 		}
-		/*void init( int d )
-		{
-			if ( type == Type::num )
-				*_asNum() = d;
-			else
-			{
-				deinit();
-				type = Type::num;
-				*_asNum() = d;
-			}
-		}*/
 		void init( const nodecpp::string& str )
 		{
 			if ( type == Type::string )
@@ -162,6 +191,7 @@ namespace nodecpp::js {
 
 	public:
 		JSVar() {}
+		JSVar( soft_ptr<JSVar> other ) { init( *other );}
 		JSVar( bool b ) { init( b ); }
 		JSVar( double d ) { init( d ); }
 		JSVar( const nodecpp::string& str ) { init( str ); }
@@ -169,6 +199,8 @@ namespace nodecpp::js {
 		JSVar( const softptr2jsobj ptr ) { init( ptr ); }
 		JSVar( owningptr2jsarr&& ptr ) { init( std::move( ptr ) ); }
 		JSVar( const softptr2jsarr ptr ) { init( ptr ); }
+
+		~JSVar() { deinit(); }
 
 	public:
 		static owning_ptr<JSVar> makeJSVar() { return make_owning<JSVar>(); }
@@ -179,9 +211,9 @@ namespace nodecpp::js {
 		static owning_ptr<JSVar> makeJSVar(const softptr2jsobj ptr) { return make_owning<JSVar>(ptr); }
 		static owning_ptr<JSVar> makeJSVar(owningptr2jsarr&& ptr) { return make_owning<JSVar>( std::move( ptr ) ); }
 		static owning_ptr<JSVar> makeJSVar(const softptr2jsarr ptr) { return make_owning<JSVar>(ptr); }
-//		static owning_ptr<JSVar> makeJSVar(std::initializer_list<int> l) { return make_owning<JSVar>(l); }
 		static owning_ptr<JSVar> makeJSVar(std::initializer_list<double> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }
 
+		JSVar& operator = ( soft_ptr<JSVar> other ) { init( *other );}
 		JSVar& operator = ( bool b ) { init( b ); return *this; }
 		JSVar& operator = ( double d ) { init( d ); return *this; }
 		JSVar& operator = ( const nodecpp::string& str ) { init( str ); return *this; }
@@ -428,6 +460,8 @@ namespace nodecpp::js {
 				(*_asOwn())->add( s, std::move( var ) );
 			case softptr:
 				(*_asSoft())->add( s, std::move( var ) );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 	}
 
