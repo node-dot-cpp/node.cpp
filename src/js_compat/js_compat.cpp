@@ -29,4 +29,5 @@
 
 thread_local nodecpp::js::JSModuleMap nodecpp::js::jsModuleMap;
 thread_local nodecpp::js::JSModuleMap2 nodecpp::js::jsModuleMap2;
+thread_local nodecpp::js::JSModuleMap3 nodecpp::js::jsModuleMap3;
 

@@ -97,15 +97,20 @@ int main( int argc, char *argv_[] )
 //	test_one();
 //	test2();
 
-	printf( "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+	printf( "\n\n~ TEST 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
 
-	auto styles_ = require<Styles>();	
-	printf( "%s\n", styles_->toString().c_str() );
+	auto styles_1 = require<Styles>();	
+	printf( "%s\n", styles_1->toString().c_str() );
 
-	printf( "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+	printf( "\n\n~ TEST 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
 
-	auto styles_1 = require2<Styles2>();	
-	printf( "%s\n", styles_1->styles->toString().c_str() );
+	auto styles_2 = require2<Styles2>();	
+	printf( "%s\n", styles_2->styles->toString().c_str() );
+
+	printf( "\n\n~ TEST 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+
+	auto styles_3 = require3<Styles3>();	
+	printf( "%s\n", styles_3->styles->toString().c_str() );
 
 	return 0;
 }
