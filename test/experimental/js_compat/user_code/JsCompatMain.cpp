@@ -94,27 +94,7 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;*/
 
-//	test_one();
-//	test2();
-
-	printf( "\n\n~ TEST 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
-
-	auto styles_1 = require<Styles>();	
-	printf( "%s\n", styles_1->toString().c_str() );
-
-	printf( "\n\n~ TEST 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
-
-	auto styles_2 = require2<Styles2>();	
-	printf( "%s\n", styles_2->styles->toString().c_str() );
-
-	printf( "\n\n~ TEST 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
-
-	auto styles_3 = require3<Styles3>();	
-	printf( "%s\n", styles_3->styles->toString().c_str() );
-
-	printf( "\n\n~ TEST 4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
-
-	auto styles_4 = require3<Styles3_>();	
+	auto styles_4 = require3<Styles>();	
 	printf( "%s\n", styles_4->toString().c_str() );
 
 	return 0;

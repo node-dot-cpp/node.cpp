@@ -490,163 +490,6 @@ namespace nodecpp::js {
 		}
 	}
 
-	class JSModuleMap
-	{
-		using MapType = nodecpp::map<std::type_index, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar>>;
-#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		MapType _classModuleMap;
-		MapType& classModuleMap() { return _classModuleMap; }
-#else
-		uint8_t mapbytes[sizeof(MapType)];
-		MapType& classModuleMap() { return *reinterpret_cast<MapType*>(mapbytes); }
-#endif
-		std::pair<bool, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>> getJsModuleExported_( std::type_index idx )
-		{
-			auto pattern = classModuleMap().find( idx );
-			if ( pattern != classModuleMap().end() )
-			{
-				nodecpp::safememory::soft_ptr<nodecpp::js::JSVar> svar = pattern->second;
-				return std::make_pair( true, svar );
-			}
-			else
-				return std::make_pair( false, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>() );
-		}
-		std::pair<bool, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>> addJsModuleExported_( std::type_index idx, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar>&& pvar )
-		{
-			auto check = classModuleMap().insert( std::make_pair( idx, std::move( pvar ) ) );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, check.second, "failed to insert exported value to map; insertion already done for this type" ); 
-			nodecpp::safememory::soft_ptr<nodecpp::js::JSVar> svar = check.first->second;
-			return std::make_pair( true, svar );
-		}
-	public:
-#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		void init()
-		{
-			new(&(classModuleMap()))MapType();
-		}
-		void destroy()
-		{
-			classModuleMap().~MapType();
-		}
-#endif
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>> getJsModuleExported()
-		{
-			return getJsModuleExported_( std::type_index(typeid(UserClass)) );
-		}
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>> addJsModuleExported( nodecpp::safememory::owning_ptr<nodecpp::js::JSVar>&& pvar )
-		{
-			return addJsModuleExported_( std::type_index(typeid(UserClass)), std::move( pvar ) );
-		}
-	};
-	extern thread_local JSModuleMap jsModuleMap;
-
-	template<class T>
-	nodecpp::safememory::soft_ptr<nodecpp::js::JSVar> require()
-	{
-		auto trial = jsModuleMap.getJsModuleExported<T>();
-		if ( trial.first )
-			return trial.second;
-		auto ret = jsModuleMap.addJsModuleExported<T>( T::getExported() );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
-		return ret.second;
-	}
-
-
-	class JSModuleMap2
-	{
-		struct OwningPtrStorage
-		{
-			static constexpr size_t blocksz = sizeof( nodecpp::safememory::owning_ptr<int> );
-			uint8_t buff[blocksz];
-			template<class T>
-			void set( nodecpp::safememory::owning_ptr<T>&& p )
-			{
-				static_assert( sizeof( nodecpp::safememory::owning_ptr<T> ) == blocksz );
-				nodecpp::safememory::owning_ptr<T> empty;
-				memcpy( buff, &p, sizeof( nodecpp::safememory::owning_ptr<T> ) );
-				memcpy( &p, &empty, sizeof( nodecpp::safememory::owning_ptr<T> ) );
-			}
-			template<class T>
-			nodecpp::safememory::soft_ptr<T> get()
-			{
-				static_assert( sizeof( nodecpp::safememory::owning_ptr<T> ) == blocksz );
-				nodecpp::safememory::owning_ptr<T> empty;
-				nodecpp::safememory::owning_ptr<T> any;
-				memcpy( &any, buff, sizeof( nodecpp::safememory::owning_ptr<T> ) );
-				nodecpp::safememory::soft_ptr<T> ret = any;
-				memcpy( &any, &empty, sizeof( nodecpp::safememory::owning_ptr<T> ) );
-				return ret;
-			}
-		};
-		using MapType = nodecpp::map<std::type_index, OwningPtrStorage>;
-#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		MapType _classModuleMap;
-		MapType& classModuleMap() { return _classModuleMap; }
-#else
-		uint8_t mapbytes[sizeof(MapType)];
-		MapType& classModuleMap() { return *reinterpret_cast<MapType*>(mapbytes); }
-#endif
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<UserClass>> getJsModuleExported_( std::type_index idx )
-		{
-			auto pattern = classModuleMap().find( idx );
-			if ( pattern != classModuleMap().end() )
-			{
-				nodecpp::safememory::soft_ptr<UserClass> svar = pattern->second.get<UserClass>();
-				return std::make_pair( true, svar );
-			}
-			else
-				return std::make_pair( false, nodecpp::safememory::soft_ptr<UserClass>() );
-		}
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<UserClass>> addJsModuleExported_( std::type_index idx, nodecpp::safememory::owning_ptr<UserClass>&& pvar )
-		{
-			OwningPtrStorage pstore;
-			pstore.set<UserClass>( std::move( pvar ) );
-			auto check = classModuleMap().insert( std::make_pair( idx, pstore ) );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, check.second, "failed to insert exported value to map; insertion already done for this type" ); 
-			nodecpp::safememory::soft_ptr<UserClass> svar = check.first->second.get<UserClass>();
-			return std::make_pair( true, svar );
-		}
-	public:
-#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		void init()
-		{
-			new(&(classModuleMap()))MapType();
-		}
-		void destroy()
-		{
-			classModuleMap().~MapType();
-		}
-#endif
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<UserClass>> getJsModuleExported()
-		{
-			return getJsModuleExported_<UserClass>( std::type_index(typeid(UserClass)) );
-		}
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<UserClass>> addJsModuleExported( nodecpp::safememory::owning_ptr<UserClass>&& pvar )
-		{
-			return addJsModuleExported_<UserClass>( std::type_index(typeid(UserClass)), std::move( pvar ) );
-		}
-	};
-	extern thread_local JSModuleMap2 jsModuleMap2;
-
-
-	template<class T>
-	nodecpp::safememory::soft_ptr<T> require2()
-	{
-		auto trial = jsModuleMap2.getJsModuleExported<T>();
-		if ( trial.first )
-			return trial.second;
-		owning_ptr<T> pt = nodecpp::safememory::make_owning<T>();
-		auto ret = jsModuleMap2.addJsModuleExported<T>( std::move( pt ) );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
-		return ret.second;
-	}
-
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -656,21 +499,18 @@ namespace nodecpp::js {
 		virtual ~JSModule() {}
 	};
 
-//	template<class T> using ModuleJSVareMember = &T::JSVar;
-
 	template<class UserClass, class MemberType, MemberType UserClass::*member>
 	class JSModule2JSVar : public UserClass
 	{
 	public:
-		soft_ptr<JSVar> operator [] ( size_t idx ) { return member.operator [] (idx ); }
+		soft_ptr<JSVar> operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
 
-		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return member.operator [] (key ); }
+		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
 
-//		nodecpp::string toString() { return member.*toString(); }
 		nodecpp::string toString() { return (this->*member)->toString();}
 	};
 
-	class JSModuleMap3
+	class JSModuleMap
 	{
 		using MapType = nodecpp::map<std::type_index, owning_ptr<JSModule>>;
 #ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
@@ -725,17 +565,17 @@ namespace nodecpp::js {
 			return addJsModuleExported_<UserClass>( std::type_index(typeid(UserClass)), std::move( pvar ) );
 		}
 	};
-	extern thread_local JSModuleMap3 jsModuleMap3;
+	extern thread_local JSModuleMap jsModuleMap;
 
 
 	template<class T>
-	nodecpp::safememory::soft_ptr<T> require3()
+	nodecpp::safememory::soft_ptr<T> require()
 	{
-		auto trial = jsModuleMap3.getJsModuleExported<T>();
+		auto trial = jsModuleMap.getJsModuleExported<T>();
 		if ( trial.first )
 			return trial.second;
 		owning_ptr<JSModule> pt = nodecpp::safememory::make_owning<T>();
-		auto ret = jsModuleMap3.addJsModuleExported<T>( std::move( pt ) );
+		auto ret = jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
 		return ret.second;
 	}
