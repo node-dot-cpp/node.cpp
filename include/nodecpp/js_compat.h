@@ -354,6 +354,8 @@ namespace nodecpp::js {
 		switch ( type )
 		{
 			case Type::undef:
+				init( JSObject::makeJSObject() );
+				return (*_asOwn())->operator[]( idx );
 			case Type::boolean:
 			case Type::num:
 				return make_owning<JSVar>();
@@ -381,6 +383,8 @@ namespace nodecpp::js {
 		switch ( type )
 		{
 			case Type::undef:
+				init( JSObject::makeJSObject() );
+				return (*_asOwn())->operator[]( key );
 			case Type::boolean:
 			case Type::num:
 				return make_owning<JSVar>();
@@ -413,6 +417,8 @@ namespace nodecpp::js {
 		switch ( type )
 		{
 			case Type::undef:
+				init( JSObject::makeJSObject() );
+				return (*_asOwn())->add( s, std::move( var ) );
 			case Type::boolean:
 			case Type::num:
 			case string:

@@ -376,7 +376,7 @@ nodecpp::safememory::owning_ptr<nodecpp::js::JSObject> codes = nodecpp::js::JSOb
 
 
 public:
-	/*Styles2()
+	Styles2()
 	{
 		codes->forEach([this](nodecpp::string key) {
 		  auto val = (*codes)[key];
@@ -387,9 +387,9 @@ public:
 		});
 
 		printf( "%s\n", styles->toString().c_str() );
-	}*/
+	}
 
-	Styles2()
+	/*Styles2()
 	{
 		nodecpp::safememory::owning_ptr<nodecpp::js::JSObject> stylesobj = nodecpp::js::JSObject::makeJSObject();
 		codes->forEach([this, &stylesobj](nodecpp::string key) {
@@ -402,7 +402,7 @@ public:
 		*styles = std::move( stylesobj );
 
 //		printf( "%s\n", styles->toString().c_str() );
-	}
+	}*/
 };
 
 
