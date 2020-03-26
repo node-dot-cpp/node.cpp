@@ -467,5 +467,6 @@ public:
 	}
 };
 
+using Styles3_ = JSModule2JSVar<Styles3, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar>, &Styles3::styles>;
 
 #endif // STYLES_H

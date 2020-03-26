@@ -648,10 +648,26 @@ namespace nodecpp::js {
 	}
 
 
+	////////////////////////////////////////////////////////////////////////////////////////////////
+
 	class JSModule
 	{
 	public:
 		virtual ~JSModule() {}
+	};
+
+//	template<class T> using ModuleJSVareMember = &T::JSVar;
+
+	template<class UserClass, class MemberType, MemberType UserClass::*member>
+	class JSModule2JSVar : public UserClass
+	{
+	public:
+		soft_ptr<JSVar> operator [] ( size_t idx ) { return member.operator [] (idx ); }
+
+		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return member.operator [] (key ); }
+
+//		nodecpp::string toString() { return member.*toString(); }
+		nodecpp::string toString() { return (this->*member)->toString();}
 	};
 
 	class JSModuleMap3

@@ -112,6 +112,11 @@ int main( int argc, char *argv_[] )
 	auto styles_3 = require3<Styles3>();	
 	printf( "%s\n", styles_3->styles->toString().c_str() );
 
+	printf( "\n\n~ TEST 4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+
+	auto styles_4 = require3<Styles3_>();	
+	printf( "%s\n", styles_4->toString().c_str() );
+
 	return 0;
 }
 
