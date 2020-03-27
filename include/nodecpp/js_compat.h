@@ -271,28 +271,17 @@ namespace nodecpp::js {
 		}
 		operator nodecpp::string () { return toString(); }
 
-		bool has( const JSVar& other ) const
-		{
-			switch ( type )
-			{
-				case Type::undef:
-				case Type::boolean:
-				case Type::num:
-					return false;
-				case Type::string:
-					return false; // TODO: ensure we report a right value
-				case Type::ownptr:
-					return *_asOwn() != nullptr;
-					break;
-				case Type::softptr:
-					return *_asSoft() != nullptr;
-				default:
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-			}
-		}
+		bool has( const JSVar& other ) const;
+		bool has( size_t idx ) const;
+		bool has( double num ) const;
+		bool has( nodecpp::string str ) const;
 
-		bool isIn( const JSVar& other ) const { return other.has( *this ); }
+		bool in( const JSVar& collection ) const { return collection.has( *this ); }
 	};
+
+	inline bool jsIn( const JSVar& var, const JSVar& collection )  { return collection.has( var ); }
+	inline bool jsIn( size_t idx, const JSVar& collection )  { return collection.has( idx ); }
+	inline bool jsIn( nodecpp::string str, const JSVar& collection )  { return collection.has( str ); }
 
 	inline
 	nodecpp::string typeOf( const JSVar& var )
@@ -393,6 +382,21 @@ namespace nodecpp::js {
 			auto f = pairs.find( var.toString() );
 			return f != pairs.end();
 		}
+		virtual bool has( size_t idx ) const
+		{
+			auto f = pairs.find( nodecpp::format( "{}", idx ) );
+			return f != pairs.end();
+		}
+		virtual bool has( double num ) const
+		{
+			auto f = pairs.find( nodecpp::format( "{}", num ) );
+			return f != pairs.end();
+		}
+		virtual bool has( nodecpp::string str ) const
+		{
+			auto f = pairs.find( str );
+			return f != pairs.end();
+		}
 	};
 
 	class JSArray : public JSObject
@@ -453,16 +457,9 @@ namespace nodecpp::js {
 			ret += " ]";
 			return ret; 
 		}
-		virtual void forEach( std::function<void(nodecpp::string)> cb )
+		virtual bool has( size_t idx ) const
 		{
-			for ( size_t i=0; i<elems.size(); ++i )
-				cb( nodecpp::format("{}", i ) );
-			for ( auto& e: pairs )
-				cb( e.first );
-		}
-		virtual bool has( const JSVar& var ) const
-		{
-			auto f = pairs.find( var.toString() );
+			auto f = pairs.find( nodecpp::format( "{}", idx ) );
 			return f != pairs.end();
 		}
 	};
@@ -577,6 +574,89 @@ namespace nodecpp::js {
 		}
 	}
 
+	inline
+	bool JSVar::has( const JSVar& other ) const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+				return false;
+			case Type::string:
+				return false; // TODO: ensure we report a right value
+			case Type::ownptr:
+				return (*_asOwn())->has( other );
+			case Type::softptr:
+				return (*_asSoft())->has( other );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+	}
+
+	inline
+	bool JSVar::has( size_t idx ) const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+				return false;
+			case Type::string:
+				return false; // TODO: ensure we report a right value
+			case Type::ownptr:
+				return (*_asOwn())->has( idx );
+			case Type::softptr:
+				return (*_asSoft())->has( idx );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+	}
+
+	inline
+	bool JSVar::has( double num ) const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+				return false;
+			case Type::string:
+				return false; // TODO: ensure we report a right value
+			case Type::ownptr:
+				return (*_asOwn())->has( num );
+			case Type::softptr:
+				return (*_asSoft())->has( num );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+	}
+
+	inline
+	bool JSVar::has( nodecpp::string str ) const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+				return false;
+			case Type::string:
+				return false; // TODO: ensure we report a right value
+			case Type::ownptr:
+				return (*_asOwn())->has( str );
+			case Type::softptr:
+				return (*_asSoft())->has( str );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
