@@ -111,7 +111,10 @@ public:
 	}
 };
 
+#if JSMODULE2JSVAR == 1
 using Styles = JSModule2JSVar<Styles_, &Styles_::styles>;
-using Styles2 = MyStruct<&Styles_::styles>;
+#else
+using Styles = MyStruct<&Styles_::styles>;
+#endif // JSMODULE2JSVAR
 
 #endif // STYLES_H

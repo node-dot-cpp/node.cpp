@@ -38,7 +38,9 @@ namespace nodecpp::js {
 	class JSArray;
 	class JSVar
 	{
-		enum Type { undef, boolean, num, string, ownptr, softptr };
+		friend nodecpp::string typeOf( const JSVar& );
+
+		enum Type { undef, boolean, num, string, ownptr, softptr, fn };
 		Type type = Type::undef;
 		static constexpr size_t memsz = sizeof( nodecpp::string ) > 16 ? sizeof( nodecpp::string ) : 16;
 		uint8_t basemem[memsz];
@@ -68,13 +70,13 @@ namespace nodecpp::js {
 				case Type::boolean:
 				case Type::num:
 					break;
-				case string:
+				case Type::string:
 					_asStr()->~basic_string();
 					break;
-				case ownptr:
+				case Type::ownptr:
 					_asOwn()->~owningptr2jsobj();
 					break;
-				case softptr:
+				case Type::softptr:
 					_asSoft()->~softptr2jsobj();
 					break;
 				default:
@@ -96,15 +98,15 @@ namespace nodecpp::js {
 				case Type::num:
 					*_asNum() = *(other._asNum());
 					break;
-				case string:
+				case Type::string:
 					*_asStr() = *(other._asStr());
 					break;
-				case ownptr:
+				case Type::ownptr:
 					_asOwn()->~owningptr2jsobj();
 					*_asSoft() = *(other._asOwn());
 					type = Type::softptr;
 					break;
-				case softptr:
+				case Type::softptr:
 					*_asSoft() = *(other._asSoft());
 					break;
 				default:
@@ -244,9 +246,77 @@ namespace nodecpp::js {
 		}*/
 
 		void add( nodecpp::string s, owning_ptr<JSVar>&& var );
+		nodecpp::string toString() const;
+		bool operator !() 
+		{
+			// TODO: make sure we report right values!!!
+			switch ( type )
+			{
+				case Type::undef:
+					return true; 
+				case Type::boolean:
+					return !*_asBool();
+				case Type::num:
+					return _asNum() == 0;
+				case Type::string:
+					return _asStr()->size() == 0 || *_asStr() == "false";
+				case Type::ownptr:
+					return *_asOwn() != nullptr;
+					break;
+				case Type::softptr:
+					return *_asSoft() != nullptr;
+				default:
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+			}
+		}
+		operator nodecpp::string () { return toString(); }
 
-		nodecpp::string toString();
+		bool has( const JSVar& other ) const
+		{
+			switch ( type )
+			{
+				case Type::undef:
+				case Type::boolean:
+				case Type::num:
+					return false;
+				case Type::string:
+					return false; // TODO: ensure we report a right value
+				case Type::ownptr:
+					return *_asOwn() != nullptr;
+					break;
+				case Type::softptr:
+					return *_asSoft() != nullptr;
+				default:
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+			}
+		}
+
+		bool isIn( const JSVar& other ) const { return other.has( *this ); }
 	};
+
+	inline
+	nodecpp::string typeOf( const JSVar& var )
+	{
+		switch ( var.type )
+		{
+			case JSVar::Type::undef:
+				return "undefined";
+			case JSVar::Type::boolean:
+				return "boolean";
+			case JSVar::Type::num:
+				return "number";
+			case JSVar::Type::string:
+				return "string";
+			case JSVar::Type::ownptr:
+				return "object";
+			case JSVar::Type::softptr:
+				return "object";
+			case JSVar::Type::fn:
+				return "function";
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(var.type) ); 
+		}
+	}
 
 	class JSObject
 	{
@@ -255,7 +325,7 @@ namespace nodecpp::js {
 
 		owning_ptr<JSVar> none;
 	
-		void toString_( nodecpp::string& ret, const nodecpp::string offset, const nodecpp::string separator ) { 
+		void toString_( nodecpp::string& ret, const nodecpp::string offset, const nodecpp::string separator ) const { 
 			if ( pairs.size() == 0 )
 				return;
 			for ( auto& entry : pairs )
@@ -302,7 +372,7 @@ namespace nodecpp::js {
 				return f->second;
 			return none;
 		}
-		virtual nodecpp::string toString() { 
+		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "{ \n";
 			toString_( ret, "  ", ",\n" );
 			ret += " }";
@@ -317,6 +387,11 @@ namespace nodecpp::js {
 		{
 			for ( auto& e: pairs )
 				cb( e.first );
+		}
+		virtual bool has( const JSVar& var ) const
+		{
+			auto f = pairs.find( var.toString() );
+			return f != pairs.end();
 		}
 	};
 
@@ -361,7 +436,7 @@ namespace nodecpp::js {
 			}
 			return JSObject::operator[](strIdx);
 		}
-		virtual nodecpp::string toString() { 
+		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "[ ";
 			if ( pairs.size() )
 			{
@@ -385,6 +460,11 @@ namespace nodecpp::js {
 			for ( auto& e: pairs )
 				cb( e.first );
 		}
+		virtual bool has( const JSVar& var ) const
+		{
+			auto f = pairs.find( var.toString() );
+			return f != pairs.end();
+		}
 	};
 
 	inline
@@ -398,7 +478,7 @@ namespace nodecpp::js {
 			case Type::boolean:
 			case Type::num:
 				return make_owning<JSVar>();
-			case string:
+			case Type::string:
 			{
 				auto pstr = _asStr();
 				if ( idx < pstr->size() )
@@ -406,9 +486,9 @@ namespace nodecpp::js {
 				else
 					return make_owning<JSVar>();
 			}
-			case ownptr:
+			case Type::ownptr:
 				return (*_asOwn())->operator[]( idx );
-			case softptr:
+			case Type::softptr:
 				return (*_asSoft())->operator[]( idx );
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -427,7 +507,7 @@ namespace nodecpp::js {
 			case Type::boolean:
 			case Type::num:
 				return make_owning<JSVar>();
-			case string:
+			case Type::string:
 			{
 				if ( key.size() && key[0] >= '0' && key[0] <= '9' )
 				{
@@ -439,9 +519,9 @@ namespace nodecpp::js {
 				}
 				return make_owning<JSVar>();
 			}
-			case ownptr:
+			case Type::ownptr:
 				return (*_asOwn())->operator[]( key );
-			case softptr:
+			case Type::softptr:
 				return (*_asSoft())->operator[]( key );
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -459,13 +539,13 @@ namespace nodecpp::js {
 				return (*_asOwn())->add( s, std::move( var ) );
 			case Type::boolean:
 			case Type::num:
-			case string:
+			case Type::string:
 				throw std::exception( ".add() is unexpected" );
 				break;
-			case ownptr:
+			case Type::ownptr:
 				(*_asOwn())->add( s, std::move( var ) );
 				break;
-			case softptr:
+			case Type::softptr:
 				(*_asSoft())->add( s, std::move( var ) );
 				break;
 			default:
@@ -474,7 +554,7 @@ namespace nodecpp::js {
 	}
 
 	inline
-	nodecpp::string JSVar::toString()
+	nodecpp::string JSVar::toString() const
 	{
 		switch ( type )
 		{
@@ -506,6 +586,8 @@ namespace nodecpp::js {
 		virtual ~JSModule() {}
 	};
 
+#define JSMODULE2JSVAR 1
+#if JSMODULE2JSVAR == 1
 	template<class UserClass, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> UserClass::*member>
 	class JSModule2JSVar : public UserClass
 	{
@@ -514,27 +596,14 @@ namespace nodecpp::js {
 
 		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
 
-		nodecpp::string toString() { return (this->*member)->toString();}
+		nodecpp::string toString() const { return (this->*member)->toString();}
 	};
 
-/*template<auto member>
-struct JSModule2JSVar_ {};
-
-template<typename Class, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> Class::* member>
-struct JSModule2JSVar_<member> {
-    // add members using Class, Result, and value here
-    using containing_type = Class;
-	containing_type x;
-		soft_ptr<JSVar> operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
-
-		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
-
-//		nodecpp::string toString() { return (this->*member)->toString();}
-		nodecpp::string toString() { return "";}
-};*/
+#else
 	template<auto value>
 	struct MyStruct : public JSModule {
 		int x;
+		nodecpp::string toString() { return "";}
 	};
 
 	template<typename Class, typename Result, Result Class::* value>
@@ -542,8 +611,9 @@ struct JSModule2JSVar_<member> {
 		// add members using Class, Result, and value here
 		using containing_type = Class;
 		Class users;
-		nodecpp::string toString() { return (users.*value)->toString();}
+		nodecpp::string toString() const { return (users.*value)->toString();}
 	};
+#endif // JSMODULE2JSVAR
 
 	class JSModuleMap
 	{
