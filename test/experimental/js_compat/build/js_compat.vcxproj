@@ -539,9 +539,11 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\error.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\ip_and_port.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\js_compat.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\logging.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
+    <ClInclude Include="..\user_code\colors.h" />
     <ClInclude Include="..\user_code\styles.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
