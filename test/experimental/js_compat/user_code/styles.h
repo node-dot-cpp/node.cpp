@@ -111,6 +111,7 @@ public:
 	}
 };
 
-using Styles = JSModule2JSVar<Styles_, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar>, &Styles_::styles>;
+using Styles = JSModule2JSVar<Styles_, &Styles_::styles>;
+using Styles2 = MyStruct<&Styles_::styles>;
 
 #endif // STYLES_H

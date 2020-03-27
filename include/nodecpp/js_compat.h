@@ -211,6 +211,8 @@ namespace nodecpp::js {
 		static owning_ptr<JSVar> makeJSVar(const softptr2jsobj ptr) { return make_owning<JSVar>(ptr); }
 		static owning_ptr<JSVar> makeJSVar(owningptr2jsarr&& ptr) { return make_owning<JSVar>( std::move( ptr ) ); }
 		static owning_ptr<JSVar> makeJSVar(const softptr2jsarr ptr) { return make_owning<JSVar>(ptr); }
+/*		static owning_ptr<JSVar> makeJSVar(std::initializer_list<bool> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }
+		static owning_ptr<JSVar> makeJSVar(std::initializer_list<nodecpp::string> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }*/
 		static owning_ptr<JSVar> makeJSVar(std::initializer_list<double> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }
 
 		JSVar& operator = ( soft_ptr<JSVar> other ) { init( *other );}
@@ -504,7 +506,7 @@ namespace nodecpp::js {
 		virtual ~JSModule() {}
 	};
 
-	template<class UserClass, class MemberType, MemberType UserClass::*member>
+	template<class UserClass, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> UserClass::*member>
 	class JSModule2JSVar : public UserClass
 	{
 	public:
@@ -513,6 +515,34 @@ namespace nodecpp::js {
 		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
 
 		nodecpp::string toString() { return (this->*member)->toString();}
+	};
+
+/*template<auto member>
+struct JSModule2JSVar_ {};
+
+template<typename Class, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> Class::* member>
+struct JSModule2JSVar_<member> {
+    // add members using Class, Result, and value here
+    using containing_type = Class;
+	containing_type x;
+		soft_ptr<JSVar> operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
+
+		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
+
+//		nodecpp::string toString() { return (this->*member)->toString();}
+		nodecpp::string toString() { return "";}
+};*/
+	template<auto value>
+	struct MyStruct : public JSModule {
+		int x;
+	};
+
+	template<typename Class, typename Result, Result Class::* value>
+	struct MyStruct<value> : public JSModule {
+		// add members using Class, Result, and value here
+		using containing_type = Class;
+		Class users;
+		nodecpp::string toString() { return (users.*value)->toString();}
 	};
 
 	class JSModuleMap
