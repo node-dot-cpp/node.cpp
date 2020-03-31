@@ -247,7 +247,7 @@ namespace nodecpp::js {
 
 		void add( nodecpp::string s, owning_ptr<JSVar>&& var );
 		nodecpp::string toString() const;
-		bool operator !() 
+		bool operator !() const
 		{
 			// TODO: make sure we report right values!!!
 			switch ( type )
@@ -269,7 +269,7 @@ namespace nodecpp::js {
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 			}
 		}
-		operator nodecpp::string () { return toString(); }
+		operator nodecpp::string () const { return toString(); }
 
 		bool has( const JSVar& other ) const;
 		bool has( size_t idx ) const;
