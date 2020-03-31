@@ -666,63 +666,20 @@ namespace nodecpp::js {
 		virtual ~JSModule() {}
 	};
 
-#define JSMODULE2JSVAR 2
-#if JSMODULE2JSVAR == 1
-	template<class UserClass, nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> UserClass::*member>
-	class JSModule2JSVar : public UserClass
-	{
-	public:
-		soft_ptr<JSVar> operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
-
-		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
-
-		nodecpp::string toString() const { return (this->*member)->toString();}
-	};
-
-#elif JSMODULE2JSVAR == 2
-
-template<auto value>
-struct JSModule2JSVar : public JSModule {};
-
-template<typename Class, typename Result, Result Class::* member>
-struct JSModule2JSVar<member> : public Class {
-    using containing_type = Class;
-    using arg_type = Result;
-
-	soft_ptr<JSVar> operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
-
-	soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
-
-	nodecpp::string toString() const { return (this->*member)->toString();}
-};
-
-//typename MyStruct<&Something::theotherthing>::containing_type x = Something();
-
-template<typename Class, typename Result, Result Class::* member>
-struct JSModule2JSVarRet_ : public Class {
-	public:
-		soft_ptr<JSVar> operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
-
-		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
-
-		nodecpp::string toString() const { return (this->*member)->toString();}
-};
-
-#elif JSMODULE2JSVAR == 3
 	template<auto value>
-	struct MyStruct : public JSModule {
-		int x;
-		nodecpp::string toString() { return "";}
-	};
+	struct JSModule2JSVar : public JSModule {};
 
-	template<typename Class, typename Result, Result Class::* value>
-	struct MyStruct<value> : public JSModule {
-		// add members using Class, Result, and value here
+	template<typename Class, typename Result, Result Class::* member>
+	struct JSModule2JSVar<member> : public Class {
 		using containing_type = Class;
-		Class users;
-		nodecpp::string toString() const { return (users.*value)->toString();}
+		using arg_type = Result;
+
+		soft_ptr<JSVar> operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
+
+		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
+
+		nodecpp::string toString() const { return (this->*member)->toString();}
 	};
-#endif // JSMODULE2JSVAR
 
 	class JSModuleMap
 	{
@@ -781,7 +738,6 @@ struct JSModule2JSVarRet_ : public Class {
 	};
 	extern thread_local JSModuleMap jsModuleMap;
 
-
 	template<class T>
 	nodecpp::safememory::soft_ptr<T> require()
 	{
@@ -793,25 +749,6 @@ struct JSModule2JSVarRet_ : public Class {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
 		return ret.second;
 	}
-/*#if JSMODULE2JSVAR == 1
-#elif JSMODULE2JSVAR == 2
-	template<class TT>
-	nodecpp::safememory::soft_ptr<TT> require()
-	{
-		using T = JSModule2JSVarRet_< typename TT::containing_type, typename TT::arg_type, TT::value>;
-		T* t = new T;
-		printf( "%s\n", t->toString().c_str() );
-		auto trial = jsModuleMap.getJsModuleExported<T>();
-		if ( trial.first )
-			return trial.second;
-		owning_ptr<JSModule> pt = nodecpp::safememory::make_owning<T>();
-		auto ret = jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
-		return ret.second;
-	}
-#else
-#error
-#endif*/
 
 } //namespace nodecpp::js
 
