@@ -217,7 +217,7 @@ namespace nodecpp::js {
 		static owning_ptr<JSVar> makeJSVar(std::initializer_list<nodecpp::string> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }*/
 		static owning_ptr<JSVar> makeJSVar(std::initializer_list<double> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }
 
-		JSVar& operator = ( soft_ptr<JSVar> other ) { init( *other );}
+		JSVar& operator = ( soft_ptr<JSVar> other ) { init( *other ); return *this; }
 		JSVar& operator = ( bool b ) { init( b ); return *this; }
 		JSVar& operator = ( double d ) { init( d ); return *this; }
 		JSVar& operator = ( const nodecpp::string& str ) { init( str ); return *this; }
