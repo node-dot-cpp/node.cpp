@@ -18,7 +18,6 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::instanceId = 0;*/
 
 	auto styles_4 = require<Styles>();	
-//	styles_4->x;
 	printf( "%s\n", styles_4->toString().c_str() );
 
 	return 0;
