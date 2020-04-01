@@ -325,6 +325,17 @@ namespace nodecpp::js {
 			ret.erase( ret.size() - separator.size(), separator.size() );
 		}
 
+		soft_ptr<JSVar> findOrAdd ( nodecpp::string s ) {
+			auto f = pairs.find( s );
+			if ( f != pairs.end() )
+				return f->second;
+			else
+			{
+				auto insret = pairs.insert( std::make_pair( s, none ) );
+				return insret.first->second;
+			}
+		}
+
 	public:
 		JSObject() {}
 		JSObject(std::initializer_list<std::pair<nodecpp::string, owning_ptr<JSVar>>> l)
@@ -338,28 +349,20 @@ namespace nodecpp::js {
 		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, owning_ptr<JSVar>>> l) { return make_owning<JSObject>(l); }
 		virtual soft_ptr<JSVar> operator [] ( size_t idx )
 		{
-			return none;
+			nodecpp::string s = nodecpp::format( "{}", idx );
+			return findOrAdd( s );
 		}
 		virtual soft_ptr<JSVar> operator [] ( const nodecpp::string& key )
 		{
-			auto f = pairs.find( key );
-			if ( f != pairs.end() )
-				return f->second;
-			return none;
+			return findOrAdd( key );
 		}
 		virtual soft_ptr<JSVar> operator [] ( const nodecpp::string_literal& key ) {
 			nodecpp::string s( key.c_str() );
-			auto f = pairs.find( s );
-			if ( f != pairs.end() )
-				return f->second;
-			return none;
+			return findOrAdd( s );
 		}
 		virtual soft_ptr<JSVar> operator [] ( const char* key ) {
 			nodecpp::string s( key );
-			auto f = pairs.find( s );
-			if ( f != pairs.end() )
-				return f->second;
-			return none;
+			return findOrAdd( s );
 		}
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "{ \n";
@@ -427,7 +430,13 @@ namespace nodecpp::js {
 		{
 			if ( idx < elems.size() )
 				return elems[ idx ];
-			return none;
+			else
+			{
+				elems.reserve( idx + 1 );
+				for ( size_t i=elems.size(); i<elems.capacity(); ++i )
+					elems.push_back( JSVar::makeJSVar() );
+				return elems[ idx ];
+			}
 		}
 		virtual soft_ptr<JSVar> operator [] ( const nodecpp::string& strIdx )
 		{
@@ -436,7 +445,7 @@ namespace nodecpp::js {
 				char* end;
 				size_t idx = strtol( strIdx.c_str(), &end, 10 );
 				if ( end - strIdx.c_str() == strIdx.size() )
-					return idx < elems.size() ? elems[idx] : none;
+					return operator [] ( idx );
 			}
 			return JSObject::operator[](strIdx);
 		}
