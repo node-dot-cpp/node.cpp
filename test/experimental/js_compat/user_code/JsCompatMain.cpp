@@ -20,6 +20,11 @@ int main( int argc, char *argv_[] )
 	auto styles_4 = require<Styles>();	
 	printf( "%s\n", styles_4->toString().c_str() );
 
+	printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
+
+	soft_ptr<JSVar> asVar = soft_ptr<JSVar>(*styles_4);
+	printf( "%s\n", asVar->toString().c_str() );
+
 	return 0;
 }
 

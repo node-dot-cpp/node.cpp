@@ -670,13 +670,33 @@ namespace nodecpp::js {
 	struct JSModule2JSVar : public JSModule {};
 
 	template<typename Class, typename Result, Result Class::* member>
-	struct JSModule2JSVar<member> : public Class {
-		using containing_type = Class;
-		using arg_type = Result;
+	struct JSModule2JSVar<member> : public Class
+	{
+		//JSVar& operator = ( soft_ptr<JSVar> other ) { (this->*member)->operator = ( other ); return (this->*member); } // TODO: ensure necessity and semantic
+		JSVar& operator = ( bool b ) { (this->*member)->operator = ( b ); return (this->*member); }
+		JSVar& operator = ( double d ) { (this->*member)->operator = ( d ); return (this->*member); }
+		JSVar& operator = ( const nodecpp::string& str ) { (this->*member)->operator = ( str ); return (this->*member); }
+		JSVar& operator = ( nodecpp::safememory::owning_ptr<JSObject>&& ptr ) { (this->*member)->operator = ( ptr ); return (this->*member); }
+		JSVar& operator = ( nodecpp::safememory::soft_ptr<JSObject> ptr ) { (this->*member)->operator = ( ptr ); return (this->*member); }
+		JSVar& operator = ( nodecpp::safememory::owning_ptr<JSArray>&& ptr ) { (this->*member)->operator = ( ptr ); return (this->*member); }
+		JSVar& operator = ( nodecpp::safememory::soft_ptr<JSArray> ptr ) { (this->*member)->operator = ( ptr ); return (this->*member); }
+
+		operator soft_ptr<JSVar> () { return (this->*member); }
 
 		soft_ptr<JSVar> operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
-
 		soft_ptr<JSVar> operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
+
+		void add( nodecpp::string s, owning_ptr<JSVar>&& var ) { return (this->*member)->add( s, std::move( var ) ); }
+
+		operator nodecpp::string () const  { return (this->*member)->operator nodecpp::string (); }
+		bool operator !() const  { return (this->*member)->operator ! (); }
+
+		bool has( const JSVar& other ) const { return (this->*member)->has(other ); }
+		bool has( size_t idx ) const { return (this->*member)->has(idx ); }
+		bool has( double num ) const { return (this->*member)->has(num ); }
+		bool has( nodecpp::string str ) const { return (this->*member)->has(str ); }
+
+		bool in( const JSVar& collection ) const { return (this->*member)->in(collection ); }
 
 		nodecpp::string toString() const { return (this->*member)->toString();}
 	};
