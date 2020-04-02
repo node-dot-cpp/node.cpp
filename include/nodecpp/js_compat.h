@@ -218,20 +218,6 @@ namespace nodecpp::js {
 		~JSVar() { deinit(); }
 
 	public:
-#if 1
-		static owning_ptr<JSVar> makeJSVar() { return make_owning<JSVar>(); }
-//		static owning_ptr<JSVar> makeJSVar(bool b) { return make_owning<JSVar>(b); }
-		static owning_ptr<JSVar> makeJSVar(double l) { return make_owning<JSVar>(l); }
-		static owning_ptr<JSVar> makeJSVar(const nodecpp::string& str) { return make_owning<JSVar>(str); }
-		static owning_ptr<JSVar> makeJSVar(owningptr2jsobj&& ptr) { return make_owning<JSVar>( std::move( ptr ) ); }
-		static owning_ptr<JSVar> makeJSVar(const softptr2jsobj ptr) { return make_owning<JSVar>(ptr); }
-		static owning_ptr<JSVar> makeJSVar(owningptr2jsarr&& ptr) { return make_owning<JSVar>( std::move( ptr ) ); }
-		static owning_ptr<JSVar> makeJSVar(const softptr2jsarr ptr) { return make_owning<JSVar>(ptr); }
-/*		static owning_ptr<JSVar> makeJSVar(std::initializer_list<bool> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }
-		static owning_ptr<JSVar> makeJSVar(std::initializer_list<nodecpp::string> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }*/
-		static owning_ptr<JSVar> makeJSVar(std::initializer_list<double> l) { auto arr = make_owning<JSArray>(l); return make_owning<JSVar>( std::move( arr ) ); }
-#endif // 0
-
 		JSVar& operator = ( const JSVar& other ) { init( other ); return *this; }
 //		JSVar& operator = ( soft_ptr<JSVar> other ) { init( *other ); return *this; }
 		JSVar& operator = ( bool b ) { init( b ); return *this; }
@@ -242,34 +228,12 @@ namespace nodecpp::js {
 		JSVar& operator = ( owningptr2jsarr&& ptr ) { init( std::move( ptr ) ); return *this; }
 		JSVar& operator = ( softptr2jsarr ptr ) { init( ptr ); return *this; }
 
-		/*soft_ptr<JSVar> operator [] ( const JSVar& var );
-		soft_ptr<JSVar> operator [] ( size_t idx );
-		soft_ptr<JSVar> operator [] ( int idx ) { return operator [] ((size_t)idx); }
-		soft_ptr<JSVar> operator [] ( const nodecpp::string& key );
-		soft_ptr<JSVar> operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }*/
 		JSVar operator [] ( const JSVar& var );
 		JSVar operator [] ( size_t idx );
 		JSVar operator [] ( int idx ) { return operator [] ((size_t)idx); }
 		JSVar operator [] ( const nodecpp::string& key );
 		JSVar operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
 
-
-		/*soft_ptr<JSVar> operator [] ( const nodecpp::string_literal& key ) {
-			nodecpp::string s( key.c_str() );
-			auto f = pairs.find( s );
-			if ( f != pairs.end() )
-				return f->second;
-			return none;
-		}
-		soft_ptr<JSVar> operator [] ( const char* key ) {
-			nodecpp::string s( key );
-			auto f = pairs.find( s );
-			if ( f != pairs.end() )
-				return f->second;
-			return none;
-		}*/
-
-		//void add( nodecpp::string s, owning_ptr<JSVar>&& var );
 		nodecpp::string toString() const;
 		bool operator !() const
 		{
@@ -397,11 +361,6 @@ namespace nodecpp::js {
 			ret += " }";
 			return ret; 
 		}
-		/*void add( nodecpp::string s, JSVar var )
-		{
-			pairs.insert( std::make_pair( s, var ) );
-			// TODO: check ret val and modify insted of ins
-		}*/
 		virtual void forEach( std::function<void(nodecpp::string)> cb )
 		{
 			for ( auto& e: pairs )
@@ -626,30 +585,6 @@ namespace nodecpp::js {
 				return JSVar(); // TODO: mignt be something else!!!
 		}
 	}
-
-	/*inline
-	void JSVar::add( nodecpp::string s, owning_ptr<JSVar>&& var )
-	{
-		switch ( type )
-		{
-			case Type::undef:
-				init( JSObject::makeJSObject() );
-				return (*_asOwn())->add( s, std::move( var ) );
-			case Type::boolean:
-			case Type::num:
-			case Type::string:
-				throw std::exception( ".add() is unexpected" );
-				break;
-			case Type::ownptr:
-				(*_asOwn())->add( s, std::move( var ) );
-				break;
-			case Type::softptr:
-				(*_asSoft())->add( s, std::move( var ) );
-				break;
-			default:
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-		}
-	}*/
 
 	inline
 	nodecpp::string JSVar::toString() const
