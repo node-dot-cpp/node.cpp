@@ -29,52 +29,54 @@
 #define COLORS_H
 
 #include <js_compat.h>
+#include "styles.h"
 
 using namespace nodecpp::js;
 
-class Colors_ : public nodecpp::js::JSModule
+class Colors_ : public JSModule
 {
 public:
-	nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> colors = nodecpp::js::JSVar::makeJSVar();
+	nodecpp::safememory::owning_ptr<JSVar> colors = JSVar::makeJSVar();
 
 private:
-	nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> ansiStyles = require;
+	nodecpp::safememory::soft_ptr<JSVar> ansiStyles;
 
 
 public:
 	Colors_()
 	{
+		ansiStyles = *require<Styles>();
 	}
 
 	void enable()
 	{
-		(*colors)["enbled"] = true;
+		*((*colors)["enbled"]) = true;
 	}
 
 	void disable()
 	{
-		(*colors)["enbled"] = false;
+		*((*colors)["enbled"]) = false;
 	}
 
-	nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> stylize( nodecpp::string str, nodecpp::safememory::soft_ptr<nodecpp::js::JSVar>style) {
-		if (!(*colors)["enbled"]) {
-//			return nodecpp::js::JSVar::makeJSVar( (*str)->toString() );
-			return nodecpp::js::JSVar::makeJSVar( str);
+	nodecpp::safememory::owning_ptr<JSVar> stylize( nodecpp::safememory::soft_ptr<JSVar> str, nodecpp::safememory::soft_ptr<JSVar>style)
+	{
+		if (!(*colors)["enbled"])
+			return JSVar::makeJSVar( str->toString() );
 
-		nodecpp::safememory::owning_ptr<nodecpp::js::JSVar> styleMap = nodecpp::js::JSVar::makeJSVar( *ansiStyles[*style] );
+		nodecpp::safememory::soft_ptr<JSVar> styleMap = (*ansiStyles)[*style];
 
 		// Stylize should work for non-ANSI styles, too
-		if(!(*styleMap) && style->isIn( *colors ) ){
-		// Style maps like trap operate as functions on strings;
-		// they don't have properties like open or close.
-		return colors[style](str);
+		if( !(*styleMap) && style->in( *colors ) )
+		{
+			// Style maps like trap operate as functions on strings;
+			// they don't have properties like open or close.
+//			return (*colors)[*style](*str);
 		}
 
 //		return styleMap.open + str + styleMap.close;
 	}
 };
 
-//using Colors = JSModule2JSVar<Styles_, &Styles_::styles>;
-//using Colors2 = MyStruct<&Styles_::styles>;
+using Colors = JSModule2JSVar<&Colors_::colors>;
 
 #endif // COLORS_H
