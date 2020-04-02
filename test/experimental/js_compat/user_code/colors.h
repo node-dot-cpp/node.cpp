@@ -36,37 +36,37 @@ using namespace nodecpp::js;
 class Colors_ : public JSModule
 {
 public:
-	nodecpp::safememory::owning_ptr<JSVar> colors = JSVar::makeJSVar();
+	JSVar colors;
 
 private:
-	nodecpp::safememory::soft_ptr<JSVar> ansiStyles;
+	JSVar ansiStyles;
 
 
 public:
 	Colors_()
 	{
-		ansiStyles = *require<Styles>();
+		ansiStyles = (JSVar)(require<Styles>());
 	}
 
 	void enable()
 	{
-		*((*colors)["enbled"]) = true;
+		colors["enbled"] = true;
 	}
 
 	void disable()
 	{
-		*((*colors)["enbled"]) = false;
+		colors["enbled"] = false;
 	}
 
-	nodecpp::safememory::owning_ptr<JSVar> stylize( nodecpp::safememory::soft_ptr<JSVar> str, nodecpp::safememory::soft_ptr<JSVar>style)
+	JSVar stylize( JSVar str, JSVar style)
 	{
-		if (!(*colors)["enbled"])
-			return JSVar::makeJSVar( str->toString() );
+		if (!colors["enbled"])
+			return JSVar( str.toString() );
 
-		nodecpp::safememory::soft_ptr<JSVar> styleMap = (*ansiStyles)[*style];
+		JSVar styleMap = ansiStyles[style];
 
 		// Stylize should work for non-ANSI styles, too
-		if( !(*styleMap) && style->in( *colors ) )
+		if( !styleMap && style.in( colors ) )
 		{
 			// Style maps like trap operate as functions on strings;
 			// they don't have properties like open or close.

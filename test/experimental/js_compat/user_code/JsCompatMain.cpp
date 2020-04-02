@@ -17,13 +17,13 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;*/
 
-	soft_ptr<JSVar> styles = *require<Styles>();
-	printf( "%s\n", styles->toString().c_str() );
+	JSVar styles = require<Styles>();
+	printf( "%s\n", styles.toString().c_str() );
 
 	printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
 
-	soft_ptr<JSVar> colors = *require<Colors>();
-	printf( "%s\n", colors->toString().c_str() );
+	JSVar colors = require<Colors>();
+	printf( "%s\n", colors.toString().c_str() );
 
 	return 0;
 }
