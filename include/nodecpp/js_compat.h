@@ -39,7 +39,9 @@ namespace nodecpp::js {
 	class JSVarBase
 	{
 	protected:
+		friend class JSVar;
 		friend class JSRet;
+		friend class JSInitializer;
 		friend class JSObject;
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarBase& );
@@ -172,14 +174,64 @@ namespace nodecpp::js {
 				new(_asSoft())softptr2jsarr( ptr );
 			}
 		}
-	};
-
-	class JSRet : protected JSVarBase
-	{
-		friend class JSObject;
-		friend class JSArray;
-
-		void init( const JSVarBase& other )
+		void initAsCopyOrRef( const JSVarBase& other )
+		{
+			if ( type == other.type )
+			{
+				switch ( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::boolean:
+						*_asBool() = *(other._asBool());
+						break;
+					case Type::num:
+						*_asNum() = *(other._asNum());
+						break;
+					case Type::string:
+						*_asStr() = *(other._asStr());
+						break;
+					case Type::ownptr:
+						*_asSoft() = *(other._asOwn());
+						type = Type::softptr;
+						break;
+					case Type::softptr:
+						*_asSoft() = *(other._asSoft());
+						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				}
+			}
+			else
+			{
+				deinit();
+				type = other.type;
+				switch ( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::boolean:
+						*_asBool() = *(other._asBool());
+						break;
+					case Type::num:
+						*_asNum() = *(other._asNum());
+						break;
+					case Type::string:
+						new(_asStr())nodecpp::string( *(other._asStr()) );
+						break;
+					case Type::ownptr:
+						new(_asSoft())softptr2jsobj( *(other._asOwn()) );
+						type = Type::softptr;
+						break;
+					case Type::softptr:
+						new(_asSoft())softptr2jsobj( *(other._asSoft()) );
+						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				}
+			}
+		}
+		void initAndGetOwnership( const JSVarBase& other )
 		{
 			if ( type == other.type )
 			{
@@ -221,20 +273,30 @@ namespace nodecpp::js {
 						*_asNum() = *(other._asNum());
 						break;
 					case Type::string:
-						*_asStr() = *(other._asStr());
+						new(_asStr())nodecpp::string( *(other._asStr()) );
 						break;
 					case Type::ownptr:
-						new(_asOwn())owningptr2jsobj( std::move( *const_cast<owningptr2jsobj*>(other._asOwn()) ) );
+						new(_asSoft())softptr2jsobj( *(other._asOwn()) );
+						type = Type::softptr;
 						break;
 					case Type::softptr:
-						new(_asSoft())softptr2jsobj( *(other._asSoft()) );
+						new(_asSoft())softptr2jsobj( std::move( *const_cast<owningptr2jsobj*>(other._asOwn()) ) );
 						break;
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 			}
-//			*reinterpret_cast<Type*>(other.type) = Type::undef;
 		}
+
+	};
+
+	class JSRet : protected JSVarBase
+	{
+		friend class JSVar;
+		friend class JSObject;
+		friend class JSArray;
+
+		void init( const JSVarBase& other ) { JSVarBase::initAndGetOwnership( other ); }
 
 	public:
 		JSRet( const JSVarBase& other ) { init( other );}
@@ -244,70 +306,53 @@ namespace nodecpp::js {
 	};
 	static_assert( sizeof(JSVarBase) == sizeof(JSRet), "no data memebers at JSRet itself!" );
 
+	class JSInitializer : protected JSVarBase
+	{
+		friend class JSObject;
+		friend class JSArray;
+
+		void init( const JSVarBase& other ) { JSVarBase::initAndGetOwnership( other ); }
+
+	public:
+		JSInitializer() {}
+		JSInitializer( const JSInitializer& other ) { init( other );}
+		JSInitializer( const JSVar& other );
+		JSInitializer( bool b ) { JSVarBase::init( b ); }
+		JSInitializer( double d ) { JSVarBase::init( d ); }
+		JSInitializer( int n ) { JSVarBase::init( (double)n ); }
+		JSInitializer( const nodecpp::string& str ) { JSVarBase::init( str ); }
+		JSInitializer( owningptr2jsobj&& ptr ) { JSVarBase::init( std::move( ptr ) ); }
+		JSInitializer( const softptr2jsobj ptr ) { JSVarBase::init( ptr ); }
+		JSInitializer( owningptr2jsarr&& ptr ) { JSVarBase::init( std::move( ptr ) ); }
+		JSInitializer( const softptr2jsarr ptr ) { JSVarBase::init( ptr ); }
+		JSInitializer( std::initializer_list<double> l ) { auto arr = make_owning<JSArray>(l); JSVarBase::init( std::move( arr ) ); }
+		JSInitializer( std::initializer_list<int> l ) { auto arr = make_owning<JSArray>(l); JSVarBase::init( std::move( arr ) ); }
+
+		~JSInitializer() { deinit(); }
+
+		JSInitializer& operator = ( const JSInitializer& other ) { init( other ); return *this; }
+		JSInitializer& operator = ( const JSVar& other );
+		JSInitializer& operator = ( bool b ) { JSVarBase::init( b ); return *this; }
+		JSInitializer& operator = ( double d ) { JSVarBase::init( d ); return *this; }
+		JSInitializer& operator = ( const nodecpp::string& str ) { JSVarBase::init( str ); return *this; }
+		JSInitializer& operator = ( owningptr2jsobj&& ptr ) { JSVarBase::init( std::move( ptr ) ); return *this; }
+		JSInitializer& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
+		JSInitializer& operator = ( owningptr2jsarr&& ptr ) { JSVarBase::init( std::move( ptr ) ); return *this; }
+		JSInitializer& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
+
+		operator JSVarBase() { return *this; }
+	};
+
 	class JSVar : protected JSVarBase
 	{
+		friend class JSInitializer;
 		friend class JSObject;
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarBase& );
 
-		void init( const JSVar& other )
-		{
-			if ( type == other.type )
-			{
-				switch ( other.type )
-				{
-					case Type::undef:
-						break;
-					case Type::boolean:
-						*_asBool() = *(other._asBool());
-						break;
-					case Type::num:
-						*_asNum() = *(other._asNum());
-						break;
-					case Type::string:
-						*_asStr() = *(other._asStr());
-						break;
-					case Type::ownptr:
-	//					_asOwn()->~owningptr2jsobj();
-						*_asSoft() = *(other._asOwn());
-						type = Type::softptr;
-						break;
-					case Type::softptr:
-						*_asSoft() = *(other._asSoft());
-						break;
-					default:
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				}
-			}
-			else
-			{
-				deinit();
-				type = other.type;
-				switch ( other.type )
-				{
-					case Type::undef:
-						break;
-					case Type::boolean:
-						*_asBool() = *(other._asBool());
-						break;
-					case Type::num:
-						*_asNum() = *(other._asNum());
-						break;
-					case Type::string:
-						new(_asStr())nodecpp::string( *(other._asStr()) );
-						break;
-					case Type::ownptr:
-						new(_asSoft())softptr2jsobj( *(other._asOwn()) );
-						type = Type::softptr;
-						break;
-					case Type::softptr:
-						new(_asSoft())softptr2jsobj( *(other._asSoft()) );
-						break;
-					default:
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				}
-			}
-		}
+		void init( const JSVar& other ) { JSVarBase::initAsCopyOrRef( other ); }
+		void init( const JSRet& other ) { JSVarBase::initAndGetOwnership( other ); }
+		void init( const JSInitializer& other ) { JSVarBase::initAndGetOwnership( (const JSVarBase&)other ); }
 
 	public:
 		JSVar() {}
@@ -326,13 +371,14 @@ namespace nodecpp::js {
 		~JSVar() { deinit(); }
 
 		JSVar& operator = ( const JSVar& other ) { init( other ); return *this; }
-		JSVar& operator = ( bool b ) { init( b ); return *this; }
-		JSVar& operator = ( double d ) { init( d ); return *this; }
-		JSVar& operator = ( const nodecpp::string& str ) { init( str ); return *this; }
-		JSVar& operator = ( owningptr2jsobj&& ptr ) { init( std::move( ptr ) ); return *this; }
-		JSVar& operator = ( softptr2jsobj ptr ) { init( ptr ); return *this; }
-		JSVar& operator = ( owningptr2jsarr&& ptr ) { init( std::move( ptr ) ); return *this; }
-		JSVar& operator = ( softptr2jsarr ptr ) { init( ptr ); return *this; }
+		JSVar& operator = ( const JSInitializer& other ) { JSVarBase::initAndGetOwnership( (const JSVarBase&)other ); return *this; }
+		JSVar& operator = ( bool b ) { JSVarBase::init( b ); return *this; }
+		JSVar& operator = ( double d ) { JSVarBase::init( d ); return *this; }
+		JSVar& operator = ( const nodecpp::string& str ) { JSVarBase::init( str ); return *this; }
+		JSVar& operator = ( owningptr2jsobj&& ptr ) { JSVarBase::init( std::move( ptr ) ); return *this; }
+		JSVar& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
+		JSVar& operator = ( owningptr2jsarr&& ptr ) { JSVarBase::init( std::move( ptr ) ); return *this; }
+		JSVar& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
 
 		JSVar operator [] ( const JSVar& var );
 		JSVar operator [] ( size_t idx );
@@ -372,7 +418,7 @@ namespace nodecpp::js {
 
 		bool in( const JSVar& collection ) const { return collection.has( *this ); }
 
-		JSRet retOwned() { return JSRet( *this ); }
+		JSRet release() { return JSRet( *this ); }
 	};
 	static_assert( sizeof(JSVarBase) == sizeof(JSVar), "no data memebers at JSVar itself!" );
 
@@ -403,6 +449,9 @@ namespace nodecpp::js {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(var.type) ); 
 		}
 	}
+
+	inline JSInitializer::JSInitializer( const JSVar& other ) { init( other );}
+	inline JSInitializer& JSInitializer::operator = ( const JSVar& other ) { init( other ); return *this; }
 
 	class JSObject
 	{
@@ -588,7 +637,7 @@ namespace nodecpp::js {
 		switch ( type )
 		{
 			case Type::undef:
-				init( JSObject::makeJSObject() );
+				JSVarBase::init( JSObject::makeJSObject() );
 				return (*_asOwn())->operator[]( var );
 			case Type::boolean:
 			case Type::num:
@@ -600,7 +649,7 @@ namespace nodecpp::js {
 					auto pstr = _asStr();
 					size_t idx = *( var._asNum() );
 					if ( idx < pstr->size() )
-						return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ); // TODO: ownership
+						return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) );
 					else
 						return JSVar(); // TODO: mignt be something else!!!
 				}
@@ -613,7 +662,7 @@ namespace nodecpp::js {
 						char* end;
 						size_t idx = strtol( str.c_str(), &end, 10 );
 						if ( end - str.c_str() == str.size() )
-							return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ); // TODO: ownership
+							return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) );
 						else
 							return JSVar(); // TODO: mignt be something else!!!
 					}
@@ -639,7 +688,7 @@ namespace nodecpp::js {
 		switch ( type )
 		{
 			case Type::undef:
-				init( JSObject::makeJSObject() );
+				JSVarBase::init( JSObject::makeJSObject() );
 				return (*_asOwn())->operator[]( idx );
 			case Type::boolean:
 			case Type::num:
@@ -668,7 +717,7 @@ namespace nodecpp::js {
 		switch ( type )
 		{
 			case Type::undef:
-				init( JSObject::makeJSObject() );
+				JSVarBase::init( JSObject::makeJSObject() );
 				return (*_asOwn())->operator[]( key );
 			case Type::boolean:
 			case Type::num:

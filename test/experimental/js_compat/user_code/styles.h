@@ -103,10 +103,10 @@ public:
 	{
 		codes->forEach([this](nodecpp::string key) {
 		  auto val = (*codes)[key];
-		  styles[ key ] = JSVar( std::move( nodecpp::js::JSArray::makeJSArray() ) ); // TODO: ownership
+		  styles[ key ] = JSInitializer( std::move( nodecpp::js::JSArray::makeJSArray() ) ); // TODO: ownership
 		  auto style = styles[key];
-		  style[ "open" ] = JSVar( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
-		  style[ "close" ] = JSVar( nodecpp::format("\\u001b[{}m", val[1].toString() ) );
+		  style[ "open" ] = JSInitializer( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
+		  style[ "close" ] = JSInitializer( nodecpp::format("\\u001b[{}m", val[1].toString() ) );
 		});
 	}
 };
