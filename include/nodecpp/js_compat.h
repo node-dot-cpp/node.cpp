@@ -47,7 +47,7 @@ namespace nodecpp::js {
 		enum Type { undef, boolean, num, string, ownptr, softptr, fn };
 		Type type = Type::undef;
 		static constexpr size_t memsz = sizeof( nodecpp::string ) > 16 ? sizeof( nodecpp::string ) : 16;
-		uint8_t basemem[memsz];
+		uintptr_t basemem[memsz/sizeof(uintptr_t)]; // note: we just cause it to be uintptr_t-aligned
 
 		struct FunctionBase
 		{
@@ -181,31 +181,59 @@ namespace nodecpp::js {
 
 		void init( const JSVarBase& other )
 		{
-			deinit();
-			type = other.type;
-			switch ( other.type )
+			if ( type == other.type )
 			{
-				case Type::undef:
-					break;
-				case Type::boolean:
-					*_asBool() = *(other._asBool());
-					break;
-				case Type::num:
-					*_asNum() = *(other._asNum());
-					break;
-				case Type::string:
-					*_asStr() = *(other._asStr());
-					break;
-				case Type::ownptr:
-					_asOwn()->~owningptr2jsobj();
-					*_asOwn() = std::move( *const_cast<owningptr2jsobj*>(other._asOwn()) );
-					break;
-				case Type::softptr:
-					*_asSoft() = *(other._asSoft());
-					break;
-				default:
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				switch ( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::boolean:
+						*_asBool() = *(other._asBool());
+						break;
+					case Type::num:
+						*_asNum() = *(other._asNum());
+						break;
+					case Type::string:
+						*_asStr() = *(other._asStr());
+						break;
+					case Type::ownptr:
+						*_asOwn() = std::move( *const_cast<owningptr2jsobj*>(other._asOwn()) );
+						break;
+					case Type::softptr:
+						*_asSoft() = *(other._asSoft());
+						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				}
 			}
+			else
+			{
+				deinit();
+				type = other.type;
+				switch ( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::boolean:
+						*_asBool() = *(other._asBool());
+						break;
+					case Type::num:
+						*_asNum() = *(other._asNum());
+						break;
+					case Type::string:
+						*_asStr() = *(other._asStr());
+						break;
+					case Type::ownptr:
+						new(_asOwn())owningptr2jsobj( std::move( *const_cast<owningptr2jsobj*>(other._asOwn()) ) );
+						break;
+					case Type::softptr:
+						new(_asSoft())softptr2jsobj( *(other._asSoft()) );
+						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				}
+			}
+//			*reinterpret_cast<Type*>(other.type) = Type::undef;
 		}
 
 	public:
@@ -224,31 +252,60 @@ namespace nodecpp::js {
 
 		void init( const JSVar& other )
 		{
-			deinit();
-			type = other.type;
-			switch ( other.type )
+			if ( type == other.type )
 			{
-				case Type::undef:
-					break;
-				case Type::boolean:
-					*_asBool() = *(other._asBool());
-					break;
-				case Type::num:
-					*_asNum() = *(other._asNum());
-					break;
-				case Type::string:
-					*_asStr() = *(other._asStr());
-					break;
-				case Type::ownptr:
-					_asOwn()->~owningptr2jsobj();
-					*_asSoft() = *(other._asOwn());
-					type = Type::softptr;
-					break;
-				case Type::softptr:
-					*_asSoft() = *(other._asSoft());
-					break;
-				default:
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				switch ( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::boolean:
+						*_asBool() = *(other._asBool());
+						break;
+					case Type::num:
+						*_asNum() = *(other._asNum());
+						break;
+					case Type::string:
+						*_asStr() = *(other._asStr());
+						break;
+					case Type::ownptr:
+	//					_asOwn()->~owningptr2jsobj();
+						*_asSoft() = *(other._asOwn());
+						type = Type::softptr;
+						break;
+					case Type::softptr:
+						*_asSoft() = *(other._asSoft());
+						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				}
+			}
+			else
+			{
+				deinit();
+				type = other.type;
+				switch ( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::boolean:
+						*_asBool() = *(other._asBool());
+						break;
+					case Type::num:
+						*_asNum() = *(other._asNum());
+						break;
+					case Type::string:
+						new(_asStr())nodecpp::string( *(other._asStr()) );
+						break;
+					case Type::ownptr:
+						new(_asSoft())softptr2jsobj( *(other._asOwn()) );
+						type = Type::softptr;
+						break;
+					case Type::softptr:
+						new(_asSoft())softptr2jsobj( *(other._asSoft()) );
+						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				}
 			}
 		}
 
