@@ -276,11 +276,10 @@ namespace nodecpp::js {
 						new(_asStr())nodecpp::string( *(other._asStr()) );
 						break;
 					case Type::ownptr:
-						new(_asSoft())softptr2jsobj( *(other._asOwn()) );
-						type = Type::softptr;
+						new(_asOwn())owningptr2jsobj( std::move( *const_cast<owningptr2jsobj*>(other._asOwn()) ) );
 						break;
 					case Type::softptr:
-						new(_asSoft())softptr2jsobj( std::move( *const_cast<owningptr2jsobj*>(other._asOwn()) ) );
+						new(_asSoft())softptr2jsobj( *(other._asSoft()) );
 						break;
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -357,6 +356,7 @@ namespace nodecpp::js {
 	public:
 		JSVar() {}
 		JSVar( const JSVar& other ) { init( other );}
+		JSVar( const JSInitializer& other ) { JSVarBase::initAndGetOwnership( (const JSVarBase&)other );}
 		JSVar( bool b ) { JSVarBase::init( b ); }
 		JSVar( double d ) { JSVarBase::init( d ); }
 		JSVar( int n ) { JSVarBase::init( (double)n ); }
@@ -475,7 +475,7 @@ namespace nodecpp::js {
 				return f->second;
 			else
 			{
-				auto insret = pairs.insert( std::make_pair( s, JSVar() ) );
+				auto insret = pairs.insert( std::make_pair( s, JSInitializer() ) );
 				return insret.first->second;
 			}
 		}
@@ -485,12 +485,20 @@ namespace nodecpp::js {
 		JSObject(std::initializer_list<std::pair<nodecpp::string, JSVar>> l)
 		{
 			for ( auto& p : l )
-				pairs.insert( std::move(*const_cast<std::pair<nodecpp::string, JSVar>*>(&p)) );
+//				pairs.insert( std::move(*const_cast<std::pair<nodecpp::string, JSVar>*>(&p)) );
+				pairs.insert( p );
+		}
+		JSObject(std::initializer_list<std::pair<nodecpp::string, JSInitializer>> l)
+		{
+			for ( auto& p : l )
+//				pairs.insert( std::move(*const_cast<std::pair<nodecpp::string, JSInitializer>*>(&p)) );
+				pairs.insert( p );
 		}
 	public:
 		virtual ~JSObject() {}
 		static owning_ptr<JSObject> makeJSObject() { return make_owning<JSObject>(); }
-		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, JSVar>> l) { return make_owning<JSObject>(l); }
+//		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, JSVar>> l) { return make_owning<JSObject>(l); }
+		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, JSInitializer>> l) { return make_owning<JSObject>(l); }
 		virtual JSVar operator [] ( const JSVar& var )
 		{
 			nodecpp::string s = var.toString(); // TODO: revise implementation!!!
