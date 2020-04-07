@@ -35,12 +35,12 @@ using namespace nodecpp::js;
 class Styles_ : public nodecpp::js::JSModule
 {
 public:
-	nodecpp::js::JSVar styles;
+	nodecpp::js::JSOwnObj styles = nodecpp::js::JSObject::makeJSObject();
 
 private:
-	nodecpp::safememory::owning_ptr<nodecpp::js::JSObject> codes = nodecpp::js::JSObject::makeJSObject({ 
-	  { "reset", JSInitializer( {0, 0 } ) },
-	  /*{ "bold", JSInitializer( {1, 22 } ) },
+	JSOwnObj codes = nodecpp::js::JSObject::makeJSObject({ 
+	  { "reset", JSOwnObj( {0, 0 } ) }/*,
+	  { "bold", JSInitializer( {1, 22 } ) },
 	  { "dim", JSInitializer( {2, 22 } ) },
 	  { "italic", JSInitializer( {3, 23 } ) },
 	  { "underline", JSInitializer( {4, 24 } ) },
@@ -101,12 +101,12 @@ private:
 public:
 	Styles_()
 	{
-		codes->forEach([this](nodecpp::string key) {
-		  auto val = (*codes)[key];
-		  styles[ key ] = JSInitializer( std::move( nodecpp::js::JSArray::makeJSArray() ) ); // TODO: ownership
-		  auto style = styles[key];
-		  style[ "open" ] = JSInitializer( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
-		  style[ "close" ] = JSInitializer( nodecpp::format("\\u001b[{}m", val[1].toString() ) );
+		codes.forEach([this](nodecpp::string key) {
+		  auto val = codes[key];
+		  styles[ key ] = JSOwnObj( std::move( nodecpp::js::JSArray::makeJSArray() ) ); // TODO: ownership
+		  auto& style = styles[key];
+//		  style[ "open" ] = JSVar( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
+//		  style[ "close" ] = JSVar( nodecpp::format("\\u001b[{}m", val[1].toString() ) );
 		});
 	}
 };

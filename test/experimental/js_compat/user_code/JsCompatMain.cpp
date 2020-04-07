@@ -20,10 +20,10 @@ int main( int argc, char *argv_[] )
 	JSVar styles = require<Styles>();
 	printf( "%s\n", styles.toString().c_str() );
 
-	printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
+	/*printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
 
 	JSVar colors = require<Colors>();
-	printf( "%s\n", colors.toString().c_str() );
+	printf( "%s\n", colors.toString().c_str() );*/
 
 	return 0;
 }
