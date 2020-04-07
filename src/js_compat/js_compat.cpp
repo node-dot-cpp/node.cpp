@@ -33,27 +33,27 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////   JSOwnObj ////
 
-	Value& JSOwnObj::operator [] ( const JSVar& var )
+	JSIndexRet JSOwnObj::operator [] ( const JSVar& var )
 	{
 		return ptr->operator[]( var );
 	}
 
-	Value& JSOwnObj::operator [] ( double d )
+	JSIndexRet JSOwnObj::operator [] ( double d )
 	{
 		return ptr->operator[]( d );
 	}
 
-	Value& JSOwnObj::operator [] ( int idx )
+	JSIndexRet JSOwnObj::operator [] ( int idx )
 	{
 		return ptr->operator[]( idx );
 	}
 
-	Value& JSOwnObj::operator [] ( const nodecpp::string& key )
+	JSIndexRet JSOwnObj::operator [] ( const nodecpp::string& key )
 	{
 		return ptr->operator[]( key );
 	}
 
-	Value& JSOwnObj::operator [] ( const char* key )
+	JSIndexRet JSOwnObj::operator [] ( const char* key )
 	{
 		nodecpp::string s( key );
 		return ptr->operator[]( s );
@@ -443,5 +443,131 @@ namespace nodecpp::js {
 		}
 	}
 
+	////////////////////////////////////////////////////////////   JSIndexRet ////
+
+	JSIndexRet::JSIndexRet( const JSIndexRet& other) { 
+		type = other.type;
+		switch( other.type )
+		{
+			case Type::undef:
+				break;
+			case Type::var:
+				new(&(_asVar()))JSVar( other._asVar() );
+				break;
+			case Type::value:
+				_asValue() = other._asValue();
+				break;
+		}
+	}
+
+	JSIndexRet& JSIndexRet::operator = ( const JSIndexRet& other ) {
+		switch ( type )
+		{
+			case Type::undef:
+				switch( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::var:
+						new(&(_asVar()))JSVar( other._asVar() );
+						break;
+					case Type::value:
+						_asValue() = other._asValue();
+						break;
+				}
+				break;
+			case Type::var:
+				switch( other.type )
+				{
+					case Type::undef:
+						_asVar().~JSVar();
+						break;
+					case Type::var:
+						_asVar() = other._asVar();
+						break;
+					case Type::value:
+						_asVar().~JSVar();
+						_asValue() = other._asValue();
+						break;
+				}
+				break;
+			case Type::value:
+				switch( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::var:
+						new(&(_asVar()))JSVar( other._asVar() );
+						break;
+					case Type::value:
+						_asValue() = other._asValue();
+						break;
+				}
+				break;
+		}
+		type = other.type;
+		return *this;
+	}
+
+	JSIndexRet& JSIndexRet::operator = ( Value& obj ) {
+		switch ( type )
+		{
+			case Type::undef:
+				_asValue() = &obj;
+				break;
+			case Type::var:
+				_asVar().~JSVar();
+				_asValue() = &obj;
+				break;
+			case Type::value:
+				_asValue() = &obj;
+				break;
+		}
+		type = Type::value;
+		return *this;
+	}
+
+	JSIndexRet& JSIndexRet::operator = ( const JSVar& var ) {
+		switch ( type )
+		{
+			case Type::undef:
+				new(&(_asVar()))JSVar( var );
+				break;
+			case Type::var:
+				_asVar() = var;
+				break;
+			case Type::value:
+				new(&(_asVar()))JSVar( var );
+				break;
+		}
+		type = Type::var;
+		return *this;
+	}
+
+	JSIndexRet::operator JSVar () const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return JSVar();
+			case Type::var:
+				return _asVar();
+			case Type::value:
+			{
+				auto& v = *(_asValue());
+				switch ( v.type )
+				{
+				case Value::Type::undef:
+						return JSVar();
+					case Value::Type::var:
+						return v._asVar();
+					case Value::Type::obj:
+						JSVar ret = v._asPtr();
+						return ret;
+				}
+			}
+				return JSVar( _asValue() );
+		}
+	}
 
 } // namespace nodecpp::js
