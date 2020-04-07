@@ -143,7 +143,32 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSVar JSVar::operator [] ( size_t idx )
+	JSVar JSVar::operator [] ( int idx )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				throw; // cannot set property to "undefined"
+			case Type::boolean:
+			case Type::num:
+				return JSVar(); // TODO: mignt be something else!!!
+			case Type::string:
+			{
+				auto pstr = _asStr();
+				if ( idx < pstr->size() )
+					return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ); // TODO: ownership
+				else
+				return JSVar(); // TODO: mignt be something else!!!
+			}
+			case Type::softptr:
+				return (*_asSoft())->operator[]( idx );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar(); // TODO: mignt be something else!!!
+		}
+	}
+
+	JSVar JSVar::operator [] ( double idx )
 	{
 		switch ( type )
 		{
@@ -557,7 +582,7 @@ namespace nodecpp::js {
 				auto& v = *(_asValue());
 				switch ( v.type )
 				{
-				case Value::Type::undef:
+					case Value::Type::undef:
 						return JSVar();
 					case Value::Type::var:
 						return v._asVar();
@@ -567,6 +592,125 @@ namespace nodecpp::js {
 				}
 			}
 				return JSVar( _asValue() );
+		}
+	}
+
+	JSIndexRet JSIndexRet::operator [] ( const JSVar& var )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return JSVar();
+			case Type::var:
+				return _asVar().operator[]( var);
+			case Type::value:
+			{
+				auto& v = *(_asValue());
+				switch ( v.type )
+				{
+					case Value::Type::undef:
+						return JSVar();
+					case Value::Type::var:
+						return v._asVar().operator[]( var);
+					case Value::Type::obj:
+						JSVar ret = v._asPtr().operator[]( var);
+						return ret;
+				}
+			}
+		}
+	}
+
+	JSIndexRet JSIndexRet::operator [] ( double d )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return JSVar();
+			case Type::var:
+				return _asVar().operator[]( d);
+			case Type::value:
+			{
+				auto& v = *(_asValue());
+				switch ( v.type )
+				{
+					case Value::Type::undef:
+						return JSVar();
+					case Value::Type::var:
+						return v._asVar().operator[]( d);
+					case Value::Type::obj:
+						JSVar ret = v._asPtr().operator[]( d);
+						return ret;
+				}
+			}
+		}
+	}
+
+	JSIndexRet JSIndexRet::operator [] ( int idx )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return JSVar();
+			case Type::var:
+				return _asVar().operator[]( idx);
+			case Type::value:
+			{
+				auto& v = *(_asValue());
+				switch ( v.type )
+				{
+					case Value::Type::undef:
+						return JSVar();
+					case Value::Type::var:
+						return v._asVar().operator[]( idx);
+					case Value::Type::obj:
+						JSVar ret = v._asPtr().operator[]( idx);
+						return ret;
+				}
+			}
+		}
+	}
+
+	JSIndexRet JSIndexRet::operator [] ( const nodecpp::string& key )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return JSVar();
+			case Type::var:
+				return _asVar().operator[]( key);
+			case Type::value:
+			{
+				auto& v = *(_asValue());
+				switch ( v.type )
+				{
+					case Value::Type::undef:
+						return JSVar();
+					case Value::Type::var:
+						return v._asVar().operator[]( key);
+					case Value::Type::obj:
+						JSVar ret = v._asPtr().operator[]( key);
+						return ret;
+				}
+			}
+		}
+	}
+
+	JSIndexRet JSIndexRet::operator [] ( const char* key )
+	{
+		nodecpp::string s( key );
+		return JSIndexRet::operator [] ( s );
+	}
+
+	nodecpp::string JSIndexRet::toString() const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return "undefined";
+			case Type::var:
+				return _asVar().toString();
+			case Type::value:
+				return _asValue()->toString();
 		}
 	}
 

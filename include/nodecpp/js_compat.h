@@ -283,8 +283,8 @@ namespace nodecpp::js {
 		JSVar& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
 
 		JSVar operator [] ( const JSVar& var );
-		JSVar operator [] ( size_t idx );
-		JSVar operator [] ( int idx ) { return operator [] ((size_t)idx); }
+		JSVar operator [] ( double num );
+		JSVar operator [] ( int num );
 		JSVar operator [] ( const nodecpp::string& key );
 		JSVar operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
 
@@ -400,9 +400,15 @@ namespace nodecpp::js {
 			type = Type::var;
 		}
 		JSIndexRet& operator = ( const JSIndexRet& other );
-
 		JSIndexRet& operator = ( Value& obj );
 		JSIndexRet& operator = ( const JSVar& var );
+
+		JSIndexRet operator [] ( const JSVar& var );
+		JSIndexRet operator [] ( double idx );
+		JSIndexRet operator [] ( int idx );
+		JSIndexRet operator [] ( const nodecpp::string& key );
+		JSIndexRet operator [] ( const char* key );
+
 		operator JSVar () const;
 		nodecpp::string toString() const;
 	};
