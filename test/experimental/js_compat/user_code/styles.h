@@ -105,6 +105,7 @@ public:
 		  auto val = codes[key];
 		  styles[ key ] = JSOwnObj( std::move( nodecpp::js::JSArray::makeJSArray() ) ); // TODO: ownership
 //printf( "\n======\n%s\n=======\n", styles.toString().c_str() );
+//		  JSVar style = styles[key];
 		  auto style = styles[key];
 		  style[ "open" ] = JSVar( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
 		  style[ "close" ] = JSVar( nodecpp::format("\\u001b[{}m", val[1].toString() ) );

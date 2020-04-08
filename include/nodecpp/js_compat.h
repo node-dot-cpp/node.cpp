@@ -100,14 +100,10 @@ namespace nodecpp::js {
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarBase& );
 
-		enum Type { undef, boolean, num, string, softptr, fn };
+		enum Type { undef, boolean, num, string, softptr, fn/*, fn0, fn1, fn2, fn3, fn4*/ };
 		Type type = Type::undef;
 		static constexpr size_t memsz = sizeof( nodecpp::string ) > 16 ? sizeof( nodecpp::string ) : 16;
 		uintptr_t basemem[memsz/sizeof(uintptr_t)]; // note: we just cause it to be uintptr_t-aligned
-
-		struct FunctionBase
-		{
-		};
 
 		static constexpr size_t fnSize = sizeof( std::function<double(double)> );
 		static_assert( fnSize == 64 );
@@ -251,6 +247,46 @@ namespace nodecpp::js {
 
 	};
 
+	class JSIndexRet
+	{
+		friend class JSVar;
+		friend class JSObject;
+		friend class JSArray;
+
+		enum Type { undef, value, var };
+		Type type = Type::undef;
+		using OwnedT = Value*;
+		static constexpr size_t memsz = sizeof( OwnedT ) > sizeof( JSVarBase ) ? sizeof( OwnedT ) : sizeof( JSVarBase );
+		uintptr_t basemem[ memsz / sizeof( uintptr_t ) ];
+		JSVar& _asVar() { return *reinterpret_cast<JSVar*>( basemem ); }
+		OwnedT& _asValue() { return *reinterpret_cast<OwnedT*>( basemem ); }
+		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
+		const OwnedT& _asValue() const { return *reinterpret_cast<const OwnedT*>( basemem ); }
+
+		JSIndexRet() {}
+		JSIndexRet( Value& v ) {
+			_asValue() = &v;
+			type = Type::value;
+		}
+		JSIndexRet( const JSVar& var );
+		JSIndexRet& operator = ( Value& obj );
+
+	public:
+		JSIndexRet( const JSIndexRet& other);
+		JSIndexRet& operator = ( const JSIndexRet& other );
+		JSIndexRet& operator = ( const JSVar& var );
+		JSIndexRet& operator = ( const JSOwnObj& obj );
+
+		JSIndexRet operator [] ( const JSVar& var );
+		JSIndexRet operator [] ( double idx );
+		JSIndexRet operator [] ( int idx );
+		JSIndexRet operator [] ( const nodecpp::string& key );
+		JSIndexRet operator [] ( const char* key );
+
+		operator JSVar () const;
+		nodecpp::string toString() const;
+	};
+
 	class JSVar : protected JSVarBase
 	{
 		friend class JSObject;
@@ -282,11 +318,11 @@ namespace nodecpp::js {
 		JSVar& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
 		JSVar& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
 
-		JSVar operator [] ( const JSVar& var );
-		JSVar operator [] ( double num );
-		JSVar operator [] ( int num );
-		JSVar operator [] ( const nodecpp::string& key );
-		JSVar operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
+		JSIndexRet operator [] ( const JSVar& var );
+		JSIndexRet operator [] ( double num );
+		JSIndexRet operator [] ( int num );
+		JSIndexRet operator [] ( const nodecpp::string& key );
+		JSIndexRet operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
 
 		nodecpp::string toString() const;
 		bool operator !() const
@@ -376,48 +412,6 @@ namespace nodecpp::js {
 
 		operator JSVar () const;
 //		operator JSOwnObj () const;
-		nodecpp::string toString() const;
-	};
-
-	class JSIndexRet
-	{
-		friend class JSObject;
-		friend class JSArray;
-
-		enum Type { undef, value, var };
-		Type type = Type::undef;
-		using OwnedT = Value*;
-		static constexpr size_t memsz = sizeof( OwnedT ) > sizeof( JSVar ) ? sizeof( OwnedT ) : sizeof( JSVar );
-		uintptr_t basemem[ memsz / sizeof( uintptr_t ) ];
-		JSVar& _asVar() { return *reinterpret_cast<JSVar*>( basemem ); }
-		OwnedT& _asValue() { return *reinterpret_cast<OwnedT*>( basemem ); }
-		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
-		const OwnedT& _asValue() const { return *reinterpret_cast<const OwnedT*>( basemem ); }
-
-		JSIndexRet() {}
-		JSIndexRet( Value& v ) {
-			_asValue() = &v;
-			type = Type::value;
-		}
-		JSIndexRet( const JSVar& var ) {
-			new(&(_asVar()))JSVar( var );
-			type = Type::var;
-		}
-		JSIndexRet& operator = ( Value& obj );
-
-	public:
-		JSIndexRet( const JSIndexRet& other);
-		JSIndexRet& operator = ( const JSIndexRet& other );
-		JSIndexRet& operator = ( const JSVar& var );
-		JSIndexRet& operator = ( const JSOwnObj& obj );
-
-		JSIndexRet operator [] ( const JSVar& var );
-		JSIndexRet operator [] ( double idx );
-		JSIndexRet operator [] ( int idx );
-		JSIndexRet operator [] ( const nodecpp::string& key );
-		JSIndexRet operator [] ( const char* key );
-
-		operator JSVar () const;
 		nodecpp::string toString() const;
 	};
 

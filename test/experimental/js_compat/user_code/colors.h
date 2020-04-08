@@ -58,6 +58,7 @@ public:
 		colors["enbled"] = false;
 	}
 
+#if 0 // temporarily disabled
 	JSVar stylize( JSVar str, JSVar style)
 	{
 		if (!colors["enbled"])
@@ -75,6 +76,7 @@ public:
 
 //		return styleMap.open + str + styleMap.close;
 	}
+#endif // 0
 };
 
 using Colors = JSModule2JSVar<&Colors_::colors>;

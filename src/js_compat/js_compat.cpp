@@ -96,7 +96,7 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////   JSVar ////
 	
-	JSVar JSVar::operator [] ( const JSVar& var )
+	JSIndexRet JSVar::operator [] ( const JSVar& var )
 	{
 		switch ( type )
 		{
@@ -143,7 +143,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSVar JSVar::operator [] ( int idx )
+	JSIndexRet JSVar::operator [] ( int idx )
 	{
 		switch ( type )
 		{
@@ -168,7 +168,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSVar JSVar::operator [] ( double idx )
+	JSIndexRet JSVar::operator [] ( double idx )
 	{
 		switch ( type )
 		{
@@ -193,7 +193,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSVar JSVar::operator [] ( const nodecpp::string& key )
+	JSIndexRet JSVar::operator [] ( const nodecpp::string& key )
 	{
 		switch ( type )
 		{
@@ -498,6 +498,11 @@ namespace nodecpp::js {
 				_asValue() = other._asValue();
 				break;
 		}
+	}
+
+	JSIndexRet::JSIndexRet( const JSVar& var ) {
+		new(&(_asVar()))JSVar( var );
+		type = Type::var;
 	}
 
 	JSIndexRet& JSIndexRet::operator = ( const JSIndexRet& other ) {
