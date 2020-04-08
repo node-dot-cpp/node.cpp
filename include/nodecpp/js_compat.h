@@ -381,6 +381,9 @@ namespace nodecpp::js {
 
 	class JSIndexRet
 	{
+		friend class JSObject;
+		friend class JSArray;
+
 		enum Type { undef, value, var };
 		Type type = Type::undef;
 		using OwnedT = Value*;
@@ -390,8 +393,8 @@ namespace nodecpp::js {
 		OwnedT& _asValue() { return *reinterpret_cast<OwnedT*>( basemem ); }
 		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
 		const OwnedT& _asValue() const { return *reinterpret_cast<const OwnedT*>( basemem ); }
-	public:
-		JSIndexRet( const JSIndexRet& other);
+
+		JSIndexRet() {}
 		JSIndexRet( Value& v ) {
 			_asValue() = &v;
 			type = Type::value;
@@ -400,8 +403,11 @@ namespace nodecpp::js {
 			new(&(_asVar()))JSVar( var );
 			type = Type::var;
 		}
-		JSIndexRet& operator = ( const JSIndexRet& other );
 		JSIndexRet& operator = ( Value& obj );
+
+	public:
+		JSIndexRet( const JSIndexRet& other);
+		JSIndexRet& operator = ( const JSIndexRet& other );
 		JSIndexRet& operator = ( const JSVar& var );
 		JSIndexRet& operator = ( const JSOwnObj& obj );
 
@@ -436,7 +442,9 @@ namespace nodecpp::js {
 		JSIndexRet findOrAdd ( nodecpp::string s ) {
 			auto f = pairs.find( s );
 			if ( f != pairs.end() )
+			{
 				return f->second;
+			}
 			else
 			{
 				auto insret = pairs.insert( std::make_pair( s, Value() ) );
@@ -563,7 +571,7 @@ namespace nodecpp::js {
 			{
 				elems.reserve( idx + 1 );
 				for ( size_t i=elems.size(); i<elems.capacity(); ++i )
-					elems.push_back( JSVar() );
+					elems.push_back( Value() );
 				return elems[ idx ];
 			}
 		}
@@ -602,7 +610,6 @@ namespace nodecpp::js {
 		}
 	};
 
-	////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
 

@@ -578,8 +578,9 @@ namespace nodecpp::js {
 				break;
 			case Type::var:
 				throw;
-				_asVar().~JSVar();
-				*(_asValue()) = obj;
+//				_asVar().~JSVar();
+//				*(_asValue()) = obj;
+				_asVar() = obj; // effectively storing soft_ptr to what's owned by obj
 				break;
 			case Type::value:
 				*(_asValue()) = obj;
@@ -593,15 +594,16 @@ namespace nodecpp::js {
 		switch ( type )
 		{
 			case Type::undef:
-				throw;
-				new(&(_asVar()))JSVar( var );
-				type = Type::var;
+				throw; // TODO: reconsider
+//				new(&(_asVar()))JSVar( var );
+//				type = Type::var;
 				break;
 			case Type::var:
 				_asVar() = var;
 				break;
 			case Type::value:
 //				new(&(_asVar()))JSVar( var );
+//				type = Type::var;
 				*(_asValue()) = var;
 				break;
 		}
@@ -640,7 +642,7 @@ namespace nodecpp::js {
 			case Type::undef:
 				return JSVar();
 			case Type::var:
-				return _asVar().operator[]( var);
+				return _asVar().operator[]( var );
 			case Type::value:
 			{
 				auto& v = *(_asValue());
@@ -649,11 +651,9 @@ namespace nodecpp::js {
 					case Value::Type::undef:
 						return JSVar();
 					case Value::Type::var:
-						return v._asVar().operator[]( var);
+						return v._asVar().operator[]( var );
 					case Value::Type::obj:
-//						JSVar ret = v._asPtr().operator[]( var);
-//						return ret;
-						return v._asPtr().operator[]( var);
+						return v._asPtr().operator[]( var );
 				}
 			}
 		}
@@ -666,7 +666,7 @@ namespace nodecpp::js {
 			case Type::undef:
 				return JSVar();
 			case Type::var:
-				return _asVar().operator[]( d);
+				return _asVar().operator[]( d );
 			case Type::value:
 			{
 				auto& v = *(_asValue());
@@ -675,10 +675,8 @@ namespace nodecpp::js {
 					case Value::Type::undef:
 						return JSVar();
 					case Value::Type::var:
-						return v._asVar().operator[]( d);
+						return v._asVar().operator[]( d );
 					case Value::Type::obj:
-//						JSVar ret = v._asPtr().operator[]( d);
-//						return ret;
 						return v._asPtr().operator[]( d );
 				}
 			}
@@ -692,7 +690,7 @@ namespace nodecpp::js {
 			case Type::undef:
 				return JSVar();
 			case Type::var:
-				return _asVar().operator[]( idx);
+				return _asVar().operator[]( idx );
 			case Type::value:
 			{
 				auto& v = *(_asValue());
@@ -701,10 +699,8 @@ namespace nodecpp::js {
 					case Value::Type::undef:
 						return JSVar();
 					case Value::Type::var:
-						return v._asVar().operator[]( idx);
+						return v._asVar().operator[]( idx );
 					case Value::Type::obj:
-//						JSVar ret = v._asPtr().operator[]( idx);
-//						return ret;
 						return v._asPtr().operator[]( idx );
 				}
 			}
@@ -718,7 +714,7 @@ namespace nodecpp::js {
 			case Type::undef:
 				return JSVar();
 			case Type::var:
-				return _asVar().operator[]( key);
+				return _asVar().operator[]( key );
 			case Type::value:
 			{
 				auto& v = *(_asValue());
@@ -727,10 +723,8 @@ namespace nodecpp::js {
 					case Value::Type::undef:
 						return JSVar();
 					case Value::Type::var:
-						return v._asVar().operator[]( key);
+						return v._asVar().operator[]( key );
 					case Value::Type::obj:
-//						JSVar ret = v._asPtr().operator[]( key);
-//						return ret;
 						return v._asPtr().operator[]( key );
 				}
 			}
