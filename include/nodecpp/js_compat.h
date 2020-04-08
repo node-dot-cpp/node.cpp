@@ -371,10 +371,11 @@ namespace nodecpp::js {
 			type = Type::var;
 		}
 		Value& operator = ( const Value& other );
-
-		Value& operator = ( JSOwnObj&& obj );
+		Value& operator = ( const JSOwnObj& obj );
 		Value& operator = ( const JSVar& var );
+
 		operator JSVar () const;
+//		operator JSOwnObj () const;
 		nodecpp::string toString() const;
 	};
 
@@ -402,6 +403,7 @@ namespace nodecpp::js {
 		JSIndexRet& operator = ( const JSIndexRet& other );
 		JSIndexRet& operator = ( Value& obj );
 		JSIndexRet& operator = ( const JSVar& var );
+		JSIndexRet& operator = ( const JSOwnObj& obj );
 
 		JSIndexRet operator [] ( const JSVar& var );
 		JSIndexRet operator [] ( double idx );
