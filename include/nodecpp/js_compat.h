@@ -410,6 +410,10 @@ namespace nodecpp::js {
 			new(&(_asVar()))JSVar( var );
 			type = Type::var;
 		}
+		Value( nodecpp::safememory::owning_ptr<JSObject>&& obj ) {
+			new(&(_asPtr()))OwnedT( std::move( obj ) );
+			type = Type::obj;
+		}
 		Value( nodecpp::safememory::owning_ptr<JSArray>&& arr ) {
 			new(&(_asPtr()))OwnedT( std::move( arr ) );
 			type = Type::obj;

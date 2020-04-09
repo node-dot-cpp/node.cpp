@@ -65,13 +65,23 @@ private:
   
 	});
 
+/*	  JSOwnObj array_of_arrays = JSObject::makeJSObject({
+		  { "key1", "val1" }, 
+		  { "key2", JSObject::makeJSObject({ 
+			  { "key1-1", "val1-1" } }) }
+	  } );*/
 	JSOwnObj array_of_arrays = nodecpp::js::JSArray::makeJSArray({ 
 	  JSArray::makeJSArray({JSVar("reset"), JSVar(0), JSVar(0) }),
 	  JSArray::makeJSArray({"bold", 1, 22 }),
 	  JSArray::makeJSArray({"dim", 2, 22 }),
 	  JSArray::makeJSArray({"num", 3 }),
-	  JSArray::makeJSArray({"str", "some str" })
-  
+	  JSArray::makeJSArray({"str", "some str" }),
+	  "just a string",
+	  JSObject::makeJSObject({
+		  { "key1", "val1" }, 
+		  { "key2", JSObject::makeJSObject({ 
+			  { "key1-1", "val1-1" } }) }
+	  } )
 	});
 
 public:
