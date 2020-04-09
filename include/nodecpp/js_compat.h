@@ -285,6 +285,8 @@ namespace nodecpp::js {
 		JSIndexRet operator [] ( const nodecpp::string& key );
 		JSIndexRet operator [] ( const char* key );
 
+		~JSIndexRet();
+
 		operator JSVar () const;
 		nodecpp::string toString() const;
 	};
@@ -453,6 +455,13 @@ namespace nodecpp::js {
 		Value& operator = ( const JSOwnObj& obj );
 		Value& operator = ( const JSVar& var );
 		Value& operator = ( int num ) { return operator = (JSVar( num ) ); }
+
+		~Value() {
+			if ( type == Type::var )
+				_asVar().~JSVar();
+			else if ( type == Type::obj )
+				_asPtr().~JSOwnObj();
+		}
 
 		operator JSVar () const;
 //		operator JSOwnObj () const;

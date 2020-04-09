@@ -352,10 +352,10 @@ namespace nodecpp::js {
 			case Type::undef:
 				break;
 			case Type::var:
-				_asVar() = other._asVar();
+				new(&(_asVar()))JSVar( other._asVar() );
 				break;
 			case Type::obj:
-				_asPtr() = other._asPtr();
+				new(&(_asPtr()))OwnedT( other._asPtr() );
 				break;
 		}
 	}
@@ -618,6 +618,11 @@ namespace nodecpp::js {
 				break;
 		}
 		return *this;
+	}
+
+	JSIndexRet::~JSIndexRet() {
+		if ( type == Type::var )
+			_asVar().~JSVar();
 	}
 
 	JSIndexRet::operator JSVar () const
