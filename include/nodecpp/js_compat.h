@@ -53,20 +53,20 @@ namespace nodecpp::js {
 //		JSOwnObj( JSOwnObj&& other ) { ptr = std::move( other.ptr ); }
 		JSOwnObj( const JSOwnObj& other ) { ptr = std::move( *const_cast<owningptr2jsobj*>( &(other.ptr) ) ); }
 		JSOwnObj( owningptr2jsobj ptr_ ) { ptr = std::move( ptr_ ); }
-//		JSOwnObj( const owningptr2jsarr ptr ) { ptr = std::move( ptr ); }
-		JSOwnObj( std::initializer_list<double> l ) { ptr = make_owning<JSArray>(l); }
-		JSOwnObj( std::initializer_list<int> l ) { ptr = make_owning<JSArray>(l); }
-		JSOwnObj( std::initializer_list<const char*> l ) { ptr = make_owning<JSArray>(l); }
+		JSOwnObj( owningptr2jsarr& ptr_ ) { owningptr2jsobj tmp(std::move( ptr_ )); ptr = std::move( tmp ); }
+//		JSOwnObj( std::initializer_list<double> l ) { ptr = make_owning<JSArray>(l); }
+//		JSOwnObj( std::initializer_list<int> l ) { ptr = make_owning<JSArray>(l); }
+//		JSOwnObj( std::initializer_list<const char*> l ) { ptr = make_owning<JSArray>(l); }
 
 		~JSOwnObj() {}
 
 //		JSOwnObj& operator = ( JSOwnObj&& other ) { if ( this == &other ) return *this; ptr = std::move( other.ptr ); return *this; }
 		JSOwnObj& operator = ( const JSOwnObj& other ) { if ( this == &other ) return *this ; ptr = std::move( *const_cast<owningptr2jsobj*>( &(other.ptr) ) ); return *this; }
 		JSOwnObj& operator = ( owningptr2jsobj ptr ) { ptr = std::move( ptr ); return *this; }
-//		JSOwnObj& operator = ( owningptr2jsarr ptr ) { ptr = std::move( ptr ); return *this; }
-		JSOwnObj& operator = ( std::initializer_list<double> l ) { ptr = make_owning<JSArray>(l); return *this; }
-		JSOwnObj& operator = ( std::initializer_list<int> l ) { ptr = make_owning<JSArray>(l); return *this; }
-		JSOwnObj& operator = ( std::initializer_list<const char*> l ) { ptr = make_owning<JSArray>(l); return *this; }
+		JSOwnObj& operator = ( owningptr2jsarr ptr ) { ptr = std::move( ptr ); return *this; }
+//		JSOwnObj& operator = ( std::initializer_list<double> l ) { ptr = make_owning<JSArray>(l); return *this; }
+//		JSOwnObj& operator = ( std::initializer_list<int> l ) { ptr = make_owning<JSArray>(l); return *this; }
+//		JSOwnObj& operator = ( std::initializer_list<const char*> l ) { ptr = make_owning<JSArray>(l); return *this; }
 
 		JSIndexRet operator [] ( const JSVar& var );
 		JSIndexRet operator [] ( double idx );
@@ -423,7 +423,7 @@ namespace nodecpp::js {
 			type = Type::var;
 		}
 //		Value( std::initializer_list<std::pair<nodecpp::string, int>> l );
-		Value( std::initializer_list<int> l ) { 
+		/*Value( std::initializer_list<int> l ) { 
 			JSOwnObj tmp(l); 
 			new(&(_asPtr()))OwnedT( std::move( tmp ) );
 			type = Type::obj;
@@ -444,7 +444,7 @@ namespace nodecpp::js {
 			new(&(_asPtr()))OwnedT( std::move( tmp ) );
 			type = Type::obj;
 			return *this;
-		}
+		}*/
 		Value& operator = ( const Value& other );
 		Value& operator = ( const JSOwnObj& obj );
 		Value& operator = ( const JSVar& var );
@@ -596,13 +596,19 @@ namespace nodecpp::js {
 			for ( auto& str : l )
 				elems.push_back( Value(JSVar( str )) );
 		}
+		JSArray(std::initializer_list<JSVar> l)
+		{
+			for ( auto& var : l )
+				elems.push_back( Value(JSVar( var )) );
+		}
 	public:
 		static owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
 		static owning_ptr<JSArray> makeJSArray(std::initializer_list<Value> l) { return make_owning<JSArray>(l); } // TODO: ownership of args
-		static owning_ptr<JSArray> makeJSArray(std::initializer_list<double> l) { return make_owning<JSArray>(l); }
-		static owning_ptr<JSArray> makeJSArray(std::initializer_list<int> l) { return make_owning<JSArray>(l); }
-		static owning_ptr<JSArray> makeJSArray(std::initializer_list<nodecpp::string> l) { return make_owning<JSArray>(l); }
-		static owning_ptr<JSArray> makeJSArray(std::initializer_list<const char*> l) { return make_owning<JSArray>(l); }
+//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<double> l) { return make_owning<JSArray>(l); }
+//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<int> l) { return make_owning<JSArray>(l); }
+//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<nodecpp::string> l) { return make_owning<JSArray>(l); }
+//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<const char*> l) { return make_owning<JSArray>(l); }
+//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<JSVar> l) { return make_owning<JSArray>(l); }
 		virtual JSIndexRet operator [] ( const JSVar& var )
 		{
 			// TODO: revise implementation!!!

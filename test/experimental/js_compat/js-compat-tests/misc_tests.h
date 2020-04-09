@@ -38,6 +38,7 @@ public:
 	nodecpp::js::JSOwnObj miscTests = nodecpp::js::JSObject::makeJSObject();
 
 private:
+#if 0
 	JSOwnObj object_with_single_type = nodecpp::js::JSObject::makeJSObject({ 
 	  { "reset", {0, 0 } },
 	  { "bold", {1, 22 } },
@@ -45,7 +46,6 @@ private:
   
 	});
 
-#if 1
 	JSOwnObj object_with_misc_types = nodecpp::js::JSObject::makeJSObject({ 
 	  { "reset", {0, 0 } },
 	  { "bold", {1, 22 } },
@@ -56,11 +56,31 @@ private:
 	});
 #endif
 
+	JSOwnObj object_with_explicit_types = nodecpp::js::JSObject::makeJSObject({ 
+	  { "reset", JSArray::makeJSArray({0, 0 }) },
+	  { "bold", JSArray::makeJSArray({1, 22 }) },
+	  { "dim", JSArray::makeJSArray({2, 22 }) },
+	  { "num", 3 },
+	  { "str", "some str" }
+  
+	});
+
+	JSOwnObj array_of_arrays = nodecpp::js::JSArray::makeJSArray({ 
+	  JSArray::makeJSArray({JSVar("reset"), JSVar(0), JSVar(0) }),
+	  JSArray::makeJSArray({"bold", 1, 22 }),
+	  JSArray::makeJSArray({"dim", 2, 22 }),
+	  JSArray::makeJSArray({"num", 3 }),
+	  JSArray::makeJSArray({"str", "some str" })
+  
+	});
+
 public:
 	MiscTests_()
 	{
-printf( "\n======\n%s\n=======\n", object_with_single_type.toString().c_str() );
-printf( "\n======\n%s\n=======\n", object_with_misc_types.toString().c_str() );
+//printf( "\n======\n%s\n=======\n", object_with_single_type.toString().c_str() );
+//printf( "\n======\n%s\n=======\n", object_with_misc_types.toString().c_str() );
+printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
+printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
 #if 0
 		object_with_single_type.forEach([this](nodecpp::string key) {
 		  auto val = object_with_single_type[key];
