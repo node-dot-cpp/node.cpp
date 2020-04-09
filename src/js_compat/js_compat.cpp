@@ -340,6 +340,11 @@ namespace nodecpp::js {
 		type = Type::undef;
 	}
 
+	/*Value::Value( std::initializer_list<std::pair<nodecpp::string, int>> l ) {
+		new(&(_asPtr()))OwnedT( JSOwnObj( std::move( JSObject::makeJSObject( l ) ) ) );
+		type = Type::obj;
+	}*/
+
 	Value::Value( const Value& other) {
 		type = other.type;
 		switch ( other.type )
