@@ -50,27 +50,17 @@ namespace nodecpp::js {
 
 	public:
 		JSOwnObj() {}
-//		JSOwnObj( JSOwnObj&& other ) { ptr = std::move( other.ptr ); }
-//		JSOwnObj( const JSOwnObj& other ) { ptr = std::move( *const_cast<owningptr2jsobj*>( &(other.ptr) ) ); }
 		JSOwnObj( const JSOwnObj& other ) = delete;
 		JSOwnObj( JSOwnObj&& other ) { ptr = std::move( other.ptr ); }
 		JSOwnObj( owningptr2jsobj&& ptr_ ) { ptr = std::move( ptr_ ); }
 		JSOwnObj( owningptr2jsarr&& ptr_ ) { owningptr2jsobj tmp(std::move( ptr_ )); ptr = std::move( tmp ); }
-//		JSOwnObj( std::initializer_list<double> l ) { ptr = make_owning<JSArray>(l); }
-//		JSOwnObj( std::initializer_list<int> l ) { ptr = make_owning<JSArray>(l); }
-//		JSOwnObj( std::initializer_list<const char*> l ) { ptr = make_owning<JSArray>(l); }
 
 		~JSOwnObj() {}
 
-//		JSOwnObj& operator = ( JSOwnObj&& other ) { if ( this == &other ) return *this; ptr = std::move( other.ptr ); return *this; }
-//		JSOwnObj& operator = ( const JSOwnObj& other ) { if ( this == &other ) return *this ; ptr = std::move( *const_cast<owningptr2jsobj*>( &(other.ptr) ) ); return *this; }
 		JSOwnObj& operator = ( const JSOwnObj& other ) = delete;
 		JSOwnObj& operator = ( JSOwnObj&& other ) { if ( this == &other ) return *this ; ptr = std::move( other.ptr ); return *this; }
 		JSOwnObj& operator = ( owningptr2jsobj&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
 		JSOwnObj& operator = ( owningptr2jsarr&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
-//		JSOwnObj& operator = ( std::initializer_list<double> l ) { ptr = make_owning<JSArray>(l); return *this; }
-//		JSOwnObj& operator = ( std::initializer_list<int> l ) { ptr = make_owning<JSArray>(l); return *this; }
-//		JSOwnObj& operator = ( std::initializer_list<const char*> l ) { ptr = make_owning<JSArray>(l); return *this; }
 
 		JSIndexRet operator [] ( const JSVar& var );
 		JSIndexRet operator [] ( double idx );
@@ -315,8 +305,6 @@ namespace nodecpp::js {
 		JSVar( const char* str ) { nodecpp::string str_( str ); JSVarBase::init( str_ ); }
 		JSVar( const softptr2jsobj ptr ) { JSVarBase::init( ptr ); }
 		JSVar( const softptr2jsarr ptr ) { JSVarBase::init( ptr ); }
-//		JSVar( std::initializer_list<double> l ) { auto arr = make_owning<JSArray>(l); JSVarBase::init( std::move( arr ) ); }
-//		JSVar( std::initializer_list<int> l ) { auto arr = make_owning<JSArray>(l); JSVarBase::init( std::move( arr ) ); }
 
 		~JSVar() { deinit(); }
 
@@ -324,6 +312,7 @@ namespace nodecpp::js {
 		JSVar& operator = ( const JSOwnObj& other ) { const nodecpp::js::JSVarBase::softptr2jsobj tmp = other.ptr; JSVarBase::init( tmp ); return *this; }
 		JSVar& operator = ( bool b ) { JSVarBase::init( b ); return *this; }
 		JSVar& operator = ( double d ) { JSVarBase::init( d ); return *this; }
+		JSVar& operator = ( int n ) { JSVarBase::init( (double)n ); return *this; }
 		JSVar& operator = ( const nodecpp::string& str ) { JSVarBase::init( str ); return *this; }
 		JSVar& operator = ( const char* str ) { nodecpp::string str_( str ); JSVarBase::init( str_ ); return * this; }
 		JSVar& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
@@ -430,7 +419,7 @@ namespace nodecpp::js {
 			new(&(_asPtr()))OwnedT( std::move( arr ) );
 			type = Type::obj;
 		}
-		/**/JSInit( int num ) {
+		JSInit( int num ) {
 			new(&(_asVar()))JSVar( num );
 			type = Type::var;
 		}
@@ -438,35 +427,12 @@ namespace nodecpp::js {
 			new(&(_asVar()))JSVar( str );
 			type = Type::var;
 		}
-//		JSInit( std::initializer_list<std::pair<nodecpp::string, int>> l );
-		/*JSInit( std::initializer_list<int> l ) { 
-			JSOwnObj tmp(l); 
-			new(&(_asPtr()))OwnedT( std::move( tmp ) );
-			type = Type::obj;
-		}
-		JSInit& operator = ( std::initializer_list<int> l ) { 
-			JSOwnObj tmp(l); 
-			new(&(_asPtr()))OwnedT( std::move( tmp ) );
-			type = Type::obj;
-			return *this;
-		}
-		JSInit( std::initializer_list<const char*> l ) { 
-			JSOwnObj tmp(l); 
-			new(&(_asPtr()))OwnedT( std::move( tmp ) );
-			type = Type::obj;
-		}
-		JSInit& operator = ( std::initializer_list<const char*> l ) { 
-			JSOwnObj tmp(l); 
-			new(&(_asPtr()))OwnedT( std::move( tmp ) );
-			type = Type::obj;
-			return *this;
-		}*/
 		JSInit& operator = ( const JSInit& other );
 		JSInit& operator = ( JSInit&& other );
-		JSInit& operator = ( JSOwnObj&& obj );
+		/*JSInit& operator = ( JSOwnObj&& obj );
 		JSInit& operator = ( const JSOwnObj& obj );
 		JSInit& operator = ( const JSVar& var );
-//		JSInit& operator = ( int num ) { return operator = (JSVar( num ) ); }
+		JSInit& operator = ( int num ) { return operator = (JSVar( num ) ); }*/
 
 		~JSInit() {
 			if ( type == Type::var )
@@ -475,9 +441,6 @@ namespace nodecpp::js {
 				_asPtr().~JSOwnObj();
 		}
 
-//		operator JSVar () const;
-//		operator JSOwnObj () const;
-//		nodecpp::string toString() const;
 		Value toValue() const;
 	};
 
@@ -496,7 +459,7 @@ namespace nodecpp::js {
 		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
 		const OwnedT& _asPtr() const { return *reinterpret_cast<const OwnedT*>( basemem ); }
 	public:
-		Value();
+		Value() {}
 		Value( Value&& other);
 		Value( const Value& other) = delete;
 		Value( JSOwnObj&& obj ) {
@@ -507,7 +470,7 @@ namespace nodecpp::js {
 			new(&(_asVar()))JSVar( var );
 			type = Type::var;
 		}
-		Value( nodecpp::safememory::owning_ptr<JSObject>&& obj ) {
+		/*Value( nodecpp::safememory::owning_ptr<JSObject>&& obj ) {
 			new(&(_asPtr()))OwnedT( std::move( obj ) );
 			type = Type::obj;
 		}
@@ -522,7 +485,7 @@ namespace nodecpp::js {
 		Value( const char* str ) {
 			new(&(_asVar()))JSVar( str );
 			type = Type::var;
-		}
+		}*/
 //		Value( std::initializer_list<std::pair<nodecpp::string, int>> l );
 		/*Value( std::initializer_list<int> l ) { 
 			JSOwnObj tmp(l); 
@@ -559,7 +522,7 @@ namespace nodecpp::js {
 				_asPtr().~JSOwnObj();
 		}
 
-		operator JSVar () const;
+//		operator JSVar () const;
 //		operator JSOwnObj () const;
 		nodecpp::string toString() const;
 	};
@@ -597,21 +560,6 @@ namespace nodecpp::js {
 
 	public:
 		JSObject() {}
-		/*JSObject(std::initializer_list<std::pair<nodecpp::string, JSVar>> l)
-		{
-			for ( auto& p : l )
-				pairs.insert( p );
-		}
-		JSObject(std::initializer_list<std::pair<nodecpp::string, JSOwnObj>> l)
-		{
-			for ( auto& p : l )
-				pairs.insert( std::move(*const_cast<std::pair<nodecpp::string, JSOwnObj>*>(&p)) );
-		}*/
-		/*JSObject(std::initializer_list<std::pair<nodecpp::string, Value>> l)
-		{
-			for ( auto& p : l )
-				pairs.insert( std::move(*const_cast<std::pair<nodecpp::string, Value>*>(&p)) );
-		}*/
 		JSObject(std::initializer_list<std::pair<nodecpp::string, JSInit>> l)
 		{
 			for ( auto& p : l )
@@ -683,41 +631,11 @@ namespace nodecpp::js {
 		nodecpp::vector<Value> elems;
 	public:
 		JSArray() {}
-		/*JSArray(std::initializer_list<Value> l)
-		{
-			for ( auto& p : l )
-				elems.push_back( p );
-		}*/
 		JSArray(std::initializer_list<JSInit> l)
 		{
 			for ( auto& p : l )
 				elems.push_back( p.toValue() );
 		}
-		/*JSArray(std::initializer_list<double> l)
-		{
-			for ( auto& d : l )
-				elems.push_back( JSVar( d ) );
-		}
-		JSArray(std::initializer_list<int> l)
-		{
-			for ( auto& d : l )
-				elems.push_back( JSVar( d ) );
-		}
-		JSArray(std::initializer_list<nodecpp::string> l)
-		{
-			for ( auto& str : l )
-				elems.push_back( Value(JSVar( str )) );
-		}
-		JSArray(std::initializer_list<const char*> l)
-		{
-			for ( auto& str : l )
-				elems.push_back( Value(JSVar( str )) );
-		}
-		JSArray(std::initializer_list<JSVar> l)
-		{
-			for ( auto& var : l )
-				elems.push_back( Value(JSVar( var )) );
-		}*/
 	public:
 		virtual JSIndexRet operator [] ( const JSVar& var )
 		{
