@@ -333,6 +333,124 @@ namespace nodecpp::js {
 		}
 	}
 
+	////////////////////////////////////////////////////////////   JSInit ////
+
+	JSInit::JSInit( const JSInit& other) {
+		type = other.type;
+		switch ( other.type )
+		{
+			case Type::undef:
+				break;
+			case Type::var:
+				new(&(_asVar()))JSVar( other._asVar() );
+				break;
+			case Type::obj:
+				new(&(_asPtr()))OwnedT( other._asPtr() );
+				break;
+		}
+	}
+
+	JSInit& JSInit::operator = ( const JSOwnObj& obj ) {
+		switch ( type )
+		{
+			case Type::undef:
+				new(&(_asPtr()))OwnedT( obj );
+				break;
+			case Type::var:
+				_asVar().~JSVar();
+				new(&(_asPtr()))OwnedT( obj );
+				break;
+			case Type::obj:
+				_asPtr() = std::move( obj );
+				break;
+		}
+		type = Type::obj;
+		return *this;
+	}
+
+	JSInit& JSInit::operator = ( const JSVar& var ) {
+		switch ( type )
+		{
+			case Type::undef:
+				new(&(_asVar()))JSVar( var );
+				break;
+			case Type::var:
+				_asVar() = var;
+				break;
+			case Type::obj:
+				_asPtr().~OwnedT();
+				new(&(_asVar()))JSVar( var );
+				break;
+		}
+		type = Type::var;
+		return *this;
+	}
+
+	JSInit& JSInit::operator = ( const JSInit& other ) {
+		switch ( type )
+		{
+			case Type::undef:
+				switch( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::var:
+						new(&(_asVar()))JSVar( other._asVar() );
+						break;
+					case Type::obj:
+						new(&(_asPtr()))OwnedT( other._asPtr() );
+						break;
+				}
+				break;
+			case Type::var:
+				switch( other.type )
+				{
+					case Type::undef:
+						_asVar().~JSVar();
+						break;
+					case Type::var:
+						_asVar() = other._asVar();
+						break;
+					case Type::obj:
+						_asVar().~JSVar();
+						new(&(_asPtr()))OwnedT( other._asPtr() );
+						break;
+				}
+				break;
+			case Type::obj:
+				switch( other.type )
+				{
+					case Type::undef:
+						_asPtr().~OwnedT();
+						break;
+					case Type::var:
+						_asPtr().~OwnedT();
+						new(&(_asVar()))JSVar( other._asVar() );
+						break;
+					case Type::obj:
+						_asPtr() = other._asPtr();
+						break;
+				}
+				break;
+		}
+		type = other.type;
+		return *this;
+	}
+
+	Value JSInit::toValue() const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return Value();
+			case Type::var:
+				return Value(_asVar());
+			case Type::obj:
+				return Value( std::move(_asPtr()));
+		}
+	}
+
+
 	////////////////////////////////////////////////////////////   Value ////
 
 	Value::Value() {
