@@ -365,6 +365,24 @@ namespace nodecpp::js {
 		}
 	}
 
+	JSInit& JSInit::operator = ( const JSOwnObj& obj ) {
+		switch ( type )
+		{
+			case Type::undef:
+				new(&(_asVar()))JSVar( obj );
+				break;
+			case Type::var:
+				_asVar() = obj;
+				break;
+			case Type::obj:
+				_asPtr().~OwnedT();
+				new(&(_asVar()))JSVar( obj );
+				break;
+		}
+		type = Type::var;
+		return *this;
+	}
+
 	JSInit& JSInit::operator = ( JSOwnObj&& obj ) {
 		switch ( type )
 		{

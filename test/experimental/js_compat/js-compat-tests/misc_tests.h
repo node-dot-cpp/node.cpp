@@ -80,18 +80,22 @@ public:
 		});
 
 		JSOwnObj arr1 = makeJSArray({0, 0 });
+		JSOwnObj arr2 = makeJSArray({1, 22 });
 
 		JSOwnObj object_with_explicit_types_2 = makeJSObject({ 
 		  { "reset", std::move(arr1) },
-		  { "bold", makeJSArray({1, 22 }) },
+		  { "bold", arr2 },
 		  { "dim", makeJSArray({2, 22 }) },
 		  { "num", 3 },
 		  { "str", "some str" }
   
 		});
 
+		arr2[0] = 999;
+
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2.toString().c_str() );
 #if 0
 		object_with_single_type.forEach([this](nodecpp::string key) {
 		  auto val = object_with_single_type[key];

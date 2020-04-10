@@ -414,6 +414,10 @@ namespace nodecpp::js {
 			new(&(_asPtr()))OwnedT( std::move( obj ) );
 			type = Type::obj;
 		}
+		JSInit( const JSOwnObj& obj ) {
+			new(&(_asVar()))JSVar( obj );
+			type = Type::var;
+		}
 		JSInit( const JSVar& var ) {
 			new(&(_asVar()))JSVar( var );
 			type = Type::var;
@@ -460,6 +464,7 @@ namespace nodecpp::js {
 		JSInit& operator = ( const JSInit& other );
 		JSInit& operator = ( JSInit&& other );
 		JSInit& operator = ( JSOwnObj&& obj );
+		JSInit& operator = ( const JSOwnObj& obj );
 		JSInit& operator = ( const JSVar& var );
 //		JSInit& operator = ( int num ) { return operator = (JSVar( num ) ); }
 
