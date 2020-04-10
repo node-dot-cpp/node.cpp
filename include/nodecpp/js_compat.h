@@ -51,9 +51,11 @@ namespace nodecpp::js {
 	public:
 		JSOwnObj() {}
 //		JSOwnObj( JSOwnObj&& other ) { ptr = std::move( other.ptr ); }
-		JSOwnObj( const JSOwnObj& other ) { ptr = std::move( *const_cast<owningptr2jsobj*>( &(other.ptr) ) ); }
-		JSOwnObj( owningptr2jsobj ptr_ ) { ptr = std::move( ptr_ ); }
-		JSOwnObj( owningptr2jsarr& ptr_ ) { owningptr2jsobj tmp(std::move( ptr_ )); ptr = std::move( tmp ); }
+//		JSOwnObj( const JSOwnObj& other ) { ptr = std::move( *const_cast<owningptr2jsobj*>( &(other.ptr) ) ); }
+		JSOwnObj( const JSOwnObj& other ) = delete;
+		JSOwnObj( JSOwnObj&& other ) { ptr = std::move( other.ptr ); }
+		JSOwnObj( owningptr2jsobj&& ptr_ ) { ptr = std::move( ptr_ ); }
+		JSOwnObj( owningptr2jsarr&& ptr_ ) { owningptr2jsobj tmp(std::move( ptr_ )); ptr = std::move( tmp ); }
 //		JSOwnObj( std::initializer_list<double> l ) { ptr = make_owning<JSArray>(l); }
 //		JSOwnObj( std::initializer_list<int> l ) { ptr = make_owning<JSArray>(l); }
 //		JSOwnObj( std::initializer_list<const char*> l ) { ptr = make_owning<JSArray>(l); }
@@ -61,9 +63,11 @@ namespace nodecpp::js {
 		~JSOwnObj() {}
 
 //		JSOwnObj& operator = ( JSOwnObj&& other ) { if ( this == &other ) return *this; ptr = std::move( other.ptr ); return *this; }
-		JSOwnObj& operator = ( const JSOwnObj& other ) { if ( this == &other ) return *this ; ptr = std::move( *const_cast<owningptr2jsobj*>( &(other.ptr) ) ); return *this; }
-		JSOwnObj& operator = ( owningptr2jsobj ptr ) { ptr = std::move( ptr ); return *this; }
-		JSOwnObj& operator = ( owningptr2jsarr ptr ) { ptr = std::move( ptr ); return *this; }
+//		JSOwnObj& operator = ( const JSOwnObj& other ) { if ( this == &other ) return *this ; ptr = std::move( *const_cast<owningptr2jsobj*>( &(other.ptr) ) ); return *this; }
+		JSOwnObj& operator = ( const JSOwnObj& other ) = delete;
+		JSOwnObj& operator = ( JSOwnObj&& other ) { if ( this == &other ) return *this ; ptr = std::move( other.ptr ); return *this; }
+		JSOwnObj& operator = ( owningptr2jsobj&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
+		JSOwnObj& operator = ( owningptr2jsarr&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
 //		JSOwnObj& operator = ( std::initializer_list<double> l ) { ptr = make_owning<JSArray>(l); return *this; }
 //		JSOwnObj& operator = ( std::initializer_list<int> l ) { ptr = make_owning<JSArray>(l); return *this; }
 //		JSOwnObj& operator = ( std::initializer_list<const char*> l ) { ptr = make_owning<JSArray>(l); return *this; }
@@ -277,7 +281,8 @@ namespace nodecpp::js {
 		JSIndexRet( const JSIndexRet& other);
 		JSIndexRet& operator = ( const JSIndexRet& other );
 		JSIndexRet& operator = ( const JSVar& var );
-		JSIndexRet& operator = ( const JSOwnObj& obj );
+//		JSIndexRet& operator = ( const JSOwnObj& obj );
+		JSIndexRet& operator = ( JSOwnObj&& obj );
 
 		JSIndexRet operator [] ( const JSVar& var );
 		JSIndexRet operator [] ( double idx );
@@ -402,8 +407,9 @@ namespace nodecpp::js {
 		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
 		const OwnedT& _asPtr() const { return *reinterpret_cast<const OwnedT*>( basemem ); }
 	public:
-		JSInit() {type = Type::undef; }
+		JSInit() {}
 		JSInit( const JSInit& other);
+		JSInit( JSInit&& other);
 		JSInit( JSOwnObj&& obj ) {
 			new(&(_asPtr()))OwnedT( std::move( obj ) );
 			type = Type::obj;
@@ -452,7 +458,8 @@ namespace nodecpp::js {
 			return *this;
 		}*/
 		JSInit& operator = ( const JSInit& other );
-		JSInit& operator = ( const JSOwnObj& obj );
+		JSInit& operator = ( JSInit&& other );
+		JSInit& operator = ( JSOwnObj&& obj );
 		JSInit& operator = ( const JSVar& var );
 //		JSInit& operator = ( int num ) { return operator = (JSVar( num ) ); }
 
@@ -472,6 +479,7 @@ namespace nodecpp::js {
 	class Value
 	{
 		friend class JSIndexRet;
+		friend class JSInit;
 
 		enum Type { undef, obj, var };
 		Type type = Type::undef;
@@ -484,7 +492,8 @@ namespace nodecpp::js {
 		const OwnedT& _asPtr() const { return *reinterpret_cast<const OwnedT*>( basemem ); }
 	public:
 		Value();
-		Value( const Value& other);
+		Value( Value&& other);
+		Value( const Value& other) = delete;
 		Value( JSOwnObj&& obj ) {
 			new(&(_asPtr()))OwnedT( std::move( obj ) );
 			type = Type::obj;
@@ -532,10 +541,11 @@ namespace nodecpp::js {
 			type = Type::obj;
 			return *this;
 		}*/
-		Value& operator = ( const Value& other );
-		Value& operator = ( const JSOwnObj& obj );
-		Value& operator = ( const JSVar& var );
-		Value& operator = ( int num ) { return operator = (JSVar( num ) ); }
+		Value& operator = ( Value&& other );
+		Value& operator = ( const Value& other ) = delete;
+//		Value& operator = ( const JSOwnObj& obj );
+//		Value& operator = ( const JSVar& var );
+//		Value& operator = ( int num ) { return operator = (JSVar( num ) ); }
 
 		~Value() {
 			if ( type == Type::var )
@@ -600,7 +610,7 @@ namespace nodecpp::js {
 		JSObject(std::initializer_list<std::pair<nodecpp::string, JSInit>> l)
 		{
 			for ( auto& p : l )
-				pairs.insert( make_pair( p.first, p.second.toValue() ) );
+				pairs.insert( make_pair( p.first, std::move( p.second.toValue() ) ) );
 		}
 	public:
 		virtual ~JSObject() {}

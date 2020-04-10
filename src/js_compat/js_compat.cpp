@@ -345,20 +345,35 @@ namespace nodecpp::js {
 				new(&(_asVar()))JSVar( other._asVar() );
 				break;
 			case Type::obj:
-				new(&(_asPtr()))OwnedT( other._asPtr() );
+				new(&(_asPtr()))OwnedT( std::move( *const_cast<OwnedT*>( &(other._asPtr()) ) ) );
 				break;
 		}
 	}
 
-	JSInit& JSInit::operator = ( const JSOwnObj& obj ) {
+	JSInit::JSInit( JSInit&& other) {
+		type = other.type;
+		switch ( other.type )
+		{
+			case Type::undef:
+				break;
+			case Type::var:
+				new(&(_asVar()))JSVar( other._asVar() );
+				break;
+			case Type::obj:
+				new(&(_asPtr()))OwnedT( std::move( other._asPtr()) );
+				break;
+		}
+	}
+
+	JSInit& JSInit::operator = ( JSOwnObj&& obj ) {
 		switch ( type )
 		{
 			case Type::undef:
-				new(&(_asPtr()))OwnedT( obj );
+				new(&(_asPtr()))OwnedT( std::move( obj ) );
 				break;
 			case Type::var:
 				_asVar().~JSVar();
-				new(&(_asPtr()))OwnedT( obj );
+				new(&(_asPtr()))OwnedT( std::move( obj ) );
 				break;
 			case Type::obj:
 				_asPtr() = std::move( obj );
@@ -398,7 +413,7 @@ namespace nodecpp::js {
 						new(&(_asVar()))JSVar( other._asVar() );
 						break;
 					case Type::obj:
-						new(&(_asPtr()))OwnedT( other._asPtr() );
+						new(&(_asPtr()))OwnedT( std::move( *const_cast<OwnedT*>( &(other._asPtr()) ) ) );
 						break;
 				}
 				break;
@@ -413,7 +428,7 @@ namespace nodecpp::js {
 						break;
 					case Type::obj:
 						_asVar().~JSVar();
-						new(&(_asPtr()))OwnedT( other._asPtr() );
+						new(&(_asPtr()))OwnedT( std::move( *const_cast<OwnedT*>( &(other._asPtr()) ) ) );
 						break;
 				}
 				break;
@@ -428,7 +443,58 @@ namespace nodecpp::js {
 						new(&(_asVar()))JSVar( other._asVar() );
 						break;
 					case Type::obj:
-						_asPtr() = other._asPtr();
+						_asPtr() = std::move( *const_cast<OwnedT*>( &(other._asPtr()) ) );
+						break;
+				}
+				break;
+		}
+		type = other.type;
+		return *this;
+	}
+
+	JSInit& JSInit::operator = ( JSInit&& other ) {
+		switch ( type )
+		{
+			case Type::undef:
+				switch( other.type )
+				{
+					case Type::undef:
+						break;
+					case Type::var:
+						new(&(_asVar()))JSVar( other._asVar() );
+						break;
+					case Type::obj:
+						new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
+						break;
+				}
+				break;
+			case Type::var:
+				switch( other.type )
+				{
+					case Type::undef:
+						_asVar().~JSVar();
+						break;
+					case Type::var:
+						_asVar() = other._asVar();
+						break;
+					case Type::obj:
+						_asVar().~JSVar();
+						new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
+						break;
+				}
+				break;
+			case Type::obj:
+				switch( other.type )
+				{
+					case Type::undef:
+						_asPtr().~OwnedT();
+						break;
+					case Type::var:
+						_asPtr().~OwnedT();
+						new(&(_asVar()))JSVar( other._asVar() );
+						break;
+					case Type::obj:
+						_asPtr() = std::move( other._asPtr() );
 						break;
 				}
 				break;
@@ -446,7 +512,7 @@ namespace nodecpp::js {
 			case Type::var:
 				return Value(_asVar());
 			case Type::obj:
-				return Value( std::move(_asPtr()));
+				return Value( std::move( *const_cast<OwnedT*>( &(_asPtr()) ) ) );
 		}
 	}
 
@@ -463,7 +529,7 @@ namespace nodecpp::js {
 		type = Type::obj;
 	}*/
 
-	Value::Value( const Value& other) {
+	Value::Value( Value&& other) {
 		type = other.type;
 		switch ( other.type )
 		{
@@ -473,12 +539,12 @@ namespace nodecpp::js {
 				new(&(_asVar()))JSVar( other._asVar() );
 				break;
 			case Type::obj:
-				new(&(_asPtr()))OwnedT( other._asPtr() );
+				new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
 				break;
 		}
 	}
 
-	Value& Value::operator = ( const JSOwnObj& obj ) {
+	/*Value& Value::operator = ( const JSOwnObj& obj ) {
 		switch ( type )
 		{
 			case Type::undef:
@@ -512,9 +578,9 @@ namespace nodecpp::js {
 		}
 		type = Type::var;
 		return *this;
-	}
+	}*/
 
-	Value& Value::operator = ( const Value& other ) {
+	Value& Value::operator = ( Value&& other ) {
 		switch ( type )
 		{
 			case Type::undef:
@@ -526,7 +592,7 @@ namespace nodecpp::js {
 						new(&(_asVar()))JSVar( other._asVar() );
 						break;
 					case Type::obj:
-						new(&(_asPtr()))OwnedT( other._asPtr() );
+						new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
 						break;
 				}
 				break;
@@ -541,7 +607,7 @@ namespace nodecpp::js {
 						break;
 					case Type::obj:
 						_asVar().~JSVar();
-						new(&(_asPtr()))OwnedT( other._asPtr() );
+						new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
 						break;
 				}
 				break;
@@ -556,7 +622,7 @@ namespace nodecpp::js {
 						new(&(_asVar()))JSVar( other._asVar() );
 						break;
 					case Type::obj:
-						_asPtr() = other._asPtr();
+						_asPtr() = std::move( other._asPtr() );
 						break;
 				}
 				break;
@@ -690,19 +756,19 @@ namespace nodecpp::js {
 				_asValue() = &obj;
 				break;
 			case Type::value:
-				*_asValue() = obj;
+				_asValue() = &obj;
 				break;
 		}
 		type = Type::value;
 		return *this;
 	}
 
-	JSIndexRet& JSIndexRet::operator = ( const JSOwnObj& obj ) {
+	JSIndexRet& JSIndexRet::operator = ( JSOwnObj&& obj ) {
 		switch ( type )
 		{
 			case Type::undef:
 				throw;
-				*(_asValue()) = obj;
+				*(_asValue()) = std::move( obj );
 				break;
 			case Type::var:
 				throw;
@@ -711,7 +777,7 @@ namespace nodecpp::js {
 				_asVar() = obj; // effectively storing soft_ptr to what's owned by obj
 				break;
 			case Type::value:
-				*(_asValue()) = obj;
+				*(_asValue()) = std::move( obj );
 				break;
 		}
 //		type = Type::value;

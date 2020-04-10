@@ -64,8 +64,34 @@ private:
 public:
 	MiscTests_()
 	{
-printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
-printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
+
+		JSOwnObj array_of_arrays1 = makeJSArray({ 
+		  makeJSArray({JSVar("reset"), JSVar(0), JSVar(0) }),
+		  makeJSArray({"bold", 1, 22 }),
+		  makeJSArray({"dim", 2, 22 }),
+		  makeJSArray({"num", 3 }),
+		  makeJSArray({"str", "some str" }),
+		  "just a string",
+		  makeJSObject({
+			  { "key1", "val1" }, 
+			  { "key2", makeJSObject({ 
+				  { "key1-1", "val1-1" } }) }
+		  } )
+		});
+
+		JSOwnObj arr1 = makeJSArray({0, 0 });
+
+		JSOwnObj object_with_explicit_types_2 = makeJSObject({ 
+		  { "reset", std::move(arr1) },
+		  { "bold", makeJSArray({1, 22 }) },
+		  { "dim", makeJSArray({2, 22 }) },
+		  { "num", 3 },
+		  { "str", "some str" }
+  
+		});
+
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
+		printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
 #if 0
 		object_with_single_type.forEach([this](nodecpp::string key) {
 		  auto val = object_with_single_type[key];

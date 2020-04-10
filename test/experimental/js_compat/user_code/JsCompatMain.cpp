@@ -18,8 +18,8 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::currentLog = &log;
 	nodecpp::logging_impl::instanceId = 0;*/
 
-	JSVar styles = require<Styles>();
-	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", styles.toString().c_str() );
+//	JSVar styles = require<Styles>();
+//	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", styles.toString().c_str() );
 
 	/*printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
 
