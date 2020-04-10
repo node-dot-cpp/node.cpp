@@ -4,6 +4,7 @@
 #include <nodecpp/common.h>
 #include <nodecpp/js_compat.h>
 #include "colors.h"
+#include "../js-compat-tests/misc_tests.h"
 
 int main( int argc, char *argv_[] )
 {
@@ -18,12 +19,15 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::instanceId = 0;*/
 
 	JSVar styles = require<Styles>();
-	printf( "%s\n", styles.toString().c_str() );
+	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", styles.toString().c_str() );
 
 	/*printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
 
 	JSVar colors = require<Colors>();
 	printf( "%s\n", colors.toString().c_str() );*/
+
+	JSVar miscTests = require<MiscTests>();
+//	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", miscTests.toString().c_str() );
 
 	return 0;
 }

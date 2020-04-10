@@ -35,51 +35,28 @@ using namespace nodecpp::js;
 class MiscTests_ : public nodecpp::js::JSModule
 {
 public:
-	nodecpp::js::JSOwnObj miscTests = nodecpp::js::JSObject::makeJSObject();
+	nodecpp::js::JSOwnObj miscTests = makeJSObject();
 
 private:
-#if 0
-	JSOwnObj object_with_single_type = nodecpp::js::JSObject::makeJSObject({ 
-	  { "reset", {0, 0 } },
-	  { "bold", {1, 22 } },
-	  { "dim", {2, 22 } },
-  
-	});
-
-	JSOwnObj object_with_misc_types = nodecpp::js::JSObject::makeJSObject({ 
-	  { "reset", {0, 0 } },
-	  { "bold", {1, 22 } },
-	  { "dim", {2, 22 } },
-	  { "num", 3 },
-	  { "str", "some str" }
-  
-	});
-#endif
-
-	JSOwnObj object_with_explicit_types = nodecpp::js::JSObject::makeJSObject({ 
-	  { "reset", JSArray::makeJSArray({0, 0 }) },
-	  { "bold", JSArray::makeJSArray({1, 22 }) },
-	  { "dim", JSArray::makeJSArray({2, 22 }) },
+	JSOwnObj object_with_explicit_types = makeJSObject({ 
+	  { "reset", makeJSArray({0, 0 }) },
+	  { "bold", makeJSArray({1, 22 }) },
+	  { "dim", makeJSArray({2, 22 }) },
 	  { "num", 3 },
 	  { "str", "some str" }
   
 	});
 
-/*	  JSOwnObj array_of_arrays = JSObject::makeJSObject({
-		  { "key1", "val1" }, 
-		  { "key2", JSObject::makeJSObject({ 
-			  { "key1-1", "val1-1" } }) }
-	  } );*/
-	JSOwnObj array_of_arrays = nodecpp::js::JSArray::makeJSArray({ 
-	  JSArray::makeJSArray({JSVar("reset"), JSVar(0), JSVar(0) }),
-	  JSArray::makeJSArray({"bold", 1, 22 }),
-	  JSArray::makeJSArray({"dim", 2, 22 }),
-	  JSArray::makeJSArray({"num", 3 }),
-	  JSArray::makeJSArray({"str", "some str" }),
+	JSOwnObj array_of_arrays = makeJSArray({ 
+	  makeJSArray({JSVar("reset"), JSVar(0), JSVar(0) }),
+	  makeJSArray({"bold", 1, 22 }),
+	  makeJSArray({"dim", 2, 22 }),
+	  makeJSArray({"num", 3 }),
+	  makeJSArray({"str", "some str" }),
 	  "just a string",
-	  JSObject::makeJSObject({
+	  makeJSObject({
 		  { "key1", "val1" }, 
-		  { "key2", JSObject::makeJSObject({ 
+		  { "key2", makeJSObject({ 
 			  { "key1-1", "val1-1" } }) }
 	  } )
 	});
@@ -87,8 +64,6 @@ private:
 public:
 	MiscTests_()
 	{
-//printf( "\n======\n%s\n=======\n", object_with_single_type.toString().c_str() );
-//printf( "\n======\n%s\n=======\n", object_with_misc_types.toString().c_str() );
 printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
 printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
 #if 0

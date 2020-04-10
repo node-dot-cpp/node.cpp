@@ -35,66 +35,66 @@ using namespace nodecpp::js;
 class Styles_ : public nodecpp::js::JSModule
 {
 public:
-	nodecpp::js::JSOwnObj styles = nodecpp::js::JSObject::makeJSObject();
+	JSOwnObj styles = makeJSObject();
 
 private:
-	JSOwnObj codes = nodecpp::js::JSObject::makeJSObject({ 
-	  { "reset", {0, 0 } }/*,
-	  { "bold", JSInitializer( {1, 22 } ) },
-	  { "dim", JSInitializer( {2, 22 } ) },
-	  { "italic", JSInitializer( {3, 23 } ) },
-	  { "underline", JSInitializer( {4, 24 } ) },
-	  { "inverse", JSInitializer( {7, 27 } ) },
-	  { "hidden", JSInitializer( {8, 28 } ) },
-	  { "strikethrough", JSInitializer( {9, 29 } ) },
+	JSOwnObj codes = makeJSObject({ 
+	  { "reset", makeJSArray( {0, 0 } ) },
+	  { "bold", makeJSArray( {1, 22 } ) },
+	  { "dim", makeJSArray( {2, 22 } ) },
+	  { "italic", makeJSArray( {3, 23 } ) },
+	  { "underline", makeJSArray( {4, 24 } ) },
+	  { "inverse", makeJSArray( {7, 27 } ) },
+	  { "hidden", makeJSArray( {8, 28 } ) },
+	  { "strikethrough", makeJSArray( {9, 29 } ) },
 
-	  { "black", JSInitializer( {30, 39 } ) },
-	  { "red", JSInitializer( {31, 39 } ) },
-	  { "green", JSInitializer( {32, 39 } ) },
-	  { "yellow", JSInitializer( {33, 39 } ) },
-	  { "blue", JSInitializer( {34, 39 } ) },
-	  { "magenta", JSInitializer( {35, 39 } ) },
-	  { "cyan", JSInitializer( {36, 39 } ) },
-	  { "white", JSInitializer( {37, 39 } ) },
-	  { "gray", JSInitializer( {90, 39 } ) },
-	  { "grey", JSInitializer( {90, 39 } ) },
+	  { "black", makeJSArray( {30, 39 } ) },
+	  { "red", makeJSArray( {31, 39 } ) },
+	  { "green", makeJSArray( {32, 39 } ) },
+	  { "yellow", makeJSArray( {33, 39 } ) },
+	  { "blue", makeJSArray( {34, 39 } ) },
+	  { "magenta", makeJSArray( {35, 39 } ) },
+	  { "cyan", makeJSArray( {36, 39 } ) },
+	  { "white", makeJSArray( {37, 39 } ) },
+	  { "gray", makeJSArray( {90, 39 } ) },
+	  { "grey", makeJSArray( {90, 39 } ) },
 
-	  { "brightRed", JSInitializer( {91, 39 } ) },
-	  { "brightGreen", JSInitializer( {92, 39 } ) },
-	  { "brightYellow", JSInitializer( {93, 39 } ) },
-	  { "brightBlue", JSInitializer( {94, 39 } ) },
-	  { "brightMagenta", JSInitializer( {95, 39 } ) },
-	  { "brightCyan", JSInitializer( {96, 39 } ) },
-	  { "brightWhite", JSInitializer( {97, 39 } ) },
+	  { "brightRed", makeJSArray( {91, 39 } ) },
+	  { "brightGreen", makeJSArray( {92, 39 } ) },
+	  { "brightYellow", makeJSArray( {93, 39 } ) },
+	  { "brightBlue", makeJSArray( {94, 39 } ) },
+	  { "brightMagenta", makeJSArray( {95, 39 } ) },
+	  { "brightCyan", makeJSArray( {96, 39 } ) },
+	  { "brightWhite", makeJSArray( {97, 39 } ) },
 
-	  { "bgBlack", JSInitializer( {40, 49 } ) },
-	  { "bgRed", JSInitializer( {41, 49 } ) },
-	  { "bgGreen", JSInitializer( {42, 49 } ) },
-	  { "bgYellow", JSInitializer( {43, 49 } ) },
-	  { "bgBlue", JSInitializer( {44, 49 } ) },
-	  { "bgMagenta", JSInitializer( {45, 49 } ) },
-	  { "bgCyan", JSInitializer( {46, 49 } ) },
-	  { "bgWhite", JSInitializer( {47, 49 } ) },
-	  { "bgGray", JSInitializer( {100, 49 } ) },
-	  { "bgGrey", JSInitializer( {100, 49 } ) },
+	  { "bgBlack", makeJSArray( {40, 49 } ) },
+	  { "bgRed", makeJSArray( {41, 49 } ) },
+	  { "bgGreen", makeJSArray( {42, 49 } ) },
+	  { "bgYellow", makeJSArray( {43, 49 } ) },
+	  { "bgBlue", makeJSArray( {44, 49 } ) },
+	  { "bgMagenta", makeJSArray( {45, 49 } ) },
+	  { "bgCyan", makeJSArray( {46, 49 } ) },
+	  { "bgWhite", makeJSArray( {47, 49 } ) },
+	  { "bgGray", makeJSArray( {100, 49 } ) },
+	  { "bgGrey", makeJSArray( {100, 49 } ) },
 
-	  { "bgBrightRed", JSInitializer( {101, 49 } ) },
-	  { "bgBrightGreen", JSInitializer( {102, 49 } ) },
-	  { "bgBrightYellow", JSInitializer( {103, 49 } ) },
-	  { "bgBrightBlue", JSInitializer( {104, 49 } ) },
-	  { "bgBrightMagenta", JSInitializer( {105, 49 } ) },
-	  { "bgBrightCyan", JSInitializer( {106, 49 } ) },
-	  { "bgBrightWhite", JSInitializer( {107, 49 } ) },
+	  { "bgBrightRed", makeJSArray( {101, 49 } ) },
+	  { "bgBrightGreen", makeJSArray( {102, 49 } ) },
+	  { "bgBrightYellow", makeJSArray( {103, 49 } ) },
+	  { "bgBrightBlue", makeJSArray( {104, 49 } ) },
+	  { "bgBrightMagenta", makeJSArray( {105, 49 } ) },
+	  { "bgBrightCyan", makeJSArray( {106, 49 } ) },
+	  { "bgBrightWhite", makeJSArray( {107, 49 } ) },
 
 	  // legacy styles for colors pre v1.0.0
-	  { "blackBG", JSInitializer( {40, 49 } ) },
-	  { "redBG", JSInitializer( {41, 49 } ) },
-	  { "greenBG", JSInitializer( {42, 49 } ) },
-	  { "yellowBG", JSInitializer( {43, 49 } ) },
-	  { "blueBG", JSInitializer( {44, 49 } ) },
-	  { "magentaBG", JSInitializer( {45, 49 } ) },
-	  { "cyanBG", JSInitializer( {46, 49 } ) },
-	  { "whiteBG", JSInitializer( {47, 49} ) }*/
+	  { "blackBG", makeJSArray( {40, 49 } ) },
+	  { "redBG", makeJSArray( {41, 49 } ) },
+	  { "greenBG", makeJSArray( {42, 49 } ) },
+	  { "yellowBG", makeJSArray( {43, 49 } ) },
+	  { "blueBG", makeJSArray( {44, 49 } ) },
+	  { "magentaBG", makeJSArray( {45, 49 } ) },
+	  { "cyanBG", makeJSArray( {46, 49 } ) },
+	  { "whiteBG", makeJSArray( {47, 49} ) }
   
 	});
 
@@ -103,7 +103,7 @@ public:
 	{
 		codes.forEach([this](nodecpp::string key) {
 		  auto val = codes[key];
-		  styles[ key ] = JSOwnObj( std::move( nodecpp::js::JSArray::makeJSArray() ) ); // TODO: ownership
+		  styles[ key ] = JSOwnObj( std::move( makeJSArray() ) );
 		  JSVar style = styles[key];
 		  style[ "open" ] = JSVar( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
 		  style[ "close" ] = JSVar( nodecpp::format("\\u001b[{}m", val[1].toString() ) );

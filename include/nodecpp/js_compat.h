@@ -518,10 +518,6 @@ namespace nodecpp::js {
 		}
 	public:
 		virtual ~JSObject() {}
-		static owning_ptr<JSObject> makeJSObject() { return make_owning<JSObject>(); }
-//		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, JSVar>> l) { return make_owning<JSObject>(l); }
-//		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, JSOwnObj>> l) { return make_owning<JSObject>(l); }
-		static owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, Value>> l) { return make_owning<JSObject>(l); }
 		virtual JSIndexRet operator [] ( const JSVar& var )
 		{
 			nodecpp::string s = var.toString(); // TODO: revise implementation!!!
@@ -576,6 +572,8 @@ namespace nodecpp::js {
 			return f != pairs.end();
 		}
 	};
+	inline owning_ptr<JSObject> makeJSObject() { return make_owning<JSObject>(); }
+	inline  owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, Value>> l) { return make_owning<JSObject>(l); }
 
 	class JSArray : public JSObject
 	{
@@ -615,13 +613,6 @@ namespace nodecpp::js {
 				elems.push_back( Value(JSVar( var )) );
 		}
 	public:
-		static owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
-		static owning_ptr<JSArray> makeJSArray(std::initializer_list<Value> l) { return make_owning<JSArray>(l); } // TODO: ownership of args
-//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<double> l) { return make_owning<JSArray>(l); }
-//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<int> l) { return make_owning<JSArray>(l); }
-//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<nodecpp::string> l) { return make_owning<JSArray>(l); }
-//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<const char*> l) { return make_owning<JSArray>(l); }
-//		static owning_ptr<JSArray> makeJSArray(std::initializer_list<JSVar> l) { return make_owning<JSArray>(l); }
 		virtual JSIndexRet operator [] ( const JSVar& var )
 		{
 			// TODO: revise implementation!!!
@@ -676,6 +667,8 @@ namespace nodecpp::js {
 			return f != pairs.end();
 		}
 	};
+	inline owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
+	inline owning_ptr<JSArray> makeJSArray(std::initializer_list<Value> l) { return make_owning<JSArray>(l); } // TODO: ownership of args
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
