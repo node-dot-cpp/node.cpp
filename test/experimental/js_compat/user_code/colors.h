@@ -58,7 +58,7 @@ public:
 		colors["enbled"] = false;
 	}
 
-#if 0 // temporarily disabled
+#if 1 // temporarily disabled
 	JSVar stylize( JSVar str, JSVar style)
 	{
 		if (!colors["enbled"])

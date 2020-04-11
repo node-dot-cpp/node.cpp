@@ -30,7 +30,15 @@
 
 #include <js_compat.h>
 
+namespace nodecpp {
+	template <class _Ty>
+	_NODISCARD constexpr std::remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept { // forward _Arg as movable
+		return static_cast<std::remove_reference_t<_Ty>&&>(_Arg);
+	}
+} // using namespace nodecpp
+
 using namespace nodecpp::js;
+
 
 class MiscTests_ : public nodecpp::js::JSModule
 {
@@ -83,7 +91,7 @@ public:
 		JSOwnObj arr2 = makeJSArray({1, 22 });
 
 		JSOwnObj object_with_explicit_types_2 = makeJSObject({ 
-		  { "reset", std::move(arr1) },
+		  { "reset", nodecpp::move(arr1) },
 		  { "bold", arr2 },
 		  { "dim", makeJSArray({2, 22 }) },
 		  { "num", 3 },

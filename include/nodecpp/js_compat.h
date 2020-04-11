@@ -282,6 +282,8 @@ namespace nodecpp::js {
 
 		~JSIndexRet();
 
+		bool operator !() const;
+		operator nodecpp::string () const { return toString(); }
 		operator JSVar () const;
 		nodecpp::string toString() const;
 	};
@@ -522,6 +524,7 @@ namespace nodecpp::js {
 				_asPtr().~JSOwnObj();
 		}
 
+		bool operator !() const;
 //		operator JSVar () const;
 //		operator JSOwnObj () const;
 		nodecpp::string toString() const;

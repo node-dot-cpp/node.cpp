@@ -631,6 +631,22 @@ namespace nodecpp::js {
 		}
 	}*/
 
+	bool Value::operator !() const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				throw; // TODO: reconsider
+				return true;
+			case Type::var:
+				return _asVar().operator!();
+				break;
+			case Type::obj:
+				return _asPtr().operator !();
+				break;
+		}
+	}
+
 	nodecpp::string Value::toString() const
 	{
 		switch ( type )
@@ -779,6 +795,22 @@ namespace nodecpp::js {
 	JSIndexRet::~JSIndexRet() {
 		if ( type == Type::var )
 			_asVar().~JSVar();
+	}
+
+	bool JSIndexRet::operator !() const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				throw; // TODO: reconsider
+				return true;
+			case Type::var:
+				return _asVar().operator!();
+				break;
+			case Type::value:
+				return _asValue()->operator !();
+				break;
+		}
 	}
 
 	JSIndexRet::operator JSVar () const
