@@ -344,6 +344,7 @@ namespace nodecpp::js {
 					return *_asSoft() != nullptr;
 				default:
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+					return false;
 			}
 		}
 		operator nodecpp::string () const { return toString(); }

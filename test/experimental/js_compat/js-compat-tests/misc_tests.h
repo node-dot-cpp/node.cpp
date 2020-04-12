@@ -104,27 +104,6 @@ public:
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2.toString().c_str() );
-#if 0
-		object_with_single_type.forEach([this](nodecpp::string key) {
-		  auto val = object_with_single_type[key];
-		  miscTests[ key ] = JSOwnObj( std::move( nodecpp::js::JSArray::makeJSArray() ) ); // TODO: ownership
-//printf( "\n======\n%s\n=======\n", styles.toString().c_str() );
-		  JSVar style = styles[key];
-//		  auto style = object_with_single_type[key];
-		  style[ "open" ] = JSVar( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
-		  style[ "close" ] = JSVar( nodecpp::format("\\u001b[{}m", val[1].toString() ) );
-printf( "\n======\n%s\n=======\n", style.toString().c_str() );
-/*		  auto open = style[ "open" ];
-		  auto close = style[ "close" ];
-		  auto varopen = JSVar( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
-printf( "\n======\n%s\n=======\n", varopen.toString().c_str() );
-		  auto varclose = JSVar( nodecpp::format("\\u001b[{}m", val[1].toString() ) );
-		  open = varopen;
-printf( "\n======\n%s\n=======\n", open.toString().c_str() );
-		  close = varclose;
-printf( "\n======\n%s\n=======\n", style.toString().c_str() );*/
-		});
-#endif // 0
 	}
 };
 

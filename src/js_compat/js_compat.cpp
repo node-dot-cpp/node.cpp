@@ -231,7 +231,14 @@ namespace nodecpp::js {
 			case Type::boolean:
 				return nodecpp::format( "{}", *_asBool() );
 			case Type::num:
-				return nodecpp::format( "{}", *_asNum() );
+			{
+				// TODO: think about a right way
+				double d = *_asNum();
+				if ( (double)((int64_t)d) == d )
+					return nodecpp::format( "{}", (int64_t)d);
+				else
+					return nodecpp::format( "{}", d);
+			}
 			case Type::string:
 				return nodecpp::format( "{}", *_asStr() );
 			case Type::softptr:
@@ -347,6 +354,8 @@ namespace nodecpp::js {
 			case Type::obj:
 				new(&(_asPtr()))OwnedT( std::move( *const_cast<OwnedT*>( &(other._asPtr()) ) ) );
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 	}
 
@@ -362,6 +371,8 @@ namespace nodecpp::js {
 			case Type::obj:
 				new(&(_asPtr()))OwnedT( std::move( other._asPtr()) );
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 	}
 
@@ -379,6 +390,8 @@ namespace nodecpp::js {
 					case Type::obj:
 						new(&(_asPtr()))OwnedT( std::move( *const_cast<OwnedT*>( &(other._asPtr()) ) ) );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
 			case Type::var:
@@ -394,6 +407,8 @@ namespace nodecpp::js {
 						_asVar().~JSVar();
 						new(&(_asPtr()))OwnedT( std::move( *const_cast<OwnedT*>( &(other._asPtr()) ) ) );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
 			case Type::obj:
@@ -409,8 +424,12 @@ namespace nodecpp::js {
 					case Type::obj:
 						_asPtr() = std::move( *const_cast<OwnedT*>( &(other._asPtr()) ) );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 		type = other.type;
 		return *this;
@@ -430,6 +449,8 @@ namespace nodecpp::js {
 					case Type::obj:
 						new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
 			case Type::var:
@@ -445,6 +466,8 @@ namespace nodecpp::js {
 						_asVar().~JSVar();
 						new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
 			case Type::obj:
@@ -460,8 +483,12 @@ namespace nodecpp::js {
 					case Type::obj:
 						_asPtr() = std::move( other._asPtr() );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 		type = other.type;
 		return *this;
@@ -531,6 +558,9 @@ namespace nodecpp::js {
 				return Value(_asVar() );
 			case Type::obj:
 				return Value( std::move( *const_cast<OwnedT*>( &(_asPtr()) ) ) );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return Value();
 		}
 	}
 
@@ -549,6 +579,8 @@ namespace nodecpp::js {
 			case Type::obj:
 				new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 	}
 
@@ -566,6 +598,8 @@ namespace nodecpp::js {
 					case Type::obj:
 						new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
 			case Type::var:
@@ -581,6 +615,8 @@ namespace nodecpp::js {
 						_asVar().~JSVar();
 						new(&(_asPtr()))OwnedT( std::move( other._asPtr() ) );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
 			case Type::obj:
@@ -596,8 +632,12 @@ namespace nodecpp::js {
 					case Type::obj:
 						_asPtr() = std::move( other._asPtr() );
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 		type = other.type;
 		return *this;
@@ -644,6 +684,9 @@ namespace nodecpp::js {
 			case Type::obj:
 				return _asPtr().operator !();
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
 		}
 	}
 
@@ -657,6 +700,9 @@ namespace nodecpp::js {
 				return _asVar().toString();
 			case Type::obj:
 				return _asPtr().toString();
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return "";
 		}
 	}
 
@@ -674,6 +720,8 @@ namespace nodecpp::js {
 			case Type::value:
 				_asValue() = other._asValue();
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 	}
 
@@ -696,6 +744,8 @@ namespace nodecpp::js {
 					case Type::value:
 						_asValue() = other._asValue();
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
 			case Type::var:
@@ -711,6 +761,8 @@ namespace nodecpp::js {
 						_asVar().~JSVar();
 						_asValue() = other._asValue();
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
 			case Type::value:
@@ -724,8 +776,12 @@ namespace nodecpp::js {
 					case Type::value:
 						_asValue() = other._asValue();
 						break;
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				}
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 		type = other.type;
 		return *this;
@@ -746,6 +802,8 @@ namespace nodecpp::js {
 			case Type::value:
 				_asValue() = &obj;
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 		type = Type::value;
 		return *this;
@@ -755,18 +813,18 @@ namespace nodecpp::js {
 		switch ( type )
 		{
 			case Type::undef:
-				throw;
+				throw; // TODO: reconsider
 				*(_asValue()) = std::move( obj );
 				break;
 			case Type::var:
-				throw;
-//				_asVar().~JSVar();
-//				*(_asValue()) = obj;
+				throw; // TODO: reconsider
 				_asVar() = obj; // effectively storing soft_ptr to what's owned by obj
 				break;
 			case Type::value:
 				*(_asValue()) = std::move( obj );
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 //		type = Type::value;
 		return *this;
@@ -777,17 +835,15 @@ namespace nodecpp::js {
 		{
 			case Type::undef:
 				throw; // TODO: reconsider
-//				new(&(_asVar()))JSVar( var );
-//				type = Type::var;
 				break;
 			case Type::var:
 				_asVar() = var;
 				break;
 			case Type::value:
-//				new(&(_asVar()))JSVar( var );
-//				type = Type::var;
 				*(_asValue()) = var;
 				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 		}
 		return *this;
 	}
@@ -806,10 +862,11 @@ namespace nodecpp::js {
 				return true;
 			case Type::var:
 				return _asVar().operator!();
-				break;
 			case Type::value:
 				return _asValue()->operator !();
-				break;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
 		}
 	}
 
@@ -831,10 +888,18 @@ namespace nodecpp::js {
 					case Value::Type::var:
 						return v._asVar();
 					case Value::Type::obj:
+					{
 						JSVar ret = v._asPtr();
 						return ret;
+					}
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+						return JSVar();
 				}
 			}
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar();
 		}
 	}
 
@@ -857,8 +922,14 @@ namespace nodecpp::js {
 						return v._asVar().operator[]( var );
 					case Value::Type::obj:
 						return v._asPtr().operator[]( var );
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+						return JSVar();
 				}
 			}
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar();
 		}
 	}
 
@@ -881,8 +952,14 @@ namespace nodecpp::js {
 						return v._asVar().operator[]( d );
 					case Value::Type::obj:
 						return v._asPtr().operator[]( d );
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+						return JSVar();
 				}
 			}
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar();
 		}
 	}
 
@@ -905,8 +982,14 @@ namespace nodecpp::js {
 						return v._asVar().operator[]( idx );
 					case Value::Type::obj:
 						return v._asPtr().operator[]( idx );
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+						return JSVar();
 				}
 			}
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar();
 		}
 	}
 
@@ -929,8 +1012,14 @@ namespace nodecpp::js {
 						return v._asVar().operator[]( key );
 					case Value::Type::obj:
 						return v._asPtr().operator[]( key );
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+						return JSVar();
 				}
 			}
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar();
 		}
 	}
 
@@ -950,6 +1039,9 @@ namespace nodecpp::js {
 				return _asVar().toString();
 			case Type::value:
 				return _asValue()->toString();
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return "";
 		}
 	}
 
