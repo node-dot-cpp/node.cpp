@@ -36,9 +36,9 @@ namespace nodecpp::js {
 
 	class JSVar;
 	class JSObject;
-	class Value;
+	class JSVarOrOwn;
 	class JSArray;
-	class JSIndexRet;
+	class JSRLValue;
 
 	class JSOwnObj
 	{
@@ -62,11 +62,11 @@ namespace nodecpp::js {
 		JSOwnObj& operator = ( owningptr2jsobj&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
 		JSOwnObj& operator = ( owningptr2jsarr&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
 
-		JSIndexRet operator [] ( const JSVar& var );
-		JSIndexRet operator [] ( double idx );
-		JSIndexRet operator [] ( int idx );
-		JSIndexRet operator [] ( const nodecpp::string& key );
-		JSIndexRet operator [] ( const char* key );
+		JSRLValue operator [] ( const JSVar& var );
+		JSRLValue operator [] ( double idx );
+		JSRLValue operator [] ( int idx );
+		JSRLValue operator [] ( const nodecpp::string& key );
+		JSRLValue operator [] ( const char* key );
 
 		nodecpp::string toString() const;
 		bool operator !() const { return ptr == nullptr; }
@@ -243,7 +243,7 @@ namespace nodecpp::js {
 
 	};
 
-	class JSIndexRet
+	class JSRLValue
 	{
 		friend class JSVar;
 		friend class JSObject;
@@ -251,7 +251,7 @@ namespace nodecpp::js {
 
 		enum Type { undef, value, var };
 		Type type = Type::undef;
-		using OwnedT = Value*;
+		using OwnedT = JSVarOrOwn*;
 		static constexpr size_t memsz = sizeof( OwnedT ) > sizeof( JSVarBase ) ? sizeof( OwnedT ) : sizeof( JSVarBase );
 		uintptr_t basemem[ memsz / sizeof( uintptr_t ) ];
 		JSVar& _asVar() { return *reinterpret_cast<JSVar*>( basemem ); }
@@ -259,28 +259,28 @@ namespace nodecpp::js {
 		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
 		const OwnedT& _asValue() const { return *reinterpret_cast<const OwnedT*>( basemem ); }
 
-		JSIndexRet() {}
-		JSIndexRet( Value& v ) {
+		JSRLValue() {}
+		JSRLValue( JSVarOrOwn& v ) {
 			_asValue() = &v;
 			type = Type::value;
 		}
-		JSIndexRet( const JSVar& var );
-		JSIndexRet& operator = ( Value& obj );
+		JSRLValue( const JSVar& var );
+		JSRLValue& operator = ( JSVarOrOwn& obj );
 
 	public:
-		JSIndexRet( const JSIndexRet& other);
-		JSIndexRet& operator = ( const JSIndexRet& other );
-		JSIndexRet& operator = ( const JSVar& var );
-//		JSIndexRet& operator = ( const JSOwnObj& obj );
-		JSIndexRet& operator = ( JSOwnObj&& obj );
+		JSRLValue( const JSRLValue& other);
+		JSRLValue& operator = ( const JSRLValue& other );
+		JSRLValue& operator = ( const JSVar& var );
+//		JSRLValue& operator = ( const JSOwnObj& obj );
+		JSRLValue& operator = ( JSOwnObj&& obj );
 
-		JSIndexRet operator [] ( const JSVar& var );
-		JSIndexRet operator [] ( double idx );
-		JSIndexRet operator [] ( int idx );
-		JSIndexRet operator [] ( const nodecpp::string& key );
-		JSIndexRet operator [] ( const char* key );
+		JSRLValue operator [] ( const JSVar& var );
+		JSRLValue operator [] ( double idx );
+		JSRLValue operator [] ( int idx );
+		JSRLValue operator [] ( const nodecpp::string& key );
+		JSRLValue operator [] ( const char* key );
 
-		~JSIndexRet();
+		~JSRLValue();
 
 		bool operator !() const;
 		operator nodecpp::string () const { return toString(); }
@@ -320,11 +320,11 @@ namespace nodecpp::js {
 		JSVar& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
 		JSVar& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
 
-		JSIndexRet operator [] ( const JSVar& var );
-		JSIndexRet operator [] ( double num );
-		JSIndexRet operator [] ( int num );
-		JSIndexRet operator [] ( const nodecpp::string& key );
-		JSIndexRet operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
+		JSRLValue operator [] ( const JSVar& var );
+		JSRLValue operator [] ( double num );
+		JSRLValue operator [] ( int num );
+		JSRLValue operator [] ( const nodecpp::string& key );
+		JSRLValue operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
 
 		nodecpp::string toString() const;
 		bool operator !() const
@@ -387,7 +387,7 @@ namespace nodecpp::js {
 
 	class JSInit
 	{
-		friend class JSIndexRet;
+		friend class JSRLValue;
 
 		enum Type { undef, obj, var };
 		Type type = Type::undef;
@@ -444,12 +444,12 @@ namespace nodecpp::js {
 				_asPtr().~JSOwnObj();
 		}
 
-		Value toValue() const;
+		JSVarOrOwn toValue() const;
 	};
 
-	class Value
+	class JSVarOrOwn
 	{
-		friend class JSIndexRet;
+		friend class JSRLValue;
 		friend class JSInit;
 
 		enum Type { undef, obj, var };
@@ -462,63 +462,63 @@ namespace nodecpp::js {
 		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
 		const OwnedT& _asPtr() const { return *reinterpret_cast<const OwnedT*>( basemem ); }
 	public:
-		Value() {}
-		Value( Value&& other);
-		Value( const Value& other) = delete;
-		Value( JSOwnObj&& obj ) {
+		JSVarOrOwn() {}
+		JSVarOrOwn( JSVarOrOwn&& other);
+		JSVarOrOwn( const JSVarOrOwn& other) = delete;
+		JSVarOrOwn( JSOwnObj&& obj ) {
 			new(&(_asPtr()))OwnedT( std::move( obj ) );
 			type = Type::obj;
 		}
-		Value( const JSVar& var ) {
+		JSVarOrOwn( const JSVar& var ) {
 			new(&(_asVar()))JSVar( var );
 			type = Type::var;
 		}
-		/*Value( nodecpp::safememory::owning_ptr<JSObject>&& obj ) {
+		/*JSVarOrOwn( nodecpp::safememory::owning_ptr<JSObject>&& obj ) {
 			new(&(_asPtr()))OwnedT( std::move( obj ) );
 			type = Type::obj;
 		}
-		Value( nodecpp::safememory::owning_ptr<JSArray>&& arr ) {
+		JSVarOrOwn( nodecpp::safememory::owning_ptr<JSArray>&& arr ) {
 			new(&(_asPtr()))OwnedT( std::move( arr ) );
 			type = Type::obj;
 		}
-		Value( int num ) {
+		JSVarOrOwn( int num ) {
 			new(&(_asVar()))JSVar( num );
 			type = Type::var;
 		}
-		Value( const char* str ) {
+		JSVarOrOwn( const char* str ) {
 			new(&(_asVar()))JSVar( str );
 			type = Type::var;
 		}*/
-//		Value( std::initializer_list<std::pair<nodecpp::string, int>> l );
-		/*Value( std::initializer_list<int> l ) { 
+//		JSVarOrOwn( std::initializer_list<std::pair<nodecpp::string, int>> l );
+		/*JSVarOrOwn( std::initializer_list<int> l ) { 
 			JSOwnObj tmp(l); 
 			new(&(_asPtr()))OwnedT( std::move( tmp ) );
 			type = Type::obj;
 		}
-		Value& operator = ( std::initializer_list<int> l ) { 
+		JSVarOrOwn& operator = ( std::initializer_list<int> l ) { 
 			JSOwnObj tmp(l); 
 			new(&(_asPtr()))OwnedT( std::move( tmp ) );
 			type = Type::obj;
 			return *this;
 		}
-		Value( std::initializer_list<const char*> l ) { 
+		JSVarOrOwn( std::initializer_list<const char*> l ) { 
 			JSOwnObj tmp(l); 
 			new(&(_asPtr()))OwnedT( std::move( tmp ) );
 			type = Type::obj;
 		}
-		Value& operator = ( std::initializer_list<const char*> l ) { 
+		JSVarOrOwn& operator = ( std::initializer_list<const char*> l ) { 
 			JSOwnObj tmp(l); 
 			new(&(_asPtr()))OwnedT( std::move( tmp ) );
 			type = Type::obj;
 			return *this;
 		}*/
-		Value& operator = ( Value&& other );
-		Value& operator = ( const Value& other ) = delete;
-//		Value& operator = ( const JSOwnObj& obj );
-//		Value& operator = ( const JSVar& var );
-//		Value& operator = ( int num ) { return operator = (JSVar( num ) ); }
+		JSVarOrOwn& operator = ( JSVarOrOwn&& other );
+		JSVarOrOwn& operator = ( const JSVarOrOwn& other ) = delete;
+//		JSVarOrOwn& operator = ( const JSOwnObj& obj );
+//		JSVarOrOwn& operator = ( const JSVar& var );
+//		JSVarOrOwn& operator = ( int num ) { return operator = (JSVar( num ) ); }
 
-		~Value() {
+		~JSVarOrOwn() {
 			if ( type == Type::var )
 				_asVar().~JSVar();
 			else if ( type == Type::obj )
@@ -536,7 +536,7 @@ namespace nodecpp::js {
 		friend class JSOwnObj;
 
 	protected:
-		nodecpp::map<nodecpp::string, Value> pairs;
+		nodecpp::map<nodecpp::string, JSVarOrOwn> pairs;
 	
 		void toString_( nodecpp::string& ret, const nodecpp::string offset, const nodecpp::string separator ) const { 
 			if ( pairs.size() == 0 )
@@ -549,7 +549,7 @@ namespace nodecpp::js {
 			ret.erase( ret.size() - separator.size(), separator.size() );
 		}
 
-		JSIndexRet findOrAdd ( nodecpp::string s ) {
+		JSRLValue findOrAdd ( nodecpp::string s ) {
 			auto f = pairs.find( s );
 			if ( f != pairs.end() )
 			{
@@ -557,7 +557,7 @@ namespace nodecpp::js {
 			}
 			else
 			{
-				auto insret = pairs.insert( std::make_pair( s, Value() ) );
+				auto insret = pairs.insert( std::make_pair( s, JSVarOrOwn() ) );
 				return insret.first->second;
 			}
 		}
@@ -571,25 +571,25 @@ namespace nodecpp::js {
 		}
 	public:
 		virtual ~JSObject() {}
-		virtual JSIndexRet operator [] ( const JSVar& var )
+		virtual JSRLValue operator [] ( const JSVar& var )
 		{
 			nodecpp::string s = var.toString(); // TODO: revise implementation!!!
 			return findOrAdd( s );
 		}
-		virtual JSIndexRet operator [] ( size_t idx )
+		virtual JSRLValue operator [] ( size_t idx )
 		{
 			nodecpp::string s = nodecpp::format( "{}", idx );
 			return findOrAdd( s );
 		}
-		virtual JSIndexRet operator [] ( const nodecpp::string& key )
+		virtual JSRLValue operator [] ( const nodecpp::string& key )
 		{
 			return findOrAdd( key );
 		}
-		virtual JSIndexRet operator [] ( const nodecpp::string_literal& key ) {
+		virtual JSRLValue operator [] ( const nodecpp::string_literal& key ) {
 			nodecpp::string s( key.c_str() );
 			return findOrAdd( s );
 		}
-		virtual JSIndexRet operator [] ( const char* key ) {
+		virtual JSRLValue operator [] ( const char* key ) {
 			nodecpp::string s( key );
 			return findOrAdd( s );
 		}
@@ -632,7 +632,7 @@ namespace nodecpp::js {
 	{
 		friend class JSOwnObj;
 
-		nodecpp::vector<Value> elems;
+		nodecpp::vector<JSVarOrOwn> elems;
 	public:
 		JSArray() {}
 		JSArray(std::initializer_list<JSInit> l)
@@ -641,7 +641,7 @@ namespace nodecpp::js {
 				elems.push_back( p.toValue() );
 		}
 	public:
-		virtual JSIndexRet operator [] ( const JSVar& var )
+		virtual JSRLValue operator [] ( const JSVar& var )
 		{
 			// TODO: revise implementation!!!
 			if ( var.type == JSVarBase::Type::num )
@@ -649,7 +649,7 @@ namespace nodecpp::js {
 			nodecpp::string s = var.toString(); 
 			return findOrAdd( s );
 		}
-		virtual JSIndexRet operator [] ( size_t idx )
+		virtual JSRLValue operator [] ( size_t idx )
 		{
 			if ( idx < elems.size() )
 				return elems[ idx ];
@@ -657,11 +657,11 @@ namespace nodecpp::js {
 			{
 				elems.reserve( idx + 1 );
 				for ( size_t i=elems.size(); i<elems.capacity(); ++i )
-					elems.push_back( Value() );
+					elems.push_back( JSVarOrOwn() );
 				return elems[ idx ];
 			}
 		}
-		virtual JSIndexRet operator [] ( const nodecpp::string& strIdx )
+		virtual JSRLValue operator [] ( const nodecpp::string& strIdx )
 		{
 			if ( strIdx.size() && strIdx[0] >= '0' && strIdx[0] <= '9' )
 			{

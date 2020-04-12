@@ -33,27 +33,27 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////   JSOwnObj ////
 
-	JSIndexRet JSOwnObj::operator [] ( const JSVar& var )
+	JSRLValue JSOwnObj::operator [] ( const JSVar& var )
 	{
 		return ptr->operator[]( var );
 	}
 
-	JSIndexRet JSOwnObj::operator [] ( double d )
+	JSRLValue JSOwnObj::operator [] ( double d )
 	{
 		return ptr->operator[]( d );
 	}
 
-	JSIndexRet JSOwnObj::operator [] ( int idx )
+	JSRLValue JSOwnObj::operator [] ( int idx )
 	{
 		return ptr->operator[]( idx );
 	}
 
-	JSIndexRet JSOwnObj::operator [] ( const nodecpp::string& key )
+	JSRLValue JSOwnObj::operator [] ( const nodecpp::string& key )
 	{
 		return ptr->operator[]( key );
 	}
 
-	JSIndexRet JSOwnObj::operator [] ( const char* key )
+	JSRLValue JSOwnObj::operator [] ( const char* key )
 	{
 		nodecpp::string s( key );
 		return ptr->operator[]( s );
@@ -96,7 +96,7 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////   JSVar ////
 	
-	JSIndexRet JSVar::operator [] ( const JSVar& var )
+	JSRLValue JSVar::operator [] ( const JSVar& var )
 	{
 		switch ( type )
 		{
@@ -143,7 +143,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet JSVar::operator [] ( int idx )
+	JSRLValue JSVar::operator [] ( int idx )
 	{
 		switch ( type )
 		{
@@ -168,7 +168,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet JSVar::operator [] ( double idx )
+	JSRLValue JSVar::operator [] ( double idx )
 	{
 		switch ( type )
 		{
@@ -193,7 +193,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet JSVar::operator [] ( const nodecpp::string& key )
+	JSRLValue JSVar::operator [] ( const nodecpp::string& key )
 	{
 		switch ( type )
 		{
@@ -548,26 +548,26 @@ namespace nodecpp::js {
 		return *this;
 	}*/
 
-	Value JSInit::toValue() const
+	JSVarOrOwn JSInit::toValue() const
 	{
 		switch ( type )
 		{
 			case Type::undef:
-				return Value();
+				return JSVarOrOwn();
 			case Type::var:
-				return Value(_asVar() );
+				return JSVarOrOwn(_asVar() );
 			case Type::obj:
-				return Value( std::move( *const_cast<OwnedT*>( &(_asPtr()) ) ) );
+				return JSVarOrOwn( std::move( *const_cast<OwnedT*>( &(_asPtr()) ) ) );
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				return Value();
+				return JSVarOrOwn();
 		}
 	}
 
 
-	////////////////////////////////////////////////////////////   Value ////
+	////////////////////////////////////////////////////////////   JSVarOrOwn ////
 
-	Value::Value( Value&& other) {
+	JSVarOrOwn::JSVarOrOwn( JSVarOrOwn&& other) {
 		type = other.type;
 		switch ( other.type )
 		{
@@ -584,7 +584,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	Value& Value::operator = ( Value&& other ) {
+	JSVarOrOwn& JSVarOrOwn::operator = ( JSVarOrOwn&& other ) {
 		switch ( type )
 		{
 			case Type::undef:
@@ -643,7 +643,7 @@ namespace nodecpp::js {
 		return *this;
 	}
 
-	/*Value::operator JSVar () const
+	/*JSVarOrOwn::operator JSVar () const
 	{
 		switch ( type )
 		{
@@ -656,7 +656,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	Value::operator JSOwnObj () const
+	JSVarOrOwn::operator JSOwnObj () const
 	{
 		switch ( type )
 		{
@@ -671,7 +671,7 @@ namespace nodecpp::js {
 		}
 	}*/
 
-	bool Value::operator !() const
+	bool JSVarOrOwn::operator !() const
 	{
 		switch ( type )
 		{
@@ -690,7 +690,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	nodecpp::string Value::toString() const
+	nodecpp::string JSVarOrOwn::toString() const
 	{
 		switch ( type )
 		{
@@ -706,9 +706,9 @@ namespace nodecpp::js {
 		}
 	}
 
-	////////////////////////////////////////////////////////////   JSIndexRet ////
+	////////////////////////////////////////////////////////////   JSRLValue ////
 
-	JSIndexRet::JSIndexRet( const JSIndexRet& other) { 
+	JSRLValue::JSRLValue( const JSRLValue& other) { 
 		type = other.type;
 		switch( other.type )
 		{
@@ -725,12 +725,12 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet::JSIndexRet( const JSVar& var ) {
+	JSRLValue::JSRLValue( const JSVar& var ) {
 		new(&(_asVar()))JSVar( var );
 		type = Type::var;
 	}
 
-	JSIndexRet& JSIndexRet::operator = ( const JSIndexRet& other ) {
+	JSRLValue& JSRLValue::operator = ( const JSRLValue& other ) {
 		switch ( type )
 		{
 			case Type::undef:
@@ -787,7 +787,7 @@ namespace nodecpp::js {
 		return *this;
 	}
 
-	JSIndexRet& JSIndexRet::operator = ( Value& obj ) {
+	JSRLValue& JSRLValue::operator = ( JSVarOrOwn& obj ) {
 		switch ( type )
 		{
 			case Type::undef:
@@ -809,7 +809,7 @@ namespace nodecpp::js {
 		return *this;
 	}
 
-	JSIndexRet& JSIndexRet::operator = ( JSOwnObj&& obj ) {
+	JSRLValue& JSRLValue::operator = ( JSOwnObj&& obj ) {
 		switch ( type )
 		{
 			case Type::undef:
@@ -830,7 +830,7 @@ namespace nodecpp::js {
 		return *this;
 	}
 
-	JSIndexRet& JSIndexRet::operator = ( const JSVar& var ) {
+	JSRLValue& JSRLValue::operator = ( const JSVar& var ) {
 		switch ( type )
 		{
 			case Type::undef:
@@ -848,12 +848,12 @@ namespace nodecpp::js {
 		return *this;
 	}
 
-	JSIndexRet::~JSIndexRet() {
+	JSRLValue::~JSRLValue() {
 		if ( type == Type::var )
 			_asVar().~JSVar();
 	}
 
-	bool JSIndexRet::operator !() const
+	bool JSRLValue::operator !() const
 	{
 		switch ( type )
 		{
@@ -870,7 +870,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet::operator JSVar () const
+	JSRLValue::operator JSVar () const
 	{
 		switch ( type )
 		{
@@ -883,11 +883,11 @@ namespace nodecpp::js {
 				auto& v = *(_asValue());
 				switch ( v.type )
 				{
-					case Value::Type::undef:
+					case JSVarOrOwn::Type::undef:
 						return JSVar();
-					case Value::Type::var:
+					case JSVarOrOwn::Type::var:
 						return v._asVar();
-					case Value::Type::obj:
+					case JSVarOrOwn::Type::obj:
 					{
 						JSVar ret = v._asPtr();
 						return ret;
@@ -903,7 +903,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet JSIndexRet::operator [] ( const JSVar& var )
+	JSRLValue JSRLValue::operator [] ( const JSVar& var )
 	{
 		switch ( type )
 		{
@@ -916,11 +916,11 @@ namespace nodecpp::js {
 				auto& v = *(_asValue());
 				switch ( v.type )
 				{
-					case Value::Type::undef:
+					case JSVarOrOwn::Type::undef:
 						return JSVar();
-					case Value::Type::var:
+					case JSVarOrOwn::Type::var:
 						return v._asVar().operator[]( var );
-					case Value::Type::obj:
+					case JSVarOrOwn::Type::obj:
 						return v._asPtr().operator[]( var );
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -933,7 +933,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet JSIndexRet::operator [] ( double d )
+	JSRLValue JSRLValue::operator [] ( double d )
 	{
 		switch ( type )
 		{
@@ -946,11 +946,11 @@ namespace nodecpp::js {
 				auto& v = *(_asValue());
 				switch ( v.type )
 				{
-					case Value::Type::undef:
+					case JSVarOrOwn::Type::undef:
 						return JSVar();
-					case Value::Type::var:
+					case JSVarOrOwn::Type::var:
 						return v._asVar().operator[]( d );
-					case Value::Type::obj:
+					case JSVarOrOwn::Type::obj:
 						return v._asPtr().operator[]( d );
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -963,7 +963,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet JSIndexRet::operator [] ( int idx )
+	JSRLValue JSRLValue::operator [] ( int idx )
 	{
 		switch ( type )
 		{
@@ -976,11 +976,11 @@ namespace nodecpp::js {
 				auto& v = *(_asValue());
 				switch ( v.type )
 				{
-					case Value::Type::undef:
+					case JSVarOrOwn::Type::undef:
 						return JSVar();
-					case Value::Type::var:
+					case JSVarOrOwn::Type::var:
 						return v._asVar().operator[]( idx );
-					case Value::Type::obj:
+					case JSVarOrOwn::Type::obj:
 						return v._asPtr().operator[]( idx );
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -993,7 +993,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet JSIndexRet::operator [] ( const nodecpp::string& key )
+	JSRLValue JSRLValue::operator [] ( const nodecpp::string& key )
 	{
 		switch ( type )
 		{
@@ -1006,11 +1006,11 @@ namespace nodecpp::js {
 				auto& v = *(_asValue());
 				switch ( v.type )
 				{
-					case Value::Type::undef:
+					case JSVarOrOwn::Type::undef:
 						return JSVar();
-					case Value::Type::var:
+					case JSVarOrOwn::Type::var:
 						return v._asVar().operator[]( key );
-					case Value::Type::obj:
+					case JSVarOrOwn::Type::obj:
 						return v._asPtr().operator[]( key );
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -1023,13 +1023,13 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSIndexRet JSIndexRet::operator [] ( const char* key )
+	JSRLValue JSRLValue::operator [] ( const char* key )
 	{
 		nodecpp::string s( key );
-		return JSIndexRet::operator [] ( s );
+		return JSRLValue::operator [] ( s );
 	}
 
-	nodecpp::string JSIndexRet::toString() const
+	nodecpp::string JSRLValue::toString() const
 	{
 		switch ( type )
 		{
