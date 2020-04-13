@@ -55,6 +55,8 @@ private:
   
 	});
 
+	JSVar likeFn;
+
 	JSOwnObj array_of_arrays = makeJSArray({ 
 	  makeJSArray({JSVar("reset"), JSVar(0), JSVar(0) }),
 	  makeJSArray({"bold", 1, 22 }),
@@ -95,15 +97,18 @@ public:
 		  { "bold", arr2 },
 		  { "dim", makeJSArray({2, 22 }) },
 		  { "num", 3 },
-		  { "str", "some str" }
+		  { "str", "some str" },
+		  { "getStr", JSVar([]() { return "this is lambda ret"; }) },
   
 		});
 
 		arr2[0] = 999;
 
+
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2.toString().c_str() );
+//		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["getStr"]().toValue().toString().c_str() );
 	}
 };
 

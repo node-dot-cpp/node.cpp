@@ -39,6 +39,7 @@ namespace nodecpp::js {
 	class JSVarOrOwn;
 	class JSArray;
 	class JSRLValue;
+	class JSInit;
 
 	class JSOwnObj
 	{
@@ -96,9 +97,45 @@ namespace nodecpp::js {
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarBase& );
 
-		enum Type { undef, boolean, num, string, softptr, fn/*, fn0, fn1, fn2, fn3, fn4*/ };
+		using Fn0T = std::function<JSInit()>;
+		using Fn1T = std::function<JSInit( JSVarOrOwn )>;
+		using Fn2T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn )>;
+		using Fn3T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+		using Fn4T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+		using Fn5T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+		using Fn6T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+		using Fn7T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+		using Fn8T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+		using Fn9T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+		using Fn10T = std::function<JSInit( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+
+		struct Fn0Struct { Fn0T fn; };
+		struct Fn1Struct { Fn1T fn; };
+		struct Fn2Struct { Fn2T fn; };
+		struct Fn3Struct { Fn3T fn; };
+		struct Fn4Struct { Fn4T fn; };
+		struct Fn5Struct { Fn5T fn; };
+		struct Fn6Struct { Fn6T fn; };
+		struct Fn7Struct { Fn7T fn; };
+		struct Fn8Struct { Fn8T fn; };
+		struct Fn9Struct { Fn9T fn; };
+		struct Fn10Struct { Fn10T fn; };
+
+		static constexpr size_t fnsz = sizeof( Fn0Struct );
+		static_assert( sizeof( Fn1Struct ) == fnsz );
+		static_assert( sizeof( Fn2Struct ) == fnsz );
+		static_assert( sizeof( Fn3Struct ) == fnsz );
+		static_assert( sizeof( Fn4Struct ) == fnsz );
+		static_assert( sizeof( Fn5Struct ) == fnsz );
+		static_assert( sizeof( Fn6Struct ) == fnsz );
+		static_assert( sizeof( Fn7Struct ) == fnsz );
+		static_assert( sizeof( Fn8Struct ) == fnsz );
+		static_assert( sizeof( Fn9Struct ) == fnsz );
+		static_assert( sizeof( Fn10Struct ) == fnsz );
+
+		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10 };
 		Type type = Type::undef;
-		static constexpr size_t memsz = sizeof( nodecpp::string ) > 16 ? sizeof( nodecpp::string ) : 16;
+		static constexpr size_t memsz = fnsz > (sizeof( nodecpp::string ) > 16 ? sizeof( nodecpp::string ) : 16) ? fnsz : (sizeof( nodecpp::string ) > 16 ? sizeof( nodecpp::string ) : 16);
 		uintptr_t basemem[memsz/sizeof(uintptr_t)]; // note: we just cause it to be uintptr_t-aligned
 
 		static constexpr size_t fnSize = sizeof( std::function<double(double)> );
@@ -111,11 +148,33 @@ namespace nodecpp::js {
 		double* _asNum() { return reinterpret_cast<double*>( basemem ); }
 		nodecpp::string* _asStr() { return reinterpret_cast<nodecpp::string*>( basemem ); }
 		softptr2jsobj* _asSoft() { return reinterpret_cast<softptr2jsobj*>( basemem ); }
+		Fn0Struct* _asFn0() { return reinterpret_cast<Fn0Struct*>( basemem ); }
+		Fn1Struct* _asFn1() { return reinterpret_cast<Fn1Struct*>( basemem ); }
+		Fn2Struct* _asFn2() { return reinterpret_cast<Fn2Struct*>( basemem ); }
+		Fn3Struct* _asFn3() { return reinterpret_cast<Fn3Struct*>( basemem ); }
+		Fn4Struct* _asFn4() { return reinterpret_cast<Fn4Struct*>( basemem ); }
+		Fn5Struct* _asFn5() { return reinterpret_cast<Fn5Struct*>( basemem ); }
+		Fn6Struct* _asFn6() { return reinterpret_cast<Fn6Struct*>( basemem ); }
+		Fn7Struct* _asFn7() { return reinterpret_cast<Fn7Struct*>( basemem ); }
+		Fn8Struct* _asFn8() { return reinterpret_cast<Fn8Struct*>( basemem ); }
+		Fn9Struct* _asFn9() { return reinterpret_cast<Fn9Struct*>( basemem ); }
+		Fn10Struct* _asFn10() { return reinterpret_cast<Fn10Struct*>( basemem ); }
 
 		const bool* _asBool() const { return reinterpret_cast<const bool*>( basemem ); }
 		const double* _asNum() const { return reinterpret_cast<const double*>( basemem ); }
 		const nodecpp::string* _asStr() const { return reinterpret_cast<const nodecpp::string*>( basemem ); }
 		const softptr2jsobj* _asSoft() const { return reinterpret_cast<const softptr2jsobj*>( basemem ); }
+		const Fn0Struct* _asFn0() const { return reinterpret_cast<const Fn0Struct*>( basemem ); }
+		const Fn1Struct* _asFn1() const { return reinterpret_cast<const Fn1Struct*>( basemem ); }
+		const Fn2Struct* _asFn2() const { return reinterpret_cast<const Fn2Struct*>( basemem ); }
+		const Fn3Struct* _asFn3() const { return reinterpret_cast<const Fn3Struct*>( basemem ); }
+		const Fn4Struct* _asFn4() const { return reinterpret_cast<const Fn4Struct*>( basemem ); }
+		const Fn5Struct* _asFn5() const { return reinterpret_cast<const Fn5Struct*>( basemem ); }
+		const Fn6Struct* _asFn6() const { return reinterpret_cast<const Fn6Struct*>( basemem ); }
+		const Fn7Struct* _asFn7() const { return reinterpret_cast<const Fn7Struct*>( basemem ); }
+		const Fn8Struct* _asFn8() const { return reinterpret_cast<const Fn8Struct*>( basemem ); }
+		const Fn9Struct* _asFn9() const { return reinterpret_cast<const Fn9Struct*>( basemem ); }
+		const Fn10Struct* _asFn10() const { return reinterpret_cast<const Fn10Struct*>( basemem ); }
 
 		void deinit()
 		{
@@ -130,6 +189,39 @@ namespace nodecpp::js {
 					break;
 				case Type::softptr:
 					_asSoft()->~softptr2jsobj();
+					break;
+				case fn0:
+					_asFn0()->~Fn0Struct();
+					break;
+				case fn1:
+					_asFn1()->~Fn1Struct();
+					break;
+				case fn2:
+					_asFn2()->~Fn2Struct();
+					break;
+				case fn3:
+					_asFn3()->~Fn3Struct();
+					break;
+				case fn4:
+					_asFn4()->~Fn4Struct();
+					break;
+				case fn5:
+					_asFn5()->~Fn5Struct();
+					break;
+				case fn6:
+					_asFn6()->~Fn6Struct();
+					break;
+				case fn7:
+					_asFn7()->~Fn7Struct();
+					break;
+				case fn8:
+					_asFn8()->~Fn8Struct();
+					break;
+				case fn9:
+					_asFn9()->~Fn9Struct();
+					break;
+				case fn10:
+					_asFn10()->~Fn10Struct();
 					break;
 				default:
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -191,6 +283,138 @@ namespace nodecpp::js {
 				new(_asSoft())softptr2jsarr( ptr );
 			}
 		}
+		void init( Fn0T&& cb )
+		{
+			if ( type == Type::fn0 )
+				_asFn0()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn0;
+				new(_asFn0())Fn0Struct();
+				_asFn0()->fn = std::move( cb );
+			}
+		}
+		void init( Fn1T&& cb )
+		{
+			if ( type == Type::fn1 )
+				_asFn1()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn1;
+				new(_asFn1())Fn0Struct();
+				_asFn1()->fn = std::move( cb );
+			}
+		}
+		void init( Fn2T&& cb )
+		{
+			if ( type == Type::fn2 )
+				_asFn2()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn2;
+				new(_asFn2())Fn0Struct();
+				_asFn2()->fn = std::move( cb );
+			}
+		}
+		void init( Fn3T&& cb )
+		{
+			if ( type == Type::fn3 )
+				_asFn3()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn3;
+				new(_asFn3())Fn0Struct();
+				_asFn3()->fn = std::move( cb );
+			}
+		}
+		void init( Fn4T&& cb )
+		{
+			if ( type == Type::fn4 )
+				_asFn4()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn4;
+				new(_asFn4())Fn0Struct();
+				_asFn4()->fn = std::move( cb );
+			}
+		}
+		void init( Fn5T&& cb )
+		{
+			if ( type == Type::fn5 )
+				_asFn5()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn5;
+				new(_asFn5())Fn0Struct();
+				_asFn5()->fn = std::move( cb );
+			}
+		}
+		void init( Fn6T&& cb )
+		{
+			if ( type == Type::fn6 )
+				_asFn6()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn6;
+				new(_asFn6())Fn0Struct();
+				_asFn6()->fn = std::move( cb );
+			}
+		}
+		void init( Fn7T&& cb )
+		{
+			if ( type == Type::fn7 )
+				_asFn7()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn7;
+				new(_asFn7())Fn0Struct();
+				_asFn7()->fn = std::move( cb );
+			}
+		}
+		void init( Fn8T&& cb )
+		{
+			if ( type == Type::fn8 )
+				_asFn8()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn8;
+				new(_asFn8())Fn0Struct();
+				_asFn8()->fn = std::move( cb );
+			}
+		}
+		void init( Fn9T&& cb )
+		{
+			if ( type == Type::fn9 )
+				_asFn9()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn9;
+				new(_asFn9())Fn0Struct();
+				_asFn9()->fn = std::move( cb );
+			}
+		}
+		void init( Fn10T&& cb )
+		{
+			if ( type == Type::fn10 )
+				_asFn10()->fn = std::move( cb );
+			else
+			{
+				deinit();
+				type = Type::fn10;
+				new(_asFn10())Fn0Struct();
+				_asFn10()->fn = std::move( cb );
+			}
+		}
 		void init( const JSVarBase& other )
 		{
 			if ( type == other.type )
@@ -210,6 +434,39 @@ namespace nodecpp::js {
 						break;
 					case Type::softptr:
 						*_asSoft() = *(other._asSoft());
+						break;
+					case Type::fn0:
+						_asFn0()->fn = other._asFn0()->fn;
+						break;
+					case Type::fn1:
+						_asFn1()->fn = other._asFn1()->fn;
+						break;
+					case Type::fn2:
+						_asFn2()->fn = other._asFn2()->fn;
+						break;
+					case Type::fn3:
+						_asFn3()->fn = other._asFn3()->fn;
+						break;
+					case Type::fn4:
+						_asFn4()->fn = other._asFn4()->fn;
+						break;
+					case Type::fn5:
+						_asFn5()->fn = other._asFn5()->fn;
+						break;
+					case Type::fn6:
+						_asFn6()->fn = other._asFn6()->fn;
+						break;
+					case Type::fn7:
+						_asFn7()->fn = other._asFn7()->fn;
+						break;
+					case Type::fn8:
+						_asFn8()->fn = other._asFn8()->fn;
+						break;
+					case Type::fn9:
+						_asFn9()->fn = other._asFn9()->fn;
+						break;
+					case Type::fn10:
+						_asFn10()->fn = other._asFn10()->fn;
 						break;
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -234,6 +491,50 @@ namespace nodecpp::js {
 						break;
 					case Type::softptr:
 						new(_asSoft())softptr2jsobj( *(other._asSoft()) );
+						break;
+					case Type::fn0:
+						new(_asFn0())Fn0Struct();
+						_asFn0()->fn = other._asFn0()->fn;
+						break;
+					case Type::fn1:
+						new(_asFn1())Fn0Struct();
+						_asFn1()->fn = other._asFn1()->fn;
+						break;
+					case Type::fn2:
+						new(_asFn2())Fn0Struct();
+						_asFn2()->fn = other._asFn2()->fn;
+						break;
+					case Type::fn3:
+						new(_asFn3())Fn0Struct();
+						_asFn3()->fn = other._asFn3()->fn;
+						break;
+					case Type::fn4:
+						new(_asFn4())Fn0Struct();
+						_asFn4()->fn = other._asFn4()->fn;
+						break;
+					case Type::fn5:
+						new(_asFn5())Fn0Struct();
+						_asFn5()->fn = other._asFn5()->fn;
+						break;
+					case Type::fn6:
+						new(_asFn6())Fn0Struct();
+						_asFn6()->fn = other._asFn6()->fn;
+						break;
+					case Type::fn7:
+						new(_asFn7())Fn0Struct();
+						_asFn7()->fn = other._asFn7()->fn;
+						break;
+					case Type::fn8:
+						new(_asFn8())Fn0Struct();
+						_asFn8()->fn = other._asFn8()->fn;
+						break;
+					case Type::fn9:
+						new(_asFn9())Fn0Struct();
+						_asFn9()->fn = other._asFn9()->fn;
+						break;
+					case Type::fn10:
+						new(_asFn10())Fn0Struct();
+						_asFn10()->fn = other._asFn10()->fn;
 						break;
 					default:
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
@@ -307,6 +608,17 @@ namespace nodecpp::js {
 		JSVar( const char* str ) { nodecpp::string str_( str ); JSVarBase::init( str_ ); }
 		JSVar( const softptr2jsobj ptr ) { JSVarBase::init( ptr ); }
 		JSVar( const softptr2jsarr ptr ) { JSVarBase::init( ptr ); }
+		JSVar( Fn0T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn1T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn2T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn3T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn4T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn5T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn6T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn7T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn8T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn9T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn10T&& cb ) { JSVarBase::init( std::move( cb ) ); }
 
 		~JSVar() { deinit(); }
 
@@ -319,6 +631,17 @@ namespace nodecpp::js {
 		JSVar& operator = ( const char* str ) { nodecpp::string str_( str ); JSVarBase::init( str_ ); return * this; }
 		JSVar& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
 		JSVar& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
+		JSVar& operator = ( Fn0T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn1T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn2T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn3T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn4T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn5T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn6T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn7T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn8T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn9T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn10T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
 
 		JSRLValue operator [] ( const JSVar& var );
 		JSRLValue operator [] ( double num );
@@ -326,27 +649,20 @@ namespace nodecpp::js {
 		JSRLValue operator [] ( const nodecpp::string& key );
 		JSRLValue operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
 
+		JSInit operator()();
+		JSInit operator()( JSVarOrOwn obj );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 );
+
 		nodecpp::string toString() const;
-		bool operator !() const
-		{
-			// TODO: make sure we report right values!!!
-			switch ( type )
-			{
-				case Type::undef:
-					return true; 
-				case Type::boolean:
-					return !*_asBool();
-				case Type::num:
-					return _asNum() == 0;
-				case Type::string:
-					return _asStr()->size() == 0 || *_asStr() == "false";
-				case Type::softptr:
-					return *_asSoft() != nullptr;
-				default:
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-					return false;
-			}
-		}
+		bool operator !() const;
 		operator nodecpp::string () const { return toString(); }
 
 		bool has( const JSVar& other ) const;
@@ -378,7 +694,17 @@ namespace nodecpp::js {
 				return "string";
 			case JSVarBase::Type::softptr:
 				return "object";
-			case JSVarBase::Type::fn:
+			case JSVarBase::Type::fn0:
+			case JSVarBase::Type::fn1:
+			case JSVarBase::Type::fn2:
+			case JSVarBase::Type::fn3:
+			case JSVarBase::Type::fn4:
+			case JSVarBase::Type::fn5:
+			case JSVarBase::Type::fn6:
+			case JSVarBase::Type::fn7:
+			case JSVarBase::Type::fn8:
+			case JSVarBase::Type::fn9:
+			case JSVarBase::Type::fn10:
 				return "function";
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(var.type) ); 

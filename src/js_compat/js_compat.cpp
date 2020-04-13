@@ -222,6 +222,117 @@ namespace nodecpp::js {
 		}
 	}
 
+	JSInit JSVar::operator()() { 
+		if ( type == Type::fn0 ) 
+			return (_asFn0()->fn)(); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj ) { 
+		if ( type == Type::fn1 ) 
+			return (_asFn1()->fn)( std::move( obj ) ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 ) { 
+		if ( type == Type::fn2 ) 
+			return (_asFn2()->fn)( std::move( obj1 ), std::move( obj2 ) ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 ) { 
+		if ( type == Type::fn3 ) 
+			return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ),  std::move( obj3 ) ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 ) { 
+		if ( type == Type::fn4 ) 
+			return (_asFn4()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )  ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 ) { 
+		if ( type == Type::fn5 ) 
+			return (_asFn5()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ) ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 ) { 
+		if ( type == Type::fn6 ) 
+			return (_asFn6()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ) ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 ) { 
+		if ( type == Type::fn7 ) 
+			return (_asFn7()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ) ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 ) { 
+		if ( type == Type::fn8 ) 
+			return (_asFn8()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ) ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 ) { 
+		if ( type == Type::fn9 ) 
+			return (_asFn9()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ) ); 
+		else 
+			throw;
+	}
+
+	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 ) { 
+		if ( type == Type::fn10 ) 
+			return (_asFn10()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ), std::move( obj10 )  ); 
+		else 
+			throw;
+	}
+
+	bool JSVar::operator !() const
+	{
+		// TODO: make sure we report right values!!!
+		switch ( type )
+		{
+			case Type::undef:
+				return true; 
+			case Type::boolean:
+				return !*_asBool();
+			case Type::num:
+				return _asNum() == 0;
+			case Type::string:
+				return _asStr()->size() == 0 || *_asStr() == "false";
+			case Type::softptr:
+				return *_asSoft() != nullptr;
+			case JSVarBase::Type::fn0:
+			case JSVarBase::Type::fn1:
+			case JSVarBase::Type::fn2:
+			case JSVarBase::Type::fn3:
+			case JSVarBase::Type::fn4:
+			case JSVarBase::Type::fn5:
+			case JSVarBase::Type::fn6:
+			case JSVarBase::Type::fn7:
+			case JSVarBase::Type::fn8:
+			case JSVarBase::Type::fn9:
+			case JSVarBase::Type::fn10:
+				throw;
+				return false;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+	}
+
 	nodecpp::string JSVar::toString() const
 	{
 		switch ( type )
