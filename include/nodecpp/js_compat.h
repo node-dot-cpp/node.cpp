@@ -575,13 +575,25 @@ namespace nodecpp::js {
 //		JSRLValue& operator = ( const JSOwnObj& obj );
 		JSRLValue& operator = ( JSOwnObj&& obj );
 
+		~JSRLValue();
+
 		JSRLValue operator [] ( const JSVar& var );
 		JSRLValue operator [] ( double idx );
 		JSRLValue operator [] ( int idx );
 		JSRLValue operator [] ( const nodecpp::string& key );
 		JSRLValue operator [] ( const char* key );
 
-		~JSRLValue();
+		JSInit operator()();
+		JSInit operator()( JSVarOrOwn obj );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 );
+		JSInit operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 );
 
 		bool operator !() const;
 		operator nodecpp::string () const { return toString(); }

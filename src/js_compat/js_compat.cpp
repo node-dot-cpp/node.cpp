@@ -354,6 +354,18 @@ namespace nodecpp::js {
 				return nodecpp::format( "{}", *_asStr() );
 			case Type::softptr:
 				return (*_asSoft())->toString();
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
+				return nodecpp::string( "function" );
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return nodecpp::string( "undefined" );
@@ -368,6 +380,17 @@ namespace nodecpp::js {
 			case Type::undef:
 			case Type::boolean:
 			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
 				return false;
 			case Type::string:
 				return false; // TODO: ensure we report a right value
@@ -386,6 +409,17 @@ namespace nodecpp::js {
 			case Type::undef:
 			case Type::boolean:
 			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
 				return false;
 			case Type::string:
 				return false; // TODO: ensure we report a right value
@@ -404,6 +438,17 @@ namespace nodecpp::js {
 			case Type::undef:
 			case Type::boolean:
 			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
 				return false;
 			case Type::string:
 				return false; // TODO: ensure we report a right value
@@ -422,6 +467,17 @@ namespace nodecpp::js {
 			case Type::undef:
 			case Type::boolean:
 			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
 				return false;
 			case Type::string:
 				return false; // TODO: ensure we report a right value
@@ -440,6 +496,17 @@ namespace nodecpp::js {
 			case Type::undef:
 			case Type::boolean:
 			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
 				return;
 			case Type::string:
 				return; // TODO: revise!
@@ -962,6 +1029,144 @@ namespace nodecpp::js {
 	JSRLValue::~JSRLValue() {
 		if ( type == Type::var )
 			_asVar().~JSVar();
+	}
+
+	JSInit JSRLValue::operator()() {
+		switch ( type )
+		{
+			case Type::var: return _asVar()();
+			case Type::value: if ( _asValue()->type == JSVarOrOwn::Type::var ) return _asValue()->_asVar()(); else throw;
+			default: throw;
+		}
+	}
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ) ); 
+				else throw;
+			default: throw;
+		}
+	}
+
+	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 ) {
+		switch ( type )
+		{
+			case Type::var: 
+				return _asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ), std::move( obj10 ) );
+			case Type::value: 
+				if ( _asValue()->type == JSVarOrOwn::Type::var ) 
+					return _asValue()->_asVar()( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ), std::move( obj10 ) ); 
+				else throw;
+			default: throw;
+		}
 	}
 
 	bool JSRLValue::operator !() const

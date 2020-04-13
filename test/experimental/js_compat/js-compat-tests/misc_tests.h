@@ -108,7 +108,7 @@ public:
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2.toString().c_str() );
-//		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["getStr"]().toValue().toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["getStr"]().toValue().toString().c_str() );
 	}
 };
 
