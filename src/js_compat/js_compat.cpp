@@ -222,77 +222,77 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSVar::operator()() { 
+	JSVarOrOwn JSVar::operator()() { 
 		if ( type == Type::fn0 ) 
 			return (_asFn0()->fn)(); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj ) { 
 		if ( type == Type::fn1 ) 
 			return (_asFn1()->fn)( std::move( obj ) ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 ) { 
 		if ( type == Type::fn2 ) 
 			return (_asFn2()->fn)( std::move( obj1 ), std::move( obj2 ) ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 ) { 
 		if ( type == Type::fn3 ) 
 			return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ),  std::move( obj3 ) ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 ) { 
 		if ( type == Type::fn4 ) 
 			return (_asFn4()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )  ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 ) { 
 		if ( type == Type::fn5 ) 
 			return (_asFn5()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ) ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 ) { 
 		if ( type == Type::fn6 ) 
 			return (_asFn6()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ) ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 ) { 
 		if ( type == Type::fn7 ) 
 			return (_asFn7()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ) ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 ) { 
 		if ( type == Type::fn8 ) 
 			return (_asFn8()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ) ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 ) { 
 		if ( type == Type::fn9 ) 
 			return (_asFn9()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ) ); 
 		else 
 			throw;
 	}
 
-	JSInit JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 ) { 
+	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 ) { 
 		if ( type == Type::fn10 ) 
 			return (_asFn10()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ), std::move( obj10 )  ); 
 		else 
@@ -1031,7 +1031,7 @@ namespace nodecpp::js {
 			_asVar().~JSVar();
 	}
 
-	JSInit JSRLValue::operator()() {
+	JSVarOrOwn JSRLValue::operator()() {
 		switch ( type )
 		{
 			case Type::var: return _asVar()();
@@ -1039,7 +1039,8 @@ namespace nodecpp::js {
 			default: throw;
 		}
 	}
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1 ) {
+
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1052,7 +1053,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1065,7 +1066,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1078,7 +1079,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1091,7 +1092,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1104,7 +1105,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1117,7 +1118,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1130,7 +1131,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1143,7 +1144,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 ) {
 		switch ( type )
 		{
 			case Type::var: 
@@ -1156,7 +1157,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSInit JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 ) {
+	JSVarOrOwn JSRLValue::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 ) {
 		switch ( type )
 		{
 			case Type::var: 

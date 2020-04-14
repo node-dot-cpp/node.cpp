@@ -98,7 +98,9 @@ public:
 		  { "dim", makeJSArray({2, 22 }) },
 		  { "num", 3 },
 		  { "str", "some str" },
-		  { "getStr", JSVar([]() { return "this is lambda ret"; }) },
+		  { "getStr", JSVar([]() { return JSVar("this is lambda ret"); }) },
+		  { "echo", JSVar([](JSVarOrOwn x) -> JSVarOrOwn { return x; }) },
+		  { "getSum2", JSVar([](JSVarOrOwn x1, JSVarOrOwn x2) { return JSVar("this is lambda ret"); }) },
   
 		});
 
@@ -108,7 +110,8 @@ public:
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2.toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["getStr"]().toValue().toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["getStr"]().toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["echo"]( JSVar("my cry") ).toString().c_str() );
 	}
 };
 
