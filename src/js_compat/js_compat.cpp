@@ -67,6 +67,14 @@ namespace nodecpp::js {
 			return nodecpp::string( "undefined" );
 	}
 
+	double JSOwnObj::toNumber() const
+	{
+		if ( ptr )
+			return ptr->toNumber();
+		else
+			return NAN;
+	}
+
 	bool JSOwnObj::has( const JSOwnObj& other ) const
 	{
 		JSVar tmp = other;
@@ -96,7 +104,7 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////   JSVar ////
 	
-	JSRLValue JSVar::operator [] ( const JSVar& var )
+	JSRLValue JSVar::operator [] ( const JSVar& var ) const
 	{
 		switch ( type )
 		{
@@ -143,7 +151,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSVar::operator [] ( int idx )
+	JSRLValue JSVar::operator [] ( int idx ) const
 	{
 		switch ( type )
 		{
@@ -168,7 +176,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSVar::operator [] ( double idx )
+	JSRLValue JSVar::operator [] ( double idx ) const
 	{
 		switch ( type )
 		{
@@ -193,7 +201,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSVar::operator [] ( const nodecpp::string& key )
+	JSRLValue JSVar::operator [] ( const nodecpp::string& key ) const
 	{
 		switch ( type )
 		{
@@ -490,6 +498,44 @@ namespace nodecpp::js {
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return nodecpp::string( "undefined" );
+				break;
+		}
+	}
+	
+	double JSVar::toNumber() const
+	{
+		switch ( type )
+		{
+			case Type::num:
+				return *_asNum();
+			case Type::boolean:
+				return *_asBool() ? 1 : 0;
+			case Type::string:
+			{
+				char* end = nullptr;
+				double ret = strtod(_asStr()->c_str(), &end);
+				if ( end - _asStr()->c_str() == _asStr()->size() )
+					return ret;
+				return NAN;
+			}
+			case Type::undef:
+			case Type::softptr:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
+//				throw;
+				return NAN;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return NAN;
 				break;
 		}
 	}
@@ -1005,6 +1051,22 @@ namespace nodecpp::js {
 		}
 	}
 
+	double JSVarOrOwn::toNumber() const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return NAN;
+			case Type::var:
+				return _asVar().toNumber();
+			case Type::obj:
+				return _asPtr().toNumber();
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return NAN;
+		}
+	}
+
 	////////////////////////////////////////////////////////////   JSRLValue ////
 
 	JSRLValue::JSRLValue( const JSRLValue& other) { 
@@ -1480,6 +1542,22 @@ namespace nodecpp::js {
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return "";
+		}
+	}
+
+	double JSRLValue::toNumber() const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+				return NAN;
+			case Type::var:
+				return _asVar().toNumber();
+			case Type::value:
+				return _asValue()->toNumber();
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return NAN;
 		}
 	}
 

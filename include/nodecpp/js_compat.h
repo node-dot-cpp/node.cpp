@@ -70,6 +70,7 @@ namespace nodecpp::js {
 		JSRLValue operator [] ( const char* key );
 
 		nodecpp::string toString() const;
+		double toNumber() const;
 		bool operator !() const { return ptr == nullptr; }
 		operator nodecpp::string () const { return toString(); }
 
@@ -599,6 +600,7 @@ namespace nodecpp::js {
 		operator nodecpp::string () const { return toString(); }
 		operator JSVar () const;
 		nodecpp::string toString() const;
+		double toNumber() const;
 	};
 
 	class JSVar : protected JSVarBase
@@ -655,11 +657,11 @@ namespace nodecpp::js {
 		JSVar& operator = ( Fn9T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
 		JSVar& operator = ( Fn10T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
 
-		JSRLValue operator [] ( const JSVar& var );
-		JSRLValue operator [] ( double num );
-		JSRLValue operator [] ( int num );
-		JSRLValue operator [] ( const nodecpp::string& key );
-		JSRLValue operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
+		JSRLValue operator [] ( const JSVar& var ) const;
+		JSRLValue operator [] ( double num ) const;
+		JSRLValue operator [] ( int num ) const;
+		JSRLValue operator [] ( const nodecpp::string& key ) const;
+		JSRLValue operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
 
 		JSVar operator()();
 		JSVar operator()( JSVar obj );
@@ -674,6 +676,7 @@ namespace nodecpp::js {
 		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9, JSVar obj10 );
 
 		nodecpp::string toString() const;
+		double toNumber() const;
 		bool operator !() const;
 		operator nodecpp::string () const { return toString(); }
 
@@ -867,6 +870,7 @@ namespace nodecpp::js {
 //		operator JSVar () const;
 //		operator JSOwnObj () const;
 		nodecpp::string toString() const;
+		double toNumber() const;
 	};
 
 	class JSObject
@@ -931,6 +935,7 @@ namespace nodecpp::js {
 			nodecpp::string s( key );
 			return findOrAdd( s );
 		}
+		double toNumber() const { return NAN; }
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "{ \n";
 			toString_( ret, "  ", ",\n" );
@@ -1004,7 +1009,7 @@ namespace nodecpp::js {
 			if ( strIdx.size() && strIdx[0] >= '0' && strIdx[0] <= '9' )
 			{
 				char* end;
-				size_t idx = strtol( strIdx.c_str(), &end, 10 );
+				size_t idx = strtol( strIdx.c_str(), &end, 10 ); // TODO: for floating ?
 				if ( end - strIdx.c_str() == strIdx.size() )
 					return operator [] ( idx );
 			}

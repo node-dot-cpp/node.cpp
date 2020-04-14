@@ -103,10 +103,13 @@ public:
 		  { "concat2", JSVar([](JSVar x1, JSVar x2) { return x1.toString() + x2.toString(); }) },
 		  { "concat3", JSVar([](JSVar x1, JSVar x2, JSVar x3) { return x1.toString() + x2.toString() + x3.toString(); }) },
 		  { "concat4", JSVar([](JSVar x1, JSVar x2, JSVar x3, JSVar x4) { return x1.toString() + x2.toString() + x3.toString() + x4.toString(); }) },
+		  { "prefix adder generator", JSVar([](JSVar prefix) { return JSVar( [prefix](JSVar s){ return prefix.toString() + s.toString();});}) },
   
 		});
 
 		arr2[0] = 999;
+
+		JSVar prefixAdder = object_with_explicit_types_2["prefix adder generator"]( "prefix + " );
 
 
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
@@ -121,6 +124,7 @@ public:
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 " ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 " ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]().toString().c_str() );
+		printf( "\n======\n%s\n=======\n", prefixAdder( "some text after" ).toString().c_str() );
 	}
 };
 
