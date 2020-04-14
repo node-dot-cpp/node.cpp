@@ -545,6 +545,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
     <ClInclude Include="..\js-compat-tests\misc_tests.h" />
     <ClInclude Include="..\user_code\colors.h" />
+    <ClInclude Include="..\user_code\maps\america.h" />
     <ClInclude Include="..\user_code\styles.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
