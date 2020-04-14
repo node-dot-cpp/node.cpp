@@ -76,7 +76,7 @@ public:
 	{
 
 		JSOwnObj array_of_arrays1 = makeJSArray({ 
-		  makeJSArray({JSVar("reset"), JSVar(0), JSVar(0) }),
+		  makeJSArray({"reset", 0, 0 }),
 		  makeJSArray({"bold", 1, 22 }),
 		  makeJSArray({"dim", 2, 22 }),
 		  makeJSArray({"num", 3 }),
@@ -98,11 +98,11 @@ public:
 		  { "dim", makeJSArray({2, 22 }) },
 		  { "num", 3 },
 		  { "str", "some str" },
-		  { "getStr", JSVar([]() { return JSVar("this is lambda ret"); }) },
-		  { "echo", JSVar([](JSVarOrOwn x) -> JSVarOrOwn { return x; }) },
-		  { "concat2", JSVar([](JSVarOrOwn x1, JSVarOrOwn x2) { return JSVar(x1.toString() + x2.toString()); }) },
-		  { "concat3", JSVar([](JSVarOrOwn x1, JSVarOrOwn x2, JSVarOrOwn x3) { return JSVar(x1.toString() + x2.toString() + x3.toString()); }) },
-		  { "concat4", JSVar([](JSVarOrOwn x1, JSVarOrOwn x2, JSVarOrOwn x3, JSVarOrOwn x4) { return JSVar(x1.toString() + x2.toString() + x3.toString() + x4.toString()); }) },
+		  { "getStr", JSVar([]() { return "this is lambda ret"; }) },
+		  { "echo", JSVar([](JSVar x) { return x; }) },
+		  { "concat2", JSVar([](JSVar x1, JSVar x2) { return x1.toString() + x2.toString(); }) },
+		  { "concat3", JSVar([](JSVar x1, JSVar x2, JSVar x3) { return x1.toString() + x2.toString() + x3.toString(); }) },
+		  { "concat4", JSVar([](JSVar x1, JSVar x2, JSVar x3, JSVar x4) { return x1.toString() + x2.toString() + x3.toString() + x4.toString(); }) },
   
 		});
 
@@ -113,13 +113,13 @@ public:
 		printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2.toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["getStr"]().toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["echo"]( JSVar("echoing my cry") ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat2"]( JSVar("word1 "), JSVar("word2 ") ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat3"]( JSVar("word1 "), JSVar("word2 "), JSVar("word3 ") ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( JSVar("word1 "), JSVar("word2 "), JSVar("word3 "), JSVar("word4 ") ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( JSVar("word1 "), JSVar("word2 "), JSVar("word3 ") ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( JSVar("word1 "), JSVar("word2 ") ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( JSVar("word1 ") ).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["echo"]( "echoing my cry" ).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat2"]( "word1 ", "word2 " ).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat3"]( "word1 ", "word2 ", "word3 " ).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 ", "word4 " ).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 " ).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 " ).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 " ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]().toString().c_str() );
 	}
 };

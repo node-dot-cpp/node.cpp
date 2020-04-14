@@ -97,17 +97,17 @@ namespace nodecpp::js {
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarBase& );
 
-		using Fn0T = std::function<JSVarOrOwn()>;
-		using Fn1T = std::function<JSVarOrOwn( JSVarOrOwn )>;
-		using Fn2T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn )>;
-		using Fn3T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
-		using Fn4T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
-		using Fn5T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
-		using Fn6T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
-		using Fn7T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
-		using Fn8T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
-		using Fn9T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
-		using Fn10T = std::function<JSVarOrOwn( JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn, JSVarOrOwn )>;
+		using Fn0T = std::function<JSVar()>;
+		using Fn1T = std::function<JSVar( JSVar )>;
+		using Fn2T = std::function<JSVar( JSVar, JSVar )>;
+		using Fn3T = std::function<JSVar( JSVar, JSVar, JSVar )>;
+		using Fn4T = std::function<JSVar( JSVar, JSVar, JSVar, JSVar )>;
+		using Fn5T = std::function<JSVar( JSVar, JSVar, JSVar, JSVar, JSVar )>;
+		using Fn6T = std::function<JSVar( JSVar, JSVar, JSVar, JSVar, JSVar, JSVar )>;
+		using Fn7T = std::function<JSVar( JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar )>;
+		using Fn8T = std::function<JSVar( JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar )>;
+		using Fn9T = std::function<JSVar( JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar )>;
+		using Fn10T = std::function<JSVar( JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar, JSVar )>;
 
 		struct Fn0Struct { Fn0T fn; };
 		struct Fn1Struct { Fn1T fn; };
@@ -583,17 +583,17 @@ namespace nodecpp::js {
 		JSRLValue operator [] ( const nodecpp::string& key );
 		JSRLValue operator [] ( const char* key );
 
-		JSVarOrOwn operator()();
-		JSVarOrOwn operator()( JSVarOrOwn obj );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 );
+		JSVar operator()();
+		JSVar operator()( JSVar obj );
+		JSVar operator()( JSVar obj1, JSVar obj2 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9, JSVar obj10 );
 
 		bool operator !() const;
 		operator nodecpp::string () const { return toString(); }
@@ -661,17 +661,17 @@ namespace nodecpp::js {
 		JSRLValue operator [] ( const nodecpp::string& key );
 		JSRLValue operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
 
-		JSVarOrOwn operator()();
-		JSVarOrOwn operator()( JSVarOrOwn obj );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 );
-		JSVarOrOwn operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 );
+		JSVar operator()();
+		JSVar operator()( JSVar obj );
+		JSVar operator()( JSVar obj1, JSVar obj2 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9 );
+		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9, JSVar obj10 );
 
 		nodecpp::string toString() const;
 		bool operator !() const;
