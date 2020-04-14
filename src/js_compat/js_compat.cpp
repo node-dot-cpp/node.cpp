@@ -223,80 +223,201 @@ namespace nodecpp::js {
 	}
 
 	JSVarOrOwn JSVar::operator()() { 
-		if ( type == Type::fn0 ) 
-			return (_asFn0()->fn)(); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(JSVar()); 
+			case Type::fn2: return (_asFn2()->fn)(JSVar(), JSVar()); 
+			case Type::fn3: return (_asFn3()->fn)(JSVar(), JSVar(), JSVar()); 
+			case Type::fn4: return (_asFn4()->fn)(JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn5: return (_asFn5()->fn)(JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn6: return (_asFn6()->fn)(JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn7: return (_asFn7()->fn)(JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn8: return (_asFn8()->fn)(JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn9: return (_asFn9()->fn)(JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj ) { 
-		if ( type == Type::fn1 ) 
-			return (_asFn1()->fn)( std::move( obj ) ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj ), JSVar()); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj ), JSVar(), JSVar()); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj ), JSVar(), JSVar(), JSVar()); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj ), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2 ) { 
-		if ( type == Type::fn2 ) 
-			return (_asFn2()->fn)( std::move( obj1 ), std::move( obj2 ) ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), JSVar()); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), JSVar(), JSVar()); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), JSVar(), JSVar(), JSVar()); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3 ) { 
-		if ( type == Type::fn3 ) 
-			return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ),  std::move( obj3 ) ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 )); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), JSVar()); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), JSVar(), JSVar()); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), JSVar(), JSVar(), JSVar()); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4 ) { 
-		if ( type == Type::fn4 ) 
-			return (_asFn4()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )  ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 )); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), JSVar()); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), JSVar(), JSVar()); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), JSVar(), JSVar(), JSVar()); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5 ) { 
-		if ( type == Type::fn5 ) 
-			return (_asFn5()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ) ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 )); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 )); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), JSVar()); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), JSVar(), JSVar()); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), JSVar(), JSVar(), JSVar()); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), JSVar(), JSVar(), JSVar(), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), JSVar(), JSVar(), JSVar(), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6 ) { 
-		if ( type == Type::fn6 ) 
-			return (_asFn6()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ) ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 )); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 )); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 )); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), JSVar()); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), JSVar(), JSVar()); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), JSVar(), JSVar(), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), JSVar(), JSVar(), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7 ) { 
-		if ( type == Type::fn7 ) 
-			return (_asFn7()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ) ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 )); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 )); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 )); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 )); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), JSVar()); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), JSVar(), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), JSVar(), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8 ) { 
-		if ( type == Type::fn8 ) 
-			return (_asFn8()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ) ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 )); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 )); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 )); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 )); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 )); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), JSVar()); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), JSVar(), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9 ) { 
-		if ( type == Type::fn9 ) 
-			return (_asFn9()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ) ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 )); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 )); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 )); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 )); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 )); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 )); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ), JSVar()); 
+			default: throw; 
+		}
 	}
 
 	JSVarOrOwn JSVar::operator()( JSVarOrOwn obj1, JSVarOrOwn obj2, JSVarOrOwn obj3, JSVarOrOwn obj4, JSVarOrOwn obj5, JSVarOrOwn obj6, JSVarOrOwn obj7, JSVarOrOwn obj8, JSVarOrOwn obj9, JSVarOrOwn obj10 ) { 
-		if ( type == Type::fn10 ) 
-			return (_asFn10()->fn)( std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ), std::move( obj10 )  ); 
-		else 
-			throw;
+		switch ( type )
+		{
+			case Type::fn0: return (_asFn0()->fn)(); 
+			case Type::fn1: return (_asFn1()->fn)(std::move( obj1 )); 
+			case Type::fn2: return (_asFn2()->fn)(std::move( obj1 ), std::move( obj2 )); 
+			case Type::fn3: return (_asFn3()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 )); 
+			case Type::fn4: return (_asFn4()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 )); 
+			case Type::fn5: return (_asFn5()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 )); 
+			case Type::fn6: return (_asFn6()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 )); 
+			case Type::fn7: return (_asFn7()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 )); 
+			case Type::fn8: return (_asFn8()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 )); 
+			case Type::fn9: return (_asFn9()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 )); 
+			case Type::fn10: return (_asFn10()->fn)(std::move( obj1 ), std::move( obj2 ), std::move( obj3 ), std::move( obj4 ), std::move( obj5 ), std::move( obj6 ), std::move( obj7 ), std::move( obj8 ), std::move( obj9 ), std::move( obj10 )); 
+			default: throw; 
+		}
 	}
 
 	bool JSVar::operator !() const
