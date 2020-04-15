@@ -28,8 +28,22 @@
 #include "js_compat.h"
 
 thread_local nodecpp::js::JSModuleMap nodecpp::js::jsModuleMap;
+thread_local nodecpp::js::JSVar currentArgs;
+class StackRestorer
+{
+	nodecpp::js::JSVar var;
+public:
+	StackRestorer( nodecpp::js::JSOwnObj& args ) {
+		var = currentArgs;
+		currentArgs = args;
+	}
+	~StackRestorer() {currentArgs = var;}
+};
+
 
 namespace nodecpp::js {
+
+	JSVar arguments() { return currentArgs; }
 
 	////////////////////////////////////////////////////////////   JSOwnObj ////
 
@@ -96,7 +110,7 @@ namespace nodecpp::js {
 		return ptr->has( str );
 	}
 
-	void JSOwnObj::forEach( std::function<void(nodecpp::string)> cb )
+	void JSOwnObj::forEach( std::function<void(JSVar)> cb )
 	{
 		ptr->forEach( std::move( cb ) );
 	}
@@ -231,6 +245,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()() { 
+		JSOwnObj args = makeJSArray();
+		StackRestorer restorer( args );
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -249,6 +265,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj ) { 
+		JSOwnObj args = makeJSArray( { obj } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -267,6 +286,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -285,6 +307,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2, obj3 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -303,6 +328,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -321,6 +349,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -339,6 +370,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -357,6 +391,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -375,6 +412,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -393,6 +433,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -411,6 +454,9 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9, JSVar obj10 ) { 
+		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9, obj10 } );
+		StackRestorer restorer( args );
+
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -656,7 +702,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	void JSVar::forEach( std::function<void(nodecpp::string)> cb )
+	void JSVar::forEach( std::function<void(JSVar)> cb )
 	{
 		switch ( type )
 		{

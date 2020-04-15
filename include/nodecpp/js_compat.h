@@ -81,7 +81,7 @@ namespace nodecpp::js {
 
 		bool in( const JSOwnObj& collection ) const { return collection.has( *this ); }
 	
-		void forEach( std::function<void(nodecpp::string)> cb );
+		void forEach( std::function<void(JSVar)> cb );
 	};
 
 	inline
@@ -686,9 +686,11 @@ namespace nodecpp::js {
 		bool has( nodecpp::string str ) const;
 
 		bool in( const JSVar& collection ) const { return collection.has( *this ); }
-		void forEach( std::function<void(nodecpp::string)> cb );
+		void forEach( std::function<void(JSVar)> cb );
 	};
 	static_assert( sizeof(JSVarBase) == sizeof(JSVar), "no data memebers at JSVar itself!" );
+
+	JSVar arguments();
 
 	inline bool jsIn( const JSVar& var, const JSVar& collection )  { return collection.has( var ); }
 	inline bool jsIn( size_t idx, const JSVar& collection )  { return collection.has( idx ); }
@@ -942,7 +944,7 @@ namespace nodecpp::js {
 			ret += " }";
 			return ret; 
 		}
-		virtual void forEach( std::function<void(nodecpp::string)> cb )
+		virtual void forEach( std::function<void(JSVar)> cb )
 		{
 			for ( auto& e: pairs )
 				cb( e.first );
@@ -1014,6 +1016,11 @@ namespace nodecpp::js {
 					return operator [] ( idx );
 			}
 			return JSObject::operator[](strIdx);
+		}
+		virtual void forEach( std::function<void(JSVar)> cb )
+		{
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( JSVar( (double)idx ) );
 		}
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "[ ";
