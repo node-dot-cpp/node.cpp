@@ -1006,6 +1006,9 @@ namespace nodecpp::js {
 	class JSModule
 	{
 	public:
+		JSModule() {}
+		JSModule( const JSModule& ) = delete; // note: modules are not copied but only referenced. In particular, use auto& to assign ret value of required<>()
+		JSModule& operator = ( const JSModule& ) = delete;
 		virtual ~JSModule() {}
 	};
 
