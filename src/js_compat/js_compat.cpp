@@ -885,60 +885,6 @@ namespace nodecpp::js {
 		return *this;
 	}
 
-	/*JSInit& JSInit::operator = ( const JSOwnObj& obj ) {
-		switch ( type )
-		{
-			case Type::undef:
-				new(&(_asVar()))JSVar( obj );
-				break;
-			case Type::var:
-				_asVar() = obj;
-				break;
-			case Type::obj:
-				_asPtr().~OwnedT();
-				new(&(_asVar()))JSVar( obj );
-				break;
-		}
-		type = Type::var;
-		return *this;
-	}
-
-	JSInit& JSInit::operator = ( JSOwnObj&& obj ) {
-		switch ( type )
-		{
-			case Type::undef:
-				new(&(_asPtr()))OwnedT( std::move( obj ) );
-				break;
-			case Type::var:
-				_asVar().~JSVar();
-				new(&(_asPtr()))OwnedT( std::move( obj ) );
-				break;
-			case Type::obj:
-				_asPtr() = std::move( obj );
-				break;
-		}
-		type = Type::obj;
-		return *this;
-	}
-
-	JSInit& JSInit::operator = ( const JSVar& var ) {
-		switch ( type )
-		{
-			case Type::undef:
-				new(&(_asVar()))JSVar( var );
-				break;
-			case Type::var:
-				_asVar() = var;
-				break;
-			case Type::obj:
-				_asPtr().~OwnedT();
-				new(&(_asVar()))JSVar( var );
-				break;
-		}
-		type = Type::var;
-		return *this;
-	}*/
-
 	JSVarOrOwn JSInit::toValue() const
 	{
 		switch ( type )
@@ -1033,34 +979,6 @@ namespace nodecpp::js {
 		type = other.type;
 		return *this;
 	}
-
-	/*JSVarOrOwn::operator JSVar () const
-	{
-		switch ( type )
-		{
-			case Type::undef:
-				return JSVar();
-			case Type::var:
-				return _asVar();
-			case Type::obj:
-				return JSVar( _asPtr() );
-		}
-	}
-
-	JSVarOrOwn::operator JSOwnObj () const
-	{
-		switch ( type )
-		{
-			case Type::undef:
-				throw;
-				return JSOwnObj();
-			case Type::var:
-				throw;
-				return JSOwnObj();
-			case Type::obj:
-				return JSVar( _asPtr() );
-		}
-	}*/
 
 	bool JSVarOrOwn::operator !() const
 	{

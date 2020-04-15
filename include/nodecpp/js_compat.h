@@ -775,10 +775,6 @@ namespace nodecpp::js {
 		}
 		JSInit& operator = ( const JSInit& other );
 		JSInit& operator = ( JSInit&& other );
-		/*JSInit& operator = ( JSOwnObj&& obj );
-		JSInit& operator = ( const JSOwnObj& obj );
-		JSInit& operator = ( const JSVar& var );
-		JSInit& operator = ( int num ) { return operator = (JSVar( num ) ); }*/
 
 		~JSInit() {
 			if ( type == Type::var )
@@ -816,50 +812,8 @@ namespace nodecpp::js {
 			new(&(_asVar()))JSVar( var );
 			type = Type::var;
 		}
-		/*JSVarOrOwn( nodecpp::safememory::owning_ptr<JSObject>&& obj ) {
-			new(&(_asPtr()))OwnedT( std::move( obj ) );
-			type = Type::obj;
-		}
-		JSVarOrOwn( nodecpp::safememory::owning_ptr<JSArray>&& arr ) {
-			new(&(_asPtr()))OwnedT( std::move( arr ) );
-			type = Type::obj;
-		}
-		JSVarOrOwn( int num ) {
-			new(&(_asVar()))JSVar( num );
-			type = Type::var;
-		}
-		JSVarOrOwn( const char* str ) {
-			new(&(_asVar()))JSVar( str );
-			type = Type::var;
-		}*/
-//		JSVarOrOwn( std::initializer_list<std::pair<nodecpp::string, int>> l );
-		/*JSVarOrOwn( std::initializer_list<int> l ) { 
-			JSOwnObj tmp(l); 
-			new(&(_asPtr()))OwnedT( std::move( tmp ) );
-			type = Type::obj;
-		}
-		JSVarOrOwn& operator = ( std::initializer_list<int> l ) { 
-			JSOwnObj tmp(l); 
-			new(&(_asPtr()))OwnedT( std::move( tmp ) );
-			type = Type::obj;
-			return *this;
-		}
-		JSVarOrOwn( std::initializer_list<const char*> l ) { 
-			JSOwnObj tmp(l); 
-			new(&(_asPtr()))OwnedT( std::move( tmp ) );
-			type = Type::obj;
-		}
-		JSVarOrOwn& operator = ( std::initializer_list<const char*> l ) { 
-			JSOwnObj tmp(l); 
-			new(&(_asPtr()))OwnedT( std::move( tmp ) );
-			type = Type::obj;
-			return *this;
-		}*/
 		JSVarOrOwn& operator = ( JSVarOrOwn&& other );
 		JSVarOrOwn& operator = ( const JSVarOrOwn& other ) = delete;
-//		JSVarOrOwn& operator = ( const JSOwnObj& obj );
-//		JSVarOrOwn& operator = ( const JSVar& var );
-//		JSVarOrOwn& operator = ( int num ) { return operator = (JSVar( num ) ); }
 
 		~JSVarOrOwn() {
 			if ( type == Type::var )
@@ -869,8 +823,6 @@ namespace nodecpp::js {
 		}
 
 		bool operator !() const;
-//		operator JSVar () const;
-//		operator JSOwnObj () const;
 		nodecpp::string toString() const;
 		double toNumber() const;
 	};
@@ -1056,39 +1008,6 @@ namespace nodecpp::js {
 	public:
 		virtual ~JSModule() {}
 	};
-
-	/*template<auto value>
-	struct JSModule2JSVar : public JSModule {};
-
-	template<typename Class, typename Result, Result Class::* member>
-	struct JSModule2JSVar<member> : public Class
-	{
-		//JSVar& operator = ( soft_ptr<JSVar> other ) { (this->*member)->operator = ( other ); return (this->*member); } // TODO: ensure necessity and semantic
-		JSVar& operator = ( bool b ) { (this->*member)->operator = ( b ); return (this->*member); }
-		JSVar& operator = ( double d ) { (this->*member)->operator = ( d ); return (this->*member); }
-		JSVar& operator = ( const nodecpp::string& str ) { (this->*member)->operator = ( str ); return (this->*member); }
-		JSVar& operator = ( nodecpp::safememory::owning_ptr<JSObject>&& ptr ) { (this->*member)->operator = ( ptr ); return (this->*member); }
-		JSVar& operator = ( nodecpp::safememory::soft_ptr<JSObject> ptr ) { (this->*member)->operator = ( ptr ); return (this->*member); }
-		JSVar& operator = ( nodecpp::safememory::owning_ptr<JSArray>&& ptr ) { (this->*member)->operator = ( ptr ); return (this->*member); }
-		JSVar& operator = ( nodecpp::safememory::soft_ptr<JSArray> ptr ) { (this->*member)->operator = ( ptr ); return (this->*member); }
-
-		operator JSVar () { return (this->*member); }
-
-		JSVar operator [] ( size_t idx ) { return (this->*member)->operator [] (idx ); }
-		JSVar operator [] ( const nodecpp::string& key ) { return (this->*member)->operator [] (key ); }
-
-		operator nodecpp::string () const  { return (this->*member)->operator nodecpp::string (); }
-		bool operator !() const  { return (this->*member)->operator ! (); }
-
-		bool has( const JSVar& other ) const { return (this->*member)->has(other ); }
-		bool has( size_t idx ) const { return (this->*member)->has(idx ); }
-		bool has( double num ) const { return (this->*member)->has(num ); }
-		bool has( nodecpp::string str ) const { return (this->*member)->has(str ); }
-
-		bool in( const JSVar& collection ) const { return (this->*member)->in(collection ); }
-
-		nodecpp::string toString() const { return (this->*member)->toString();}
-	};*/
 
 	class JSModuleMap
 	{
