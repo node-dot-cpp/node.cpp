@@ -27,7 +27,7 @@
 
 #include "js_compat.h"
 
-thread_local nodecpp::js::JSModuleMap nodecpp::js::jsModuleMap;
+thread_local nodecpp::JSModuleMap nodecpp::jsModuleMap;
 thread_local nodecpp::js::JSVar currentArgs;
 class StackRestorer
 {

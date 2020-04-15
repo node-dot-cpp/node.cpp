@@ -542,6 +542,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\js_compat.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\logging.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\nls.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
     <ClInclude Include="..\js-compat-tests\misc_tests.h" />
     <ClInclude Include="..\user_code\colors.h" />

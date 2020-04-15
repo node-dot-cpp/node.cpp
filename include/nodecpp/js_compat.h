@@ -29,8 +29,9 @@
 #define NODECPP_JS_COMPAT_H
 
 #include "common.h"
-#include <typeinfo>
-#include <typeindex>
+//#include <typeinfo>
+//#include <typeindex>
+#include "nls.h"
 
 namespace nodecpp::js {
 
@@ -1001,73 +1002,6 @@ namespace nodecpp::js {
 	inline owning_ptr<JSArray> makeJSArray(std::initializer_list<JSInit> l) { return make_owning<JSArray>(l); } // TODO: ownership of args
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-	class JSModule
-	{
-	public:
-		JSModule() {}
-		JSModule( const JSModule& ) = delete; // note: modules are not copied but only referenced. In particular, use auto& to assign ret value of required<>()
-		JSModule& operator = ( const JSModule& ) = delete;
-		virtual ~JSModule() {}
-	};
-
-	class JSModuleMap
-	{
-		using MapType = nodecpp::map<std::type_index, owning_ptr<JSModule>>;
-#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		MapType _classModuleMap;
-		MapType& classModuleMap() { return _classModuleMap; }
-#else
-		uint8_t mapbytes[sizeof(MapType)];
-		MapType& classModuleMap() { return *reinterpret_cast<MapType*>(mapbytes); }
-#endif
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<UserClass>> getJsModuleExported_( std::type_index idx )
-		{
-			auto pattern = classModuleMap().find( idx );
-			if ( pattern != classModuleMap().end() )
-			{
-				nodecpp::safememory::soft_ptr<JSModule> svar0 = pattern->second;
-				nodecpp::safememory::soft_ptr<UserClass> svar = soft_ptr_static_cast<UserClass>(svar0);
-				return std::make_pair( true, svar );
-			}
-			else
-				return std::make_pair( false, nodecpp::safememory::soft_ptr<UserClass>() );
-		}
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<UserClass>> addJsModuleExported_( std::type_index idx, nodecpp::safememory::owning_ptr<JSModule>&& pvar )
-		{
-			auto check = classModuleMap().insert( std::make_pair( idx, std::move( pvar ) ) );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, check.second, "failed to insert exported value to map; insertion already done for this type" ); 
-//			nodecpp::safememory::soft_ptr<UserClass> svar = check.first->second;
-			nodecpp::safememory::soft_ptr<JSModule> svar0 = check.first->second;
-			nodecpp::safememory::soft_ptr<UserClass> svar = soft_ptr_static_cast<UserClass>(svar0);
-			return std::make_pair( true, svar );
-		}
-	public:
-#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		void init()
-		{
-			new(&(classModuleMap()))MapType();
-		}
-		void destroy()
-		{
-			classModuleMap().~MapType();
-		}
-#endif
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<UserClass>> getJsModuleExported()
-		{
-			return getJsModuleExported_<UserClass>( std::type_index(typeid(UserClass)) );
-		}
-		template<class UserClass>
-		std::pair<bool, nodecpp::safememory::soft_ptr<UserClass>> addJsModuleExported( nodecpp::safememory::owning_ptr<JSModule>&& pvar )
-		{
-			return addJsModuleExported_<UserClass>( std::type_index(typeid(UserClass)), std::move( pvar ) );
-		}
-	};
-	extern thread_local JSModuleMap jsModuleMap;
 
 	template<class T>
 	JSVar require()
