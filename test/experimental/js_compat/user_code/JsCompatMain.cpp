@@ -19,14 +19,12 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::instanceId = 0;*/
 
 	JSVar styles = require<Styles>();
-	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", styles.toString().c_str() );
+	printf( "\n~~~~~~~~~~~~~~~\n%s\n~~~~~~~~~~~~~~~\n\n", styles.toString().c_str() );
 
-	/*printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
+	auto& colors = import<Colors>();
+	printf( "\n~~~~~~~~~~~~~~~\n%s\n~~~~~~~~~~~~~~~\n\n", colors.toString().c_str() );
 
-	JSVar colors = require<Colors>();
-	printf( "%s\n", colors.toString().c_str() );*/
-
-	JSVar miscTests = require<MiscTests>();
+	auto& miscTests = import<MiscTests>();
 //	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", miscTests.toString().c_str() );
 
 	return 0;

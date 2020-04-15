@@ -32,12 +32,10 @@
 
 using namespace nodecpp::js;
 
-class Styles_ : public nodecpp::js::JSModule
+class Styles : public nodecpp::js::JSModule
 {
-public:
 	JSOwnObj styles = makeJSObject();
 
-private:
 	JSOwnObj codes = makeJSObject({ 
 	  { "reset", makeJSArray( {0, 0 } ) },
 	  { "bold", makeJSArray( {1, 22 } ) },
@@ -99,7 +97,7 @@ private:
 	});
 
 public:
-	Styles_()
+	Styles() // initialization code is to be placed to ctor
 	{
 		codes.forEach([this](nodecpp::string key) {
 		  auto val = codes[key];
@@ -109,8 +107,8 @@ public:
 		  style[ "close" ] = JSVar( nodecpp::format("\\u001b[{}m", val[1].toString() ) );
 		});
 	}
-};
 
-using Styles = JSModule2JSVar<&Styles_::styles>;
+	JSVar exports() { return styles; } // required call returning exported var
+};
 
 #endif // STYLES_H

@@ -1050,7 +1050,7 @@ namespace nodecpp::js {
 		virtual ~JSModule() {}
 	};
 
-	template<auto value>
+	/*template<auto value>
 	struct JSModule2JSVar : public JSModule {};
 
 	template<typename Class, typename Result, Result Class::* member>
@@ -1081,7 +1081,7 @@ namespace nodecpp::js {
 		bool in( const JSVar& collection ) const { return (this->*member)->in(collection ); }
 
 		nodecpp::string toString() const { return (this->*member)->toString();}
-	};
+	};*/
 
 	class JSModuleMap
 	{
@@ -1141,7 +1141,19 @@ namespace nodecpp::js {
 	extern thread_local JSModuleMap jsModuleMap;
 
 	template<class T>
-	T& require()
+	JSVar require()
+	{
+		auto trial = jsModuleMap.getJsModuleExported<T>();
+		if ( trial.first )
+			return trial.second->exports();
+		owning_ptr<JSModule> pt = nodecpp::safememory::make_owning<T>();
+		auto ret = jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
+		return ret.second->exports();
+	}
+
+	template<class T>
+	T& import()
 	{
 		auto trial = jsModuleMap.getJsModuleExported<T>();
 		if ( trial.first )

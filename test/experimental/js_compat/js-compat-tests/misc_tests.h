@@ -40,7 +40,7 @@ namespace nodecpp {
 using namespace nodecpp::js;
 
 
-class MiscTests_ : public nodecpp::js::JSModule
+class MiscTests : public nodecpp::js::JSModule
 {
 public:
 	nodecpp::js::JSOwnObj miscTests = makeJSObject();
@@ -72,7 +72,7 @@ private:
 	});
 
 public:
-	MiscTests_()
+	MiscTests()
 	{
 
 		JSOwnObj array_of_arrays1 = makeJSArray({ 
@@ -127,7 +127,5 @@ public:
 		printf( "\n======\n%s\n=======\n", prefixAdder( "some text after" ).toString().c_str() );
 	}
 };
-
-using MiscTests = JSModule2JSVar<&MiscTests_::miscTests>;
 
 #endif // MISC_TESTS_H

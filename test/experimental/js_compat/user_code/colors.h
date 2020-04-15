@@ -33,7 +33,7 @@
 
 using namespace nodecpp::js;
 
-class Colors_ : public JSModule
+class Colors : public JSModule
 {
 public:
 	JSVar colors;
@@ -43,9 +43,9 @@ private:
 
 
 public:
-	Colors_()
+	Colors()
 	{
-		ansiStyles = (JSVar)(require<Styles>());
+		ansiStyles = require<Styles>();
 	}
 
 	void enable()
@@ -77,8 +77,9 @@ public:
 
 		return styleMap["open"].toString() + str.toString() + styleMap["close"].toString();
 	}
-};
 
-using Colors = JSModule2JSVar<&Colors_::colors>;
+	// fake temporary call for testing purposes only; TODO remove when no longer needed ASAP
+	nodecpp::string toString() { return "Colors class"; }
+};
 
 #endif // COLORS_H
