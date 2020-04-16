@@ -682,6 +682,8 @@ namespace nodecpp::js {
 		operator nodecpp::string () const { return toString(); }
 		bool operator !() const;
 		JSVar operator %( const JSVar& other ) const;
+		operator bool () const; // does not exist in JS. TODO: consider making a fn call .toBool() or alike
+		JSVar operator ||( const JSVar& other ) const;
 
 		bool has( const JSVar& other ) const;
 		bool has( size_t idx ) const;
