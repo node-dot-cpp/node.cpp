@@ -512,13 +512,22 @@ namespace nodecpp::js {
 
 	JSVar JSVar::operator ||( const JSVar& other ) const
 	{
-		// TODO: make sure we report right values!!!
 		bool me_ = *this;
 		bool other_ = other;
 		if ( me_ )
 			return *this;
 		else
 			return other;
+	}
+
+	JSVar JSVar::operator &&( const JSVar& other ) const
+	{
+		bool me_ = *this;
+		bool other_ = other;
+		if ( me_ )
+			return other;
+		else
+			return *this;
 	}
 
 	bool JSVar::operator ==( const JSVar& other ) const

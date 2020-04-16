@@ -684,6 +684,7 @@ namespace nodecpp::js {
 		JSVar operator %( const JSVar& other ) const;
 		operator bool () const; // does not exist in JS. TODO: consider making a fn call .toBool() or alike
 		JSVar operator ||( const JSVar& other ) const;
+		JSVar operator &&( const JSVar& other ) const;
 
 		JSVar operator++(); // prefix
 		JSVar operator++(int); // postfix
