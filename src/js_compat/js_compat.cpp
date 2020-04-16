@@ -210,7 +210,7 @@ namespace nodecpp::js {
 			{
 				auto pstr = _asStr();
 				if ( idx < pstr->size() )
-					return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ); // TODO: ownership
+					return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) );
 				else
 				return JSVar(); // TODO: mignt be something else!!!
 			}
@@ -218,7 +218,7 @@ namespace nodecpp::js {
 				return (*_asSoft())->operator[]( idx );
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				return JSVar(); // TODO: mignt be something else!!!
+				return JSVar(); // formally
 		}
 	}
 
@@ -483,7 +483,7 @@ namespace nodecpp::js {
 
 	bool JSVar::operator !() const
 	{
-		return !*this;
+		return !(bool)(*this);
 	}
 
 	JSVar JSVar::operator %( const JSVar& other ) const
