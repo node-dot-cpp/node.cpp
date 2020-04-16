@@ -521,6 +521,89 @@ namespace nodecpp::js {
 			return other;
 	}
 
+	bool JSVar::operator ==( const JSVar& other ) const
+	{
+		/*switch ( type )
+		{
+			case Type::undef:
+				return false; 
+			case Type::boolean:
+				return *this;
+			case Type::num:
+				return *_asNum() != 0 && !std::isnan( *_asNum() );
+			case Type::string:
+				return _asStr()->size() != 0 && *_asStr() != "false";
+			case Type::softptr:
+				return *_asSoft() != nullptr;
+			case JSVarBase::Type::fn0:
+			case JSVarBase::Type::fn1:
+			case JSVarBase::Type::fn2:
+			case JSVarBase::Type::fn3:
+			case JSVarBase::Type::fn4:
+			case JSVarBase::Type::fn5:
+			case JSVarBase::Type::fn6:
+			case JSVarBase::Type::fn7:
+			case JSVarBase::Type::fn8:
+			case JSVarBase::Type::fn9:
+			case JSVarBase::Type::fn10:
+				return false; 
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}*/
+		return false;
+	}
+	
+	JSVar JSVar::operator++()
+	{
+		double val = toNumber();
+		if ( !std::isnan( val ) )
+			JSVarBase::init( val + 1 );
+		else
+			JSVarBase::init( val );
+		return *this;
+	}
+
+	JSVar JSVar::operator++(int)
+	{
+		double val = toNumber();
+		if ( !std::isnan( val ) )
+		{
+			JSVarBase::init( val + 1 );
+			return JSVar( val );
+		}
+		else
+		{
+			JSVarBase::init( val );
+			return *this;
+		}
+	}
+	
+	JSVar JSVar::operator--()
+	{
+		double val = toNumber();
+		if ( !std::isnan( val ) )
+			JSVarBase::init( val - 1 );
+		else
+			JSVarBase::init( val );
+		return *this;
+	}
+
+	JSVar JSVar::operator--(int)
+	{
+		double val = toNumber();
+		if ( !std::isnan( val ) )
+		{
+			JSVarBase::init( val - 1 );
+			return JSVar( val );
+		}
+		else
+		{
+			JSVarBase::init( val );
+			return *this;
+		}
+	}
+
 	JSVar::operator bool () const
 	{
 		switch ( type )
