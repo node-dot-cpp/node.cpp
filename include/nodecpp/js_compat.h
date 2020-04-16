@@ -1006,11 +1006,11 @@ namespace nodecpp::js {
 	template<class T>
 	JSVar require()
 	{
-		auto trial = jsModuleMap.getJsModuleExported<T>();
+		auto trial = nodecpp::threadLocalData.jsModuleMap.getJsModuleExported<T>();
 		if ( trial.first )
 			return trial.second->exports();
 		owning_ptr<JSModule> pt = nodecpp::safememory::make_owning<T>();
-		auto ret = jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
+		auto ret = nodecpp::threadLocalData.jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
 		return ret.second->exports();
 	}
@@ -1018,11 +1018,11 @@ namespace nodecpp::js {
 	template<class T>
 	T& import()
 	{
-		auto trial = jsModuleMap.getJsModuleExported<T>();
+		auto trial = nodecpp::threadLocalData.jsModuleMap.getJsModuleExported<T>();
 		if ( trial.first )
 			return *(trial.second);
 		owning_ptr<JSModule> pt = nodecpp::safememory::make_owning<T>();
-		auto ret = jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
+		auto ret = nodecpp::threadLocalData.jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
 		return *(ret.second);
 	}

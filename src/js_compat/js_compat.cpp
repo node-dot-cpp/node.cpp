@@ -26,24 +26,30 @@
 * -------------------------------------------------------------------------------*/
 
 #include "js_compat.h"
+#include "nls.h"
 
-thread_local nodecpp::JSModuleMap nodecpp::jsModuleMap;
-thread_local nodecpp::js::JSVar currentArgs;
-class StackRestorer
+namespace nodecpp {
+
+thread_local NLS threadLocalData;
+
+} // namespace nodecpp
+
+
+class JSStackMan // just a helper
 {
-	nodecpp::js::JSVar var;
+	nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> args;
 public:
-	StackRestorer( nodecpp::js::JSOwnObj& args ) {
-		var = currentArgs;
-		currentArgs = args;
+	JSStackMan( nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> args_ ) {
+		args = nodecpp::threadLocalData.currentArgs;
+		nodecpp::threadLocalData.currentArgs = args_;
 	}
-	~StackRestorer() {currentArgs = var;}
+	~JSStackMan() {nodecpp::threadLocalData.currentArgs = args;}
 };
 
 
 namespace nodecpp::js {
 
-	JSVar arguments() { return currentArgs; }
+	JSVar arguments() { return threadLocalData.currentArgs != nullptr ? threadLocalData.currentArgs : JSVar(); }
 
 	////////////////////////////////////////////////////////////   JSOwnObj ////
 
@@ -245,8 +251,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()() { 
-		JSOwnObj args = makeJSArray();
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray();
+		JSStackMan restorer( args );
 		switch ( type )
 		{
 			case Type::fn0: return (_asFn0()->fn)(); 
@@ -265,8 +271,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj ) { 
-		JSOwnObj args = makeJSArray( { obj } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -286,8 +292,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -307,8 +313,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2, obj3 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -328,8 +334,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -349,8 +355,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -370,8 +376,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -391,8 +397,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -412,8 +418,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -433,8 +439,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
@@ -454,8 +460,8 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9, JSVar obj10 ) { 
-		JSOwnObj args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9, obj10 } );
-		StackRestorer restorer( args );
+		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9, obj10 } );
+		JSStackMan restorer( args );
 
 		switch ( type )
 		{
