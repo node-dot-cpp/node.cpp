@@ -25,6 +25,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#include <cmath>
 #include "js_compat.h"
 #include "nls.h"
 
@@ -489,10 +490,10 @@ namespace nodecpp::js {
 	{
 		// TODO: make sure we report right values!!!
 		double me_ = toNumber();
-		if ( me_ == NAN )
+		if ( std::isnan( me_ ) )
 			return NAN;
 		double other_ = other.toNumber();
-		if ( other_ == NAN )
+		if ( std::isnan( other_ ) )
 			return NAN;
 		bool me_negative = me_ < 0;
 		if ( me_negative )
@@ -500,7 +501,7 @@ namespace nodecpp::js {
 		if ( other_ < 0 )
 			other_ = - other_;
 		double rat = me_ / other_;
-		if ( rat == NAN )
+		if ( std::isnan( rat ) )
 			return NAN;
 		uint64_t irat = (uint64_t)(rat);
 		double rem = me_ - other_ * irat;
@@ -527,7 +528,7 @@ namespace nodecpp::js {
 			case Type::boolean:
 				return *this;
 			case Type::num:
-				return *_asNum() != 0 && *_asNum() != NAN;
+				return *_asNum() != 0 && !std::isnan( *_asNum() );
 			case Type::string:
 				return _asStr()->size() != 0 && *_asStr() != "false";
 			case Type::softptr:
