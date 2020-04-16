@@ -514,6 +514,30 @@ namespace nodecpp::js {
 		}
 	}
 
+	JSVar JSVar::operator %( const JSVar& other ) const
+	{
+		// TODO: make sure we report right values!!!
+		double me_ = toNumber();
+		if ( me_ == NAN )
+			return NAN;
+		double other_ = other.toNumber();
+		if ( other_ == NAN )
+			return NAN;
+		bool me_negative = me_ < 0;
+		if ( me_negative )
+			me_ = -me_;
+		if ( other_ < 0 )
+			other_ = - other_;
+		double rat = me_ / other_;
+		if ( rat == NAN )
+			return NAN;
+		uint64_t irat = (uint64_t)(rat);
+		double rem = me_ - other_ * irat;
+		if ( me_negative )
+			rem = -rem;
+		return rem;
+	}
+
 	nodecpp::string JSVar::toString() const
 	{
 		switch ( type )
@@ -583,7 +607,6 @@ namespace nodecpp::js {
 			case Type::fn8:
 			case Type::fn9:
 			case Type::fn10:
-//				throw;
 				return NAN;
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 

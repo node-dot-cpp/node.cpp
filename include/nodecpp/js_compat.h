@@ -678,8 +678,10 @@ namespace nodecpp::js {
 
 		nodecpp::string toString() const;
 		double toNumber() const;
-		bool operator !() const;
+
 		operator nodecpp::string () const { return toString(); }
+		bool operator !() const;
+		JSVar operator %( const JSVar& other ) const;
 
 		bool has( const JSVar& other ) const;
 		bool has( size_t idx ) const;

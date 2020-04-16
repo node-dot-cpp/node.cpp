@@ -134,6 +134,13 @@ public:
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]().toString().c_str() );
 		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat_any"]( "word1 ", "word2 ", "word3 ", "word4 " ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", prefixAdder( "some text after" ).toString().c_str() );
+
+		// misc math
+		printf( "\n======math=======\n" );
+		printf( "\n======\n%s\n=======\n", ( JSVar(3.5) % JSVar(2)).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", ( JSVar(-3.5) % JSVar(2)).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", ( JSVar(7.5) % JSVar(2.4)).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", ( JSVar("7.5") % JSVar("2.4")).toString().c_str() );
 	}
 };
 
