@@ -715,38 +715,6 @@ namespace nodecpp::js {
 		}
 	}
 
-/*	JSVar::operator bool () const
-	{
-		switch ( type )
-		{
-			case Type::undef:
-				return false; 
-			case Type::boolean:
-				return *this;
-			case Type::num:
-				return *_asNum() != 0 && !std::isnan( *_asNum() );
-			case Type::string:
-				return _asStr()->size() != 0 ? *this : JSVar(false);
-			case Type::softptr:
-				return *_asSoft() != nullptr ? *this : JSVar(false);
-			case JSVarBase::Type::fn0:
-			case JSVarBase::Type::fn1:
-			case JSVarBase::Type::fn2:
-			case JSVarBase::Type::fn3:
-			case JSVarBase::Type::fn4:
-			case JSVarBase::Type::fn5:
-			case JSVarBase::Type::fn6:
-			case JSVarBase::Type::fn7:
-			case JSVarBase::Type::fn8:
-			case JSVarBase::Type::fn9:
-			case JSVarBase::Type::fn10:
-				return *this; 
-			default:
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				return false;
-		}
-	}*/
-
 	bool JSVar::isFalseValue() const
 	{
 		switch ( type )
