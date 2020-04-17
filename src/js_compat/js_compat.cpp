@@ -532,34 +532,136 @@ namespace nodecpp::js {
 
 	bool JSVar::operator ==( const JSVar& other ) const
 	{
-		/*switch ( type )
+		switch ( type )
 		{
 			case Type::undef:
-				return false; 
+				switch ( other.type )
+				{
+					case Type::undef:
+						return true; 
+					case Type::softptr:
+						return *_asSoft() == nullptr;
+					default:
+						return false;
+				}
 			case Type::boolean:
-				return *this;
+				switch ( other.type )
+				{
+					case Type::undef:
+						return !*_asBool(); 
+					case Type::boolean:
+						return *_asBool() == *(other._asBool());
+					case Type::num:
+						return (*_asBool() ? 1 : 0) == *(other._asNum());
+					case Type::string:
+						return other.toNumber() == (_asBool() ? 1 : 0);
+					default:
+						return false;
+				}
 			case Type::num:
-				return *_asNum() != 0 && !std::isnan( *_asNum() );
+			{
+				switch ( other.type )
+				{
+					case Type::undef:
+						return false; 
+					case Type::boolean:
+						return *_asNum() == (*(other._asBool()) ? 1 : 0);
+					case Type::num:
+						return *_asNum() == *(other._asNum());
+					case Type::string:
+						return *_asNum() == other.toNumber();
+					default:
+						return false;
+				}
+			}
 			case Type::string:
-				return _asStr()->size() != 0 && *_asStr() != "false";
+			{
+				switch ( other.type )
+				{
+					case Type::string:
+						return *_asStr() == *(other._asStr());
+					case Type::boolean:
+						return toNumber() == (*(other._asBool()) ? 1 : 0);
+					case Type::num:
+						return toNumber() == *(other._asNum());
+					case Type::softptr:
+						if ( *(other._asSoft()) == nullptr )
+							return false;
+						else
+							return *_asStr() == other.toString();
+					default:
+						return false;
+				}
+			}
 			case Type::softptr:
-				return *_asSoft() != nullptr;
+				switch ( other.type )
+				{
+					case Type::undef:
+						return *_asSoft() == nullptr;
+					case Type::softptr:
+						return &(*(*_asSoft())) == &(*(*(other._asSoft())));
+					default:
+						return false;
+				}
 			case JSVarBase::Type::fn0:
+				if ( other.type == fn0 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn1:
+				if ( other.type == fn1 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn2:
+				if ( other.type == fn2 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn3:
+				if ( other.type == fn3 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn4:
+				if ( other.type == fn4 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn5:
+				if ( other.type == fn5 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn6:
+				if ( other.type == fn6 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn7:
+				if ( other.type == fn7 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn8:
+				if ( other.type == fn8 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn9:
+				if ( other.type == fn9 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			case JSVarBase::Type::fn10:
-				return false; 
+				if ( other.type == fn10 )
+					return false; // a mechanism is required to check whether we have copies of the same function
+				else
+					return false;
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return false;
-		}*/
+		}
 		return false;
 	}
 	
