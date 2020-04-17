@@ -612,6 +612,8 @@ namespace nodecpp::js {
 
 		void init( const JSVar& other ) { JSVarBase::init( other ); }
 
+		bool isFalseValue() const;
+
 	public:
 		JSVar() {}
 		JSVar( const JSVar& other ) { init( other );}
@@ -682,7 +684,7 @@ namespace nodecpp::js {
 		operator nodecpp::string () const { return toString(); }
 		bool operator !() const;
 		JSVar operator %( const JSVar& other ) const;
-		operator bool () const; // does not exist in JS. TODO: consider making a fn call .toBool() or alike
+//		operator bool () const; // does not exist in JS. TODO: consider making a fn call .toBool() or alike
 		JSVar operator ||( const JSVar& other ) const;
 		JSVar operator &&( const JSVar& other ) const;
 

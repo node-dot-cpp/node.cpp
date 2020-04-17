@@ -483,7 +483,7 @@ namespace nodecpp::js {
 
 	bool JSVar::operator !() const
 	{
-		return !(bool)(*this);
+		return isFalseValue();
 	}
 
 	JSVar JSVar::operator %( const JSVar& other ) const
@@ -512,8 +512,8 @@ namespace nodecpp::js {
 
 	JSVar JSVar::operator ||( const JSVar& other ) const
 	{
-		bool me_ = *this;
-		bool other_ = other;
+		bool me_ = !isFalseValue();
+		bool other_ = !other.isFalseValue();
 		if ( me_ )
 			return *this;
 		else
@@ -522,8 +522,8 @@ namespace nodecpp::js {
 
 	JSVar JSVar::operator &&( const JSVar& other ) const
 	{
-		bool me_ = *this;
-		bool other_ = other;
+		bool me_ = !isFalseValue();
+		bool other_ = !other.isFalseValue();
 		if ( me_ )
 			return other;
 		else
@@ -613,20 +613,52 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSVar::operator bool () const
+/*	JSVar::operator bool () const
 	{
 		switch ( type )
 		{
+			case Type::undef:
+				return false; 
 			case Type::boolean:
 				return *this;
 			case Type::num:
 				return *_asNum() != 0 && !std::isnan( *_asNum() );
 			case Type::string:
-				return _asStr()->size() != 0 && *_asStr() != "false";
+				return _asStr()->size() != 0 ? *this : JSVar(false);
 			case Type::softptr:
-				return *_asSoft() != nullptr;
+				return *_asSoft() != nullptr ? *this : JSVar(false);
+			case JSVarBase::Type::fn0:
+			case JSVarBase::Type::fn1:
+			case JSVarBase::Type::fn2:
+			case JSVarBase::Type::fn3:
+			case JSVarBase::Type::fn4:
+			case JSVarBase::Type::fn5:
+			case JSVarBase::Type::fn6:
+			case JSVarBase::Type::fn7:
+			case JSVarBase::Type::fn8:
+			case JSVarBase::Type::fn9:
+			case JSVarBase::Type::fn10:
+				return *this; 
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+	}*/
+
+	bool JSVar::isFalseValue() const
+	{
+		switch ( type )
+		{
 			case Type::undef:
-				return false; 
+				return true; 
+			case Type::boolean:
+				return *_asBool() == false;
+			case Type::num:
+				return *_asNum() == 0 || std::isnan( *_asNum() );
+			case Type::string:
+				return _asStr()->size() == 0;
+			case Type::softptr:
+				return *_asSoft() == nullptr;
 			case JSVarBase::Type::fn0:
 			case JSVarBase::Type::fn1:
 			case JSVarBase::Type::fn2:
@@ -641,7 +673,7 @@ namespace nodecpp::js {
 				return false; 
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				return false;
+				return true;
 		}
 	}
 

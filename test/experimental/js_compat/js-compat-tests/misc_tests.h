@@ -145,13 +145,13 @@ public:
 		printf( "\n======\n%s\n=======\n", ( JSVar("abc") || JSVar("def")).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar("") || JSVar("def")).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar() || JSVar("def")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("false") || JSVar("def")).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", ( JSVar(false) || JSVar("def")).toString().c_str() );
 
 		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar("jkl")).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar("")).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar("") && JSVar("jkl")).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar()).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar("false")).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar(false)).toString().c_str() );
 
 		printf( "\n======\n%s\n=======\n", ( (JSVar("3"))++).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( ++(JSVar("3"))).toString().c_str() );
