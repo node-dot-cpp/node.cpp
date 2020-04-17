@@ -664,6 +664,51 @@ namespace nodecpp::js {
 		}
 		return false;
 	}
+
+	bool JSVar::isStrictlyTheSame( const JSVar& other ) const
+	{
+		if ( type != other.type )
+			return false;
+		switch ( type )
+		{
+			case Type::undef:
+				return true;
+			case Type::boolean:
+				return *_asBool() == *(other._asBool());
+			case Type::num:
+				return *_asNum() == *(other._asNum());
+			case Type::string:
+				return *_asStr() == *(other._asStr());
+			case Type::softptr:
+				return &(*(*_asSoft())) == &(*(*(other._asSoft())));
+			case JSVarBase::Type::fn0:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn1:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn2:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn3:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn4:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn5:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn6:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn7:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn8:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn9:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			case JSVarBase::Type::fn10:
+				return false; // a mechanism is required to check whether we have copies of the same function
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+		return false;
+	}
 	
 	JSVar JSVar::operator++()
 	{
