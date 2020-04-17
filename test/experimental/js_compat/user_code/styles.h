@@ -103,8 +103,8 @@ public:
 		  auto val = codes[key];
 		  styles[ key ] = JSOwnObj( std::move( makeJSArray() ) );
 		  JSVar style = styles[key];
-		  style[ "open" ] = JSVar( nodecpp::format("\\u001b[{}m", val[0].toString() ) );
-		  style[ "close" ] = JSVar( nodecpp::format("\\u001b[{}m", val[1].toString() ) );
+		  style[ "open" ] = nodecpp::format("\\u001b[{}m", val[0].toString() );
+		  style[ "close" ] = nodecpp::format("\\u001b[{}m", val[1].toString() );
 		});
 	}
 
