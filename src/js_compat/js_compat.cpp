@@ -1862,6 +1862,14 @@ namespace nodecpp::js {
 		ret->elems.push_back( JSVar( myPtr ) );
 	}
 
+	void JSObject::concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr )
+	{
+		if ( arr.type == JSVar::Type::softptr )
+			(*(arr._asSoft()))->concat_impl_add_me( ret );
+		else
+			ret->elems.push_back( arr );
+	}
+
 	////////////////////////////////////////////////////////////   JSArray ////
 
 	void JSArray::concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret )

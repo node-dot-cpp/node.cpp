@@ -897,8 +897,6 @@ namespace nodecpp::js {
 		nodecpp::safememory::soft_this_ptr<JSObject> myThis;
 		nodecpp::map<nodecpp::string, JSVarOrOwn> pairs;
 
-		virtual bool isArray() { return false; }
-	
 		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
 
 		void toString_( nodecpp::string& ret, const nodecpp::string offset, const nodecpp::string separator ) const { 
@@ -925,11 +923,7 @@ namespace nodecpp::js {
 			}
 		}
 
-		virtual void concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr )
-		{
-			printf( "JSObject::concat_impl(JSVar)\n" );
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "concat() cannot be called with respect to Object" ); 
-		}
+		void concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr );
 
 	public:
 		JSObject() {}
@@ -998,7 +992,6 @@ namespace nodecpp::js {
 		template<class ArrT, class ArrT1, class ... ArrTX>
 		void concat_impl( nodecpp::safememory::owning_ptr<JSArray>& ret, ArrT arr, ArrT1 arr1, ArrTX ... args)
 		{
-//			printf( "concat_impl(...)\n" );
 			concat_impl_1( ret, arr );
 			concat_impl( ret, arr1, args ... );
 		}
@@ -1006,7 +999,6 @@ namespace nodecpp::js {
 		template<class ArrT>
 		void concat_impl( nodecpp::safememory::owning_ptr<JSArray>& ret, ArrT arr )
 		{
-//			printf( "concat_impl(last)\n" );
 			concat_impl_1( ret, arr );
 		}
 
@@ -1024,28 +1016,7 @@ namespace nodecpp::js {
 
 		nodecpp::vector<JSVarOrOwn> elems;
 
-		virtual bool isArray() { return true; }
-
 		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
-
-		virtual void concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr )
-		{
-			printf( "JSArr::concat_impl_1(JSVar)\n" );
-			// TODO: populate with copies of this->elems elements
-			if ( arr.type == JSVar::Type::softptr )
-			{
-				(*(arr._asSoft()))->concat_impl_add_me( ret );
-				/*if ( (*(arr._asSoft()))->isArray() )
-				{
-					nodecpp::safememory::soft_ptr<JSArray> parr = nodecpp::safememory::soft_ptr_static_cast<JSArray>( *(arr._asSoft()) );
-					parr->concat_impl_add_me( ret );
-				}
-				else
-					ret->elems.push_back( arr );*/
-			}
-			else
-				ret->elems.push_back( arr );
-		}
 
 	public:
 		JSArray() {}
@@ -1139,15 +1110,6 @@ namespace nodecpp::js {
 	JSOwnObj JSObject::concat( ArrT1 arr1, ArrTX ... args )
 	{
 		auto ret = makeJSArray();
-		/*if ( isArray() )
-		{
-			JSArray* pme = nodecpp::safememory::soft_ptr_static_cast<JSArray>( this );
-			pme->concat_impl_add_me( ret );
-		}
-		else
-		{
-			ret->elems.push_back( arr );
-		}*/
 		concat_impl_add_me( ret );
 		concat_impl( ret, arr1, args ... );
 		return ret;
