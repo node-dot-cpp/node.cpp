@@ -704,7 +704,7 @@ namespace nodecpp::js {
 		bool in( const JSVar& collection ) const { return collection.has( *this ); }
 		void forEach( std::function<void(JSVar)> cb );
 
-		JSOwnObj split(  const JSVar& separator, JSVar maxCount ) const;
+		JSOwnObj split(  const JSVar& separator, JSVar maxCount ) const; // TODO: implement!
 		JSOwnObj split( const JSVar& separator ) const { return split( separator, INT32_MAX ); }
 		JSOwnObj split() const;
 	};

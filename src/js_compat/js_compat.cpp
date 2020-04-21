@@ -1016,14 +1016,46 @@ namespace nodecpp::js {
 
 	JSOwnObj JSVar::split() const
 	{
+		nodecpp::string str = toString();
+		return makeJSArray( {JSVar( str )} );
+	}
+
+	JSOwnObj JSVar::split(  const JSVar& separator, JSVar maxCount ) const
+	{
 		// TODO: reimplement! (optimization, at minimum)
+		// TODO: regexp
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, separator.type == Type::string && separator._asStr()->size() <= 1, "error: not implemented yet" ); 
 		nodecpp::string str = toString();
 		auto arr = makeJSArray();
-		for ( auto ch : str )
+		if ( separator._asStr()->size() == 0 )
 		{
-			nodecpp::string fragment;
-			fragment += ch;
-			arr->elems.push_back( JSVar( fragment ) );
+			for ( auto ch : str )
+			{
+				nodecpp::string fragment;
+				fragment += ch;
+				arr->elems.push_back( JSVar( fragment ) );
+			}
+		}
+		else
+		{
+			size_t mcnt = maxCount.toNumber();
+			size_t cnt = 0;
+			nodecpp::string separ = *(separator._asStr());
+			size_t start = 0;
+			for ( ; cnt<mcnt; ++cnt )
+			{
+				size_t end = str.find( separ, start );
+				if ( end == nodecpp::string::npos )
+				{
+					arr->elems.push_back( JSVar( str.substr( start ) ) );
+					break;
+				}
+				else
+				{
+					arr->elems.push_back( JSVar( str.substr( start, end - start ) ) );
+					start = end + separ.size();
+				}
+			}
 		}
 		return arr;
 	}

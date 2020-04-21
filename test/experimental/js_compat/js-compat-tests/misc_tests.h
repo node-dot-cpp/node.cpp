@@ -159,6 +159,9 @@ public:
 		printf( "\n======\n%s\n=======\n", ( --(JSVar("3"))).toString().c_str() );
 
 		printf( "\n======\n%s\n=======\n", ( (JSVar("abc")).split()).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", ( (JSVar("abc")).split("")).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", ( (JSVar("abc def ghi")).split(" ")).toString().c_str() );
+		printf( "\n======\n%s\n=======\n", ( (JSVar(" abc def ghi ")).split( " ")).toString().c_str() );
 	}
 };
 
