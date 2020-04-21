@@ -599,7 +599,7 @@ namespace nodecpp::js {
 					case Type::undef:
 						return *_asSoft() == nullptr;
 					case Type::softptr:
-						return &(*(*_asSoft())) == &(*(*(other._asSoft())));
+						return *_asSoft() == *(other._asSoft());
 					default:
 						return false;
 				}
@@ -680,7 +680,7 @@ namespace nodecpp::js {
 			case Type::string:
 				return *_asStr() == *(other._asStr());
 			case Type::softptr:
-				return &(*(*_asSoft())) == &(*(*(other._asSoft())));
+				return *_asSoft() == *(other._asSoft());
 			case JSVarBase::Type::fn0:
 				return false; // a mechanism is required to check whether we have copies of the same function
 			case JSVarBase::Type::fn1:
@@ -1012,6 +1012,20 @@ namespace nodecpp::js {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return;
 		}
+	}
+
+	JSOwnObj JSVar::split() const
+	{
+		// TODO: reimplement! (optimization, at minimum)
+		nodecpp::string str = toString();
+		auto arr = makeJSArray();
+		for ( auto ch : str )
+		{
+			nodecpp::string fragment;
+			fragment += ch;
+			arr->elems.push_back( JSVar( fragment ) );
+		}
+		return arr;
 	}
 
 	////////////////////////////////////////////////////////////   JSInit ////
