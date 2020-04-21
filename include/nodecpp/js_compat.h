@@ -83,6 +83,9 @@ namespace nodecpp::js {
 		bool in( const JSOwnObj& collection ) const { return collection.has( *this ); }
 	
 		void forEach( std::function<void(JSVar)> cb );
+
+		template<class ArrT1, class ... ArrTX>
+		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 	};
 
 	inline
@@ -602,6 +605,9 @@ namespace nodecpp::js {
 		operator JSVar () const;
 		nodecpp::string toString() const;
 		double toNumber() const;
+
+		template<class ArrT1, class ... ArrTX>
+		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 	};
 
 	class JSVar : protected JSVarBase
@@ -707,6 +713,10 @@ namespace nodecpp::js {
 		JSOwnObj split(  const JSVar& separator, JSVar maxCount ) const; // TODO: implement!
 		JSOwnObj split( const JSVar& separator ) const { return split( separator, INT32_MAX ); }
 		JSOwnObj split() const;
+
+
+		template<class ArrT1, class ... ArrTX>
+		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 	};
 	static_assert( sizeof(JSVarBase) == sizeof(JSVar), "no data memebers at JSVar itself!" );
 
@@ -747,6 +757,24 @@ namespace nodecpp::js {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(var.type) ); 
 		}
 	}
+
+
+	template<class ArrT1, class ... ArrTX>
+	JSOwnObj JSRLValue::concat( ArrT1 arr1, ArrTX ... args )
+	{
+		if ( type == Type::var )
+			return _asVar().concat( arr1, args ... );
+		else 
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type == Type::value, "unexpected type: {}", (size_t)type ); 
+			return _asValue()->concat( arr1, args ... );
+		}
+	}
+
+	class JSMath
+	{
+	public:
+	};
 
 	class JSInit
 	{
@@ -810,6 +838,7 @@ namespace nodecpp::js {
 	{
 		friend class JSRLValue;
 		friend class JSInit;
+		friend class JSArray;
 
 		enum Type { undef, obj, var };
 		Type type = Type::undef;
@@ -845,15 +874,33 @@ namespace nodecpp::js {
 		bool operator !() const;
 		nodecpp::string toString() const;
 		double toNumber() const;
+
+		template<class ArrT1, class ... ArrTX>
+		JSOwnObj concat( ArrT1 arr1, ArrTX ... args )
+		{
+			if ( type == Type::var )
+				return _asVar().concat( arr1, args ... );
+			else
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type == Type::obj, "unexpected type: {}", (size_t)type ); 
+				return _asPtr().concat( arr1, args ... );
+			}
+		}
 	};
 
 	class JSObject
 	{
 		friend class JSOwnObj;
+		friend class JSArray;
 
 	protected:
+		nodecpp::safememory::soft_this_ptr<JSObject> myThis;
 		nodecpp::map<nodecpp::string, JSVarOrOwn> pairs;
+
+		virtual bool isArray() { return false; }
 	
+		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
+
 		void toString_( nodecpp::string& ret, const nodecpp::string offset, const nodecpp::string separator ) const { 
 			if ( pairs.size() == 0 )
 				return;
@@ -876,6 +923,12 @@ namespace nodecpp::js {
 				auto insret = pairs.insert( std::make_pair( s, JSVarOrOwn() ) );
 				return insret.first->second;
 			}
+		}
+
+		virtual void concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr )
+		{
+			printf( "JSObject::concat_impl(JSVar)\n" );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "concat() cannot be called with respect to Object" ); 
 		}
 
 	public:
@@ -941,6 +994,24 @@ namespace nodecpp::js {
 			auto f = pairs.find( str );
 			return f != pairs.end();
 		}
+
+		template<class ArrT, class ArrT1, class ... ArrTX>
+		void concat_impl( nodecpp::safememory::owning_ptr<JSArray>& ret, ArrT arr, ArrT1 arr1, ArrTX ... args)
+		{
+//			printf( "concat_impl(...)\n" );
+			concat_impl_1( ret, arr );
+			concat_impl( ret, arr1, args ... );
+		}
+
+		template<class ArrT>
+		void concat_impl( nodecpp::safememory::owning_ptr<JSArray>& ret, ArrT arr )
+		{
+//			printf( "concat_impl(last)\n" );
+			concat_impl_1( ret, arr );
+		}
+
+		template<class ArrT1, class ... ArrTX>
+		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 	};
 	inline owning_ptr<JSObject> makeJSObject() { return make_owning<JSObject>(); }
 	inline  owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, JSInit>> l) { return make_owning<JSObject>(l); }
@@ -948,9 +1019,34 @@ namespace nodecpp::js {
 	class JSArray : public JSObject
 	{
 		friend class JSOwnObj;
+		friend class JSObject;
 		friend class JSVar; // for quick fill in split()
 
 		nodecpp::vector<JSVarOrOwn> elems;
+
+		virtual bool isArray() { return true; }
+
+		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
+
+		virtual void concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr )
+		{
+			printf( "JSArr::concat_impl_1(JSVar)\n" );
+			// TODO: populate with copies of this->elems elements
+			if ( arr.type == JSVar::Type::softptr )
+			{
+				(*(arr._asSoft()))->concat_impl_add_me( ret );
+				/*if ( (*(arr._asSoft()))->isArray() )
+				{
+					nodecpp::safememory::soft_ptr<JSArray> parr = nodecpp::safememory::soft_ptr_static_cast<JSArray>( *(arr._asSoft()) );
+					parr->concat_impl_add_me( ret );
+				}
+				else
+					ret->elems.push_back( arr );*/
+			}
+			else
+				ret->elems.push_back( arr );
+		}
+
 	public:
 		JSArray() {}
 		JSArray(std::initializer_list<JSInit> l)
@@ -1020,6 +1116,42 @@ namespace nodecpp::js {
 	};
 	inline owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
 	inline owning_ptr<JSArray> makeJSArray(std::initializer_list<JSInit> l) { return make_owning<JSArray>(l); } // TODO: ownership of args
+
+	template<class ArrT1, class ... ArrTX>
+	JSOwnObj JSOwnObj::concat( ArrT1 arr1, ArrTX ... args ) 
+	{
+		return ptr->concat( arr1, args ... );
+	}
+
+	template<class ArrT1, class ... ArrTX>
+	JSOwnObj JSVar::concat( ArrT1 arr1, ArrTX ... args )
+	{
+		switch ( type )
+		{
+			case Type::softptr:
+				return (*_asSoft())->concat( arr1, args ... );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+		}
+	}
+
+	template<class ArrT1, class ... ArrTX>
+	JSOwnObj JSObject::concat( ArrT1 arr1, ArrTX ... args )
+	{
+		auto ret = makeJSArray();
+		/*if ( isArray() )
+		{
+			JSArray* pme = nodecpp::safememory::soft_ptr_static_cast<JSArray>( this );
+			pme->concat_impl_add_me( ret );
+		}
+		else
+		{
+			ret->elems.push_back( arr );
+		}*/
+		concat_impl_add_me( ret );
+		concat_impl( ret, arr1, args ... );
+		return ret;
+	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 

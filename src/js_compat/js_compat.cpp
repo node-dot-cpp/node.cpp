@@ -1854,4 +1854,28 @@ namespace nodecpp::js {
 		}
 	}
 
+	////////////////////////////////////////////////////////////   JSObject ////
+
+	void JSObject::concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret )
+	{
+		nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
+		ret->elems.push_back( JSVar( myPtr ) );
+	}
+
+	////////////////////////////////////////////////////////////   JSArray ////
+
+	void JSArray::concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret )
+	{
+		for ( auto& el : elems )
+		{
+			if ( el.type == JSVarOrOwn::Type::var )
+				ret->elems.push_back( el._asVar() );
+			else
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, el.type == JSVarOrOwn::Type::obj, "unexpected type: {}", (size_t)(el.type) ); 
+				ret->elems.push_back( JSVar( el._asPtr() ) );
+			}
+		}
+	}
+
 } // namespace nodecpp::js
