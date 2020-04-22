@@ -621,6 +621,7 @@ namespace nodecpp::js {
 		friend class JSObject;
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarBase& );
+		friend class JSMath;
 
 		void init( const JSVar& other ) { JSVarBase::init( other ); }
 
@@ -782,6 +783,7 @@ namespace nodecpp::js {
 	class JSMath
 	{
 	public:
+		static JSVar floor( JSVar var );
 	};
 
 	class JSInit

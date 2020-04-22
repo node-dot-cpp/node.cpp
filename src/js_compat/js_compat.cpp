@@ -1933,4 +1933,18 @@ namespace nodecpp::js {
 		}
 	}
 
+	////////////////////////////////////////////////////////////   JSMath ////
+
+	JSVar JSMath::floor( JSVar var ) 
+	{ 
+		double num = var.toNumber(); 
+		if ( !std::isnan( num ) )
+			return std::floor( num );
+		else
+		{
+			if ( var.type == JSVar::Type::softptr && *(var._asSoft()) == nullptr )
+				return 0;
+			return num;
+		}
+	}
 } // namespace nodecpp::js
