@@ -805,6 +805,73 @@ namespace nodecpp::js {
 		}
 	}
 
+	JSVar JSVar::operator + (const JSVar& other ) const
+	{
+		// TODO: check for correctness and completeness
+		switch ( type )
+		{
+			case Type::boolean:
+				switch ( other.type )
+				{
+					case Type::boolean:
+						return ( *(_asBool()) ? 1 : 0 ) + ( *(other._asBool()) ? 1 : 0 );
+					case Type::num:
+						return ( *(_asBool()) ? 1 : 0 ) + *(other._asNum());
+					case Type::string:
+						return toString() + *(other._asStr());
+					default:
+						throw;
+				}
+				break;
+			case Type::num:
+			{
+				switch ( other.type )
+				{
+					case Type::boolean:
+						return *(_asNum()) + ( *(other._asBool()) ? 1 : 0 );
+					case Type::num:
+						return *(_asNum()) + *(other._asNum());
+					case Type::string:
+						return toString() + *(other._asStr());
+					default:
+						throw;
+				}
+				break;
+			}
+			case Type::string:
+			{
+				switch ( other.type )
+				{
+					case Type::boolean:
+					case Type::num:
+						return *(_asStr()) + other.toString();
+					case Type::string:
+						return *(_asStr()) + *(other._asStr());
+					default:
+						throw;
+				}
+				break;
+			}
+			case Type::undef:
+			case Type::softptr:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
+				throw;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar();
+		}
+	}
+
 	JSVar JSVar::operator++()
 	{
 		double val = toNumber();

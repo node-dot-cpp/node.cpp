@@ -706,6 +706,7 @@ namespace nodecpp::js {
 		bool isNotStrictlyTheSame( const JSVar& other ) const { return !isStrictlyTheSame( other ); }
 
 		JSVar operator += (const JSVar& other );
+		JSVar operator + (const JSVar& other ) const;
 
 		JSVar operator++(); // prefix
 		JSVar operator++(int); // postfix
