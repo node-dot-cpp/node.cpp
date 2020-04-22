@@ -784,6 +784,7 @@ namespace nodecpp::js {
 	{
 	public:
 		static JSVar floor( JSVar var );
+		static JSVar random();
 	};
 
 	class JSInit

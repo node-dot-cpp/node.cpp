@@ -101,12 +101,31 @@ namespace nodecpp {
 				return addJsModuleExported_<UserClass>( std::type_index(typeid(UserClass)), std::move( pvar ) );
 			}
 		};
+
+		class LCG
+		{
+			// quick and dirty implementation
+			// TODO: revise!
+			static constexpr uint64_t a = 500713;
+			static constexpr uint64_t c = 138041;
+			uint64_t s;
+	
+		public:
+			LCG() { s = 0x12345; }
+			void seed( uint64_t seed_ ) { s = seed_; }
+			uint32_t rnd() 
+			{
+				s = ( a * s + c );
+				return (uint32_t)(s >> 16);
+			}
+		};
 	} // namespace js
 
 	struct NLS
 	{
 		js::JSModuleMap jsModuleMap;
 		nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> currentArgs;
+		js::LCG rng;
 
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		void init()

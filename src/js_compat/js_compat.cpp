@@ -1947,4 +1947,10 @@ namespace nodecpp::js {
 			return num;
 		}
 	}
+
+	JSVar JSMath::random() 
+	{ 
+		return (double)(threadLocalData.rng.rnd());
+	}
+
 } // namespace nodecpp::js
