@@ -1170,6 +1170,38 @@ namespace nodecpp::js {
 			throw; 
 	}
 
+	JSVar JSVar::toLowerCase() const
+	{
+		// TODO: other than ASCII
+		nodecpp::string ret;
+		const nodecpp::string& str = toString();
+		for ( size_t idx = 0; idx<str.size(); ++idx )
+		{
+			char ch = str[ idx ];
+			if ( ch >= 'A' && ch <= 'Z' )
+				ret += ch - ('A' - 'a');
+			else
+				ret += ch;
+		}
+		return ret;
+	}
+
+	JSVar JSVar::toUpperCase() const
+	{
+		// TODO: other than ASCII
+		nodecpp::string ret;
+		const nodecpp::string& str = toString();
+		for ( size_t idx = 0; idx<str.size(); ++idx )
+		{
+			char ch = str[ idx ];
+			if ( ch >= 'a' && ch <= 'z' )
+				ret += ch + ('A' - 'a');
+			else
+				ret += ch;
+		}
+		return ret;
+	}
+
 	////////////////////////////////////////////////////////////   JSInit ////
 
 	JSInit::JSInit( const JSInit& other) {

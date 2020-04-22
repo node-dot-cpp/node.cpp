@@ -176,6 +176,8 @@ public:
 		printf( "\n======\n%s\n=======\n", ( JSMath::random() ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSMath::random() ).toString().c_str() );
 
+		printf( "\n======\n%s\n=======\n", ( (JSVar("3_AbCd, #")).toLowerCase() ).toString().c_str() );
+
 		printf( "\n======\n%s\n=======\n", ( JSVar(3) += JSVar(4) ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar(3) += JSVar("4") ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar("3") += JSVar(4) ).toString().c_str() );

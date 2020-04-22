@@ -729,6 +729,9 @@ namespace nodecpp::js {
 
 		double length();
 		void setLength( double ln ) ;
+
+		JSVar toLowerCase() const;
+		JSVar toUpperCase() const;
 	};
 	static_assert( sizeof(JSVarBase) == sizeof(JSVar), "no data memebers at JSVar itself!" );
 
