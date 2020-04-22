@@ -164,6 +164,8 @@ public:
 		printf( "\n======\n%s\n=======\n", ( (JSVar(" abc def ghi ")).split( " ")).toString().c_str() );
 
 		printf( "\n======\n%s\n=======\n", ( (array_of_arrays1["0"].concat( array_of_arrays1["1"], array_of_arrays1["2"] ))).toString().c_str() );
+		printf( "\n======\n%f\n=======\n", array_of_arrays1.length() );
+		printf( "\n======\n%f\n=======\n", array_of_arrays1["0"].length() );
 	}
 };
 

@@ -122,6 +122,8 @@ namespace nodecpp::js {
 		ptr->forEach( std::move( cb ) );
 	}
 
+	double JSOwnObj::length() { return ptr->length(); }
+	void JSOwnObj::setLength( double ln ) { ptr->setLength( ln ); }
 
 	////////////////////////////////////////////////////////////   JSVar ////
 	
@@ -1060,6 +1062,21 @@ namespace nodecpp::js {
 		return arr;
 	}
 
+	double JSVar::length()
+	{ 
+		if ( type == Type::softptr )
+			return (*_asSoft())->length();
+		else
+			throw; 
+	}
+	void JSVar::setLength( double ln )
+	{ 
+		if ( type == Type::softptr )
+			(*_asSoft())->setLength( ln );
+		else
+			throw; 
+	}
+
 	////////////////////////////////////////////////////////////   JSInit ////
 
 	JSInit::JSInit( const JSInit& other) {
@@ -1358,6 +1375,21 @@ namespace nodecpp::js {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return NAN;
 		}
+	}
+
+	double JSVarOrOwn::length()
+	{ 
+		if ( type == Type::obj )
+			return _asPtr().length();
+		else
+			throw; 
+	}
+	void JSVarOrOwn::setLength( double ln )
+	{ 
+		if ( type == Type::obj )
+			_asPtr().setLength( ln );
+		else
+			throw; 
 	}
 
 	////////////////////////////////////////////////////////////   JSRLValue ////
@@ -1852,6 +1884,21 @@ namespace nodecpp::js {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return NAN;
 		}
+	}
+
+	double JSRLValue::length()
+	{ 
+		if ( type == Type::value )
+			return _asValue()->length();
+		else
+			throw; 
+	}
+	void JSRLValue::setLength( double ln )
+	{ 
+		if ( type == Type::value )
+			_asValue()->setLength( ln );
+		else
+			throw; 
 	}
 
 	////////////////////////////////////////////////////////////   JSObject ////

@@ -86,6 +86,9 @@ namespace nodecpp::js {
 
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
+
+		double length();
+		void setLength( double ln ) ;
 	};
 
 	inline
@@ -608,6 +611,9 @@ namespace nodecpp::js {
 
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
+
+		double length();
+		void setLength( double ln ) ;
 	};
 
 	class JSVar : protected JSVarBase
@@ -714,9 +720,11 @@ namespace nodecpp::js {
 		JSOwnObj split( const JSVar& separator ) const { return split( separator, INT32_MAX ); }
 		JSOwnObj split() const;
 
-
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
+
+		double length();
+		void setLength( double ln ) ;
 	};
 	static_assert( sizeof(JSVarBase) == sizeof(JSVar), "no data memebers at JSVar itself!" );
 
@@ -886,6 +894,9 @@ namespace nodecpp::js {
 				return _asPtr().concat( arr1, args ... );
 			}
 		}
+
+		double length();
+		void setLength( double ln ) ;
 	};
 
 	class JSObject
@@ -1004,6 +1015,9 @@ namespace nodecpp::js {
 
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
+
+		virtual double length() { throw; }
+		virtual void setLength( double ln ) { throw; }
 	};
 	inline owning_ptr<JSObject> makeJSObject() { return make_owning<JSObject>(); }
 	inline  owning_ptr<JSObject> makeJSObject(std::initializer_list<std::pair<nodecpp::string, JSInit>> l) { return make_owning<JSObject>(l); }
@@ -1083,6 +1097,21 @@ namespace nodecpp::js {
 		{
 			auto f = pairs.find( nodecpp::format( "{}", idx ) );
 			return f != pairs.end();
+		}
+		virtual double length() { return elems.size(); }
+		virtual void setLength( double ln )
+		{
+			if ( ln >= 0 && ln <= UINT32_MAX )
+			{
+				size_t iln = (size_t)ln;
+				if ( ln < elems.size() )
+					elems.erase( elems.begin() + iln, elems.end() );
+				else 
+					for ( size_t n = elems.size(); n < iln; ++n )
+						elems.push_back( JSVar() );
+			}
+			else
+				throw;
 		}
 	};
 	inline owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
