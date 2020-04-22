@@ -699,10 +699,13 @@ namespace nodecpp::js {
 		JSVar operator %( const JSVar& other ) const;
 		JSVar operator ||( const JSVar& other ) const;
 		JSVar operator &&( const JSVar& other ) const;
+
 		bool operator ==( const JSVar& other ) const;
 		bool operator !=( const JSVar& other ) const { return !operator == ( other ); }
 		bool isStrictlyTheSame( const JSVar& other ) const;
 		bool isNotStrictlyTheSame( const JSVar& other ) const { return !isStrictlyTheSame( other ); }
+
+		JSVar operator += (const JSVar& other );
 
 		JSVar operator++(); // prefix
 		JSVar operator++(int); // postfix

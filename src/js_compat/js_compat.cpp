@@ -712,6 +712,99 @@ namespace nodecpp::js {
 		return false;
 	}
 	
+	JSVar JSVar::operator += (const JSVar& other )
+	{
+		// TODO: check for correctness and completeness
+		switch ( type )
+		{
+			case Type::boolean:
+				switch ( other.type )
+				{
+					case Type::boolean:
+					{
+						double val = ( *(_asBool()) ? 1 : 0 ) + ( *(other._asBool()) ? 1 : 0 );
+						init( val );
+						return val;
+					}
+					case Type::num:
+					{
+						double val = ( *(_asBool()) ? 1 : 0 ) + *(other._asNum());
+						init( val );
+						return val;
+					}
+					case Type::string:
+					{
+						init( toString() + *(other._asStr()) );
+						return *(_asStr());
+					}
+					default:
+						throw;
+				}
+				break;
+			case Type::num:
+			{
+				switch ( other.type )
+				{
+					case Type::boolean:
+					{
+						*(_asNum()) += ( *(other._asBool()) ? 1 : 0 );
+						return *(_asNum());
+					}
+					case Type::num:
+					{
+						*(_asNum()) += *(other._asNum());
+						return *(_asNum());
+					}
+					case Type::string:
+					{
+						init( toString() + *(other._asStr()) );
+						return *(_asStr());
+					}
+					default:
+						throw;
+				}
+				break;
+			}
+			case Type::string:
+			{
+				switch ( other.type )
+				{
+					case Type::boolean:
+					case Type::num:
+					{
+						*(_asStr()) += other.toString();
+						return *(_asStr());
+					}
+					case Type::string:
+					{
+						*(_asStr()) += *(other._asStr());
+						return *(_asStr());
+					}
+					default:
+						throw;
+				}
+				break;
+			}
+			case Type::undef:
+			case Type::softptr:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
+				throw;
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar();
+		}
+	}
+
 	JSVar JSVar::operator++()
 	{
 		double val = toNumber();
