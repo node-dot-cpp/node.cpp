@@ -59,6 +59,11 @@ namespace nodecpp::js {
 		return ptr->operator[]( var );
 	}
 
+	JSRLValue JSOwnObj::operator [] ( const JSRLValue& val )
+	{
+		return ptr->operator[]( val );
+	}
+
 	JSRLValue JSOwnObj::operator [] ( double d )
 	{
 		return ptr->operator[]( d );

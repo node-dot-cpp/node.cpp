@@ -65,6 +65,7 @@ namespace nodecpp::js {
 		JSOwnObj& operator = ( owningptr2jsarr&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
 
 		JSRLValue operator [] ( const JSVar& var );
+		JSRLValue operator [] ( const JSRLValue& val );
 		JSRLValue operator [] ( double idx );
 		JSRLValue operator [] ( int idx );
 		JSRLValue operator [] ( const nodecpp::string& key );
@@ -962,6 +963,12 @@ namespace nodecpp::js {
 			nodecpp::string s = var.toString(); // TODO: revise implementation!!!
 			return findOrAdd( s );
 		}
+		virtual JSRLValue operator [] ( const JSRLValue& val )
+		{
+			if ( val.type != JSRLValue::Type::var )
+				return JSVar(); // TODO: check if we should throw or convert to string, etc, instead
+			return operator []( val._asVar() );
+		}
 		virtual JSRLValue operator [] ( size_t idx )
 		{
 			nodecpp::string s = nodecpp::format( "{}", idx );
@@ -1059,6 +1066,12 @@ namespace nodecpp::js {
 				return operator [] ( *(var._asNum()) );
 			nodecpp::string s = var.toString(); 
 			return findOrAdd( s );
+		}
+		virtual JSRLValue operator [] ( const JSRLValue& val )
+		{
+			if ( val.type != JSRLValue::Type::var )
+				return JSVar(); // TODO: check if we should throw or convert to string, etc, instead
+			return operator []( val._asVar() );
 		}
 		virtual JSRLValue operator [] ( size_t idx )
 		{
