@@ -122,7 +122,7 @@ namespace nodecpp::js {
 		ptr->forEach( std::move( cb ) );
 	}
 
-	double JSOwnObj::length() { return ptr->length(); }
+	double JSOwnObj::length() const { return ptr->length(); }
 	void JSOwnObj::setLength( double ln ) { ptr->setLength( ln ); }
 
 	////////////////////////////////////////////////////////////   JSVar ////
@@ -1222,7 +1222,7 @@ namespace nodecpp::js {
 		return arr;
 	}
 
-	double JSVar::length()
+	double JSVar::length() const
 	{ 
 		if ( type == Type::softptr )
 			return (*_asSoft())->length();
@@ -1569,7 +1569,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	double JSVarOrOwn::length()
+	double JSVarOrOwn::length() const
 	{ 
 		if ( type == Type::obj )
 			return _asPtr().length();
@@ -2078,7 +2078,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	double JSRLValue::length()
+	double JSRLValue::length() const
 	{ 
 		if ( type == Type::value )
 			return _asValue()->length();

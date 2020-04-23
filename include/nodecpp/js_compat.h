@@ -87,7 +87,7 @@ namespace nodecpp::js {
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 
-		double length();
+		double length() const;
 		void setLength( double ln ) ;
 	};
 
@@ -612,7 +612,7 @@ namespace nodecpp::js {
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 
-		double length();
+		double length() const;
 		void setLength( double ln ) ;
 	};
 
@@ -728,7 +728,7 @@ namespace nodecpp::js {
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 
-		double length();
+		double length() const;
 		void setLength( double ln ) ;
 
 		JSVar toLowerCase() const;
@@ -905,7 +905,7 @@ namespace nodecpp::js {
 			}
 		}
 
-		double length();
+		double length() const;
 		void setLength( double ln ) ;
 	};
 
@@ -1108,7 +1108,7 @@ namespace nodecpp::js {
 			auto f = pairs.find( nodecpp::format( "{}", idx ) );
 			return f != pairs.end();
 		}
-		virtual double length() { return elems.size(); }
+		virtual double length() const { return elems.size(); }
 		virtual void setLength( double ln )
 		{
 			if ( ln >= 0 && ln <= UINT32_MAX )
