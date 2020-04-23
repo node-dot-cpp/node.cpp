@@ -174,6 +174,57 @@ namespace nodecpp::js {
 		}
 	}
 
+	JSRLValue JSVar::operator [] ( const JSRLValue& val ) const
+	{
+		if ( val.type != JSRLValue::Type::var )
+			return JSVar(); // TODO: check if we should throw or convert to string, etc, instead
+		const JSVar& var = val._asVar();
+
+		switch ( type )
+		{
+			case Type::undef:
+				throw; // cannot set property to "undefined"
+			case Type::boolean:
+			case Type::num:
+				return JSVar();
+			case Type::string:
+			{
+				if ( var.type == Type::num )
+				{
+					auto pstr = _asStr();
+					size_t idx = *( var._asNum() );
+					if ( idx < pstr->size() )
+						return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) );
+					else
+						return JSVar(); // TODO: mignt be something else!!!
+				}
+				else if ( var.type == Type::string )
+				{
+					const nodecpp::string& str = *(var._asStr());
+					if ( str.size() && str[0] >= '0' && str[0] <= '9' )
+					{
+						auto pstr = _asStr();
+						char* end;
+						size_t idx = strtol( str.c_str(), &end, 10 );
+						if ( end - str.c_str() == str.size() )
+							return JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) );
+						else
+							return JSVar(); // TODO: mignt be something else!!!
+					}
+					else
+						return JSVar(); // TODO: mignt be something else!!!
+				}
+				else
+					return JSVar(); // TODO: mignt be something else!!!
+			}
+			case Type::softptr:
+				return (*_asSoft())->operator[]( var );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+					return JSVar(); // TODO: mignt be something else!!!
+		}
+	}
+
 	JSRLValue JSVar::operator [] ( int idx ) const
 	{
 		switch ( type )
@@ -1922,6 +1973,39 @@ namespace nodecpp::js {
 
 	JSRLValue JSRLValue::operator [] ( const JSVar& var )
 	{
+		switch ( type )
+		{
+			case Type::undef:
+				return JSVar();
+			case Type::var:
+				return _asVar().operator[]( var );
+			case Type::value:
+			{
+				auto& v = *(_asValue());
+				switch ( v.type )
+				{
+					case JSVarOrOwn::Type::undef:
+						return JSVar();
+					case JSVarOrOwn::Type::var:
+						return v._asVar().operator[]( var );
+					case JSVarOrOwn::Type::obj:
+						return v._asPtr().operator[]( var );
+					default:
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+						return JSVar();
+				}
+			}
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return JSVar();
+		}
+	}
+
+	JSRLValue JSRLValue::operator [] ( const JSRLValue& val )
+	{
+		if ( val.type != Type::var )
+			return JSVar(); // TODO: check if we should throw or convert to string, etc, instead
+		const JSVar& var = val._asVar();
 		switch ( type )
 		{
 			case Type::undef:

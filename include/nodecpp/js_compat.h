@@ -586,6 +586,7 @@ namespace nodecpp::js {
 		~JSRLValue();
 
 		JSRLValue operator [] ( const JSVar& var );
+		JSRLValue operator [] ( const JSRLValue& val );
 		JSRLValue operator [] ( double idx );
 		JSRLValue operator [] ( int idx );
 		JSRLValue operator [] ( const nodecpp::string& key );
@@ -674,6 +675,7 @@ namespace nodecpp::js {
 		JSVar& operator = ( Fn10T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
 
 		JSRLValue operator [] ( const JSVar& var ) const;
+		JSRLValue operator [] ( const JSRLValue& val ) const;
 		JSRLValue operator [] ( double num ) const;
 		JSRLValue operator [] ( int num ) const;
 		JSRLValue operator [] ( const nodecpp::string& key ) const;
@@ -1026,7 +1028,7 @@ namespace nodecpp::js {
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 
-		virtual double length() { throw; }
+		virtual double length() const { throw; }
 		virtual void setLength( double ln ) { throw; }
 	};
 	inline owning_ptr<JSObject> makeJSObject() { return make_owning<JSObject>(); }
