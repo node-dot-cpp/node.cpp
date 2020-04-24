@@ -1333,15 +1333,24 @@ namespace nodecpp::js {
 			throw;
 		nodecpp::safememory::owning_ptr<JSArray> ret = makeJSArray();
 		const nodecpp::string& str = *(_asStr());
-		std::regex stdre( re.re() );
-		auto words_begin = std::sregex_iterator(str.begin(), str.end(), stdre);
-		auto words_end = std::sregex_iterator();
-		for (std::sregex_iterator i = words_begin; i != words_end; ++i)
+		if ( re.flags() & JSRegExp::Flags::g )
 		{
-			nodecpp::string found = i->str().c_str();
-			ret->elems.push_back( JSVar( found ) );
+			std::regex stdre( re.re() );
+			auto words_begin = std::sregex_iterator(str.begin(), str.end(), stdre);
+			auto words_end = std::sregex_iterator();
+			for (std::sregex_iterator i = words_begin; i != words_end; ++i)
+			{
+				nodecpp::string found = i->str().c_str();
+				ret->elems.push_back( JSVar( found ) );
+			}
+			return ret;
 		}
-		return ret;
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "error: not implemented" ); 
+			return makeJSArray();
+			// TODO: ...
+		}
 	}
 
 	////////////////////////////////////////////////////////////   JSInit ////

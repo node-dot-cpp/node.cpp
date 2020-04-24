@@ -620,9 +620,12 @@ namespace nodecpp::js {
 
 	class JSRegExp
 	{
+	public:
+		enum Flags { none = 0, g = 0x1, i=0x2 }; // TODO: subject for further revision (consider using std:: -related names and values)
+
+	private:
 		nodecpp::string regex;
-		bool g = false;
-		bool i = false;
+		uint64_t flags_ = Flags::none;
 
 	public:
 		JSRegExp() {}
@@ -631,13 +634,14 @@ namespace nodecpp::js {
 			for ( size_t i=0; i<flags.size(); ++i )
 				switch ( flags[i] )
 				{
-					case 'g': g = true; break;
-					case 'i': i = true; break;
+					case 'g': flags_ |= Flags::g; break;
+					case 'i': flags_ |= Flags::g; break;
 					default:
 						throw;
 				}
 		}
 		const nodecpp::string& re() const { return regex; }
+		uint64_t flags() const { return flags_; }
 	};
 
 	class JSVar : protected JSVarBase
