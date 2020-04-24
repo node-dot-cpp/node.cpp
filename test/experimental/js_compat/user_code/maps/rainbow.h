@@ -42,7 +42,7 @@ public:
         JSVar rainbow = JSVar([rainbowColors](JSVar colors) {
             return
                 JSVar([colors, rainbowColors](JSVar letter, JSVar i) {
-                if (letter.toString() == " ") {
+            if (letter.isStrictlyTheSame( " " )) { // if (letter === ' ')
                     return letter;
                 }
                 else {

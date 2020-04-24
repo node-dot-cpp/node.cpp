@@ -40,7 +40,7 @@ public:
     JSVar america = JSVar([](JSVar colors) {
          return
             JSVar([colors](JSVar letter, JSVar i) {
-            if (letter.toString() == " ")
+            if (letter.isStrictlyTheSame( " " )) // if (letter === ' ')
             {
                 return letter;
             }
