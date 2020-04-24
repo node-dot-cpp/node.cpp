@@ -40,17 +40,17 @@ public:
     JSVar america = JSVar([](JSVar colors) {
          return
             JSVar([colors](JSVar letter, JSVar i) {
-            if (letter.isStrictlyTheSame( " " )) // if (letter === ' ')
+            if (letter.isStrictlyTheSame( " " )) // JS: '  if (letter === ' ')  '
             {
                 return letter;
             }
-            switch (((size_t)(i.toNumber())) % 3)
+            switch (((size_t)(i.toNumber())) % 3) // JS: '  switch (i%3)  ' where i is var. TODO: consider '  switch ( (size_t)((i % 3).toNumber()) )  ', which is closer to the original
             {
-            case 1:
+            case 0:
                 return colors["red"](letter);
-            case 2:
+            case 1:
                 return colors["white"](letter);
-            case 3:
+            case 2:
                 return colors["blue"](letter);
             }
                 });
