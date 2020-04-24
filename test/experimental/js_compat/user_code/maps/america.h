@@ -28,6 +28,33 @@
 #ifndef AMERICA_H
 #define AMERICA_H
 
+#include <js_compat.h>
 
 
+using namespace nodecpp::js;
+
+class America : public nodecpp::js::JSModule
+{
+public:
+
+    JSVar america = JSVar([](JSVar colors) {
+         return
+            JSVar([colors](JSVar letter, JSVar i) {
+            if (letter.toString() == " ")
+            {
+                return letter;
+            }
+            switch (((size_t)(i.toNumber())) % 3)
+            {
+            case 1:
+                return colors["red"](letter);
+            case 2:
+                return colors["white"](letter);
+            case 3:
+                return colors["blue"](letter);
+            }
+                });
+        });
+    JSVar exports() { return america; }
+};
 #endif // AMERICA_H
