@@ -192,6 +192,8 @@ public:
 		printf( "\n======\n%s\n=======\n", ( JSVar(3) + JSVar(true) ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar("3") + JSVar(false) ).toString().c_str() );
 		printf( "\n======\n%s\n=======\n", ( JSVar(true) + JSVar("4") ).toString().c_str() );
+
+		printf( "\n======\n%s\n=======\n", ( JSVar("Some people when confronted with a problem think I know Ill use regular expressions Now they have two problems").match( JSRegExp( "([a-zA-Z]+)[, .]" ))).toString().c_str() );
 	}
 };
 

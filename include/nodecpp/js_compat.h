@@ -618,6 +618,28 @@ namespace nodecpp::js {
 		void setLength( double ln ) ;
 	};
 
+	class JSRegExp
+	{
+		nodecpp::string regex;
+		bool g = false;
+		bool i = false;
+
+	public:
+		JSRegExp() {}
+		JSRegExp( nodecpp::string regex_, nodecpp::string flags = "" ) : regex( regex_ )
+		{
+			for ( size_t i=0; i<flags.size(); ++i )
+				switch ( flags[i] )
+				{
+					case 'g': g = true; break;
+					case 'i': i = true; break;
+					default:
+						throw;
+				}
+		}
+		const nodecpp::string& re() const { return regex; }
+	};
+
 	class JSVar : protected JSVarBase
 	{
 		friend class JSObject;
@@ -736,6 +758,8 @@ namespace nodecpp::js {
 
 		JSVar toLowerCase() const;
 		JSVar toUpperCase() const;
+
+		JSOwnObj match( const JSRegExp& re ) const;
 	};
 	static_assert( sizeof(JSVarBase) == sizeof(JSVar), "no data memebers at JSVar itself!" );
 

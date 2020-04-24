@@ -26,6 +26,8 @@
 * -------------------------------------------------------------------------------*/
 
 #include <cmath>
+#include <iterator>
+#include <regex>
 #include "js_compat.h"
 #include "nls.h"
 
@@ -1321,6 +1323,23 @@ namespace nodecpp::js {
 				ret += ch + ('A' - 'a');
 			else
 				ret += ch;
+		}
+		return ret;
+	}
+
+	JSOwnObj JSVar::match( const JSRegExp& re ) const
+	{
+		if ( type != Type::string )
+			throw;
+		nodecpp::safememory::owning_ptr<JSArray> ret = makeJSArray();
+		const nodecpp::string& str = *(_asStr());
+		std::regex stdre( re.re() );
+		auto words_begin = std::sregex_iterator(str.begin(), str.end(), stdre);
+		auto words_end = std::sregex_iterator();
+		for (std::sregex_iterator i = words_begin; i != words_end; ++i)
+		{
+			nodecpp::string found = i->str().c_str();
+			ret->elems.push_back( JSVar( found ) );
 		}
 		return ret;
 	}
