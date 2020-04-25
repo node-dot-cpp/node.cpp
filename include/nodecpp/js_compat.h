@@ -737,6 +737,9 @@ namespace nodecpp::js {
 		JSVar operator += (const JSVar& other );
 		JSVar operator + (const JSVar& other ) const;
 
+		JSVar operator *= (const JSVar& other );
+		JSVar operator * (const JSVar& other ) const;
+
 		JSVar operator++(); // prefix
 		JSVar operator++(int); // postfix
 		JSVar operator--(); // prefix
