@@ -92,19 +92,16 @@ namespace nodecpp::js {
 		void setLength( double ln ) ;
 	};
 
-	inline
-	nodecpp::string typeOf( const JSOwnObj& obj )
-	{
-		return "object";
-	}
-
 	class JSVarBase
 	{
 	protected:
 		friend class JSVar;
 		friend class JSObject;
 		friend class JSArray;
+		friend class JSRLValue;
 		friend nodecpp::string typeOf( const JSVarBase& );
+		friend nodecpp::string typeOf( const JSVarOrOwn& );
+		friend nodecpp::string typeOf( const JSRLValue& );
 
 		using Fn0T = std::function<JSVar()>;
 		using Fn1T = std::function<JSVar( JSVar )>;
@@ -558,6 +555,7 @@ namespace nodecpp::js {
 		friend class JSVar;
 		friend class JSObject;
 		friend class JSArray;
+		friend nodecpp::string typeOf( const JSRLValue& );
 
 		enum Type { undef, value, var };
 		Type type = Type::undef;
@@ -649,6 +647,8 @@ namespace nodecpp::js {
 		friend class JSObject;
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarBase& );
+		friend nodecpp::string typeOf( const JSVarOrOwn& );
+		friend nodecpp::string typeOf( const JSRLValue& );
 		friend class JSMath;
 
 		void init( const JSVar& other ) { JSVarBase::init( other ); }
@@ -773,38 +773,6 @@ namespace nodecpp::js {
 	inline bool jsIn( size_t idx, const JSVar& collection )  { return collection.has( idx ); }
 	inline bool jsIn( nodecpp::string str, const JSVar& collection )  { return collection.has( str ); }
 
-	inline
-	nodecpp::string typeOf( const JSVarBase& var )
-	{
-		switch ( var.type )
-		{
-			case JSVarBase::Type::undef:
-				return "undefined";
-			case JSVarBase::Type::boolean:
-				return "boolean";
-			case JSVarBase::Type::num:
-				return "number";
-			case JSVarBase::Type::string:
-				return "string";
-			case JSVarBase::Type::softptr:
-				return "object";
-			case JSVarBase::Type::fn0:
-			case JSVarBase::Type::fn1:
-			case JSVarBase::Type::fn2:
-			case JSVarBase::Type::fn3:
-			case JSVarBase::Type::fn4:
-			case JSVarBase::Type::fn5:
-			case JSVarBase::Type::fn6:
-			case JSVarBase::Type::fn7:
-			case JSVarBase::Type::fn8:
-			case JSVarBase::Type::fn9:
-			case JSVarBase::Type::fn10:
-				return "function";
-			default:
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(var.type) ); 
-		}
-	}
-
 
 	template<class ArrT1, class ... ArrTX>
 	JSOwnObj JSRLValue::concat( ArrT1 arr1, ArrTX ... args )
@@ -888,6 +856,7 @@ namespace nodecpp::js {
 		friend class JSRLValue;
 		friend class JSInit;
 		friend class JSArray;
+		friend nodecpp::string typeOf( const JSVarOrOwn& );
 
 		enum Type { undef, obj, var };
 		Type type = Type::undef;
@@ -1195,6 +1164,76 @@ namespace nodecpp::js {
 		concat_impl_add_me( ret );
 		concat_impl( ret, arr1, args ... );
 		return ret;
+	}
+
+	inline
+	nodecpp::string typeOf( const JSVarBase& var )
+	{
+		switch ( var.type )
+		{
+			case JSVarBase::Type::undef:
+				return "undefined";
+			case JSVarBase::Type::boolean:
+				return "boolean";
+			case JSVarBase::Type::num:
+				return "number";
+			case JSVarBase::Type::string:
+				return "string";
+			case JSVarBase::Type::softptr:
+				return "object";
+			case JSVarBase::Type::fn0:
+			case JSVarBase::Type::fn1:
+			case JSVarBase::Type::fn2:
+			case JSVarBase::Type::fn3:
+			case JSVarBase::Type::fn4:
+			case JSVarBase::Type::fn5:
+			case JSVarBase::Type::fn6:
+			case JSVarBase::Type::fn7:
+			case JSVarBase::Type::fn8:
+			case JSVarBase::Type::fn9:
+			case JSVarBase::Type::fn10:
+				return "function";
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(var.type) ); 
+		}
+	}
+
+	inline
+	nodecpp::string typeOf( const JSOwnObj& obj )
+	{
+		return "object";
+	}
+
+	inline
+	nodecpp::string typeOf( const JSVarOrOwn& val )
+	{
+		switch ( val.type )
+		{
+			case JSVarOrOwn::Type::undef:
+				return "undefined";
+			case JSVarOrOwn::Type::obj:
+				return typeOf( val._asPtr() );
+			case JSVarOrOwn::Type::var:
+				return typeOf( val._asVar() );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(val.type) ); 
+		}
+	}
+
+	inline
+	nodecpp::string typeOf( const JSRLValue& val )
+	{
+		switch ( val.type )
+		{
+			case JSRLValue::Type::undef:
+				return "undefined";
+			case JSRLValue::Type::value:
+				return typeOf( *(val._asValue()) );
+			case JSRLValue::Type::var:
+				return typeOf( val._asVar() );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(val.type) ); 
+		}
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
