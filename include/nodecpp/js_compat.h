@@ -83,7 +83,8 @@ namespace nodecpp::js {
 
 		bool in( const JSOwnObj& collection ) const { return collection.has( *this ); }
 	
-		void forEach( std::function<void(JSVar)> cb );
+		void forEach( std::function<void(JSRLValue)> cb );
+		nodecpp::safememory::owning_ptr<JSArray> keys();
 
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
@@ -758,7 +759,8 @@ namespace nodecpp::js {
 		bool has( nodecpp::string str ) const;
 
 		bool in( const JSVar& collection ) const { return collection.has( *this ); }
-		void forEach( std::function<void(JSVar)> cb );
+		void forEach( std::function<void(JSRLValue)> cb );
+		nodecpp::safememory::owning_ptr<JSArray> keys();
 
 		JSOwnObj split(  const JSVar& separator, JSVar maxCount ) const; // TODO: implement!
 		JSOwnObj split( const JSVar& separator ) const { return split( separator, INT32_MAX ); }
@@ -964,8 +966,8 @@ namespace nodecpp::js {
 			for ( auto& p : l )
 				pairs.insert( make_pair( p.first, std::move( p.second.toValue() ) ) );
 		}
-	public:
 		virtual ~JSObject() {}
+
 		virtual JSRLValue operator [] ( const JSVar& var )
 		{
 			nodecpp::string s = var.toString(); // TODO: revise implementation!!!
@@ -1001,11 +1003,8 @@ namespace nodecpp::js {
 			ret += " }";
 			return ret; 
 		}
-		virtual void forEach( std::function<void(JSVar)> cb )
-		{
-			for ( auto& e: pairs )
-				cb( e.first );
-		}
+		nodecpp::safememory::owning_ptr<JSArray> keys();
+		virtual void forEach( std::function<void(JSRLValue)> cb ) { return; }
 		virtual bool has( const JSVar& var ) const
 		{
 			auto f = pairs.find( var.toString() );
@@ -1104,10 +1103,10 @@ namespace nodecpp::js {
 			}
 			return JSObject::operator[](strIdx);
 		}
-		virtual void forEach( std::function<void(JSVar)> cb )
+		virtual void forEach( std::function<void(JSRLValue)> cb )
 		{
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				cb( JSVar( (double)idx ) );
+				cb( elems[idx] );
 		}
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "[ ";

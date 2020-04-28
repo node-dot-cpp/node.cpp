@@ -99,12 +99,13 @@ class Styles : public nodecpp::js::JSModule
 public:
 	Styles() // initialization code is to be placed to ctor
 	{
-		codes.forEach([this](nodecpp::string key) {
-		  auto val = codes[key];
-		  styles[ key ] = JSOwnObj( std::move( makeJSArray() ) );
-		  JSVar style = styles[key];
-		  style[ "open" ] = nodecpp::format("\\u001b[{}m", val[0].toString() );
-		  style[ "close" ] = nodecpp::format("\\u001b[{}m", val[1].toString() );
+		JSOwnObj keys = codes.keys();
+		keys.forEach([this](nodecpp::string key) {
+			auto val = codes[key];
+			styles[ key ] = JSOwnObj( std::move( makeJSArray() ) );
+			JSVar style = styles[key];
+			style[ "open" ] = nodecpp::format("\\u001b[{}m", val[0].toString() );
+			style[ "close" ] = nodecpp::format("\\u001b[{}m", val[1].toString() );
 		});
 	}
 

@@ -124,9 +124,14 @@ namespace nodecpp::js {
 		return ptr->has( str );
 	}
 
-	void JSOwnObj::forEach( std::function<void(JSVar)> cb )
+	void JSOwnObj::forEach( std::function<void(JSRLValue)> cb )
 	{
 		ptr->forEach( std::move( cb ) );
+	}
+
+	nodecpp::safememory::owning_ptr<JSArray> JSOwnObj::keys()
+	{
+		return ptr->keys();
 	}
 
 	double JSOwnObj::length() const { return ptr->length(); }
@@ -1341,7 +1346,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	void JSVar::forEach( std::function<void(JSVar)> cb )
+	void JSVar::forEach( std::function<void(JSRLValue)> cb )
 	{
 		switch ( type )
 		{
@@ -1367,6 +1372,34 @@ namespace nodecpp::js {
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return;
+		}
+	}
+
+	nodecpp::safememory::owning_ptr<JSArray> JSVar::keys()
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
+			case Type::string:
+				throw; // type error TODO: revise!
+			case Type::softptr:
+				return (*_asSoft())->keys();
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return nodecpp::safememory::owning_ptr<JSArray>();
 		}
 	}
 
@@ -2382,6 +2415,14 @@ namespace nodecpp::js {
 			(*(arr._asSoft()))->concat_impl_add_me( ret );
 		else
 			ret->elems.push_back( arr );
+	}
+
+	nodecpp::safememory::owning_ptr<JSArray> JSObject::keys()
+	{
+		nodecpp::safememory::owning_ptr<JSArray> ret = makeJSArray();
+		for ( auto& elem : pairs )
+			ret->elems.push_back( JSVar( elem.first ) );
+		return ret;
 	}
 
 	////////////////////////////////////////////////////////////   JSArray ////
