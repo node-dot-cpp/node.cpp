@@ -1108,6 +1108,28 @@ namespace nodecpp::js {
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
 				cb( elems[idx] );
 		}
+		virtual void forEach( std::function<void(JSRLValue, JSVar idx)> cb )
+		{
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( elems[idx], JSVar((double)idx) );
+		}
+		virtual void forEach( std::function<void(JSRLValue, size_t idx)> cb )
+		{
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( elems[idx], idx );
+		}
+		virtual void forEach( std::function<void(JSRLValue, JSVar idx, JSVar arr)> cb )
+		{
+			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( elems[idx], JSVar((double)idx), JSVar( myPtr ) );
+		}
+		virtual void forEach( std::function<void(JSRLValue, size_t idx, JSVar arr)> cb )
+		{
+			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( elems[idx], idx, JSVar( myPtr ) );
+		}
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "[ ";
 			if ( pairs.size() )
