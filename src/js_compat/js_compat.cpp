@@ -132,6 +132,16 @@ namespace nodecpp::js {
 	double JSOwnObj::length() const { return ptr->length(); }
 	void JSOwnObj::setLength( double ln ) { ptr->setLength( ln ); }
 
+
+	////////////////////////////////////////////////////////////   JSRegExp ////
+
+	JSRegExp::JSRegExp( JSVar regex_, nodecpp::string flags ) {
+		if ( !(regex_.type == JSVarBase::Type::string || regex_.type == JSVarBase::Type::num || regex_.type == JSVarBase::Type::boolean ) )
+			throw;
+		regex = regex_.toString();
+	}
+
+
 	////////////////////////////////////////////////////////////   JSVar ////
 	
 	JSRLValue JSVar::operator [] ( const JSVar& var ) const
@@ -2407,7 +2417,7 @@ namespace nodecpp::js {
 
 	JSVar JSMath::random() 
 	{ 
-		return (double)(threadLocalData.rng.rnd());
+		return threadLocalData.rng.normalizedRnd();
 	}
 
 } // namespace nodecpp::js

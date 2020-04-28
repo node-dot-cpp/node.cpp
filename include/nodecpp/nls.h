@@ -118,6 +118,11 @@ namespace nodecpp {
 				s = ( a * s + c );
 				return (uint32_t)(s >> 16);
 			}
+			double normalizedRnd()
+			{
+				s = ( a * s + c );
+				return ((uint32_t)(s >> 16)) / ((double)(((uint64_t)(1))<<32));
+			}
 		};
 	} // namespace js
 

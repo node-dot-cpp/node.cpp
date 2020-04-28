@@ -99,6 +99,7 @@ namespace nodecpp::js {
 		friend class JSObject;
 		friend class JSArray;
 		friend class JSRLValue;
+		friend class JSRegExp;
 		friend nodecpp::string typeOf( const JSVarBase& );
 		friend nodecpp::string typeOf( const JSVarOrOwn& );
 		friend nodecpp::string typeOf( const JSRLValue& );
@@ -625,9 +626,7 @@ namespace nodecpp::js {
 		nodecpp::string regex;
 		uint64_t flags_ = Flags::none;
 
-	public:
-		JSRegExp() {}
-		JSRegExp( nodecpp::string regex_, nodecpp::string flags = "" ) : regex( regex_ )
+		void setFlags( nodecpp::string flags )
 		{
 			for ( size_t i=0; i<flags.size(); ++i )
 				switch ( flags[i] )
@@ -638,6 +637,13 @@ namespace nodecpp::js {
 						throw;
 				}
 		}
+
+	public:
+		JSRegExp() {}
+		JSRegExp( JSVar regex_, nodecpp::string flags = "" );
+		JSRegExp( nodecpp::string regex_, nodecpp::string flags = "" ) : regex( regex_ ) { setFlags( flags ); }
+		JSRegExp( const char* regex_, nodecpp::string flags = "" ) : regex( regex_ ) { setFlags( flags ); }
+
 		const nodecpp::string& re() const { return regex; }
 		uint64_t flags() const { return flags_; }
 	};
@@ -646,10 +652,11 @@ namespace nodecpp::js {
 	{
 		friend class JSObject;
 		friend class JSArray;
+		friend class JSMath;
+		friend class JSRegExp;
 		friend nodecpp::string typeOf( const JSVarBase& );
 		friend nodecpp::string typeOf( const JSVarOrOwn& );
 		friend nodecpp::string typeOf( const JSRLValue& );
-		friend class JSMath;
 
 		void init( const JSVar& other ) { JSVarBase::init( other ); }
 
