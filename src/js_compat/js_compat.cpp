@@ -1479,6 +1479,28 @@ namespace nodecpp::js {
 		}
 	}
 
+	JSVar JSVar::replace( const JSRegExp& re, const JSVar replacement ) const
+	{
+		if ( type != Type::string )
+			throw;
+		if ( replacement.type != Type::string )
+			throw;
+		const nodecpp::string& str = *(_asStr());
+		const nodecpp::string& repl = *(replacement._asStr());
+		if ( re.flags() & JSRegExp::Flags::g )
+		{
+			std::regex stdre( re.re() );
+			std::string out = std::regex_replace(std::string(str.c_str()), stdre, std::string(repl.c_str()));
+			return nodecpp::string( out.c_str() );
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "error: not implemented" ); 
+			return JSVar();
+			// TODO: ...
+		}
+	}
+
 	////////////////////////////////////////////////////////////   JSInit ////
 
 	JSInit::JSInit( const JSInit& other) {

@@ -767,6 +767,7 @@ namespace nodecpp::js {
 		JSVar toUpperCase() const;
 
 		JSOwnObj match( const JSRegExp& re ) const;
+		JSVar replace( const JSRegExp& re, const JSVar replacement ) const;
 	};
 	static_assert( sizeof(JSVarBase) == sizeof(JSVar), "no data memebers at JSVar itself!" );
 
@@ -1157,6 +1158,7 @@ namespace nodecpp::js {
 				return (*_asSoft())->concat( arr1, args ... );
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return makeJSArray();
 		}
 	}
 
@@ -1198,6 +1200,7 @@ namespace nodecpp::js {
 				return "function";
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(var.type) ); 
+				return "undefined";
 		}
 	}
 
@@ -1220,6 +1223,7 @@ namespace nodecpp::js {
 				return typeOf( val._asVar() );
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(val.type) ); 
+				return "undefined";
 		}
 	}
 
@@ -1236,6 +1240,7 @@ namespace nodecpp::js {
 				return typeOf( val._asVar() );
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)(val.type) ); 
+				return "undefined";
 		}
 	}
 
