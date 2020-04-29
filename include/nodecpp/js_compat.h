@@ -83,7 +83,9 @@ namespace nodecpp::js {
 
 		bool in( const JSOwnObj& collection ) const { return collection.has( *this ); }
 	
-		void forEach( std::function<void(JSRLValue)> cb );
+		template<class callback> // expected: td::function<void(JSRLValue)>, td::function<void(JSRLValue, JSVar)>, td::function<void(JSRLValue, size_t)>, td::function<void(JSRLValue, JSVar, JSVar)>, td::function<void(JSRLValue, size_t, JSVar)>
+		void forEach( callback cb );
+
 		nodecpp::safememory::owning_ptr<JSArray> keys();
 
 		template<class ArrT1, class ... ArrTX>
@@ -759,7 +761,10 @@ namespace nodecpp::js {
 		bool has( nodecpp::string str ) const;
 
 		bool in( const JSVar& collection ) const { return collection.has( *this ); }
-		void forEach( std::function<void(JSRLValue)> cb );
+
+		template<class callback> // expected: td::function<void(JSRLValue)>, td::function<void(JSRLValue, JSVar)>, td::function<void(JSRLValue, size_t)>, td::function<void(JSRLValue, JSVar, JSVar)>, td::function<void(JSRLValue, size_t, JSVar)>
+		void forEach( callback cb );
+
 		nodecpp::safememory::owning_ptr<JSArray> keys();
 
 		JSOwnObj split(  const JSVar& separator, JSVar maxCount ) const; // TODO: implement!
@@ -1005,6 +1010,10 @@ namespace nodecpp::js {
 		}
 		nodecpp::safememory::owning_ptr<JSArray> keys();
 		virtual void forEach( std::function<void(JSRLValue)> cb ) { return; }
+		virtual void forEach( std::function<void(JSRLValue, JSVar)> cb ) { return; }
+		virtual void forEach( std::function<void(JSRLValue, size_t)> cb ) { return; }
+		virtual void forEach( std::function<void(JSRLValue, JSVar, JSVar)> cb ) { return; }
+		virtual void forEach( std::function<void(JSRLValue, size_t, JSVar)> cb ) { return; }
 		virtual bool has( const JSVar& var ) const
 		{
 			auto f = pairs.find( var.toString() );
@@ -1108,6 +1117,28 @@ namespace nodecpp::js {
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
 				cb( elems[idx] );
 		}
+		virtual void forEach( std::function<void(JSRLValue, JSVar idx)> cb )
+		{
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( elems[idx], JSVar((double)idx) );
+		}
+		virtual void forEach( std::function<void(JSRLValue, size_t idx)> cb )
+		{
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( elems[idx], idx );
+		}
+		virtual void forEach( std::function<void(JSRLValue, JSVar idx, JSVar arr)> cb )
+		{
+			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( elems[idx], JSVar((double)idx), JSVar( myPtr ) );
+		}
+		virtual void forEach( std::function<void(JSRLValue, size_t idx, JSVar arr)> cb )
+		{
+			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
+			for ( size_t idx = 0; idx<elems.size(); ++idx )
+				cb( elems[idx], idx, JSVar( myPtr ) );
+		}
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "[ ";
 			if ( pairs.size() )
@@ -1148,6 +1179,42 @@ namespace nodecpp::js {
 	};
 	inline owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
 	inline owning_ptr<JSArray> makeJSArray(std::initializer_list<JSInit> l) { return make_owning<JSArray>(l); } // TODO: ownership of args
+
+	template<class callback>
+	void JSOwnObj::forEach( callback cb )
+	{
+		ptr->forEach( std::move( cb ) );
+	}
+
+	template<class callback>
+	void JSVar::forEach( callback cb )
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
+				return;
+			case Type::string:
+				return; // TODO: revise!
+			case Type::softptr:
+				return (*_asSoft())->forEach( std::move( cb ) );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return;
+		}
+	}
 
 	template<class ArrT1, class ... ArrTX>
 	JSOwnObj JSOwnObj::concat( ArrT1 arr1, ArrTX ... args ) 

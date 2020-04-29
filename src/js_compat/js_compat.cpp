@@ -124,11 +124,6 @@ namespace nodecpp::js {
 		return ptr->has( str );
 	}
 
-	void JSOwnObj::forEach( std::function<void(JSRLValue)> cb )
-	{
-		ptr->forEach( std::move( cb ) );
-	}
-
 	nodecpp::safememory::owning_ptr<JSArray> JSOwnObj::keys()
 	{
 		return ptr->keys();
@@ -1343,35 +1338,6 @@ namespace nodecpp::js {
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
 				return false;
-		}
-	}
-
-	void JSVar::forEach( std::function<void(JSRLValue)> cb )
-	{
-		switch ( type )
-		{
-			case Type::undef:
-			case Type::boolean:
-			case Type::num:
-			case Type::fn0:
-			case Type::fn1:
-			case Type::fn2:
-			case Type::fn3:
-			case Type::fn4:
-			case Type::fn5:
-			case Type::fn6:
-			case Type::fn7:
-			case Type::fn8:
-			case Type::fn9:
-			case Type::fn10:
-				return;
-			case Type::string:
-				return; // TODO: revise!
-			case Type::softptr:
-				return (*_asSoft())->forEach( std::move( cb ) );
-			default:
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				return;
 		}
 	}
 
