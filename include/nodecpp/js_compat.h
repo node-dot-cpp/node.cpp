@@ -1115,29 +1115,34 @@ namespace nodecpp::js {
 		virtual void forEach( std::function<void(JSRLValue)> cb )
 		{
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				cb( elems[idx] );
+				if ( elems[idx].type != JSRLValue::Type::undef )
+					cb( elems[idx] );
 		}
 		virtual void forEach( std::function<void(JSRLValue, JSVar idx)> cb )
 		{
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				cb( elems[idx], JSVar((double)idx) );
+				if ( elems[idx].type != JSRLValue::Type::undef )
+					cb( elems[idx], JSVar((double)idx) );
 		}
 		virtual void forEach( std::function<void(JSRLValue, size_t idx)> cb )
 		{
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				cb( elems[idx], idx );
+				if ( elems[idx].type != JSRLValue::Type::undef )
+					cb( elems[idx], idx );
 		}
 		virtual void forEach( std::function<void(JSRLValue, JSVar idx, JSVar arr)> cb )
 		{
 			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				cb( elems[idx], JSVar((double)idx), JSVar( myPtr ) );
+				if ( elems[idx].type != JSRLValue::Type::undef )
+					cb( elems[idx], JSVar((double)idx), JSVar( myPtr ) );
 		}
 		virtual void forEach( std::function<void(JSRLValue, size_t idx, JSVar arr)> cb )
 		{
 			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				cb( elems[idx], idx, JSVar( myPtr ) );
+				if ( elems[idx].type != JSRLValue::Type::undef )
+					cb( elems[idx], idx, JSVar( myPtr ) );
 		}
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "[ ";
