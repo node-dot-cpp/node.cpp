@@ -69,16 +69,17 @@ public:
             JSVar runTheTrap = JSVar([trap](JSVar text, JSVar options) {
                 JSVar result = "";
                 text = text || JSVar("Run the trap drop the bass");
-                text = text.split("");
-                text.forEach([trap, &result, text](JSVar idx) {
-                    JSVar c = text[idx];
+                JSOwnObj textChars = text.split("");
+                text = textChars;
+                text.forEach([trap, &result, text](JSVar c) {
+                    c = c.toLowerCase();
                     JSVar chars = trap[c];
                     JSVar rand = JSMath::floor(JSMath::random() * chars.length());
                     if (typeOf(trap[c]) != "undefined") {
                         result += trap[c][rand];
                     }
                     else {
-                        result += text[c];
+                        result += c;
                     }
                     });
                 return result;
