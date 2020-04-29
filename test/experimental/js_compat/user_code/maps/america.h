@@ -44,7 +44,7 @@ public:
             {
                 return letter;
             }
-            switch (((size_t)(i.toNumber())) % 3) // JS: '  switch (i%3)  ' where i is var. TODO: consider '  switch ( (size_t)((i % 3).toNumber()) )  ', which is closer to the original
+            switch ((size_t)((i % 3).toNumber())) // JS: '  switch (i%3)  ' where i is var. TODO: consider '  switch ( (size_t)((i % 3).toNumber()) )  ', which is closer to the original
             {
             case 0:
                 return colors["red"](letter);
