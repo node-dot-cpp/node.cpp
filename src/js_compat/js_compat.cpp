@@ -2427,4 +2427,54 @@ namespace nodecpp::js {
 		return threadLocalData.rng.normalizedRnd();
 	}
 
+	////////////////////////////////////////////////////////////   UTF staff ////
+
+	void utf8ToUc16( const char8_t* utfs, short* uc16buff, size_t uc16buffsz )
+	{
+		size_t idx = 0;
+		size_t idxout = 0;
+		size_t seq = 0;
+		uint32_t code = 0;
+		while ( utfs[idx] )
+		{
+			auto ch = utfs[idx++];
+			if ( seq == 0 )
+			{
+				if ( (ch & 0x80) == 0 )
+				{
+					uc16buff[idxout++] = ch;
+					code = 0;
+				}
+				else
+				{
+					if ( (ch & 0xe0) == 0xc0 )
+					{
+						seq = 1;
+						code = ((uint32_t)(ch & 0x1f)) << 6;
+					}
+					else if ( (ch & 0xf0) == 0xe0 )
+					{
+						seq = 2;
+						code = ((uint32_t)(ch & 0x0f)) << 12;
+					}
+					else if ( (ch & 0xf1) == 0xf0 )
+					{
+						seq = 3;
+						code = ((uint32_t)(ch & 0x07)) << 18;
+					}
+			  }
+			}
+			else
+			{
+				code += ((uint32_t)(ch & 0x3f)) << ( --seq );
+				if ( seq == 0 )
+				{
+					uc16buff[idxout++] = (short)(code);
+					code = 0;
+				}
+			}
+		}
+		uc16buff[idxout] = 0;
+	}
+
 } // namespace nodecpp::js
