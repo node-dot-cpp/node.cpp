@@ -576,14 +576,15 @@ namespace nodecpp::js {
 			_asValue() = &v;
 			type = Type::value;
 		}
-		JSRLValue( const JSVar& var );
+//		JSRLValue( const JSVar& var );
+		void initBy( const JSVar& var );
+		static JSRLValue from( const JSVar& var );
 		JSRLValue& operator = ( JSVarOrOwn& obj );
 
 	public:
 		JSRLValue( const JSRLValue& other);
 		JSRLValue& operator = ( const JSRLValue& other );
 		JSRLValue& operator = ( const JSVar& var );
-//		JSRLValue& operator = ( const JSOwnObj& obj );
 		JSRLValue& operator = ( JSOwnObj&& obj );
 
 		~JSRLValue();
@@ -871,6 +872,7 @@ namespace nodecpp::js {
 
 	class JSVarOrOwn
 	{
+		friend class JSVar;
 		friend class JSRLValue;
 		friend class JSInit;
 		friend class JSArray;
@@ -980,8 +982,8 @@ namespace nodecpp::js {
 		}
 		virtual JSRLValue operator [] ( const JSRLValue& val )
 		{
-			if ( val.type != JSRLValue::Type::var )
-				return JSVar(); // TODO: check if we should throw or convert to string, etc, instead
+			if ( val.type != JSRLValue::Type::var ) // TODO: check if we should throw or convert to string, etc, instead
+				return JSRLValue();
 			return operator []( val._asVar() );
 		}
 		virtual JSRLValue operator [] ( size_t idx )
@@ -1085,8 +1087,8 @@ namespace nodecpp::js {
 		}
 		virtual JSRLValue operator [] ( const JSRLValue& val )
 		{
-			if ( val.type != JSRLValue::Type::var )
-				return JSVar(); // TODO: check if we should throw or convert to string, etc, instead
+			if ( val.type != JSRLValue::Type::var ) // TODO: check if we should throw or convert to string, etc, instead
+				return JSRLValue();
 			return operator []( val._asVar() );
 		}
 		virtual JSRLValue operator [] ( size_t idx )
