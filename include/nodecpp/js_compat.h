@@ -42,6 +42,112 @@ namespace nodecpp::js {
 	class JSRLValue;
 	class JSInit;
 
+	class JSChar
+	{
+		friend class JSString;
+		uint32_t code = 0;
+	public:
+	};
+
+	class JSString
+	{
+		nodecpp::string str;
+
+		const char* utf8ToJSChar( const char* utfs, JSChar& jschar )
+		{
+			jschar.code = 0;
+			size_t seq = 0;
+			uint32_t code = 0;
+			while ( *utfs )
+			{
+				auto ch = *utfs++;
+				if ( seq == 0 )
+				{
+					if ( (ch & 0x80) == 0 )
+					{
+						jschar.code = ch;
+						break;
+					}
+					else
+					{
+						if ( (ch & 0xe0) == 0xc0 )
+						{
+							seq = 1;
+							jschar.code = ((uint32_t)(ch & 0x1f)) << 6;
+						}
+						else if ( (ch & 0xf0) == 0xe0 )
+						{
+							seq = 2;
+							jschar.code = ((uint32_t)(ch & 0x0f)) << 12;
+						}
+						else if ( (ch & 0xf1) == 0xf0 )
+						{
+							seq = 3;
+							jschar.code = ((uint32_t)(ch & 0x07)) << 18;
+						}
+					}
+				}
+				else
+				{
+					code += ((uint32_t)(ch & 0x3f)) << ( --seq );
+					if ( seq == 0 )
+						break;
+				}
+			}
+			return utfs;
+		}
+
+		char* utf8FromJSChar( char* utfs, JSChar jschar )
+		{
+			if ( jschar.code <= 0x7F )
+			{
+				*utfs = (char)(jschar.code);
+				return utfs + 1;
+			}
+			else if ( jschar.code <= 0x7FF )
+			{
+				utfs[0] = 0xC0 | ((char)(jschar.code >> 5) & 0x1F );
+				utfs[1] = 0x80 | ((char)(jschar.code) & 0x3F );
+				return utfs + 2;
+			}
+			else if ( jschar.code <= 0xFFFF )
+			{
+				utfs[0] = 0xE0 | ((char)(jschar.code >> 11) & 0x1F );
+				utfs[1] = 0x80 | ((char)(jschar.code >> 6) & 0x3F );
+				utfs[2] = 0x80 | ((char)(jschar.code) & 0x3F );
+				return utfs + 3;
+			}
+			else if ( jschar.code <= 0x1FFFFF )
+			{
+				utfs[0] = 0xF0 | ((char)(jschar.code >> 17) & 0x1F );
+				utfs[1] = 0x80 | ((char)(jschar.code >> 12) & 0x3F );
+				utfs[2] = 0x80 | ((char)(jschar.code >> 6) & 0x3F );
+				utfs[3] = 0x80 | ((char)(jschar.code) & 0x3F );
+				return utfs + 4;
+			}
+			else
+				throw; // TODO: right way of error reporting
+		}
+
+	public:
+		JSString() {};
+		JSString( const JSString& ) = default;
+		JSString( JSString&& ) = default;
+		JSString( const char* str_ ) { str = str_; }
+		JSString( const char8_t* str_ ) { str = (const char*)str_; }
+		JSString( JSChar ch ) { /* TODO*/ }
+		JSString( nodecpp::string str_ ) { str = str_; }
+
+		JSString& operator = ( const JSString& ) = default;
+		JSString& operator = ( JSString&& ) = default;
+		JSString& operator = ( const char* str_ ) { str = str_; return *this; }
+		JSString& operator = ( const char8_t* str_ ) { str = (const char*)str_; return *this; }
+		JSString& operator = ( JSChar ch ) { /* TODO*/ return *this; }
+		JSString& operator = ( nodecpp::string str_ ) { str = str_; return *this; }
+
+		JSChar charAt( size_t pos ) { /* TODO*/ return JSChar(); }
+	};
+
 	class JSOwnObj
 	{
 		friend class JSVar;
