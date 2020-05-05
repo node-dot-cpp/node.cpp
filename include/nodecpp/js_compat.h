@@ -51,9 +51,9 @@ namespace nodecpp::js {
 
 	class JSString
 	{
-		nodecpp::string str;
+		nodecpp::string str_;
 
-		const char* utf8ToJSChar( const char* utfs, JSChar& jschar )
+		static const char* utf8ToJSChar( const char* utfs, JSChar& jschar )
 		{
 			jschar.code = 0;
 			size_t seq = 0;
@@ -97,12 +97,20 @@ namespace nodecpp::js {
 			return utfs;
 		}
 
-		char* utf8FromJSChar( char* utfs, JSChar jschar )
+		static char* utf8FromJSChar( JSChar jschar, char* utfs )
 		{
 			if ( jschar.code <= 0x7F )
 			{
-				*utfs = (char)(jschar.code);
-				return utfs + 1;
+				if ( jschar.code > 0 )
+				{
+					*utfs = (char)(jschar.code);
+					return utfs + 1;
+				}
+				else
+				{
+					*utfs = 0;
+					return utfs;
+				}
 			}
 			else if ( jschar.code <= 0x7FF )
 			{
@@ -133,19 +141,31 @@ namespace nodecpp::js {
 		JSString() {};
 		JSString( const JSString& ) = default;
 		JSString( JSString&& ) = default;
-		JSString( const char* str_ ) { str = str_; }
-		JSString( const char8_t* str_ ) { str = (const char*)str_; }
-		JSString( JSChar ch ) { /* TODO*/ }
-		JSString( nodecpp::string str_ ) { str = str_; }
+		JSString( const char* str ) { str_ = str; }
+		JSString( const char8_t* str ) { str_ = (const char*)str; }
+		JSString( nodecpp::string str ) { str_ = str; }
+		JSString( JSChar ch ) { char buff[5]; *(utf8FromJSChar( ch, buff )) = 0; str_ = buff; }
 
 		JSString& operator = ( const JSString& ) = default;
 		JSString& operator = ( JSString&& ) = default;
-		JSString& operator = ( const char* str_ ) { str = str_; return *this; }
-		JSString& operator = ( const char8_t* str_ ) { str = (const char*)str_; return *this; }
-		JSString& operator = ( JSChar ch ) { /* TODO*/ return *this; }
-		JSString& operator = ( nodecpp::string str_ ) { str = str_; return *this; }
+		JSString& operator = ( const char* str ) { str_ = str; return *this; }
+		JSString& operator = ( const char8_t* str ) { str_ = (const char*)str; return *this; }
+		JSString& operator = ( nodecpp::string str ) { str_ = str; return *this; }
+		JSString& operator = ( JSChar ch ) { char buff[5]; *(utf8FromJSChar( ch, buff )) = 0; str_ = buff; return *this; }
 
-		JSChar charAt( size_t pos ) { /* TODO*/ return JSChar(); }
+		JSChar charAt( size_t index ) const
+		{
+			JSChar ret;
+			const char* ustr = str_.c_str();
+			const char* end = ustr + str_.size();
+			for ( size_t idx=0; idx<index && ustr<end; ++idx )
+				ustr = utf8ToJSChar( ustr, ret );
+			return ret;
+		}
+		size_t size() const { return str_.size(); }
+		const char* c_str() const { return str_.c_str(); }
+		nodecpp::string& str() {return str_; }
+		const nodecpp::string& str() const {return str_; }
 	};
 
 	class JSOwnObj
@@ -251,7 +271,7 @@ namespace nodecpp::js {
 
 		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10 };
 		Type type = Type::undef;
-		static constexpr size_t memsz = fnsz > (sizeof( nodecpp::string ) > 16 ? sizeof( nodecpp::string ) : 16) ? fnsz : (sizeof( nodecpp::string ) > 16 ? sizeof( nodecpp::string ) : 16);
+		static constexpr size_t memsz = fnsz > (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16) ? fnsz : (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16);
 		uintptr_t basemem[memsz/sizeof(uintptr_t)]; // note: we just cause it to be uintptr_t-aligned
 
 		static constexpr size_t fnSize = sizeof( std::function<double(double)> );
@@ -262,7 +282,7 @@ namespace nodecpp::js {
 
 		bool* _asBool() { return reinterpret_cast<bool*>( basemem ); }
 		double* _asNum() { return reinterpret_cast<double*>( basemem ); }
-		nodecpp::string* _asStr() { return reinterpret_cast<nodecpp::string*>( basemem ); }
+		JSString* _asStr() { return reinterpret_cast<JSString*>( basemem ); }
 		softptr2jsobj* _asSoft() { return reinterpret_cast<softptr2jsobj*>( basemem ); }
 		Fn0Struct* _asFn0() { return reinterpret_cast<Fn0Struct*>( basemem ); }
 		Fn1Struct* _asFn1() { return reinterpret_cast<Fn1Struct*>( basemem ); }
@@ -278,7 +298,7 @@ namespace nodecpp::js {
 
 		const bool* _asBool() const { return reinterpret_cast<const bool*>( basemem ); }
 		const double* _asNum() const { return reinterpret_cast<const double*>( basemem ); }
-		const nodecpp::string* _asStr() const { return reinterpret_cast<const nodecpp::string*>( basemem ); }
+		const JSString* _asStr() const { return reinterpret_cast<const JSString*>( basemem ); }
 		const softptr2jsobj* _asSoft() const { return reinterpret_cast<const softptr2jsobj*>( basemem ); }
 		const Fn0Struct* _asFn0() const { return reinterpret_cast<const Fn0Struct*>( basemem ); }
 		const Fn1Struct* _asFn1() const { return reinterpret_cast<const Fn1Struct*>( basemem ); }
@@ -301,7 +321,7 @@ namespace nodecpp::js {
 				case Type::num:
 					break;
 				case Type::string:
-					_asStr()->~basic_string();
+					_asStr()->~JSString();
 					break;
 				case Type::softptr:
 					_asSoft()->~softptr2jsobj();
@@ -374,7 +394,18 @@ namespace nodecpp::js {
 			{
 				deinit();
 				type = Type::string;
-				new(_asStr())nodecpp::string( str );
+				new(_asStr())JSString( str );
+			}
+		}
+		void init( const JSString& str )
+		{
+			if ( type == Type::string )
+				*_asStr() = str;
+			else
+			{
+				deinit();
+				type = Type::string;
+				new(_asStr())JSString( str );
 			}
 		}
 		void init( const softptr2jsobj ptr )
@@ -603,7 +634,7 @@ namespace nodecpp::js {
 						*_asNum() = *(other._asNum());
 						break;
 					case Type::string:
-						new(_asStr())nodecpp::string( *(other._asStr()) );
+						new(_asStr())JSString( *(other._asStr()) );
 						break;
 					case Type::softptr:
 						new(_asSoft())softptr2jsobj( *(other._asSoft()) );
@@ -780,7 +811,9 @@ namespace nodecpp::js {
 		JSVar( double d ) { JSVarBase::init( d ); }
 		JSVar( int n ) { JSVarBase::init( (double)n ); }
 		JSVar( const nodecpp::string& str ) { JSVarBase::init( str ); }
+		JSVar( const JSString& str ) { JSVarBase::init( str ); }
 		JSVar( const char* str ) { nodecpp::string str_( str ); JSVarBase::init( str_ ); }
+		JSVar( const char8_t* str ) { JSString str_( str ); JSVarBase::init( str_ ); }
 		JSVar( const softptr2jsobj ptr ) { JSVarBase::init( ptr ); }
 		JSVar( const softptr2jsarr ptr ) { JSVarBase::init( ptr ); }
 		JSVar( Fn0T&& cb ) { JSVarBase::init( std::move( cb ) ); }
@@ -803,7 +836,9 @@ namespace nodecpp::js {
 		JSVar& operator = ( double d ) { JSVarBase::init( d ); return *this; }
 		JSVar& operator = ( int n ) { JSVarBase::init( (double)n ); return *this; }
 		JSVar& operator = ( const nodecpp::string& str ) { JSVarBase::init( str ); return *this; }
+		JSVar& operator = ( const JSString& str ) { JSVarBase::init( str ); return *this; }
 		JSVar& operator = ( const char* str ) { nodecpp::string str_( str ); JSVarBase::init( str_ ); return * this; }
+		JSVar& operator = ( const char8_t* str ) { JSString str_( str ); JSVarBase::init( str_ ); return * this; }
 		JSVar& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
 		JSVar& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
 		JSVar& operator = ( Fn0T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
@@ -822,8 +857,10 @@ namespace nodecpp::js {
 		JSRLValue operator [] ( const JSRLValue& val ) const;
 		JSRLValue operator [] ( double num ) const;
 		JSRLValue operator [] ( int num ) const;
-		JSRLValue operator [] ( const nodecpp::string& key ) const;
-		JSRLValue operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
+		JSRLValue operator [] ( const JSString& key ) const;
+		JSRLValue operator [] ( const nodecpp::string& key ) const { return operator [] ( JSString( key ) ); }
+		JSRLValue operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s); }
+		JSRLValue operator [] ( const char* key ) const { JSString s(key); return operator [] (s); }
 
 		JSVar operator()();
 		JSVar operator()( JSVar obj );

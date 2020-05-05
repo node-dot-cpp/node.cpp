@@ -160,20 +160,20 @@ namespace nodecpp::js {
 					auto pstr = _asStr();
 					size_t idx = *( var._asNum() );
 					if ( idx < pstr->size() )
-						return JSRLValue::from( JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ) );
+						return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 					else
 						return JSRLValue(); // TODO: mignt be something else!!!
 				}
 				else if ( var.type == Type::string )
 				{
-					const nodecpp::string& str = *(var._asStr());
-					if ( str.size() && str[0] >= '0' && str[0] <= '9' )
+					const JSString& str = *(var._asStr());
+					if ( str.size() && str.str()[0] >= '0' && str.str()[0] <= '9' )
 					{
 						auto pstr = _asStr();
 						char* end;
 						size_t idx = strtol( str.c_str(), &end, 10 );
 						if ( end - str.c_str() == str.size() )
-							return JSRLValue::from( JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ) );
+							return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 						else
 							return JSRLValue(); // TODO: mignt be something else!!!
 					}
@@ -211,20 +211,20 @@ namespace nodecpp::js {
 					auto pstr = _asStr();
 					size_t idx = *( var._asNum() );
 					if ( idx < pstr->size() )
-						return JSRLValue::from( JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ) );
+						return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 					else
 						return JSRLValue(); // TODO: mignt be something else!!!
 				}
 				else if ( var.type == Type::string )
 				{
-					const nodecpp::string& str = *(var._asStr());
-					if ( str.size() && str[0] >= '0' && str[0] <= '9' )
+					const JSString& str = *(var._asStr());
+					if ( str.size() && str.str()[0] >= '0' && str.str()[0] <= '9' )
 					{
 						auto pstr = _asStr();
 						char* end;
 						size_t idx = strtol( str.c_str(), &end, 10 );
 						if ( end - str.c_str() == str.size() )
-							return JSRLValue::from( JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ) );
+							return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 						else
 							return JSRLValue(); // TODO: mignt be something else!!!
 					}
@@ -255,7 +255,7 @@ namespace nodecpp::js {
 			{
 				auto pstr = _asStr();
 				if ( idx < pstr->size() )
-					return JSRLValue::from( JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ) ); // TODO: ownership
+					return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) ); // TODO: ownership
 				else
 				return JSRLValue(); // TODO: mignt be something else!!!
 			}
@@ -280,7 +280,7 @@ namespace nodecpp::js {
 			{
 				auto pstr = _asStr();
 				if ( idx < pstr->size() )
-					return JSRLValue::from( JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ) );
+					return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 				else
 				return JSRLValue(); // TODO: mignt be something else!!!
 			}
@@ -292,7 +292,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSVar::operator [] ( const nodecpp::string& key ) const
+	JSRLValue JSVar::operator [] ( const JSString& key ) const
 	{
 		switch ( type )
 		{
@@ -303,13 +303,13 @@ namespace nodecpp::js {
 				return JSRLValue(); // TODO: mignt be something else!!!
 			case Type::string:
 			{
-				if ( key.size() && key[0] >= '0' && key[0] <= '9' )
+				if ( key.size() && key.str()[0] >= '0' && key.str()[0] <= '9' )
 				{
 					auto pstr = _asStr();
 					char* end;
 					size_t idx = strtol( key.c_str(), &end, 10 );
 					if ( end - key.c_str() == key.size() )
-						return JSRLValue::from( JSVar( nodecpp::string( pstr->substr( idx, 1 ) ) ) ); // TODO: ownership
+						return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) ); // TODO: ownership
 				}
 				return JSRLValue(); // TODO: mignt be something else!!!
 			}
@@ -649,7 +649,7 @@ namespace nodecpp::js {
 				switch ( other.type )
 				{
 					case Type::string:
-						return *_asStr() == *(other._asStr());
+						return _asStr()->str() == other._asStr()->str();
 					case Type::boolean:
 						return toNumber() == (*(other._asBool()) ? 1 : 0);
 					case Type::num:
@@ -658,7 +658,7 @@ namespace nodecpp::js {
 						if ( *(other._asSoft()) == nullptr )
 							return false;
 						else
-							return *_asStr() == other.toString();
+							return _asStr()->str() == other.toString();
 					default:
 						return false;
 				}
@@ -748,7 +748,7 @@ namespace nodecpp::js {
 			case Type::num:
 				return *_asNum() == *(other._asNum());
 			case Type::string:
-				return *_asStr() == *(other._asStr());
+				return _asStr()->str() == other._asStr()->str();
 			case Type::softptr:
 				return *_asSoft() == *(other._asSoft());
 			case JSVarBase::Type::fn0:
@@ -802,7 +802,7 @@ namespace nodecpp::js {
 					}
 					case Type::string:
 					{
-						init( toString() + *(other._asStr()) );
+						init( toString() + other._asStr()->str() );
 						return *(_asStr());
 					}
 					default:
@@ -825,7 +825,7 @@ namespace nodecpp::js {
 					}
 					case Type::string:
 					{
-						init( toString() + *(other._asStr()) );
+						init( toString() + other._asStr()->str() );
 						return *(_asStr());
 					}
 					default:
@@ -840,12 +840,12 @@ namespace nodecpp::js {
 					case Type::boolean:
 					case Type::num:
 					{
-						*(_asStr()) += other.toString();
+						_asStr()->str() += other.toString();
 						return *(_asStr());
 					}
 					case Type::string:
 					{
-						*(_asStr()) += *(other._asStr());
+						_asStr()->str() += other._asStr()->str();
 						return *(_asStr());
 					}
 					default:
@@ -886,7 +886,7 @@ namespace nodecpp::js {
 					case Type::num:
 						return ( *(_asBool()) ? 1 : 0 ) + *(other._asNum());
 					case Type::string:
-						return toString() + *(other._asStr());
+						return toString() + other._asStr()->str();
 					default:
 						throw;
 				}
@@ -900,7 +900,7 @@ namespace nodecpp::js {
 					case Type::num:
 						return *(_asNum()) + *(other._asNum());
 					case Type::string:
-						return toString() + *(other._asStr());
+						return toString() + other._asStr()->str();
 					default:
 						throw;
 				}
@@ -912,9 +912,9 @@ namespace nodecpp::js {
 				{
 					case Type::boolean:
 					case Type::num:
-						return *(_asStr()) + other.toString();
+						return _asStr()->str() + other.toString();
 					case Type::string:
-						return *(_asStr()) + *(other._asStr());
+						return _asStr()->str() + other._asStr()->str();
 					default:
 						throw;
 				}
@@ -1166,7 +1166,7 @@ namespace nodecpp::js {
 					return nodecpp::format( "{}", d);
 			}
 			case Type::string:
-				return nodecpp::format( "{}", *_asStr() );
+				return _asStr()->str();
 			case Type::softptr:
 				return (*_asSoft())->toString();
 			case Type::fn0:
@@ -1395,7 +1395,7 @@ namespace nodecpp::js {
 		{
 			size_t mcnt = maxCount.toNumber();
 			size_t cnt = 0;
-			nodecpp::string separ = *(separator._asStr());
+			nodecpp::string separ = separator._asStr()->str();
 			size_t start = 0;
 			for ( ; cnt<mcnt; ++cnt )
 			{
@@ -1467,7 +1467,7 @@ namespace nodecpp::js {
 		if ( type != Type::string )
 			throw;
 		nodecpp::safememory::owning_ptr<JSArray> ret = makeJSArray();
-		const nodecpp::string& str = *(_asStr());
+		const nodecpp::string& str = _asStr()->str();
 		if ( re.flags() & JSRegExp::Flags::g )
 		{
 			std::regex stdre( re.re() );
@@ -1494,8 +1494,8 @@ namespace nodecpp::js {
 			throw;
 		if ( replacement.type != Type::string )
 			throw;
-		const nodecpp::string& str = *(_asStr());
-		const nodecpp::string& repl = *(replacement._asStr());
+		const nodecpp::string& str = _asStr()->str();
+		const nodecpp::string& repl = replacement._asStr()->str();
 		if ( re.flags() & JSRegExp::Flags::g )
 		{
 			std::regex stdre( re.re() );
