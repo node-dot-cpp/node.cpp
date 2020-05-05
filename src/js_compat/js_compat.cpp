@@ -56,36 +56,34 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////   JSOwnObj ////
 
-	JSRLValue JSOwnObj::operator [] ( const JSVar& var )
+	JSRLValue JSOwnObj::operator [] ( const JSVar& var ) const
 	{
 		return ptr->operator[]( var );
 	}
 
-	JSRLValue JSOwnObj::operator [] ( const JSRLValue& val )
+	JSRLValue JSOwnObj::operator [] ( const JSRLValue& val ) const
 	{
 		return ptr->operator[]( val );
 	}
 
-	JSRLValue JSOwnObj::operator [] ( double d )
+	JSRLValue JSOwnObj::operator [] ( double d ) const
 	{
 		return ptr->operator[]( d );
 	}
 
-	JSRLValue JSOwnObj::operator [] ( int idx )
+	JSRLValue JSOwnObj::operator [] ( int idx ) const
 	{
 		return ptr->operator[]( idx );
 	}
 
-	JSRLValue JSOwnObj::operator [] ( const nodecpp::string& key )
+	JSRLValue JSOwnObj::operator [] ( const nodecpp::string& key ) const
 	{
 		return ptr->operator[]( key );
 	}
 
-	JSRLValue JSOwnObj::operator [] ( const char* key )
-	{
-		nodecpp::string s( key );
-		return ptr->operator[]( s );
-	}
+	JSRLValue JSOwnObj::operator [] ( const JSString& key ) const { return operator [] ( key.str() ); }
+	JSRLValue JSOwnObj::operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s.str()); }
+	JSRLValue JSOwnObj::operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
 
 	nodecpp::string JSOwnObj::toString() const
 	{
@@ -292,7 +290,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSVar::operator [] ( const JSString& key ) const
+	JSRLValue JSVar::operator [] ( const nodecpp::string& key ) const
 	{
 		switch ( type )
 		{
@@ -303,13 +301,13 @@ namespace nodecpp::js {
 				return JSRLValue(); // TODO: mignt be something else!!!
 			case Type::string:
 			{
-				if ( key.size() && key.str()[0] >= '0' && key.str()[0] <= '9' )
+				if ( key.size() && key[0] >= '0' && key[0] <= '9' )
 				{
 					auto pstr = _asStr();
 					char* end;
 					size_t idx = strtol( key.c_str(), &end, 10 );
 					if ( end - key.c_str() == key.size() )
-						return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) ); // TODO: ownership
+						return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 				}
 				return JSRLValue(); // TODO: mignt be something else!!!
 			}
@@ -2167,7 +2165,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSRLValue::operator [] ( const JSVar& var )
+	JSRLValue JSRLValue::operator [] ( const JSVar& var ) const
 	{
 		switch ( type )
 		{
@@ -2197,7 +2195,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSRLValue::operator [] ( const JSRLValue& val )
+	JSRLValue JSRLValue::operator [] ( const JSRLValue& val ) const
 	{
 		if ( val.type != Type::var )
 			return JSRLValue(); // TODO: check if we should throw or convert to string, etc, instead
@@ -2230,7 +2228,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSRLValue::operator [] ( double d )
+	JSRLValue JSRLValue::operator [] ( double d ) const
 	{
 		switch ( type )
 		{
@@ -2260,7 +2258,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSRLValue::operator [] ( int idx )
+	JSRLValue JSRLValue::operator [] ( int idx ) const
 	{
 		switch ( type )
 		{
@@ -2290,7 +2288,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSRLValue::operator [] ( const nodecpp::string& key )
+	JSRLValue JSRLValue::operator [] ( const nodecpp::string& key ) const
 	{
 		switch ( type )
 		{
@@ -2320,11 +2318,11 @@ namespace nodecpp::js {
 		}
 	}
 
-	JSRLValue JSRLValue::operator [] ( const char* key )
+	/*JSRLValue JSRLValue::operator [] ( const char* key )
 	{
 		nodecpp::string s( key );
 		return JSRLValue::operator [] ( s );
-	}
+	}*/
 
 	nodecpp::string JSRLValue::toString() const
 	{

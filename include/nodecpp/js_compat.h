@@ -190,12 +190,14 @@ namespace nodecpp::js {
 		JSOwnObj& operator = ( owningptr2jsobj&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
 		JSOwnObj& operator = ( owningptr2jsarr&& ptr_ ) { ptr = std::move( ptr_ ); return *this; }
 
-		JSRLValue operator [] ( const JSVar& var );
-		JSRLValue operator [] ( const JSRLValue& val );
-		JSRLValue operator [] ( double idx );
-		JSRLValue operator [] ( int idx );
-		JSRLValue operator [] ( const nodecpp::string& key );
-		JSRLValue operator [] ( const char* key );
+		JSRLValue operator [] ( const JSVar& var ) const;
+		JSRLValue operator [] ( const JSRLValue& val ) const;
+		JSRLValue operator [] ( double idx ) const;
+		JSRLValue operator [] ( int idx ) const;
+		JSRLValue operator [] ( const nodecpp::string& key ) const;
+		JSRLValue operator [] ( const JSString& key ) const;
+		JSRLValue operator [] ( const char8_t* key ) const;
+		JSRLValue operator [] ( const char* key ) const;
 
 		nodecpp::string toString() const;
 		double toNumber() const;
@@ -726,12 +728,14 @@ namespace nodecpp::js {
 
 		~JSRLValue();
 
-		JSRLValue operator [] ( const JSVar& var );
-		JSRLValue operator [] ( const JSRLValue& val );
-		JSRLValue operator [] ( double idx );
-		JSRLValue operator [] ( int idx );
-		JSRLValue operator [] ( const nodecpp::string& key );
-		JSRLValue operator [] ( const char* key );
+		JSRLValue operator [] ( const JSVar& var ) const;
+		JSRLValue operator [] ( const JSRLValue& val ) const;
+		JSRLValue operator [] ( double idx ) const;
+		JSRLValue operator [] ( int idx ) const;
+		JSRLValue operator [] ( const nodecpp::string& key ) const;
+		JSRLValue operator [] ( const JSString& key ) const { return operator [] ( key.str() ); }
+		JSRLValue operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s.str()); }
+		JSRLValue operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
 
 		JSVar operator()();
 		JSVar operator()( JSVar obj );
@@ -857,10 +861,10 @@ namespace nodecpp::js {
 		JSRLValue operator [] ( const JSRLValue& val ) const;
 		JSRLValue operator [] ( double num ) const;
 		JSRLValue operator [] ( int num ) const;
-		JSRLValue operator [] ( const JSString& key ) const;
-		JSRLValue operator [] ( const nodecpp::string& key ) const { return operator [] ( JSString( key ) ); }
-		JSRLValue operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s); }
-		JSRLValue operator [] ( const char* key ) const { JSString s(key); return operator [] (s); }
+		JSRLValue operator [] ( const nodecpp::string& key ) const;
+		JSRLValue operator [] ( const JSString& key ) const { return operator [] ( key.str() ); }
+		JSRLValue operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s.str()); }
+		JSRLValue operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
 
 		JSVar operator()();
 		JSVar operator()( JSVar obj );
@@ -1138,14 +1142,11 @@ namespace nodecpp::js {
 		{
 			return findOrAdd( key );
 		}
-		virtual JSRLValue operator [] ( const nodecpp::string_literal& key ) {
-			nodecpp::string s( key.c_str() );
-			return findOrAdd( s );
-		}
-		virtual JSRLValue operator [] ( const char* key ) {
-			nodecpp::string s( key );
-			return findOrAdd( s );
-		}
+		virtual JSRLValue operator [] ( const JSString& key ) const { return operator [] ( key.str() ); }
+		virtual JSRLValue operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s.str()); }
+		virtual JSRLValue operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
+		virtual JSRLValue operator [] ( const nodecpp::string_literal& key ) { nodecpp::string s( key.c_str() ); return operator [] (s); }
+
 		double toNumber() const { return NAN; }
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "{ \n";
@@ -1257,6 +1258,11 @@ namespace nodecpp::js {
 			}
 			return JSObject::operator[](strIdx);
 		}
+		virtual JSRLValue operator [] ( const JSString& key ) const { return operator [] ( key.str() ); }
+		virtual JSRLValue operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s.str()); }
+		virtual JSRLValue operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
+		virtual JSRLValue operator [] ( const nodecpp::string_literal& key ) { nodecpp::string s( key.c_str() ); return operator [] (s); }
+
 		virtual void forEach( std::function<void(JSRLValue)> cb )
 		{
 			for ( size_t idx = 0; idx<elems.size(); ++idx )
