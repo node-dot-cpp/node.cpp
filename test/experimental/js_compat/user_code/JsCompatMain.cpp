@@ -5,8 +5,8 @@
 #include <nodecpp/js_compat.h>
 
 #include "./styles.h"
-#include "./maps/america.h"
-#include "setMap.h"
+#include "./setMap.h"
+
 
 
 int main( int argc, char *argv_[] )
@@ -23,7 +23,7 @@ int main( int argc, char *argv_[] )
 
 
 	JSVar styles = require<Styles>();
-	printf(styles(styles("COLOR TEST", "whiteBG"),"cyan").toString().c_str());
+	printf(styles(styles("COLOR TEST\n", "whiteBG"),"cyan").toString().c_str());
 
 	JSVar setMap = require<SetMap>();
 	printf(setMap("MAPPED TEST", "america").toString().c_str());

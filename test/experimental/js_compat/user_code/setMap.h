@@ -25,37 +25,35 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef AMERICA_H
-#define AMERICA_H
+#ifndef SETMAP_H
+#define SETMAP_H
 
 #include <js_compat.h>
-#include "../styles.h"
+#include "./maps/america.h"
+
 
 
 using namespace nodecpp::js;
 
-class America : public nodecpp::js::JSModule
+class SetMap : public nodecpp::js::JSModule
 {
 public:
     JSVar exports() {
-        return
-            JSVar([](JSVar letter, JSVar i) {
-            JSVar result;
-            JSVar styles = require<Styles>();
-            if (letter.isStrictlyTheSame(" ")) // JS: '  if (letter === ' ')  '
-            {
-                return letter;
-            }
-            switch ((size_t)((i % 3).toNumber())) // JS: '  switch (i%3)  ' where i is var. TODO: consider '  switch ( (size_t)((i % 3).toNumber()) )  ', which is closer to the original
-            {
-            case 0:
-                return  result = styles(letter, "red"); 
-            case 1:
-                return result = styles(letter, "white");
-            case 2:
-                return result = styles(letter, "blue");
-            }
-                });
-    };
+        return 
+            JSVar([](JSVar str, JSVar maps) {
+                JSVar mappedStr = "";
+                JSVar america = require<America>();
+                int i;
+                if (maps == "america") {
+                    JSOwnObj strChars = str.split("");
+                    str = strChars;
+                    for (i = 0; i < str.length(); i++) {
+                        mappedStr += america(str[i], i);
+                    }
+                }
+                return mappedStr;
+        
+        });
+    }
 };
-#endif // AMERICA_H
+#endif // SETMAP_H
