@@ -36,7 +36,7 @@ class Styles : public nodecpp::js::JSModule
 {
 	JSOwnObj styles = makeJSObject();
 
-	JSOwnObj codes = makeJSObject({ 
+	JSOwnObj codes_ = makeJSObject({ 
 	  { "reset", makeJSArray( {0, 0 } ) },
 	  { "bold", makeJSArray( {1, 22 } ) },
 	  { "dim", makeJSArray( {2, 22 } ) },
@@ -97,7 +97,17 @@ class Styles : public nodecpp::js::JSModule
 	});
 
 public:
-	Styles() // initialization code is to be placed to ctor
+	JSVar exports() {
+		JSVar codes = codes_;
+		return JSVar([codes](JSVar str, JSVar color) {
+			JSVar  code = codes[color];
+			return nodecpp::format("\u001b[{}m{}\u001b[{}m", code[0].toString(), str.toString(), code[1].toString());
+			});
+
+	}
+
+
+	/*Styles() // initialization code is to be placed to ctor
 	{
 		JSOwnObj keys = codes.keys();
 		keys.forEach([this](nodecpp::string key) {
@@ -109,7 +119,7 @@ public:
 		});
 	}
 
-	JSVar exports() { return styles; } // required call returning exported var
+	JSVar exports() { return styles; } // required call returning exported var*/
 };
 
 #endif // STYLES_H
