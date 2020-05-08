@@ -15,11 +15,12 @@ int main( int argc, char *argv_[] )
 	g_AllocManager.initialize();
 #endif
 	// so far we will used old good printf()
-/*	nodecpp::log::Log log;
+	nodecpp::log::Log log;
 //	log.level = nodecpp::log::LogLevel::info;
 	log.add( stdout );
 	nodecpp::logging_impl::currentLog = &log;
-	nodecpp::logging_impl::instanceId = 0;*/
+	nodecpp::logging_impl::instanceId = 0;
+	log.setCriticalLevel( nodecpp::log::LogLevel::err );
 
 
 	JSVar styles = require<Styles>();
