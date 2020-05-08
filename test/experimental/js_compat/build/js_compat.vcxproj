@@ -546,6 +546,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\timers.h" />
     <ClInclude Include="..\js-compat-tests\misc_tests.h" />
     <ClInclude Include="..\user_code\colors.h" />
+    <ClInclude Include="..\user_code\custom\trap.h" />
     <ClInclude Include="..\user_code\maps\america.h" />
     <ClInclude Include="..\user_code\maps\rainbow.h" />
     <ClInclude Include="..\user_code\styles.h" />

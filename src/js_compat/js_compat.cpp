@@ -2115,21 +2115,24 @@ namespace nodecpp::js {
 		}
 	}
 
-	bool JSRLValue::operator !() const
+	bool JSRLValue::operator !() const 
 	{
-		switch ( type )
-		{
-			case Type::undef:
-				throw; // TODO: reconsider
-				return true;
-			case Type::var:
-				return _asVar().operator!();
-			case Type::value:
-				return _asValue()->operator !();
-			default:
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				return false;
-		}
+		JSVar tmp = *this; return !tmp;
+	}
+
+	JSVar JSRLValue::operator %( const JSVar& other ) const
+	{
+		JSVar tmp = *this; return tmp % other;
+	}
+
+	JSVar JSRLValue::operator ||( const JSVar& other ) const
+	{
+		JSVar tmp = *this; return tmp || other;
+	}
+
+	JSVar JSRLValue::operator &&( const JSVar& other ) const
+	{
+		JSVar tmp = *this; return tmp && other;
 	}
 
 	JSRLValue::operator JSVar () const

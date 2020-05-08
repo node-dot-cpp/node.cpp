@@ -64,27 +64,28 @@ private:
         {"z",makeJSArray({"\u01b5", "\u0240"})}
         });
 public:
-    JSVar exports() {
-        JSVar trap = trap_;
-            return  
-                JSVar([trap](JSVar text, JSVar options) {
-                JSVar result = "";
-                text = text || JSVar("Run the trap drop the bass");
-                JSOwnObj textChars = text.split("");
-                text = textChars;
-                text.forEach([trap, &result, text](JSVar c) {
-                    c = c.toLowerCase();
-                    JSVar chars = trap[c];
-                    JSVar rand = JSMath::floor(JSMath::random() * chars.length());
-                    if (typeOf(trap[c]) != "undefined") {
-                        result += trap[c][rand];
-                    }
-                    else {
-                        result += c;
-                    }
-                    });
-                return result;
-                });
+	JSVar exports() {
+		JSVar trap = trap_;
+		return 
+			JSVar([trap](JSVar text, JSVar options) {
+			    JSVar result = "";
+			    text = text || JSVar("Run the trap drop the bass");
+			    JSOwnObj textChars = text.split("");
+			    text = textChars;
+			    text.forEach([trap, &result, text](JSVar c) {
+				    c = c.toLowerCase();
+				    JSOwnObj space = makeJSArray({ " " });
+				    JSVar chars = trap[c] || space; // var chars = trap[c] || [' '];
+				    JSVar rand = JSMath::floor(JSMath::random() * chars.length());
+				    if (typeOf(trap[c]) != "undefined") {
+					    result += trap[c][rand];
+				    }
+				    else {
+					    result += c;
+				    }
+				});
+			    return result;
+		    });
     }
 };
 #endif // TRAP_H

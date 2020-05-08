@@ -32,6 +32,7 @@
 #include "nls.h"
 
 namespace nodecpp::js {
+
 	class JSString;
 	class JSOwnObj;
 	class JSVar;
@@ -40,9 +41,6 @@ namespace nodecpp::js {
 	class JSArray;
 	class JSRLValue;
 	class JSInit;
-} // nodecpp::js
-
-namespace nodecpp::js {
 
 	class JSChar
 	{
@@ -752,9 +750,12 @@ namespace nodecpp::js {
 		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9 );
 		JSVar operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9, JSVar obj10 );
 
-		bool operator !() const;
-		operator nodecpp::string () const { return toString(); }
 		operator JSVar () const;
+		bool operator !() const;
+		JSVar operator %( const JSVar& other ) const;
+		JSVar operator ||( const JSVar& other ) const;
+		JSVar operator &&( const JSVar& other ) const;
+		operator nodecpp::string () const { return toString(); }
 		nodecpp::string toString() const;
 		double toNumber() const;
 
