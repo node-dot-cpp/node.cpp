@@ -29,18 +29,20 @@
 #define NODECPP_JS_COMPAT_H
 
 #include "common.h"
-//#include <typeinfo>
-//#include <typeindex>
 #include "nls.h"
 
 namespace nodecpp::js {
-
+	class JSString;
+	class JSOwnObj;
 	class JSVar;
 	class JSObject;
 	class JSVarOrOwn;
 	class JSArray;
 	class JSRLValue;
 	class JSInit;
+} // nodecpp::js
+
+namespace nodecpp::js {
 
 	class JSChar
 	{
@@ -166,6 +168,7 @@ namespace nodecpp::js {
 		const char* c_str() const { return str_.c_str(); }
 		nodecpp::string& str() {return str_; }
 		const nodecpp::string& str() const {return str_; }
+		nodecpp::string toString() const {return str_; }
 	};
 
 	class JSOwnObj
@@ -1500,5 +1503,40 @@ namespace nodecpp::js {
 	}
 
 } //namespace nodecpp::js
+
+template<>
+struct ::fmt::formatter<nodecpp::js::JSString>
+{
+	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
+	template<typename FormatContext> auto format(nodecpp::js::JSString const& str, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", str.str() );}
+};	
+
+template<>
+struct ::fmt::formatter<nodecpp::js::JSOwnObj>
+{
+	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
+	template<typename FormatContext> auto format(nodecpp::js::JSOwnObj const& obj, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", obj.toString() );}
+};	
+
+template<>
+struct ::fmt::formatter<nodecpp::js::JSVar>
+{
+	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
+	template<typename FormatContext> auto format(nodecpp::js::JSVar const& v, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", v.toString() );}
+};	
+
+template<>
+struct ::fmt::formatter<nodecpp::js::JSVarOrOwn>
+{
+	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
+	template<typename FormatContext> auto format(nodecpp::js::JSVarOrOwn const& v, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", v.toString() );}
+};	
+
+template<>
+struct ::fmt::formatter<nodecpp::js::JSRLValue>
+{
+	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
+	template<typename FormatContext> auto format(nodecpp::js::JSRLValue const& v, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", v.toString() );}
+};	
 
 #endif // NODECPP_JS_COMPAT_H

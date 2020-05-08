@@ -124,6 +124,48 @@ namespace nodecpp {
 				return ((uint32_t)(s >> 16)) / ((double)(((uint64_t)(1))<<32));
 			}
 		};
+
+		class JSConsole
+		{
+			template<class VarT1, class ... VarTX>
+			void _stringify4logging( nodecpp::string& out, const VarT1& var1, const VarTX& ... args )
+			{
+				out += var1.toString();
+				_stringify4logging( out, args... );
+			}
+
+			template<class VarT1>
+			void _stringify4logging( nodecpp::string& out, const VarT1& var1 )
+			{
+				out += var1.toString();
+			}
+
+		public:
+
+			template<class ... VarTX>
+			void log( const VarTX& ... args )
+			{
+				// TODO: incrementing counters, etc
+				nodecpp::string out;
+				_stringify4logging( out, args... );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", out );
+			}
+
+			template<class ... VarTX>
+			void log( nodecpp::string f, const VarTX& ... args )
+			{
+				// TODO: incrementing counters, etc
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f.c_str(), args... ) );
+			}
+
+			template<class ... VarTX>
+			void log( const char* f, const VarTX& ... args )
+			{
+				// TODO: incrementing counters, etc
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f, args... ) );
+			}
+
+		};
 	} // namespace js
 
 	struct NLS
@@ -131,6 +173,7 @@ namespace nodecpp {
 		js::JSModuleMap jsModuleMap;
 		nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> currentArgs;
 		js::LCG rng;
+		js::JSConsole console;
 
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		void init()
@@ -144,9 +187,12 @@ namespace nodecpp {
 #endif
 	};
 
-//	extern thread_local JSModuleMap jsModuleMap;
 	extern thread_local NLS threadLocalData;
 
-} //namespace nodecpp
+	namespace js {
+		inline
+		JSConsole& console() { return threadLocalData.console; }
+	} // namespace js
+} // namespace nodecpp
 
 #endif // NLS_H

@@ -120,81 +120,81 @@ public:
 		JSVar prefixAdder = object_with_explicit_types_2["prefix adder generator"]( "prefix + " );
 
 
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types.toString().c_str() );
-		printf( "\n======\n%s\n=======\n", array_of_arrays.toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2.toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["getStr"]().toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["echo"]( "echoing my cry" ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat2"]( "word1 ", "word2 " ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat3"]( "word1 ", "word2 ", "word3 " ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 ", "word4 " ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 " ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 " ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]( "word1 " ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat4"]().toString().c_str() );
-		printf( "\n======\n%s\n=======\n", object_with_explicit_types_2["concat_any"]( "word1 ", "word2 ", "word3 ", "word4 " ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", prefixAdder( "some text after" ).toString().c_str() );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types );
+		console().log( "\n======\n{}\n=======\n", array_of_arrays );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2 );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["getStr"]() );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["echo"]( "echoing my cry" ) );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat2"]( "word1 ", "word2 " ) );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat3"]( "word1 ", "word2 ", "word3 " ) );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 ", "word4 " ) );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 " ) );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 " ) );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 " ) );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]() );
+		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat_any"]( "word1 ", "word2 ", "word3 ", "word4 " ) );
+		console().log( "\n======\n{}\n=======\n", prefixAdder( "some text after" ) );
 
 		// misc math, etc
-		printf( "\n======math=======\n" );
-		printf( "\n======\n%s\n=======\n", ( JSVar(3.5) % JSVar(2)).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(-3.5) % JSVar(2)).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(7.5) % JSVar(2.4)).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("7.5") % JSVar("2.4")).toString().c_str() );
+		console().log( "\n======math=======\n" );
+		console().log( JSVar(3.5) % JSVar(2));
+		console().log( JSVar(-3.5) % JSVar(2));
+		console().log( JSVar(7.5) % JSVar(2.4));
+		console().log( JSVar("7.5") % JSVar("2.4"));
 
-		printf( "\n======\n%s\n=======\n", ( JSVar("abc") || JSVar("def")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("") || JSVar("def")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar() || JSVar("def")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(false) || JSVar("def")).toString().c_str() );
+		console().log( JSVar("abc") || JSVar("def"));
+		console().log( JSVar("") || JSVar("def"));
+		console().log( JSVar() || JSVar("def"));
+		console().log( JSVar(false) || JSVar("def"));
 
-		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar("jkl")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar("")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("") && JSVar("jkl")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar()).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("ghi") && JSVar(false)).toString().c_str() );
+		console().log( JSVar("ghi") && JSVar("jkl"));
+		console().log( JSVar("ghi") && JSVar(""));
+		console().log( JSVar("") && JSVar("jkl"));
+		console().log( JSVar("ghi") && JSVar());
+		console().log( JSVar("ghi") && JSVar(false));
 
-		printf( "\n======\n%s\n=======\n", ( (JSVar("3"))++).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( ++(JSVar("3"))).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( (JSVar("3"))--).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( --(JSVar("3"))).toString().c_str() );
+		console().log( (JSVar("3"))++);
+		console().log( ++(JSVar("3")));
+		console().log( (JSVar("3"))--);
+		console().log( --(JSVar("3")));
 
-		printf( "\n======\n%s\n=======\n", ( (JSVar("abc")).split()).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( (JSVar("abc")).split("")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( (JSVar("abc def ghi")).split(" ")).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( (JSVar(" abc def ghi ")).split( " ")).toString().c_str() );
+		console().log( (JSVar("abc")).split());
+		console().log( (JSVar("abc")).split(""));
+		console().log( (JSVar("abc def ghi")).split(" "));
+		console().log( (JSVar(" abc def ghi ")).split( " "));
 
-		printf( "\n======\n%s\n=======\n", ( (array_of_arrays1["0"].concat( array_of_arrays1["1"], array_of_arrays1["2"] ))).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( ((makeJSArray())->concat(array_of_arrays1["0"], array_of_arrays1["1"], array_of_arrays1["2"] ))).toString().c_str() );
+		console().log( (array_of_arrays1["0"].concat( array_of_arrays1["1"], array_of_arrays1["2"] )));
+		console().log( ((makeJSArray())->concat(array_of_arrays1["0"], array_of_arrays1["1"], array_of_arrays1["2"] )));
 
-		printf( "\n======\n%f\n=======\n", array_of_arrays1.length() );
-		printf( "\n======\n%f\n=======\n", array_of_arrays1["0"].length() );
+		console().log( "\n======\n{}\n=======\n", array_of_arrays1.length() );
+		console().log( "\n======\n{}\n=======\n", array_of_arrays1["0"].length() );
 
-		printf( "\n======\n%s\n=======\n", (JSMath::floor(JSVar(3.14))).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", (JSMath::floor(JSVar(-3.14))).toString().c_str() );
+		console().log(JSMath::floor(JSVar(3.14)));
+		console().log(JSMath::floor(JSVar(-3.14)));
 
-		printf( "\n======\n%s\n=======\n", ( JSMath::random() ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSMath::random() ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSMath::random() ).toString().c_str() );
+		console().log( JSMath::random() );
+		console().log( JSMath::random() );
+		console().log( JSMath::random() );
 
-		printf( "\n======\n%s\n=======\n", ( (JSVar("3_AbCd, #")).toLowerCase() ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( (JSVar("3_AbCd, #")).toUpperCase() ).toString().c_str() );
+		console().log( (JSVar("3_AbCd, #")).toLowerCase() );
+		console().log( (JSVar("3_AbCd, #")).toUpperCase() );
 
-		printf( "\n======\n%s\n=======\n", ( JSVar(3) += JSVar(4) ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(3) += JSVar("4") ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("3") += JSVar(4) ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(3) += JSVar(true) ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("3") += JSVar(false) ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(true) += JSVar("4") ).toString().c_str() );
+		console().log( JSVar(3) += JSVar(4) );
+		console().log( JSVar(3) += JSVar("4") );
+		console().log( JSVar("3") += JSVar(4) );
+		console().log( JSVar(3) += JSVar(true) );
+		console().log( JSVar("3") += JSVar(false) );
+		console().log( JSVar(true) += JSVar("4") );
 
-		printf( "\n======\n%s\n=======\n", ( JSVar(3) + JSVar(4) ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(3) + JSVar("4") ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("3") + JSVar(4) ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(3) + JSVar(true) ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("3") + JSVar(false) ).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar(true) + JSVar("4") ).toString().c_str() );
+		console().log( JSVar(3) + JSVar(4) );
+		console().log( JSVar(3) + JSVar("4") );
+		console().log( JSVar("3") + JSVar(4) );
+		console().log( JSVar(3) + JSVar(true) );
+		console().log( JSVar("3") + JSVar(false) );
+		console().log( JSVar(true) + JSVar("4") );
 
-		printf( "\n======\n%s\n=======\n", ( JSVar("Some people when confronted with a problem think I know Ill use regular expressions Now they have two problems").match( JSRegExp( "([a-zA-Z]+)[, .]", "g" ))).toString().c_str() );
-		printf( "\n======\n%s\n=======\n", ( JSVar("Quick brown fox").replace( JSRegExp( "a|e|i|o|u", "g" ), JSVar("*") )).toString().c_str() );
+		console().log( JSVar("Some people when confronted with a problem think I know Ill use regular expressions Now they have two problems").match( JSRegExp( "([a-zA-Z]+)[, .]", "g" )));
+		console().log( JSVar("Quick brown fox").replace( JSRegExp( "a|e|i|o|u", "g" ), JSVar("*") ));
 	}
 };
 
