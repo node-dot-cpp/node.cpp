@@ -28,7 +28,7 @@
 #ifndef RANDOM_H
 #define RANDOM_H
 #include <js_compat.h>
-
+#include "../styles.h"
 
 using namespace nodecpp::js;
 
@@ -42,14 +42,12 @@ public:
     JSVar exports() {
         JSVar avaible = avaible_;
         return
-        JSVar([avaible](JSVar colors) {
-            return
-                JSVar([colors, avaible](JSVar letter, JSVar i) {
-                return letter.isStrictlyTheSame(" ") ? letter : colors[avaible[JSMath::random() * (avaible.length() - 2)]];
+                JSVar([avaible](JSVar letter, JSVar i) { 
+                JSVar styles = require<Styles>();
+                return letter.isStrictlyTheSame(" ") ? letter : styles(letter ,avaible[letter,JSMath::random() * (avaible.length() - 2)]);
                     });
-            });
+            };
     };
-};
 
 // 
 #endif // RANDOM_H

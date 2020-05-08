@@ -30,6 +30,11 @@
 
 #include <js_compat.h>
 #include "./maps/america.h"
+#include "./maps/rainbow.h"
+#include "./maps/random.h"
+#include "./maps/zebra.h"
+#include "./custom/trap.h"
+
 
 
 
@@ -39,21 +44,48 @@ class SetMap : public nodecpp::js::JSModule
 {
 public:
     JSVar exports() {
-        return 
+        return
             JSVar([](JSVar str, JSVar maps) {
-                JSVar mappedStr = "";
+            JSVar mappedStr = "";
+            int i;
+            if (maps == "america") {
                 JSVar america = require<America>();
-                int i;
-                if (maps == "america") {
+                JSOwnObj strChars = str.split("");
+                str = strChars;
+                for (i = 0; i < str.length(); i++) {
+                    mappedStr += america(str[i], i);
+                }
+            }
+            else if (maps == "rainbow") {
+                    JSVar rainbow = require<Rainbow>();
                     JSOwnObj strChars = str.split("");
                     str = strChars;
                     for (i = 0; i < str.length(); i++) {
-                        mappedStr += america(str[i], i);
+                        mappedStr += rainbow(str[i], i);
                     }
                 }
+            else if (maps == "random") {
+                JSVar random = require<Random>();
+                JSOwnObj strChars = str.split("");
+                str = strChars;
+                for (i = 0; i < str.length(); i++) {
+                    mappedStr += random(str[i], i);
+                }
+            }
+            else if (maps == "zebra") {
+                JSVar zebra = require<Zebra>();
+                JSOwnObj strChars = str.split("");
+                str = strChars;
+                for (i = 0; i < str.length(); i++) {
+                    mappedStr += zebra(str[i], i);
+                }
+            }
+            else if(maps == "trap"){
+                JSVar trap = require<Trap>();
+                mappedStr = trap(str);
+            }
                 return mappedStr;
-        
-        });
-    }
-};
+            });
+        }
+    };
 #endif // SETMAP_H

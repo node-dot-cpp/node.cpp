@@ -28,6 +28,7 @@
 #ifndef ZEBRA_H
 #define ZEBRA_H
 #include <js_compat.h>
+#include "../styles.h"
 
 
 using namespace nodecpp::js;
@@ -35,13 +36,13 @@ using namespace nodecpp::js;
 class Zebra : public nodecpp::js::JSModule
 {
 public:
-    JSVar zebra = JSVar([](JSVar colors) {
+    JSVar exports() {
         return
-            JSVar([colors](JSVar letter, JSVar i) {
-            return (i % 2).isStrictlyTheSame(0) ? letter : colors["inverse"](letter);
+            JSVar([](JSVar letter, JSVar i) {
+            JSVar styles = require<Styles>();
+            return (i % 2).isStrictlyTheSame(0) ? letter : styles(letter, "inverse");
                 });
-        });
-    JSVar exports() { return zebra; }
+    };
 };
 
 // 

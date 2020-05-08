@@ -66,7 +66,8 @@ private:
 public:
     JSVar exports() {
         JSVar trap = trap_;
-            JSVar runTheTrap = JSVar([trap](JSVar text, JSVar options) {
+            return  
+                JSVar([trap](JSVar text, JSVar options) {
                 JSVar result = "";
                 text = text || JSVar("Run the trap drop the bass");
                 JSOwnObj textChars = text.split("");
@@ -84,7 +85,7 @@ public:
                     });
                 return result;
                 });
-         return runTheTrap; }
+    }
 };
 #endif // TRAP_H
 

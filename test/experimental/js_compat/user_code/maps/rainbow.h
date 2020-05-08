@@ -29,28 +29,26 @@
 #define RAINBOW_H
 
 #include <js_compat.h>
-
+#include "../styles.h". ;
 
 using namespace nodecpp::js;
 class Rainbow : public nodecpp::js::JSModule
 {
 public:
     JSOwnObj rainbowColors_ = makeJSArray({ "red", "yellow", "green", "blue", "magenta" });
-
     JSVar exports() {
         JSVar rainbowColors = JSVar(rainbowColors_);
-        JSVar rainbow = JSVar([rainbowColors](JSVar colors) {
-            return
-                JSVar([colors, rainbowColors](JSVar letter, JSVar i) {
-            if (letter.isStrictlyTheSame( " " )) { // if (letter === ' ')
+        return
+            JSVar([rainbowColors](JSVar letter, JSVar i) {
+                JSVar result;
+                JSVar styles = require<Styles>();
+                if (letter.isStrictlyTheSame(" ")) { // if (letter === ' ')
                     return letter;
                 }
                 else {
-                    return colors[rainbowColors[i++ % rainbowColors.length()]](letter);
-                };
-                    });
+                    return result = styles(letter,rainbowColors[i++ % rainbowColors.length()]);
+                }      
             });
-        return  rainbow;
-    }
+    };
 };
 #endif // RAINBOW_H
