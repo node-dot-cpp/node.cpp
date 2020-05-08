@@ -179,6 +179,20 @@ namespace nodecpp {
 				nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f, args... ) );
 			}
 
+			template<class ... VarTX>
+			void assert( bool cond, nodecpp::string f, const VarTX& ... args )
+			{
+				if (!cond)
+					nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f.c_str(), args... ) );
+			}
+
+			template<class ... VarTX>
+			void assert( bool cond, const char* f, const VarTX& ... args )
+			{
+				if (!cond)
+					nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f, args... ) );
+			}
+
 		};
 	} // namespace js
 
