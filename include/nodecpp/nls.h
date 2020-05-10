@@ -154,29 +154,47 @@ namespace nodecpp {
 			template<class ... VarTX>
 			void log( nodecpp::string f, const VarTX& ... args )
 			{
-				// TODO: incrementing counters, etc
 				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f.c_str(), args... ) );
 			}
 
 			template<class ... VarTX>
 			void log( const char* f, const VarTX& ... args )
 			{
-				// TODO: incrementing counters, etc
 				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f, args... ) );
+			}
+
+			template<class ... VarTX>
+			void error( const VarTX& ... args )
+			{
+				// TODO: revise (printing to stderr)
+				nodecpp::string out;
+				_stringify4logging( out, args... );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", out );
 			}
 
 			template<class ... VarTX>
 			void error( nodecpp::string f, const VarTX& ... args )
 			{
-				// TODO: incrementing counters, etc
+				// TODO: revise (printing to stderr)
 				nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f.c_str(), args... ) );
 			}
 
 			template<class ... VarTX>
 			void error( const char* f, const VarTX& ... args )
 			{
-				// TODO: incrementing counters, etc
+				// TODO: revise (printing to stderr)
 				nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f, args... ) );
+			}
+
+			template<class ... VarTX>
+			void assert( bool cond, const VarTX& ... args )
+			{
+				if ( cond )
+					return;
+				// TODO: revise (printing to stderr)
+				nodecpp::string out;
+				_stringify4logging( out, args... );
+				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", out );
 			}
 
 			template<class ... VarTX>
