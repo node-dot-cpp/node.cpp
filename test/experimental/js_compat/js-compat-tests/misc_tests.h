@@ -120,81 +120,81 @@ public:
 		JSVar prefixAdder = object_with_explicit_types_2["prefix adder generator"]( "prefix + " );
 
 
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types );
-		console().log( "\n======\n{}\n=======\n", array_of_arrays );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2 );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["getStr"]() );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["echo"]( "echoing my cry" ) );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat2"]( "word1 ", "word2 " ) );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat3"]( "word1 ", "word2 ", "word3 " ) );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 ", "word4 " ) );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 " ) );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 " ) );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 " ) );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]() );
-		console().log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat_any"]( "word1 ", "word2 ", "word3 ", "word4 " ) );
-		console().log( "\n======\n{}\n=======\n", prefixAdder( "some text after" ) );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types );
+		console.log( "\n======\n{}\n=======\n", array_of_arrays );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2 );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["getStr"]() );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["echo"]( "echoing my cry" ) );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat2"]( "word1 ", "word2 " ) );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat3"]( "word1 ", "word2 ", "word3 " ) );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 ", "word4 " ) );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 ", "word3 " ) );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 ", "word2 " ) );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]( "word1 " ) );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat4"]() );
+		console.log( "\n======\n{}\n=======\n", object_with_explicit_types_2["concat_any"]( "word1 ", "word2 ", "word3 ", "word4 " ) );
+		console.log( "\n======\n{}\n=======\n", prefixAdder( "some text after" ) );
 
 		// misc math, etc
-		console().log( "\n======math=======\n" );
-		console().log( JSVar(3.5) % JSVar(2));
-		console().log( JSVar(-3.5) % JSVar(2));
-		console().log( JSVar(7.5) % JSVar(2.4));
-		console().log( JSVar("7.5") % JSVar("2.4"));
+		console.log( "\n======math=======\n" );
+		console.log( JSVar(3.5) % JSVar(2));
+		console.log( JSVar(-3.5) % JSVar(2));
+		console.log( JSVar(7.5) % JSVar(2.4));
+		console.log( JSVar("7.5") % JSVar("2.4"));
 
-		console().log( JSVar("abc") || JSVar("def"));
-		console().log( JSVar("") || JSVar("def"));
-		console().log( JSVar() || JSVar("def"));
-		console().log( JSVar(false) || JSVar("def"));
+		console.log( JSVar("abc") || JSVar("def"));
+		console.log( JSVar("") || JSVar("def"));
+		console.log( JSVar() || JSVar("def"));
+		console.log( JSVar(false) || JSVar("def"));
 
-		console().log( JSVar("ghi") && JSVar("jkl"));
-		console().log( JSVar("ghi") && JSVar(""));
-		console().log( JSVar("") && JSVar("jkl"));
-		console().log( JSVar("ghi") && JSVar());
-		console().log( JSVar("ghi") && JSVar(false));
+		console.log( JSVar("ghi") && JSVar("jkl"));
+		console.log( JSVar("ghi") && JSVar(""));
+		console.log( JSVar("") && JSVar("jkl"));
+		console.log( JSVar("ghi") && JSVar());
+		console.log( JSVar("ghi") && JSVar(false));
 
-		console().log( (JSVar("3"))++);
-		console().log( ++(JSVar("3")));
-		console().log( (JSVar("3"))--);
-		console().log( --(JSVar("3")));
+		console.log( (JSVar("3"))++);
+		console.log( ++(JSVar("3")));
+		console.log( (JSVar("3"))--);
+		console.log( --(JSVar("3")));
 
-		console().log( (JSVar("abc")).split());
-		console().log( (JSVar("abc")).split(""));
-		console().log( (JSVar("abc def ghi")).split(" "));
-		console().log( (JSVar(" abc def ghi ")).split( " "));
+		console.log( (JSVar("abc")).split());
+		console.log( (JSVar("abc")).split(""));
+		console.log( (JSVar("abc def ghi")).split(" "));
+		console.log( (JSVar(" abc def ghi ")).split( " "));
 
-		console().log( (array_of_arrays1["0"].concat( array_of_arrays1["1"], array_of_arrays1["2"] )));
-		console().log( ((makeJSArray())->concat(array_of_arrays1["0"], array_of_arrays1["1"], array_of_arrays1["2"] )));
+		console.log( (array_of_arrays1["0"].concat( array_of_arrays1["1"], array_of_arrays1["2"] )));
+		console.log( ((makeJSArray())->concat(array_of_arrays1["0"], array_of_arrays1["1"], array_of_arrays1["2"] )));
 
-		console().log( "\n======\n{}\n=======\n", array_of_arrays1.length() );
-		console().log( "\n======\n{}\n=======\n", array_of_arrays1["0"].length() );
+		console.log( "\n======\n{}\n=======\n", array_of_arrays1.length() );
+		console.log( "\n======\n{}\n=======\n", array_of_arrays1["0"].length() );
 
-		console().log(JSMath::floor(JSVar(3.14)));
-		console().log(JSMath::floor(JSVar(-3.14)));
+		console.log(JSMath::floor(JSVar(3.14)));
+		console.log(JSMath::floor(JSVar(-3.14)));
 
-		console().log( JSMath::random() );
-		console().log( JSMath::random() );
-		console().log( JSMath::random() );
+		console.log( JSMath::random() );
+		console.log( JSMath::random() );
+		console.log( JSMath::random() );
 
-		console().log( (JSVar("3_AbCd, #")).toLowerCase() );
-		console().log( (JSVar("3_AbCd, #")).toUpperCase() );
+		console.log( (JSVar("3_AbCd, #")).toLowerCase() );
+		console.log( (JSVar("3_AbCd, #")).toUpperCase() );
 
-		console().log( JSVar(3) += JSVar(4) );
-		console().log( JSVar(3) += JSVar("4") );
-		console().log( JSVar("3") += JSVar(4) );
-		console().log( JSVar(3) += JSVar(true) );
-		console().log( JSVar("3") += JSVar(false) );
-		console().log( JSVar(true) += JSVar("4") );
+		console.log( JSVar(3) += JSVar(4) );
+		console.log( JSVar(3) += JSVar("4") );
+		console.log( JSVar("3") += JSVar(4) );
+		console.log( JSVar(3) += JSVar(true) );
+		console.log( JSVar("3") += JSVar(false) );
+		console.log( JSVar(true) += JSVar("4") );
 
-		console().log( JSVar(3) + JSVar(4) );
-		console().log( JSVar(3) + JSVar("4") );
-		console().log( JSVar("3") + JSVar(4) );
-		console().log( JSVar(3) + JSVar(true) );
-		console().log( JSVar("3") + JSVar(false) );
-		console().log( JSVar(true) + JSVar("4") );
+		console.log( JSVar(3) + JSVar(4) );
+		console.log( JSVar(3) + JSVar("4") );
+		console.log( JSVar("3") + JSVar(4) );
+		console.log( JSVar(3) + JSVar(true) );
+		console.log( JSVar("3") + JSVar(false) );
+		console.log( JSVar(true) + JSVar("4") );
 
-		console().log( JSVar("Some people when confronted with a problem think I know Ill use regular expressions Now they have two problems").match( JSRegExp( "([a-zA-Z]+)[, .]", "g" )));
-		console().log( JSVar("Quick brown fox").replace( JSRegExp( "a|e|i|o|u", "g" ), JSVar("*") ));
+		console.log( JSVar("Some people when confronted with a problem think I know Ill use regular expressions Now they have two problems").match( JSRegExp( "([a-zA-Z]+)[, .]", "g" )));
+		console.log( JSVar("Quick brown fox").replace( JSRegExp( "a|e|i|o|u", "g" ), JSVar("*") ));
 	}
 };
 

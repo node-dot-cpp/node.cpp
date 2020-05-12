@@ -52,6 +52,8 @@ public:
 
 namespace nodecpp::js {
 
+	JSConsole console;
+
 	JSVar arguments() { return threadLocalData.currentArgs != nullptr ? threadLocalData.currentArgs : JSVar(); }
 
 	////////////////////////////////////////////////////////////   JSOwnObj ////

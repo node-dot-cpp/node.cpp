@@ -1479,6 +1479,109 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
+	class JSConsole // static functions only
+	{
+		template<class VarT1, class ... VarTX>
+		static 
+		void _stringify4logging( nodecpp::string& out, const VarT1& var1, const VarTX& ... args )
+		{
+			out += var1.toString();
+			_stringify4logging( out, args... );
+		}
+
+		template<class VarT1>
+		static 
+		void _stringify4logging( nodecpp::string& out, const VarT1& var1 )
+		{
+			out += var1.toString();
+		}
+
+	public:
+
+		template<class ... VarTX>
+		static 
+		void log( const VarTX& ... args )
+		{
+			// TODO: incrementing counters, etc
+			nodecpp::string out;
+			_stringify4logging( out, args... );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", out );
+		}
+
+		template<class ... VarTX>
+		static 
+		void log( nodecpp::string f, const VarTX& ... args )
+		{
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f.c_str(), args... ) );
+		}
+
+		template<class ... VarTX>
+		static 
+		void log( const char* f, const VarTX& ... args )
+		{
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f, args... ) );
+		}
+
+		template<class ... VarTX>
+		static 
+		void error( const VarTX& ... args )
+		{
+			// TODO: revise (printing to stderr)
+			nodecpp::string out;
+			_stringify4logging( out, args... );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", out );
+		}
+
+		template<class ... VarTX>
+		static 
+		void error( nodecpp::string f, const VarTX& ... args )
+		{
+			// TODO: revise (printing to stderr)
+			nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f.c_str(), args... ) );
+		}
+
+		template<class ... VarTX>
+		static 
+		void error( const char* f, const VarTX& ... args )
+		{
+			// TODO: revise (printing to stderr)
+			nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f, args... ) );
+		}
+
+		template<class ... VarTX>
+		static 
+		void assert( bool cond, const VarTX& ... args )
+		{
+			if ( cond )
+				return;
+			// TODO: revise (printing to stderr)
+			nodecpp::string out;
+			_stringify4logging( out, args... );
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", out );
+		}
+
+		template<class ... VarTX>
+		static 
+		void assert( bool cond, nodecpp::string f, const VarTX& ... args )
+		{
+			if (!cond)
+				nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f.c_str(), args... ) );
+		}
+
+		template<class ... VarTX>
+		static 
+		void assert( bool cond, const char* f, const VarTX& ... args )
+		{
+			if (!cond)
+				nodecpp::log::default_log::error( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "{}", nodecpp::format( f, args... ) );
+		}
+
+	};
+	static_assert( sizeof(JSConsole) <= 1 );
+	extern JSConsole console;
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+
 	template<class T>
 	JSVar require()
 	{
