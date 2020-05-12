@@ -551,6 +551,9 @@
     <ClInclude Include="..\user_code\maps\rainbow.h" />
     <ClInclude Include="..\user_code\styles.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\user_code\js_compat.natvis" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

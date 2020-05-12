@@ -272,7 +272,7 @@ namespace nodecpp::js {
 		static_assert( sizeof( Fn9Struct ) == fnsz );
 		static_assert( sizeof( Fn10Struct ) == fnsz );
 
-		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10 };
+		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10, type_max };
 		Type type = Type::undef;
 		static constexpr size_t memsz = fnsz > (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16) ? fnsz : (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16);
 		uintptr_t basemem[memsz/sizeof(uintptr_t)]; // note: we just cause it to be uintptr_t-aligned
@@ -701,7 +701,7 @@ namespace nodecpp::js {
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSRLValue& );
 
-		enum Type { undef, value, var };
+		enum Type { undef, value, var, type_max };
 		Type type = Type::undef;
 		using OwnedT = JSVarOrOwn*;
 		static constexpr size_t memsz = sizeof( OwnedT ) > sizeof( JSVarBase ) ? sizeof( OwnedT ) : sizeof( JSVarBase );
@@ -1029,7 +1029,7 @@ namespace nodecpp::js {
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarOrOwn& );
 
-		enum Type { undef, obj, var };
+		enum Type { undef, obj, var, type_max };
 		Type type = Type::undef;
 		using OwnedT = JSOwnObj;
 		static constexpr size_t memsz = sizeof( OwnedT ) > sizeof( JSVar ) ? sizeof( OwnedT ) : sizeof( JSVar );
@@ -1338,7 +1338,7 @@ namespace nodecpp::js {
 		}
 	};
 	inline owning_ptr<JSArray> makeJSArray() { return make_owning<JSArray>(); }
-	inline owning_ptr<JSArray> makeJSArray(std::initializer_list<JSInit> l) { return make_owning<JSArray>(l); } // TODO: ownership of args
+	inline owning_ptr<JSArray> makeJSArray(std::initializer_list<JSInit> l) { return make_owning<JSArray>(l); }
 
 	template<class callback>
 	void JSOwnObj::forEach( callback cb )

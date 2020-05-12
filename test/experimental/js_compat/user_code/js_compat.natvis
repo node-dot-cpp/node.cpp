@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  
+  <Type Name="nodecpp::js::JSString">
+    <DisplayString>{{value = {str_}}}</DisplayString>
+  </Type>
+  
+  <Type Name="nodecpp::js::JSVarBase">
+    <DisplayString Condition="type&gt; nodecpp::js::JSVarBase::Type::type_max || type &lt; 0">(uninitialized or ill-formed)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::undef">(undefined)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::boolean">{{boolean, value = {*(bool*)(basemem)}}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::num">{{number, value = {*(double*)(basemem)}}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::string">{{string, value = {((nodecpp::js::JSString*)(basemem))->str_}}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn0">function (0 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn1">function (1 arg)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn2">function (2 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn3">function (3 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn4">function (4 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn5">function (5 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn6">function (6 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn7">function (7 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn8">function (8 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn9">function (9 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn10">function (10 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::softptr &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) == 0">null</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::softptr &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) != 0">(object)</DisplayString>
+  </Type>
+  
+  <Type Name="nodecpp::js::JSOwnObj">
+    <DisplayString Condition="(*(uint64_t*)(&amp;ptr) &amp; 0xFFFFFFFFFFFC) == 0">null</DisplayString>
+    <DisplayString Condition="(*(uint64_t*)(&amp;ptr) &amp; 0xFFFFFFFFFFFC) != 0">(object)</DisplayString>
+  </Type>
+  
+  <Type Name="nodecpp::js::JSRLValue">
+    <DisplayString Condition="type&gt; nodecpp::js::JSRLValue::Type::type_max || type &lt; 0">(uninitialized or ill-formed)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::undef">(undefined)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::var">{{JSVar, value = {*(nodecpp::js::JSVar*)(basemem)}}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::value &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) == 0">null</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::value &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) != 0">(object)</DisplayString>
+  </Type>
+
+  <Type Name="nodecpp::js::JSVarOrOwn">
+    <DisplayString Condition="type&gt; nodecpp::js::JSVarOrOwn::Type::type_max || type &lt; 0">(uninitialized or ill-formed)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::undef">(undefined)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::var">{{JSVar, value = {*(nodecpp::js::JSVar*)(basemem)}}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::obj &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) == 0">null</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::obj &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) != 0">(object)</DisplayString>
+  </Type>
+</AutoVisualizer>
