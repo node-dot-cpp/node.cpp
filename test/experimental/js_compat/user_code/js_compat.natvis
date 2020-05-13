@@ -24,11 +24,17 @@
     <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn10">function (10 args)</DisplayString>
     <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::softptr &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) == 0">null</DisplayString>
     <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::softptr &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) != 0">(object)</DisplayString>
+    <Expand>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::softptr">(nodecpp::js::JSObject*)(*(uint64_t*)(&amp;ptr) &amp; 0xFFFFFFFFFFFC)"</ExpandedItem>
+    </Expand>
   </Type>
   
   <Type Name="nodecpp::js::JSOwnObj">
     <DisplayString Condition="(*(uint64_t*)(&amp;ptr) &amp; 0xFFFFFFFFFFFC) == 0">null</DisplayString>
     <DisplayString Condition="(*(uint64_t*)(&amp;ptr) &amp; 0xFFFFFFFFFFFC) != 0">(object)</DisplayString>
+    <Expand>
+      <ExpandedItem >(nodecpp::js::JSObject*)(*(uint64_t*)(&amp;ptr) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
+    </Expand>
   </Type>
   
   <Type Name="nodecpp::js::JSRLValue">
@@ -38,7 +44,7 @@
     <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::value">{{JSObject}}</DisplayString>
     <Expand>
       <ExpandedItem Condition="type == nodecpp::js::JSRLValue::Type::var">(nodecpp::js::JSVar*)(basemem)</ExpandedItem>
-      <ExpandedItem Condition="type == nodecpp::js::JSRLValue::Type::value">(nodecpp::js::JSObject*)(*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSRLValue::Type::value">(nodecpp::js::JSOwnObj*)(basemem)</ExpandedItem>
     </Expand>
   </Type>
 
@@ -49,7 +55,7 @@
     <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::obj">{{JSObject}}</DisplayString>
     <Expand>
       <ExpandedItem Condition="type == nodecpp::js::JSVarOrOwn::Type::var">(nodecpp::js::JSVar*)(basemem)</ExpandedItem>
-      <ExpandedItem Condition="type == nodecpp::js::JSVarOrOwn::Type::obj">(nodecpp::js::JSObject*)(*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarOrOwn::Type::obj">(nodecpp::js::JSOwnObj*)(basemem)</ExpandedItem>
     </Expand>
   </Type>
 </AutoVisualizer>
