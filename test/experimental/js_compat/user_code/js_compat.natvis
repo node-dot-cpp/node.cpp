@@ -34,19 +34,22 @@
   <Type Name="nodecpp::js::JSRLValue">
     <DisplayString Condition="type&gt; nodecpp::js::JSRLValue::Type::type_max || type &lt; 0">(uninitialized or ill-formed)</DisplayString>
     <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::undef">(undefined)</DisplayString>
-    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::var">{{JSVar, value = {*(nodecpp::js::JSVar*)(basemem)}}}</DisplayString>
-    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::value &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) == 0">null</DisplayString>
-    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::value &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) != 0">(object)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::var">{{JSVar}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::value">{{JSObject}}</DisplayString>
+    <Expand>
+      <ExpandedItem Condition="type == nodecpp::js::JSRLValue::Type::var">(nodecpp::js::JSVar*)(basemem)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSRLValue::Type::value">(nodecpp::js::JSObject*)(*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
+    </Expand>
   </Type>
 
   <Type Name="nodecpp::js::JSVarOrOwn">
     <DisplayString Condition="type&gt; nodecpp::js::JSVarOrOwn::Type::type_max || type &lt; 0">(uninitialized or ill-formed)</DisplayString>
     <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::undef">(undefined)</DisplayString>
     <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::var">{{JSVar}}</DisplayString>
-    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::obj &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) == 0">null</DisplayString>
-    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::obj &amp;&amp; (*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC) != 0">(object)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::obj">{{JSObject}}</DisplayString>
     <Expand>
       <ExpandedItem Condition="type == nodecpp::js::JSVarOrOwn::Type::var">(nodecpp::js::JSVar*)(basemem)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarOrOwn::Type::obj">(nodecpp::js::JSObject*)(*(uint64_t*)(basemem) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
     </Expand>
   </Type>
 </AutoVisualizer>
