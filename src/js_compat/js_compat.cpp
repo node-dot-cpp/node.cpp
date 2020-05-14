@@ -1388,7 +1388,7 @@ namespace nodecpp::js {
 			{
 				nodecpp::string fragment;
 				fragment += ch;
-				arr->elems.push_back( JSVar( fragment ) );
+				arr->arrayValues.push_back( JSVar( fragment ) );
 			}
 		}
 		else
@@ -1402,12 +1402,12 @@ namespace nodecpp::js {
 				size_t end = str.find( separ, start );
 				if ( end == nodecpp::string::npos )
 				{
-					arr->elems.push_back( JSVar( str.substr( start ) ) );
+					arr->arrayValues.push_back( JSVar( str.substr( start ) ) );
 					break;
 				}
 				else
 				{
-					arr->elems.push_back( JSVar( str.substr( start, end - start ) ) );
+					arr->arrayValues.push_back( JSVar( str.substr( start, end - start ) ) );
 					start = end + separ.size();
 				}
 			}
@@ -1476,7 +1476,7 @@ namespace nodecpp::js {
 			for (std::sregex_iterator i = words_begin; i != words_end; ++i)
 			{
 				nodecpp::string found = i->str().c_str();
-				ret->elems.push_back( JSVar( found ) );
+				ret->arrayValues.push_back( JSVar( found ) );
 			}
 			return ret;
 		}
@@ -2381,7 +2381,7 @@ namespace nodecpp::js {
 	void JSObject::concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret )
 	{
 		nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
-		ret->elems.push_back( JSVar( myPtr ) );
+		ret->arrayValues.push_back( JSVar( myPtr ) );
 	}
 
 	void JSObject::concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr )
@@ -2389,14 +2389,14 @@ namespace nodecpp::js {
 		if ( arr.type == JSVar::Type::softptr )
 			(*(arr._asSoft()))->concat_impl_add_me( ret );
 		else
-			ret->elems.push_back( arr );
+			ret->arrayValues.push_back( arr );
 	}
 
 	nodecpp::safememory::owning_ptr<JSArray> JSObject::keys()
 	{
 		nodecpp::safememory::owning_ptr<JSArray> ret = makeJSArray();
-		for ( auto& elem : pairs )
-			ret->elems.push_back( JSVar( elem.first ) );
+		for ( auto& elem : keyValuePairs )
+			ret->arrayValues.push_back( JSVar( elem.first ) );
 		return ret;
 	}
 
@@ -2404,14 +2404,14 @@ namespace nodecpp::js {
 
 	void JSArray::concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret )
 	{
-		for ( auto& el : elems )
+		for ( auto& el : arrayValues )
 		{
 			if ( el.type == JSVarOrOwn::Type::var )
-				ret->elems.push_back( el._asVar() );
+				ret->arrayValues.push_back( el._asVar() );
 			else
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, el.type == JSVarOrOwn::Type::obj, "unexpected type: {}", (size_t)(el.type) ); 
-				ret->elems.push_back( JSVar( el._asPtr() ) );
+				ret->arrayValues.push_back( JSVar( el._asPtr() ) );
 			}
 		}
 	}

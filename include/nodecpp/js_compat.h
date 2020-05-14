@@ -1087,14 +1087,14 @@ namespace nodecpp::js {
 
 	protected:
 		nodecpp::safememory::soft_this_ptr<JSObject> myThis;
-		nodecpp::map<nodecpp::string, JSVarOrOwn> pairs;
+		nodecpp::map<nodecpp::string, JSVarOrOwn> keyValuePairs;
 
 		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
 
 		void toString_( nodecpp::string& ret, const nodecpp::string offset, const nodecpp::string separator ) const { 
-			if ( pairs.size() == 0 )
+			if ( keyValuePairs.size() == 0 )
 				return;
-			for ( auto& entry : pairs )
+			for ( auto& entry : keyValuePairs )
 			{
 				nodecpp::string entrystr = nodecpp::format( "{}{}: {}{}", offset, entry.first, entry.second.toString(), separator );
 				ret += entrystr;
@@ -1103,14 +1103,14 @@ namespace nodecpp::js {
 		}
 
 		JSRLValue findOrAdd ( nodecpp::string s ) {
-			auto f = pairs.find( s );
-			if ( f != pairs.end() )
+			auto f = keyValuePairs.find( s );
+			if ( f != keyValuePairs.end() )
 			{
 				return f->second;
 			}
 			else
 			{
-				auto insret = pairs.insert( std::make_pair( s, JSVarOrOwn() ) );
+				auto insret = keyValuePairs.insert( std::make_pair( s, JSVarOrOwn() ) );
 				return insret.first->second;
 			}
 		}
@@ -1122,7 +1122,7 @@ namespace nodecpp::js {
 		JSObject(std::initializer_list<std::pair<nodecpp::string, JSInit>> l)
 		{
 			for ( auto& p : l )
-				pairs.insert( make_pair( p.first, std::move( p.second.toValue() ) ) );
+				keyValuePairs.insert( make_pair( p.first, std::move( p.second.toValue() ) ) );
 		}
 		virtual ~JSObject() {}
 
@@ -1166,23 +1166,23 @@ namespace nodecpp::js {
 		virtual void forEach( std::function<void(JSRLValue, size_t, JSVar)> cb ) { return; }
 		virtual bool has( const JSVar& var ) const
 		{
-			auto f = pairs.find( var.toString() );
-			return f != pairs.end();
+			auto f = keyValuePairs.find( var.toString() );
+			return f != keyValuePairs.end();
 		}
 		virtual bool has( size_t idx ) const
 		{
-			auto f = pairs.find( nodecpp::format( "{}", idx ) );
-			return f != pairs.end();
+			auto f = keyValuePairs.find( nodecpp::format( "{}", idx ) );
+			return f != keyValuePairs.end();
 		}
 		virtual bool has( double num ) const
 		{
-			auto f = pairs.find( nodecpp::format( "{}", num ) );
-			return f != pairs.end();
+			auto f = keyValuePairs.find( nodecpp::format( "{}", num ) );
+			return f != keyValuePairs.end();
 		}
 		virtual bool has( nodecpp::string str ) const
 		{
-			auto f = pairs.find( str );
-			return f != pairs.end();
+			auto f = keyValuePairs.find( str );
+			return f != keyValuePairs.end();
 		}
 
 		template<class ArrT, class ArrT1, class ... ArrTX>
@@ -1213,7 +1213,7 @@ namespace nodecpp::js {
 		friend class JSObject;
 		friend class JSVar; // for quick fill in split()
 
-		nodecpp::vector<JSVarOrOwn> elems;
+		nodecpp::vector<JSVarOrOwn> arrayValues;
 
 		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
 
@@ -1222,7 +1222,7 @@ namespace nodecpp::js {
 		JSArray(std::initializer_list<JSInit> l)
 		{
 			for ( auto& p : l )
-				elems.push_back( p.toValue() );
+				arrayValues.push_back( p.toValue() );
 		}
 	public:
 		virtual JSRLValue operator [] ( const JSVar& var )
@@ -1241,14 +1241,14 @@ namespace nodecpp::js {
 		}
 		virtual JSRLValue operator [] ( size_t idx )
 		{
-			if ( idx < elems.size() )
-				return elems[ idx ];
+			if ( idx < arrayValues.size() )
+				return arrayValues[ idx ];
 			else
 			{
-				elems.reserve( idx + 1 );
-				for ( size_t i=elems.size(); i<elems.capacity(); ++i )
-					elems.push_back( JSVarOrOwn() );
-				return elems[ idx ];
+				arrayValues.reserve( idx + 1 );
+				for ( size_t i=arrayValues.size(); i<arrayValues.capacity(); ++i )
+					arrayValues.push_back( JSVarOrOwn() );
+				return arrayValues[ idx ];
 			}
 		}
 		virtual JSRLValue operator [] ( const nodecpp::string& strIdx )
@@ -1269,47 +1269,47 @@ namespace nodecpp::js {
 
 		virtual void forEach( std::function<void(JSRLValue)> cb )
 		{
-			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				if ( elems[idx].type != JSRLValue::Type::undef )
-					cb( elems[idx] );
+			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
+				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+					cb( arrayValues[idx] );
 		}
 		virtual void forEach( std::function<void(JSRLValue, JSVar idx)> cb )
 		{
-			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				if ( elems[idx].type != JSRLValue::Type::undef )
-					cb( elems[idx], JSVar((double)idx) );
+			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
+				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+					cb( arrayValues[idx], JSVar((double)idx) );
 		}
 		virtual void forEach( std::function<void(JSRLValue, size_t idx)> cb )
 		{
-			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				if ( elems[idx].type != JSRLValue::Type::undef )
-					cb( elems[idx], idx );
+			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
+				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+					cb( arrayValues[idx], idx );
 		}
 		virtual void forEach( std::function<void(JSRLValue, JSVar idx, JSVar arr)> cb )
 		{
 			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
-			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				if ( elems[idx].type != JSRLValue::Type::undef )
-					cb( elems[idx], JSVar((double)idx), JSVar( myPtr ) );
+			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
+				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+					cb( arrayValues[idx], JSVar((double)idx), JSVar( myPtr ) );
 		}
 		virtual void forEach( std::function<void(JSRLValue, size_t idx, JSVar arr)> cb )
 		{
 			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
-			for ( size_t idx = 0; idx<elems.size(); ++idx )
-				if ( elems[idx].type != JSRLValue::Type::undef )
-					cb( elems[idx], idx, JSVar( myPtr ) );
+			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
+				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+					cb( arrayValues[idx], idx, JSVar( myPtr ) );
 		}
 		virtual nodecpp::string toString() const { 
 			nodecpp::string ret = "[ ";
-			if ( pairs.size() )
+			if ( keyValuePairs.size() )
 			{
 				toString_( ret, "", ", " );
-				for ( auto& x : elems )
+				for ( auto& x : arrayValues )
 					ret += nodecpp::format( ", {}", x.toString() );
 			}
-			else if ( elems.size() )
+			else if ( arrayValues.size() )
 			{
-				for ( auto& x : elems )
+				for ( auto& x : arrayValues )
 					ret += nodecpp::format( "{}, ", x.toString() );
 				ret.erase( ret.end() - 2 );
 			}
@@ -1318,20 +1318,20 @@ namespace nodecpp::js {
 		}
 		virtual bool has( size_t idx ) const
 		{
-			auto f = pairs.find( nodecpp::format( "{}", idx ) );
-			return f != pairs.end();
+			auto f = keyValuePairs.find( nodecpp::format( "{}", idx ) );
+			return f != keyValuePairs.end();
 		}
-		virtual double length() const { return elems.size(); }
+		virtual double length() const { return arrayValues.size(); }
 		virtual void setLength( double ln )
 		{
 			if ( ln >= 0 && ln <= UINT32_MAX )
 			{
 				size_t iln = (size_t)ln;
-				if ( ln < elems.size() )
-					elems.erase( elems.begin() + iln, elems.end() );
+				if ( ln < arrayValues.size() )
+					arrayValues.erase( arrayValues.begin() + iln, arrayValues.end() );
 				else 
-					for ( size_t n = elems.size(); n < iln; ++n )
-						elems.push_back( JSVar() );
+					for ( size_t n = arrayValues.size(); n < iln; ++n )
+						arrayValues.push_back( JSVar() );
 			}
 			else
 				throw;
