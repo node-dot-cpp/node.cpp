@@ -10,10 +10,19 @@
     </Expand>
   </Type>
 
+  <Type Name="::nodecpp::platform::ptrwithdatastructsdefs::optimized_ptr_with_zombie_property_">
+    <DisplayString>{{optimized_ptr_with_zombie_property_}}</DisplayString>
+    <Expand>
+      <Item Name="ptr">(void*)( (uintptr_t)ptr &amp; ~zombie_indicator)</Item>
+      <Item Name="is_zombie">((uintptr_t)ptr) == zombie_indicator</Item>
+    </Expand>
+  </Type>
+
   <Type Name="nodecpp::safememory::owning_ptr_impl&lt;*&gt;">
     <DisplayString>{{owning_ptr}}</DisplayString>
     <Expand>
       <ExpandedItem >($T1*)(*(uint64_t*)(&amp;t) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
+      <ExpandedItem >t</ExpandedItem>
     </Expand>
   </Type>
 
