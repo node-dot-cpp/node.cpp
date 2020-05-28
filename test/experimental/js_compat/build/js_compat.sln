@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2047
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29920.165
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "js_compat", "js_compat.vcxproj", "{2016F6D0-BDAC-42A1-A543-D732D98DE406}"
 EndProject
@@ -12,12 +12,16 @@ Global
 		automated_testing_release|x86 = automated_testing_release|x86
 		dbg_with_clustering|x64 = dbg_with_clustering|x64
 		dbg_with_clustering|x86 = dbg_with_clustering|x86
+		Debug_with_destruction_info|x64 = Debug_with_destruction_info|x64
+		Debug_with_destruction_info|x86 = Debug_with_destruction_info|x86
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		debug-clang|x64 = debug-clang|x64
 		debug-clang|x86 = debug-clang|x86
 		release_with_clustering|x64 = release_with_clustering|x64
 		release_with_clustering|x86 = release_with_clustering|x86
+		Release_with_destruction_info|x64 = Release_with_destruction_info|x64
+		Release_with_destruction_info|x86 = Release_with_destruction_info|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
@@ -34,6 +38,10 @@ Global
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x64.Build.0 = dbg_with_clustering|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x86.ActiveCfg = dbg_with_clustering|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x86.Build.0 = dbg_with_clustering|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug_with_destruction_info|x64.ActiveCfg = Debug_with_destruction_info|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug_with_destruction_info|x64.Build.0 = Debug_with_destruction_info|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug_with_destruction_info|x86.ActiveCfg = Debug_with_destruction_info|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug_with_destruction_info|x86.Build.0 = Debug_with_destruction_info|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.ActiveCfg = Debug|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.Build.0 = Debug|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x86.ActiveCfg = Debug|Win32
@@ -46,6 +54,10 @@ Global
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.release_with_clustering|x64.Build.0 = release_with_clustering|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.release_with_clustering|x86.ActiveCfg = release_with_clustering|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.release_with_clustering|x86.Build.0 = release_with_clustering|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release_with_destruction_info|x64.ActiveCfg = Release_with_destruction_info|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release_with_destruction_info|x64.Build.0 = Release_with_destruction_info|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release_with_destruction_info|x86.ActiveCfg = Release_with_destruction_info|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release_with_destruction_info|x86.Build.0 = Release_with_destruction_info|Win32
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x64.ActiveCfg = Release|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x64.Build.0 = Release|x64
 		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x86.ActiveCfg = Release|Win32

@@ -274,7 +274,9 @@ namespace nodecpp::js {
 
 		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10, type_max };
 		Type type = Type::undef;
-		static constexpr size_t memsz = fnsz > (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16) ? fnsz : (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16);
+		static constexpr size_t memsz1 = fnsz > (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16) ? fnsz : (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16);
+		static constexpr size_t memsz2 = sizeof(nodecpp::safememory::owning_ptr<int>) > memsz1 ? sizeof(nodecpp::safememory::owning_ptr<int>) : memsz1;
+		static constexpr size_t memsz = sizeof(nodecpp::safememory::soft_ptr<int>) > memsz2 ? sizeof(nodecpp::safememory::soft_ptr<int>) : memsz2;
 		uintptr_t basemem[memsz/sizeof(uintptr_t)]; // note: we just cause it to be uintptr_t-aligned
 
 		static constexpr size_t fnSize = sizeof( std::function<double(double)> );

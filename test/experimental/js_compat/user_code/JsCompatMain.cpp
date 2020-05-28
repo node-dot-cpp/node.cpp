@@ -6,6 +6,7 @@
 
 #include "./styles.h"
 #include "./setMap.h"
+#include "../js-compat-tests/misc_tests.h"
 
 
 
@@ -22,30 +23,35 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::instanceId = 0;
 	log.setCriticalLevel( nodecpp::log::LogLevel::err );
 
+	try {
+		JSVar styles = require<Styles>();
+		printf(styles(styles("COLOR TEST\n", "whiteBG"),"cyan").toString().c_str());
 
-	JSVar styles = require<Styles>();
-	printf(styles(styles("COLOR TEST\n", "whiteBG"),"cyan").toString().c_str());
-
-	JSVar setMap = require<SetMap>();
-	printf(setMap("MAPPED TEST\n", "america").toString().c_str());
-	printf(setMap("MAPPED TEST\n", "rainbow").toString().c_str());
-	printf(setMap("MAPPED TEST\n", "random").toString().c_str());
-	printf(setMap("MAPPED TEST\n", "zebra").toString().c_str());
-	printf(setMap("DROP THE BASS\n", "trap").toString().c_str());
+		JSVar setMap = require<SetMap>();
+		printf(setMap("MAPPED TEST\n", "america").toString().c_str());
+		printf(setMap("MAPPED TEST\n", "rainbow").toString().c_str());
+		printf(setMap("MAPPED TEST\n", "random").toString().c_str());
+		printf(setMap("MAPPED TEST\n", "zebra").toString().c_str());
+		printf(setMap("DROP THE BASS\n", "trap").toString().c_str());
 
 
 	
 
-	//auto& colors = import<Colors>();
-	//printf( "\n~~~~~~~~~~~~~~~\n%s\n~~~~~~~~~~~~~~~\n\n", colors.toString().c_str() );
+		//auto& colors = import<Colors>();
+		//printf( "\n~~~~~~~~~~~~~~~\n%s\n~~~~~~~~~~~~~~~\n\n", colors.toString().c_str() );
 
-	//auto& miscTests = import<MiscTests>();
-//	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", miscTests.toString().c_str() );
+		auto& miscTests = import<MiscTests>();
+	//	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", miscTests.toString().c_str() );
 
 
-	//JS TEST
-	/*require('./extendStringPrototype')();
-	console.log('drop the bass'.trap);*/
+		//JS TEST
+		/*require('./extendStringPrototype')();
+		console.log('drop the bass'.trap);*/
+	}
+	catch (nodecpp::error::error e)
+	{
+		e.log( log, nodecpp::log::LogLevel::fatal );
+	}
 	return 0;
 }
 

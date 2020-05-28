@@ -89,6 +89,10 @@ public:
 		  } )
 		});
 
+		JSOwnObj* pobj = &array_of_arrays1;
+		nodecpp::safememory::owning_ptr<JSObject>* pown = reinterpret_cast<nodecpp::safememory::owning_ptr<JSObject>*>(pobj);
+		JSObject& obj1 = *(*pown);
+
 		JSOwnObj arr1 = makeJSArray({0, 0 });
 		JSOwnObj arr2 = makeJSArray({1, 22 });
 
@@ -118,6 +122,10 @@ public:
 		arr2[0] = 999;
 
 		JSVar prefixAdder = object_with_explicit_types_2["prefix adder generator"]( "prefix + " );
+		JSVar strvar = "some text";
+		JSVar arrvar = object_with_explicit_types_2["bold"];
+		JSVar numvar = 17;
+		JSVar boolvar = true;
 
 
 		console.log( "\n======\n{}\n=======\n", object_with_explicit_types );
@@ -195,6 +203,10 @@ public:
 
 		console.log( JSVar("Some people when confronted with a problem think I know Ill use regular expressions Now they have two problems").match( JSRegExp( "([a-zA-Z]+)[, .]", "g" )));
 		console.log( JSVar("Quick brown fox").replace( JSRegExp( "a|e|i|o|u", "g" ), JSVar("*") ));
+
+		JSVar ttext = "abc";
+		JSVar nullvar = ttext.split( "" );
+		JSVar failed = nullvar[1];
 	}
 };
 
