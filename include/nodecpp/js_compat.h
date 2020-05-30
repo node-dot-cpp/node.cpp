@@ -1269,33 +1269,33 @@ namespace nodecpp::js {
 		virtual void forEach( std::function<void(JSRLValue)> cb )
 		{
 			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
-				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+				if ( arrayValues[idx].type != JSVarOrOwn::Type::undef )
 					cb( arrayValues[idx] );
 		}
 		virtual void forEach( std::function<void(JSRLValue, JSVar idx)> cb )
 		{
 			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
-				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+				if ( arrayValues[idx].type != JSVarOrOwn::Type::undef )
 					cb( arrayValues[idx], JSVar((double)idx) );
 		}
 		virtual void forEach( std::function<void(JSRLValue, size_t idx)> cb )
 		{
 			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
-				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+				if ( arrayValues[idx].type != JSVarOrOwn::Type::undef )
 					cb( arrayValues[idx], idx );
 		}
 		virtual void forEach( std::function<void(JSRLValue, JSVar idx, JSVar arr)> cb )
 		{
 			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
 			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
-				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+				if ( arrayValues[idx].type != JSVarOrOwn::Type::undef )
 					cb( arrayValues[idx], JSVar((double)idx), JSVar( myPtr ) );
 		}
 		virtual void forEach( std::function<void(JSRLValue, size_t idx, JSVar arr)> cb )
 		{
 			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
 			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
-				if ( arrayValues[idx].type != JSRLValue::Type::undef )
+				if ( arrayValues[idx].type != JSVarOrOwn::Type::undef )
 					cb( arrayValues[idx], idx, JSVar( myPtr ) );
 		}
 		virtual nodecpp::string toString() const { 
