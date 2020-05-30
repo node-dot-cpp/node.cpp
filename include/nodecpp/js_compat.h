@@ -279,9 +279,6 @@ namespace nodecpp::js {
 		static constexpr size_t memsz = sizeof(nodecpp::safememory::soft_ptr<int>) > memsz2 ? sizeof(nodecpp::safememory::soft_ptr<int>) : memsz2;
 		uintptr_t basemem[memsz/sizeof(uintptr_t)]; // note: we just cause it to be uintptr_t-aligned
 
-		static constexpr size_t fnSize = sizeof( std::function<double(double)> );
-		static_assert( fnSize == 64 );
-
 		using softptr2jsobj = nodecpp::safememory::soft_ptr<JSObject>;
 		using softptr2jsarr = nodecpp::safememory::soft_ptr<JSArray>;
 
