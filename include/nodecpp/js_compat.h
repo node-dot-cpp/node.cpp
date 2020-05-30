@@ -1611,35 +1611,35 @@ namespace nodecpp::js {
 } //namespace nodecpp::js
 
 template<>
-struct ::fmt::formatter<nodecpp::js::JSString>
+struct fmt::formatter<nodecpp::js::JSString>
 {
 	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
 	template<typename FormatContext> auto format(nodecpp::js::JSString const& str, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", str.str() );}
 };	
 
 template<>
-struct ::fmt::formatter<nodecpp::js::JSOwnObj>
+struct fmt::formatter<nodecpp::js::JSOwnObj>
 {
 	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
 	template<typename FormatContext> auto format(nodecpp::js::JSOwnObj const& obj, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", obj.toString() );}
 };	
 
 template<>
-struct ::fmt::formatter<nodecpp::js::JSVar>
+struct fmt::formatter<nodecpp::js::JSVar>
 {
 	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
 	template<typename FormatContext> auto format(nodecpp::js::JSVar const& v, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", v.toString() );}
 };	
 
 template<>
-struct ::fmt::formatter<nodecpp::js::JSVarOrOwn>
+struct fmt::formatter<nodecpp::js::JSVarOrOwn>
 {
 	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
 	template<typename FormatContext> auto format(nodecpp::js::JSVarOrOwn const& v, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", v.toString() );}
 };	
 
 template<>
-struct ::fmt::formatter<nodecpp::js::JSRLValue>
+struct fmt::formatter<nodecpp::js::JSRLValue>
 {
 	template<typename ParseContext> constexpr auto parse(ParseContext& ctx) {return ctx.begin();}
 	template<typename FormatContext> auto format(nodecpp::js::JSRLValue const& v, FormatContext& ctx) {return fmt::format_to(ctx.out(), "{}", v.toString() );}
