@@ -29,7 +29,7 @@
 #define RAINBOW_H
 
 #include <js_compat.h>
-#include "../styles.h". ;
+#include "../styles.h"
 
 using namespace nodecpp::js;
 class Rainbow : public nodecpp::js::JSModule

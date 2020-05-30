@@ -28,8 +28,8 @@
 #include <cmath>
 #include <iterator>
 #include <regex>
-#include "js_compat.h"
-#include "nls.h"
+#include "../../include/nodecpp/js_compat.h"
+#include "../../include/nodecpp/nls.h"
 
 namespace nodecpp {
 
