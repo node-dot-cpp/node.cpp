@@ -1467,13 +1467,18 @@ namespace nodecpp::js {
 		if ( type != Type::string )
 			throw;
 		nodecpp::safememory::owning_ptr<JSArray> ret = makeJSArray();
-		const nodecpp::string& str = _asStr()->str();
+//		const nodecpp::string& str = _asStr()->str();
+		const char* str = _asStr()->str().c_str();
 		if ( re.flags() & JSRegExp::Flags::g )
 		{
-			std::regex stdre( re.re() );
-			auto words_begin = std::sregex_iterator(str.begin(), str.end(), stdre);
-			auto words_end = std::sregex_iterator();
-			for (std::sregex_iterator i = words_begin; i != words_end; ++i)
+//			std::regex stdre( re.re() );
+			std::regex stdre( re.re().c_str() );
+//			auto words_begin = std::sregex_iterator(str.begin(), str.end(), stdre);
+			auto words_begin = std::cregex_iterator(str, str + _asStr()->str().size(), stdre);
+//			auto words_end = std::sregex_iterator();
+			auto words_end = std::cregex_iterator();
+//			for (std::sregex_iterator i = words_begin; i != words_end; ++i)
+			for (std::cregex_iterator i = words_begin; i != words_end; ++i)
 			{
 				nodecpp::string found = i->str().c_str();
 				ret->arrayValues.push_back( JSVar( found ) );

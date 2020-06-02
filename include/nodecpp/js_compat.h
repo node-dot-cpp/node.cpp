@@ -272,12 +272,14 @@ namespace nodecpp::js {
 		static_assert( sizeof( Fn9Struct ) == fnsz );
 		static_assert( sizeof( Fn10Struct ) == fnsz );
 
-		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10, type_max };
-		Type type = Type::undef;
 		static constexpr size_t memsz1 = fnsz > (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16) ? fnsz : (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16);
 		static constexpr size_t memsz2 = sizeof(nodecpp::safememory::owning_ptr<int>) > memsz1 ? sizeof(nodecpp::safememory::owning_ptr<int>) : memsz1;
-		static constexpr size_t memsz = sizeof(nodecpp::safememory::soft_ptr<int>) > memsz2 ? sizeof(nodecpp::safememory::soft_ptr<int>) : memsz2;
-		uintptr_t basemem[memsz/sizeof(uintptr_t)]; // note: we just cause it to be uintptr_t-aligned
+		static constexpr size_t memsz3 = sizeof(nodecpp::safememory::soft_ptr<int>) > memsz2 ? sizeof(nodecpp::safememory::soft_ptr<int>) : memsz2;
+		static constexpr size_t memsz = ((memsz3 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
+		uint8_t basemem[ memsz ];
+
+		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10, type_max };
+		Type type = Type::undef;
 
 		using softptr2jsobj = nodecpp::safememory::soft_ptr<JSObject>;
 		using softptr2jsarr = nodecpp::safememory::soft_ptr<JSArray>;
@@ -432,7 +434,7 @@ namespace nodecpp::js {
 				new(_asSoft())softptr2jsarr( ptr );
 			}
 		}
-		void init( Fn0T&& cb )
+		void initAsFn( Fn0T&& cb )
 		{
 			if ( type == Type::fn0 )
 				_asFn0()->fn = std::move( cb );
@@ -444,7 +446,7 @@ namespace nodecpp::js {
 				_asFn0()->fn = std::move( cb );
 			}
 		}
-		void init( Fn1T&& cb )
+		void initAsFn( Fn1T&& cb )
 		{
 			if ( type == Type::fn1 )
 				_asFn1()->fn = std::move( cb );
@@ -456,7 +458,7 @@ namespace nodecpp::js {
 				_asFn1()->fn = std::move( cb );
 			}
 		}
-		void init( Fn2T&& cb )
+		void initAsFn( Fn2T&& cb )
 		{
 			if ( type == Type::fn2 )
 				_asFn2()->fn = std::move( cb );
@@ -468,7 +470,7 @@ namespace nodecpp::js {
 				_asFn2()->fn = std::move( cb );
 			}
 		}
-		void init( Fn3T&& cb )
+		void initAsFn( Fn3T&& cb )
 		{
 			if ( type == Type::fn3 )
 				_asFn3()->fn = std::move( cb );
@@ -480,7 +482,7 @@ namespace nodecpp::js {
 				_asFn3()->fn = std::move( cb );
 			}
 		}
-		void init( Fn4T&& cb )
+		void initAsFn( Fn4T&& cb )
 		{
 			if ( type == Type::fn4 )
 				_asFn4()->fn = std::move( cb );
@@ -492,7 +494,7 @@ namespace nodecpp::js {
 				_asFn4()->fn = std::move( cb );
 			}
 		}
-		void init( Fn5T&& cb )
+		void initAsFn( Fn5T&& cb )
 		{
 			if ( type == Type::fn5 )
 				_asFn5()->fn = std::move( cb );
@@ -504,7 +506,7 @@ namespace nodecpp::js {
 				_asFn5()->fn = std::move( cb );
 			}
 		}
-		void init( Fn6T&& cb )
+		void initAsFn( Fn6T&& cb )
 		{
 			if ( type == Type::fn6 )
 				_asFn6()->fn = std::move( cb );
@@ -516,7 +518,7 @@ namespace nodecpp::js {
 				_asFn6()->fn = std::move( cb );
 			}
 		}
-		void init( Fn7T&& cb )
+		void initAsFn( Fn7T&& cb )
 		{
 			if ( type == Type::fn7 )
 				_asFn7()->fn = std::move( cb );
@@ -528,7 +530,7 @@ namespace nodecpp::js {
 				_asFn7()->fn = std::move( cb );
 			}
 		}
-		void init( Fn8T&& cb )
+		void initAsFn( Fn8T&& cb )
 		{
 			if ( type == Type::fn8 )
 				_asFn8()->fn = std::move( cb );
@@ -540,7 +542,7 @@ namespace nodecpp::js {
 				_asFn8()->fn = std::move( cb );
 			}
 		}
-		void init( Fn9T&& cb )
+		void initAsFn( Fn9T&& cb )
 		{
 			if ( type == Type::fn9 )
 				_asFn9()->fn = std::move( cb );
@@ -552,7 +554,7 @@ namespace nodecpp::js {
 				_asFn9()->fn = std::move( cb );
 			}
 		}
-		void init( Fn10T&& cb )
+		void initAsFn( Fn10T&& cb )
 		{
 			if ( type == Type::fn10 )
 				_asFn10()->fn = std::move( cb );
@@ -700,11 +702,14 @@ namespace nodecpp::js {
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSRLValue& );
 
+		using OwnedT = JSVarOrOwn*;
+		static constexpr size_t memsz1 = sizeof( OwnedT ) > sizeof( JSVarBase ) ? sizeof( OwnedT ) : sizeof( JSVarBase );
+		static constexpr size_t memsz = ((memsz1 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
+		uint8_t basemem[ memsz ];
+
 		enum Type { undef, value, var, type_max };
 		Type type = Type::undef;
-		using OwnedT = JSVarOrOwn*;
-		static constexpr size_t memsz = sizeof( OwnedT ) > sizeof( JSVarBase ) ? sizeof( OwnedT ) : sizeof( JSVarBase );
-		uintptr_t basemem[ memsz / sizeof( uintptr_t ) ];
+
 		JSVar& _asVar() { return *reinterpret_cast<JSVar*>( basemem ); }
 		OwnedT& _asValue() { return *reinterpret_cast<OwnedT*>( basemem ); }
 		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
@@ -814,7 +819,7 @@ namespace nodecpp::js {
 		JSVar() {}
 		JSVar( const JSVar& other ) { init( other );}
 		JSVar( const JSOwnObj& other ) { const nodecpp::js::JSVarBase::softptr2jsobj tmp = other.ptr; JSVarBase::init( tmp );}
-		JSVar( bool b ) { JSVarBase::init( b ); }
+//		JSVar( bool b ) { JSVarBase::init( b ); }
 		JSVar( double d ) { JSVarBase::init( d ); }
 		JSVar( int n ) { JSVarBase::init( (double)n ); }
 		JSVar( const nodecpp::string& str ) { JSVarBase::init( str ); }
@@ -823,17 +828,30 @@ namespace nodecpp::js {
 		JSVar( const char8_t* str ) { JSString str_( str ); JSVarBase::init( str_ ); }
 		JSVar( const softptr2jsobj ptr ) { JSVarBase::init( ptr ); }
 		JSVar( const softptr2jsarr ptr ) { JSVarBase::init( ptr ); }
-		JSVar( Fn0T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn1T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn2T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn3T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn4T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn5T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn6T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn7T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn8T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn9T&& cb ) { JSVarBase::init( std::move( cb ) ); }
-		JSVar( Fn10T&& cb ) { JSVarBase::init( std::move( cb ) ); }
+		JSVar( Fn0T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn1T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn2T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn3T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn4T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn5T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn6T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn7T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn8T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn9T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		JSVar( Fn10T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
+		template<class T>
+		JSVar( T b ) { 
+			if constexpr ( std::is_same<T, bool>::value )
+				JSVarBase::init( b );
+			else if constexpr ( std::is_same<T, float>::value )
+				JSVarBase::init( b );
+			else if constexpr ( std::is_same<T, double>::value )
+				JSVarBase::init( (double)b );
+			else if constexpr ( std::is_same<T, int>::value )
+				JSVarBase::init( (double)b );
+			else
+				JSVarBase::initAsFn( std::move( b ) );
+		}
 
 		~JSVar() { deinit(); }
 
@@ -848,17 +866,17 @@ namespace nodecpp::js {
 		JSVar& operator = ( const char8_t* str ) { JSString str_( str ); JSVarBase::init( str_ ); return * this; }
 		JSVar& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
 		JSVar& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
-		JSVar& operator = ( Fn0T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn1T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn2T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn3T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn4T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn5T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn6T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn7T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn8T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn9T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn10T&& cb ) { JSVarBase::init( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn0T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn1T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn2T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn3T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn4T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn5T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn6T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn7T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn8T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn9T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
+		JSVar& operator = ( Fn10T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
 
 		JSRLValue operator [] ( const JSVar& var ) const;
 		JSRLValue operator [] ( const JSRLValue& val ) const;
@@ -966,11 +984,14 @@ namespace nodecpp::js {
 	{
 		friend class JSRLValue;
 
+		using OwnedT = JSOwnObj;
+		static constexpr size_t memsz1 = sizeof( OwnedT ) > sizeof( JSVar ) ? sizeof( OwnedT ) : sizeof( JSVar );
+		static constexpr size_t memsz = ((memsz1 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
+		uint8_t basemem[ memsz ];
+
 		enum Type { undef, obj, var };
 		Type type = Type::undef;
-		using OwnedT = JSOwnObj;
-		static constexpr size_t memsz = sizeof( OwnedT ) > sizeof( JSVar ) ? sizeof( OwnedT ) : sizeof( JSVar );
-		uintptr_t basemem[ memsz / sizeof( uintptr_t ) ];
+
 		JSVar& _asVar() { return *reinterpret_cast<JSVar*>( basemem ); }
 		OwnedT& _asPtr() { return *reinterpret_cast<OwnedT*>( basemem ); }
 		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }
@@ -1028,11 +1049,14 @@ namespace nodecpp::js {
 		friend class JSArray;
 		friend nodecpp::string typeOf( const JSVarOrOwn& );
 
+		using OwnedT = JSOwnObj;
+		static constexpr size_t memsz1 = sizeof( OwnedT ) > sizeof( JSVar ) ? sizeof( OwnedT ) : sizeof( JSVar );
+		static constexpr size_t memsz = ((memsz1 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
+		uint8_t basemem[ memsz ];
+
 		enum Type { undef, obj, var, type_max };
 		Type type = Type::undef;
-		using OwnedT = JSOwnObj;
-		static constexpr size_t memsz = sizeof( OwnedT ) > sizeof( JSVar ) ? sizeof( OwnedT ) : sizeof( JSVar );
-		uintptr_t basemem[ memsz / sizeof( uintptr_t ) ];
+
 		JSVar& _asVar() { return *reinterpret_cast<JSVar*>( basemem ); }
 		OwnedT& _asPtr() { return *reinterpret_cast<OwnedT*>( basemem ); }
 		const JSVar& _asVar() const { return *reinterpret_cast<const JSVar*>( basemem ); }

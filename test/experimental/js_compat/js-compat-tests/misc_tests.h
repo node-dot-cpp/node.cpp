@@ -32,7 +32,7 @@
 
 namespace nodecpp {
 	template <class _Ty>
-	_NODISCARD constexpr std::remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept { // forward _Arg as movable
+	NODISCARD constexpr std::remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept { // forward _Arg as movable
 		return static_cast<std::remove_reference_t<_Ty>&&>(_Arg);
 	}
 } // using namespace nodecpp
