@@ -28,7 +28,7 @@
 #ifndef SETMAP_H
 #define SETMAP_H
 
-#include <js_compat.h>
+#include <nodecpp/js_compat.h>
 #include "./maps/america.h"
 #include "./maps/rainbow.h"
 #include "./maps/random.h"

@@ -28,7 +28,7 @@
 #ifndef MISC_TESTS_H
 #define MISC_TESTS_H
 
-#include <js_compat.h>
+#include <nodecpp/js_compat.h>
 
 namespace nodecpp {
 	template <class _Ty>

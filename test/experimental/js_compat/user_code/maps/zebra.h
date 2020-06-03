@@ -27,7 +27,7 @@
 
 #ifndef ZEBRA_H
 #define ZEBRA_H
-#include <js_compat.h>
+#include <nodecpp/js_compat.h>
 #include "../styles.h"
 
 

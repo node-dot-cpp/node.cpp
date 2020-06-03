@@ -28,7 +28,7 @@
 #ifndef AMERICA_H
 #define AMERICA_H
 
-#include <js_compat.h>
+#include <nodecpp/js_compat.h>
 #include "../styles.h"
 
 

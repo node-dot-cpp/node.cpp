@@ -27,7 +27,7 @@
 
 #ifndef RANDOM_H
 #define RANDOM_H
-#include <js_compat.h>
+#include <nodecpp/js_compat.h>
 #include "../styles.h"
 
 using namespace nodecpp::js;

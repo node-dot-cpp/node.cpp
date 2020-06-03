@@ -28,7 +28,7 @@
 #ifndef STYLES_H
 #define STYLES_H
 
-#include <js_compat.h>
+#include <nodecpp/js_compat.h>
 
 using namespace nodecpp::js;
 
