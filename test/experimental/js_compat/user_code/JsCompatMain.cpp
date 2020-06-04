@@ -25,14 +25,14 @@ int main( int argc, char *argv_[] )
 
 	try {
 		JSVar styles = require<Styles>();
-		printf(styles(styles("COLOR TEST\n", "whiteBG"),"cyan").toString().c_str());
+		printf( "%s", styles(styles("COLOR TEST\n", "whiteBG"),"cyan").toString().c_str() );
 
 		JSVar setMap = require<SetMap>();
-		printf(setMap("MAPPED TEST\n", "america").toString().c_str());
-		printf(setMap("MAPPED TEST\n", "rainbow").toString().c_str());
-		printf(setMap("MAPPED TEST\n", "random").toString().c_str());
-		printf(setMap("MAPPED TEST\n", "zebra").toString().c_str());
-		printf(setMap("DROP THE BASS\n", "trap").toString().c_str());
+		printf( "%s", setMap("MAPPED TEST\n", "america").toString().c_str() );
+		printf( "%s", setMap("MAPPED TEST\n", "rainbow").toString().c_str() );
+		printf( "%s", setMap("MAPPED TEST\n", "random").toString().c_str() );
+		printf( "%s", setMap("MAPPED TEST\n", "zebra").toString().c_str() );
+		printf( "%s", setMap("DROP THE BASS\n", "trap").toString().c_str() );
 
 
 	
