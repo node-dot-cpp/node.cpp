@@ -44,7 +44,7 @@ public:
         return
                 JSVar([avaible](JSVar letter, JSVar i) { 
                 JSVar styles = require<Styles>();
-                return letter.isStrictlyTheSame(" ") ? letter : styles(letter ,available[letter,JSMath::random() * (available.length() - 2)]);
+                return letter.isStrictlyTheSame(" ") ? letter : styles(letter, available[JSMath::random() * (available.length() - 2)]);
                     });
             };
     };
