@@ -1161,7 +1161,7 @@ namespace nodecpp::js {
 			ret.erase( ret.size() - separator.size(), separator.size() );
 		}
 
-		JSRLValue findOrAdd ( nodecpp::string s ) {
+		JSRLValue findOrAdd ( const nodecpp::string& s ) {
 			auto f = keyValuePairs.find( s );
 			if ( f != keyValuePairs.end() )
 			{
@@ -1205,9 +1205,9 @@ namespace nodecpp::js {
 		{
 			return findOrAdd( key );
 		}
-		virtual JSRLValue operator [] ( const JSString& key ) const { return operator [] ( key.str() ); }
-		virtual JSRLValue operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s.str()); }
-		virtual JSRLValue operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
+		virtual JSRLValue operator [] ( const JSString& key ) { return findOrAdd( key.str() ); }
+		virtual JSRLValue operator [] ( const char8_t* key ) { JSString s(key); return operator [] (s.str()); }
+		virtual JSRLValue operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
 		virtual JSRLValue operator [] ( const nodecpp::string_literal& key ) { nodecpp::string s( key.c_str() ); return operator [] (s); }
 
 		double toNumber() const { return NAN; }
@@ -1321,9 +1321,9 @@ namespace nodecpp::js {
 			}
 			return JSObject::operator[](strIdx);
 		}
-		virtual JSRLValue operator [] ( const JSString& key ) const { return operator [] ( key.str() ); }
-		virtual JSRLValue operator [] ( const char8_t* key ) const { JSString s(key); return operator [] (s.str()); }
-		virtual JSRLValue operator [] ( const char* key ) const { nodecpp::string s(key); return operator [] (s); }
+		virtual JSRLValue operator [] (const JSString& key) { const nodecpp::string& k1 = key.str(); return operator [] ( k1 ); }
+		virtual JSRLValue operator [] ( const char8_t* key ) { JSString s(key); return operator [] (s.str()); }
+		virtual JSRLValue operator [] ( const char* key ) { nodecpp::string s(key); return operator [] (s); }
 		virtual JSRLValue operator [] ( const nodecpp::string_literal& key ) { nodecpp::string s( key.c_str() ); return operator [] (s); }
 
 		virtual void forEach( std::function<void(JSRLValue)> cb )
