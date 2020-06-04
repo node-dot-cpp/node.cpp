@@ -172,7 +172,7 @@ namespace nodecpp::js {
 						auto pstr = _asStr();
 						char* end;
 						size_t idx = strtol( str.c_str(), &end, 10 );
-						if ( end - str.c_str() == str.size() )
+						if ( end == str.c_str() + str.size() )
 							return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 						else
 							return JSRLValue(); // TODO: mignt be something else!!!
@@ -223,7 +223,7 @@ namespace nodecpp::js {
 						auto pstr = _asStr();
 						char* end;
 						size_t idx = strtol( str.c_str(), &end, 10 );
-						if ( end - str.c_str() == str.size() )
+						if ( end == str.c_str() + str.size() )
 							return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 						else
 							return JSRLValue(); // TODO: mignt be something else!!!
@@ -254,7 +254,7 @@ namespace nodecpp::js {
 			case Type::string:
 			{
 				auto pstr = _asStr();
-				if ( idx < pstr->size() )
+				if ( (size_t)idx < pstr->size() )
 					return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) ); // TODO: ownership
 				else
 				return JSRLValue(); // TODO: mignt be something else!!!
@@ -308,7 +308,7 @@ namespace nodecpp::js {
 					auto pstr = _asStr();
 					char* end;
 					size_t idx = strtol( key.c_str(), &end, 10 );
-					if ( end - key.c_str() == key.size() )
+					if ( end == key.c_str() + key.size() )
 						return JSRLValue::from( JSVar( JSString( pstr->charAt( idx ) ) ) );
 				}
 				return JSRLValue(); // TODO: mignt be something else!!!
@@ -1200,7 +1200,7 @@ namespace nodecpp::js {
 			{
 				char* end = nullptr;
 				double ret = strtod(_asStr()->c_str(), &end);
-				if ( end - _asStr()->c_str() == _asStr()->size() )
+				if ( end == _asStr()->c_str() + _asStr()->size() )
 					return ret;
 				return NAN;
 			}

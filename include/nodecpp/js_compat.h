@@ -1316,7 +1316,7 @@ namespace nodecpp::js {
 			{
 				char* end;
 				size_t idx = strtol( strIdx.c_str(), &end, 10 ); // TODO: for floating ?
-				if ( end - strIdx.c_str() == strIdx.size() )
+				if ( end == strIdx.c_str() + strIdx.size() )
 					return operator [] ( idx );
 			}
 			return JSObject::operator[](strIdx);
