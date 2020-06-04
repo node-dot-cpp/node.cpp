@@ -35,16 +35,16 @@ using namespace nodecpp::js;
 class Random : public nodecpp::js::JSModule
 {
 private:
-    JSOwnObj avaible_ = makeJSArray({ "underline", "inverse", "grey", "yellow", "red", "green","blue",
+    JSOwnObj available_ = makeJSArray({ "underline", "inverse", "grey", "yellow", "red", "green","blue",
                                   "white", "cyan", "magenta", "brightYellow", "brightRed","brightGreen", 
                                   "brightBlue", "brightWhite", "brightCyan", "brightMagenta" });
 public:
     JSVar exports() {
-        JSVar avaible = avaible_;
+        JSVar available = available_;
         return
                 JSVar([avaible](JSVar letter, JSVar i) { 
                 JSVar styles = require<Styles>();
-                return letter.isStrictlyTheSame(" ") ? letter : styles(letter ,avaible[letter,JSMath::random() * (avaible.length() - 2)]);
+                return letter.isStrictlyTheSame(" ") ? letter : styles(letter ,available[letter,JSMath::random() * (available.length() - 2)]);
                     });
             };
     };
