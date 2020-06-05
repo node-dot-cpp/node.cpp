@@ -390,7 +390,7 @@ namespace nodecpp::js {
 			}
 			type = Type::undef;
 		}
-		void init( bool b )
+		void initAsBool( bool b )
 		{
 			if ( type == Type::boolean )
 				*_asBool() = b;
@@ -456,7 +456,7 @@ namespace nodecpp::js {
 				new(_asSoft())softptr2jsarr( ptr );
 			}
 		}
-		void initAsFn( Fn0T&& cb )
+		void init( Fn0T&& cb )
 		{
 			if ( type == Type::fn0 )
 				_asFn0()->fn = std::move( cb );
@@ -468,7 +468,7 @@ namespace nodecpp::js {
 				_asFn0()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn1T&& cb )
+		void init( Fn1T&& cb )
 		{
 			if ( type == Type::fn1 )
 				_asFn1()->fn = std::move( cb );
@@ -480,7 +480,7 @@ namespace nodecpp::js {
 				_asFn1()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn2T&& cb )
+		void init( Fn2T&& cb )
 		{
 			if ( type == Type::fn2 )
 				_asFn2()->fn = std::move( cb );
@@ -492,7 +492,7 @@ namespace nodecpp::js {
 				_asFn2()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn3T&& cb )
+		void init( Fn3T&& cb )
 		{
 			if ( type == Type::fn3 )
 				_asFn3()->fn = std::move( cb );
@@ -504,7 +504,7 @@ namespace nodecpp::js {
 				_asFn3()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn4T&& cb )
+		void init( Fn4T&& cb )
 		{
 			if ( type == Type::fn4 )
 				_asFn4()->fn = std::move( cb );
@@ -516,7 +516,7 @@ namespace nodecpp::js {
 				_asFn4()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn5T&& cb )
+		void init( Fn5T&& cb )
 		{
 			if ( type == Type::fn5 )
 				_asFn5()->fn = std::move( cb );
@@ -528,7 +528,7 @@ namespace nodecpp::js {
 				_asFn5()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn6T&& cb )
+		void init( Fn6T&& cb )
 		{
 			if ( type == Type::fn6 )
 				_asFn6()->fn = std::move( cb );
@@ -540,7 +540,7 @@ namespace nodecpp::js {
 				_asFn6()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn7T&& cb )
+		void init( Fn7T&& cb )
 		{
 			if ( type == Type::fn7 )
 				_asFn7()->fn = std::move( cb );
@@ -552,7 +552,7 @@ namespace nodecpp::js {
 				_asFn7()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn8T&& cb )
+		void init( Fn8T&& cb )
 		{
 			if ( type == Type::fn8 )
 				_asFn8()->fn = std::move( cb );
@@ -564,7 +564,7 @@ namespace nodecpp::js {
 				_asFn8()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn9T&& cb )
+		void init( Fn9T&& cb )
 		{
 			if ( type == Type::fn9 )
 				_asFn9()->fn = std::move( cb );
@@ -576,7 +576,7 @@ namespace nodecpp::js {
 				_asFn9()->fn = std::move( cb );
 			}
 		}
-		void initAsFn( Fn10T&& cb )
+		void init( Fn10T&& cb )
 		{
 			if ( type == Type::fn10 )
 				_asFn10()->fn = std::move( cb );
@@ -843,108 +843,40 @@ namespace nodecpp::js {
 		JSVar() {}
 		JSVar( const JSVar& other ) { init( other );}
 		JSVar( const JSOwnObj& other ) { const nodecpp::js::JSVarBase::softptr2jsobj tmp = other.ptr; JSVarBase::init( tmp );}
-//		JSVar( bool b ) { JSVarBase::init( b ); }
-//		JSVar( double d ) { JSVarBase::init( d ); }
-//		JSVar( int n ) { JSVarBase::init( (double)n ); }
-//		JSVar( const nodecpp::string& str ) { JSVarBase::init( str ); }
-//		JSVar( const JSString& str ) { JSVarBase::init( str ); }
+		JSVar( double d ) { JSVarBase::init( d ); }
+		JSVar( int n ) { JSVarBase::init( (double)n ); }
+		JSVar( const nodecpp::string& str ) { JSVarBase::init( str ); }
+		JSVar( const JSString& str ) { JSVarBase::init( str ); }
 		JSVar( const char* str ) { nodecpp::string str_( str ); JSVarBase::init( str_ ); }
 		JSVar( const char8_t* str ) { JSString str_( str ); JSVarBase::init( str_ ); }
 		JSVar( const softptr2jsobj ptr ) { JSVarBase::init( ptr ); }
 		JSVar( const softptr2jsarr ptr ) { JSVarBase::init( ptr ); }
-		/*JSVar( Fn0T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn1T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn2T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn3T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn4T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn5T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn6T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn7T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn8T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn9T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }
-		JSVar( Fn10T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); }*/
 		template<class T>
 		JSVar( T val ) { 
 			if constexpr ( std::is_same<T, bool>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, float>::value )
-				JSVarBase::init( (double)val );
-			else if constexpr ( std::is_same<T, double>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, int>::value )
-				JSVarBase::init( (double)val );
-			else if constexpr ( std::is_same<T, const JSVar&>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, JSVar>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, const JSOwnObj&>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, JSOwnObj>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, const nodecpp::string&>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, nodecpp::string>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, const JSString&>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, JSString>::value )
-				JSVarBase::init( val );
+				JSVarBase::initAsBool( val );
 			else
-				JSVarBase::initAsFn( std::move( val ) );
+				JSVarBase::init( std::move( val ) );
 		}
 
 		~JSVar() { deinit(); }
 
 		JSVar& operator = ( const JSVar& other ) { init( other ); return *this; }
 		JSVar& operator = ( const JSOwnObj& other ) { const nodecpp::js::JSVarBase::softptr2jsobj tmp = other.ptr; JSVarBase::init( tmp ); return *this; }
-//		JSVar& operator = ( bool b ) { JSVarBase::init( b ); return *this; }
-//		JSVar& operator = ( double d ) { JSVarBase::init( d ); return *this; }
-//		JSVar& operator = ( int n ) { JSVarBase::init( (double)n ); return *this; }
-//		JSVar& operator = ( const nodecpp::string& str ) { JSVarBase::init( str ); return *this; }
-//		JSVar& operator = ( const JSString& str ) { JSVarBase::init( str ); return *this; }
+		JSVar& operator = ( double d ) { JSVarBase::init( d ); return *this; }
+		JSVar& operator = ( int n ) { JSVarBase::init( (double)n ); return *this; }
+		JSVar& operator = ( const nodecpp::string& str ) { JSVarBase::init( str ); return *this; }
+		JSVar& operator = ( const JSString& str ) { JSVarBase::init( str ); return *this; }
 		JSVar& operator = ( const char* str ) { nodecpp::string str_( str ); JSVarBase::init( str_ ); return * this; }
 		JSVar& operator = ( const char8_t* str ) { JSString str_( str ); JSVarBase::init( str_ ); return * this; }
 		JSVar& operator = ( softptr2jsobj ptr ) { JSVarBase::init( ptr ); return *this; }
 		JSVar& operator = ( softptr2jsarr ptr ) { JSVarBase::init( ptr ); return *this; }
-		/*JSVar& operator = ( Fn0T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn1T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn2T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn3T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn4T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn5T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn6T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn7T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn8T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn9T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }
-		JSVar& operator = ( Fn10T&& cb ) { JSVarBase::initAsFn( std::move( cb ) ); return *this; }*/
 		template<class T>
 		JSVar& operator = ( T val ) { 
 			if constexpr ( std::is_same<T, bool>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, float>::value )
-				JSVarBase::init( (double)val );
-			else if constexpr ( std::is_same<T, double>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, int>::value )
-				JSVarBase::init( (double)val );
-			else if constexpr ( std::is_same<T, const JSVar&>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, JSVar>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, const JSOwnObj&>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, JSOwnObj>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, const nodecpp::string&>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, nodecpp::string>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, const JSString&>::value )
-				JSVarBase::init( val );
-			else if constexpr ( std::is_same<T, JSString>::value )
-				JSVarBase::init( val );
+				JSVarBase::initAsBool( val );
 			else
-				JSVarBase::initAsFn( std::move( val ) );
+				JSVarBase::init( std::move( val ) );
 			return *this;
 		}
 
