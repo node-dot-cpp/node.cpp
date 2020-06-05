@@ -205,8 +205,10 @@ public:
 		console.log( JSVar("Quick brown fox").replace( JSRegExp( "a|e|i|o|u", "g" ), JSVar("*") ));
 
 		JSVar ttext = "abc";
-		JSVar nullvar = ttext.split( "" );
-		JSVar failed = nullvar[1];
+		JSOwnObj badarr = makeJSArray({ 0, 0 });
+		JSVar badvar = ttext.split( "" );
+		badarr[0] = badvar;
+		JSVar failed = badarr[0][1];
 	}
 };
 
