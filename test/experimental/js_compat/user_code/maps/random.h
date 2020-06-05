@@ -42,7 +42,7 @@ public:
     JSVar exports() {
         JSVar available = available_;
         return
-                JSVar([avaible](JSVar letter, JSVar i) { 
+                JSVar([available](JSVar letter, JSVar i) { 
                 JSVar styles = require<Styles>();
                 return letter.isStrictlyTheSame(" ") ? letter : styles(letter, available[JSMath::random() * (available.length() - 2)]);
                     });
