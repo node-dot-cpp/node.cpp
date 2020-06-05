@@ -260,75 +260,75 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_with_destruction_info|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_with_destruction_info|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_with_destruction_info|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release_with_clustering|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_with_destruction_info|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release_with_clustering|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../safe_memory/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -685,7 +685,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\error.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\ip_and_port.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\js_compat.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\logging.h" />
@@ -697,6 +696,7 @@
     <ClInclude Include="..\user_code\custom\trap.h" />
     <ClInclude Include="..\user_code\maps\america.h" />
     <ClInclude Include="..\user_code\maps\rainbow.h" />
+    <ClInclude Include="..\user_code\maps\random.h" />
     <ClInclude Include="..\user_code\styles.h" />
   </ItemGroup>
   <ItemGroup>
