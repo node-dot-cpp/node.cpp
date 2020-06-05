@@ -275,11 +275,30 @@ namespace nodecpp::js {
 		static_assert( sizeof( Fn9Struct ) == fnsz );
 		static_assert( sizeof( Fn10Struct ) == fnsz );
 
+		static constexpr size_t own_ptr_alignment = std::alignment_of_v<nodecpp::safememory::owning_ptr<int>>;
+		static constexpr size_t fn_alignment = std::alignment_of_v<Fn1Struct>;
+		static_assert(std::alignment_of_v<Fn1Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn2Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn3Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn4Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn5Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn6Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn7Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn8Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn9Struct> == fn_alignment );
+		static_assert( std::alignment_of_v<Fn10Struct> == fn_alignment );
+		static constexpr size_t soft_ptr_alignment = std::alignment_of_v<nodecpp::safememory::soft_ptr<int>>;
+		static constexpr size_t js_str_alignment = std::alignment_of_v<JSString>;
+		static constexpr size_t basemem_alignment1 = own_ptr_alignment > soft_ptr_alignment ? own_ptr_alignment : soft_ptr_alignment;
+		static constexpr size_t basemem_alignment2 = basemem_alignment1 > fn_alignment ? basemem_alignment1 : fn_alignment;
+		static constexpr size_t basemem_alignment = basemem_alignment2 > js_str_alignment ? basemem_alignment2 : js_str_alignment;
+
 		static constexpr size_t memsz1 = fnsz > (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16) ? fnsz : (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16);
 		static constexpr size_t memsz2 = sizeof(nodecpp::safememory::owning_ptr<int>) > memsz1 ? sizeof(nodecpp::safememory::owning_ptr<int>) : memsz1;
 		static constexpr size_t memsz3 = sizeof(nodecpp::safememory::soft_ptr<int>) > memsz2 ? sizeof(nodecpp::safememory::soft_ptr<int>) : memsz2;
 		static constexpr size_t memsz = ((memsz3 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
-		uint8_t basemem[ memsz ];
+
+		alignas(basemem_alignment) uint8_t basemem[ memsz ];
 
 		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10, type_max };
 		Type type = Type::undef;
@@ -708,7 +727,9 @@ namespace nodecpp::js {
 		using OwnedT = JSVarOrOwn*;
 		static constexpr size_t memsz1 = sizeof( OwnedT ) > sizeof( JSVarBase ) ? sizeof( OwnedT ) : sizeof( JSVarBase );
 		static constexpr size_t memsz = ((memsz1 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
-		uint8_t basemem[ memsz ];
+
+		static constexpr size_t basemem_alignment = std::alignment_of_v<JSVarBase> > std::alignment_of_v<OwnedT> ? std::alignment_of_v<JSVarBase> : std::alignment_of_v<OwnedT>;
+		alignas(basemem_alignment) uint8_t basemem[memsz];
 
 		enum Type { undef, value, var, type_max };
 		Type type = Type::undef;
@@ -1023,7 +1044,8 @@ namespace nodecpp::js {
 		using OwnedT = JSOwnObj;
 		static constexpr size_t memsz1 = sizeof( OwnedT ) > sizeof( JSVar ) ? sizeof( OwnedT ) : sizeof( JSVar );
 		static constexpr size_t memsz = ((memsz1 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
-		uint8_t basemem[ memsz ];
+		static constexpr size_t basemem_alignment = std::alignment_of_v<JSVar> > std::alignment_of_v<OwnedT> ? std::alignment_of_v<JSVar> : std::alignment_of_v<OwnedT>;
+		alignas(basemem_alignment) uint8_t basemem[memsz];
 
 		enum Type { undef, obj, var };
 		Type type = Type::undef;
@@ -1088,7 +1110,8 @@ namespace nodecpp::js {
 		using OwnedT = JSOwnObj;
 		static constexpr size_t memsz1 = sizeof( OwnedT ) > sizeof( JSVar ) ? sizeof( OwnedT ) : sizeof( JSVar );
 		static constexpr size_t memsz = ((memsz1 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
-		uint8_t basemem[ memsz ];
+		static constexpr size_t basemem_alignment = std::alignment_of_v<JSVar> > std::alignment_of_v<OwnedT> ? std::alignment_of_v<JSVar> : std::alignment_of_v<OwnedT>;
+		alignas(basemem_alignment) uint8_t basemem[memsz];
 
 		enum Type { undef, obj, var, type_max };
 		Type type = Type::undef;
