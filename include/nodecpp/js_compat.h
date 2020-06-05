@@ -1204,7 +1204,7 @@ namespace nodecpp::js {
 		JSObject(std::initializer_list<std::pair<nodecpp::string, JSInit>> l)
 		{
 			for ( auto& p : l )
-				keyValuePairs.insert( make_pair( p.first, std::move( p.second.toValue() ) ) );
+				keyValuePairs.insert( make_pair( p.first, p.second.toValue() ) );
 		}
 		virtual ~JSObject() {}
 
