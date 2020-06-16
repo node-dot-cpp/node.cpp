@@ -1849,6 +1849,25 @@ namespace nodecpp::js {
 		}
 	}
 
+	JSRLValue::JSRLValue(JSRLValue&& other) {
+		type = other.type;
+		switch (other.type)
+		{
+		case Type::undef:
+			break;
+		case Type::var:
+			new(&(_asVar()))JSVar(other._asVar());
+			other.type = Type::undef;
+			break;
+		case Type::value:
+			_asValue() = std::move(other._asValue());
+			other.type = Type::undef;
+			break;
+		default:
+			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type);
+		}
+	}
+
 	void JSRLValue::initBy( const JSVar& var ) {
 		new(&(_asVar()))JSVar( var );
 		type = Type::var;

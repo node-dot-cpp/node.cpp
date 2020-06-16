@@ -43,15 +43,20 @@ int main( int argc, char *argv_[] )
 		auto& miscTests = import<MiscTests>();
 	//	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", miscTests.toString().c_str() );
 
-
 		//JS TEST
 		/*require('./extendStringPrototype')();
 		console.log('drop the bass'.trap);*/
 	}
 	catch (nodecpp::error::error e)
 	{
-		e.log( log, nodecpp::log::LogLevel::fatal );
+		e.log(log, nodecpp::log::LogLevel::fatal);
 	}
+	catch (...)
+	{
+		nodecpp::log::default_log::fatal("Unknown error happened. About to exit...");
+		return 0;
+	}
+	nodecpp::log::default_log::fatal( "About to exit..." );
 	return 0;
 }
 

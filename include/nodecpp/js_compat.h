@@ -750,10 +750,12 @@ namespace nodecpp::js {
 		JSRLValue& operator = ( JSVarOrOwn& obj );
 
 	public:
-		JSRLValue( const JSRLValue& other);
-		JSRLValue& operator = ( const JSRLValue& other );
-		JSRLValue& operator = ( const JSVar& var );
-		JSRLValue& operator = ( JSOwnObj&& obj );
+		JSRLValue(const JSRLValue& other);
+		JSRLValue(JSRLValue&& other);
+		JSRLValue& operator = (const JSRLValue& other);
+		JSRLValue& operator = (JSRLValue&& other) = delete;
+		JSRLValue& operator = (const JSVar& var);
+		JSRLValue& operator = (JSOwnObj&& obj);
 
 		~JSRLValue();
 
@@ -841,8 +843,9 @@ namespace nodecpp::js {
 
 	public:
 		JSVar() {}
-		JSVar( const JSVar& other ) { init( other );}
-		JSVar( const JSOwnObj& other ) { const nodecpp::js::JSVarBase::softptr2jsobj tmp = other.ptr; JSVarBase::init( tmp );}
+		JSVar(const JSVar& other) { init(other); }
+		JSVar(JSVar&& other) { init(other); other.deinit(); }
+		JSVar(const JSOwnObj& other) { const nodecpp::js::JSVarBase::softptr2jsobj tmp = other.ptr; JSVarBase::init(tmp); }
 		JSVar( double d ) { JSVarBase::init( d ); }
 		JSVar( int n ) { JSVarBase::init( (double)n ); }
 		JSVar( const nodecpp::string& str ) { JSVarBase::init( str ); }
@@ -861,7 +864,8 @@ namespace nodecpp::js {
 
 		~JSVar() { deinit(); }
 
-		JSVar& operator = ( const JSVar& other ) { init( other ); return *this; }
+		JSVar& operator = (const JSVar& other) { init(other); return *this; }
+		JSVar& operator = (JSVar&& other) { init(other); other.deinit(); return *this; }
 		JSVar& operator = ( const JSOwnObj& other ) { const nodecpp::js::JSVarBase::softptr2jsobj tmp = other.ptr; JSVarBase::init( tmp ); return *this; }
 		JSVar& operator = ( double d ) { JSVarBase::init( d ); return *this; }
 		JSVar& operator = ( int n ) { JSVarBase::init( (double)n ); return *this; }
