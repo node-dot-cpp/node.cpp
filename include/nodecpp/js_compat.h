@@ -825,6 +825,9 @@ namespace nodecpp::js {
 
 		const nodecpp::string& re() const { return regex; }
 		uint64_t flags() const { return flags_; }
+
+		bool test( const JSVar what ) const;
+
 	};
 
 	class JSVar : protected JSVarBase

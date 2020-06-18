@@ -141,6 +141,24 @@ namespace nodecpp::js {
 		regex = regex_.toString();
 	}
 
+	bool JSRegExp::test( const JSVar what ) const
+	{
+		if ( what.type != JSVarBase::Type::string )
+			throw;
+		const nodecpp::string& str = what._asStr()->str();
+		if ( flags() & JSRegExp::Flags::g )
+		{
+			std::regex stdre( re() );
+			return std::regex_match(str, stdre);
+		}
+		else
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "error: not implemented" ); 
+			return false;
+			// TODO: ...
+		}
+	}
+
 
 	////////////////////////////////////////////////////////////   JSVar ////
 

@@ -204,6 +204,9 @@ public:
 		console.log( JSVar("Some people when confronted with a problem think I know Ill use regular expressions Now they have two problems").match( JSRegExp( "([a-zA-Z]+)[, .]", "g" )));
 		console.log( JSVar("Quick brown fox").replace( JSRegExp( "a|e|i|o|u", "g" ), JSVar("*") ));
 
+		JSVar tested4matching = "uoaieaoau";
+		console.log( tested4matching + ( JSRegExp( "[a|e|i|o|u]", "g" ).test( tested4matching ) ? "matches" : "not matches" ) );
+
 		JSVar ttext = "abc";
 		JSOwnObj badarr = makeJSArray({ 0, 0 });
 		JSVar badvar = ttext.split( "" );
