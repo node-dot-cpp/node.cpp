@@ -207,6 +207,13 @@ public:
 		JSVar tested4matching = "uoaieaoau";
 		console.log( tested4matching + ( JSRegExp( "[a|e|i|o|u]", "g" ).test( tested4matching ) ? "matches" : "not matches" ) );
 
+//		JSOwnObj arrUnderConstr = makeJSArray();
+		auto arrUnderConstr = makeJSArray();
+		arrUnderConstr->push( "abc", "def", "klm" );
+		JSOwnObj auc( std::move( arrUnderConstr ) );
+//		console.log( JSVar(arrUnderConstr) );
+		console.log( JSVar(auc) );
+
 		JSVar ttext = "abc";
 		JSOwnObj badarr = makeJSArray({ 0, 0 });
 		JSVar badvar = ttext.split( "" );

@@ -36,6 +36,9 @@
 #endif // assert
 namespace nodecpp::js {
 
+	template<typename T> struct is_xvalue { static constexpr bool value = false; };
+	template<typename T> struct is_xvalue<T&&> { static constexpr bool value = true; };
+
 	class JSString;
 	class JSOwnObj;
 	class JSVar;
@@ -1144,6 +1147,10 @@ namespace nodecpp::js {
 
 		void concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr );
 
+
+		virtual void push_single( JSVar var ) { throw std::exception(); }
+		virtual void push_single( JSOwnObj&& obj ) { throw std::exception(); }
+
 	public:
 		JSObject() {}
 		JSObject(std::initializer_list<std::pair<nodecpp::string, JSInit>> l)
@@ -1236,6 +1243,25 @@ namespace nodecpp::js {
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 
+		template<class Obj>
+		void push( Obj& obj )
+		{
+			if constexpr ( is_xvalue<Obj>::value )
+				push_single( std::move( obj ) );
+			else
+				push_single( obj );
+		}
+
+		template<class Obj1, class ... ObjTX>
+		void push( Obj1& obj, ObjTX& ... args )
+		{
+			if constexpr ( is_xvalue<Obj1>::value )
+				push_single( std::move( obj ) );
+			else
+				push_single( obj );
+			push( args ... );
+		}
+
 		virtual double length() const { throw; }
 		virtual void setLength( double ln ) { throw; }
 	};
@@ -1252,6 +1278,9 @@ namespace nodecpp::js {
 
 		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
 		int indexof_impl( const JSVar& var, int idx ) const;
+
+		virtual void push_single( JSVar var ) { arrayValues.push_back( var ); }
+		virtual void push_single( JSOwnObj&& obj ) { arrayValues.push_back( std::move( obj ) ); }
 
 	public:
 		JSArray() {}
