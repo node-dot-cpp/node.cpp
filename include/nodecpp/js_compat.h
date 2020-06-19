@@ -215,6 +215,9 @@ namespace nodecpp::js {
 
 		bool in( const JSOwnObj& collection ) const { return collection.has( *this ); }
 	
+		int indexOf( const JSVar& var, int idx ) const;
+		int indexOf( const JSVar& var ) const;
+
 		template<class callback> // expected: td::function<void(JSRLValue)>, td::function<void(JSRLValue, JSVar)>, td::function<void(JSRLValue, size_t)>, td::function<void(JSRLValue, JSVar, JSVar)>, td::function<void(JSRLValue, size_t, JSVar)>
 		void forEach( callback cb );
 
@@ -940,6 +943,9 @@ namespace nodecpp::js {
 
 		bool in( const JSVar& collection ) const { return collection.has( *this ); }
 
+		int indexOf( const JSVar& var, int idx ) const;
+		int indexOf( const JSVar& var ) const;
+
 		template<class callback> // expected: td::function<void(JSRLValue)>, td::function<void(JSRLValue, JSVar)>, td::function<void(JSRLValue, size_t)>, td::function<void(JSRLValue, JSVar, JSVar)>, td::function<void(JSRLValue, size_t, JSVar)>
 		void forEach( callback cb );
 
@@ -1205,6 +1211,14 @@ namespace nodecpp::js {
 			auto f = keyValuePairs.find( str );
 			return f != keyValuePairs.end();
 		}
+		virtual int indexOf( const JSVar& var, int idx ) const
+		{
+			throw std::exception();
+		}
+		virtual int indexOf( const JSVar& var ) const
+		{
+			throw std::exception();
+		}
 
 		template<class ArrT, class ArrT1, class ... ArrTX>
 		void concat_impl( nodecpp::safememory::owning_ptr<JSArray>& ret, ArrT arr, ArrT1 arr1, ArrTX ... args)
@@ -1237,6 +1251,7 @@ namespace nodecpp::js {
 		nodecpp::vector<JSVarOrOwn> arrayValues;
 
 		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
+		int indexof_impl( const JSVar& var, int idx ) const;
 
 	public:
 		JSArray() {}
@@ -1341,6 +1356,15 @@ namespace nodecpp::js {
 		{
 			auto f = keyValuePairs.find( nodecpp::format( "{}", idx ) );
 			return f != keyValuePairs.end();
+		}
+		virtual int indexOf( const JSVar& var, int idx ) const
+		{
+			if ( idx < 0 ) idx += arrayValues.size();
+			return indexof_impl( var, idx );
+		}
+		virtual int indexOf( const JSVar& var ) const
+		{
+			return indexof_impl( var, 0 );
 		}
 		virtual double length() const { return arrayValues.size(); }
 		virtual void setLength( double ln )

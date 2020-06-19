@@ -124,6 +124,15 @@ namespace nodecpp::js {
 		return ptr->has( str );
 	}
 
+	int JSOwnObj::indexOf( const JSVar& var, int idx ) const
+	{
+		return ptr->indexOf( var, idx );
+	}
+
+	int JSOwnObj::indexOf( const JSVar& var ) const
+	{
+		return ptr->indexOf( var );
+	}
 	nodecpp::safememory::owning_ptr<JSArray> JSOwnObj::keys()
 	{
 		return ptr->keys();
@@ -1359,6 +1368,62 @@ namespace nodecpp::js {
 		}
 	}
 
+	int JSVar::indexOf( const JSVar& var, int idx ) const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
+			case Type::string:
+				return -1; // TODO: ensure we report a right value (should we throw instead?)
+			case Type::softptr:
+				return (*_asSoft())->indexOf( var, idx );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+	}
+
+	int JSVar::indexOf( const JSVar& var ) const
+	{
+		switch ( type )
+		{
+			case Type::undef:
+			case Type::boolean:
+			case Type::num:
+			case Type::fn0:
+			case Type::fn1:
+			case Type::fn2:
+			case Type::fn3:
+			case Type::fn4:
+			case Type::fn5:
+			case Type::fn6:
+			case Type::fn7:
+			case Type::fn8:
+			case Type::fn9:
+			case Type::fn10:
+			case Type::string:
+				return -1; // TODO: ensure we report a right value (should we throw instead?)
+			case Type::softptr:
+				return (*_asSoft())->indexOf( var );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+				return false;
+		}
+	}
+
 	nodecpp::safememory::owning_ptr<JSArray> JSVar::keys()
 	{
 		switch ( type )
@@ -2456,6 +2521,24 @@ namespace nodecpp::js {
 				ret->arrayValues.push_back( JSVar( el._asPtr() ) );
 			}
 		}
+	}
+
+	int JSArray::indexof_impl( const JSVar& var, int idx ) const
+	{
+		for ( ; idx<arrayValues.size(); ++idx )
+			switch ( arrayValues[idx].type )
+			{
+				case JSVarOrOwn::Type::var:
+					if ( var.isStrictlyTheSame( arrayValues[idx]._asVar() ) ) return (int)(idx);
+					else break;
+				case JSVarOrOwn::Type::obj:
+					if ( var.isStrictlyTheSame( arrayValues[idx]._asPtr() ) ) return (int)(idx);
+					else break;
+				case JSVarOrOwn::Type::undef:
+					if ( var.type == JSVarBase::Type::undef ) return (int)(idx);
+					else break;
+			}
+		return -1;
 	}
 
 	////////////////////////////////////////////////////////////   JSMath ////
