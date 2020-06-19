@@ -36,9 +36,6 @@
 #endif // assert
 namespace nodecpp::js {
 
-	template<typename T> struct is_xvalue { static constexpr bool value = false; };
-	template<typename T> struct is_xvalue<T&&> { static constexpr bool value = true; };
-
 	class JSString;
 	class JSOwnObj;
 	class JSVar;
@@ -228,6 +225,9 @@ namespace nodecpp::js {
 
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
+
+		template<class ... ObjTX>
+		void push( ObjTX&& ... args );
 
 		double length() const;
 		void setLength( double ln ) ;
@@ -1147,9 +1147,9 @@ namespace nodecpp::js {
 
 		void concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr );
 
-
 		virtual void push_single( JSVar var ) { throw std::exception(); }
 		virtual void push_single( JSOwnObj&& obj ) { throw std::exception(); }
+		virtual void push_single( const JSOwnObj& obj ) { throw std::exception(); }
 
 	public:
 		JSObject() {}
@@ -1244,22 +1244,16 @@ namespace nodecpp::js {
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 
 		template<class Obj>
-		void push( Obj& obj )
+		void push( Obj&& obj )
 		{
-			if constexpr ( is_xvalue<Obj>::value )
-				push_single( std::move( obj ) );
-			else
-				push_single( obj );
+			push_single( std::forward<Obj>( obj ) );
 		}
 
 		template<class Obj1, class ... ObjTX>
-		void push( Obj1& obj, ObjTX& ... args )
+		void push( Obj1&& obj, ObjTX&& ... args )
 		{
-			if constexpr ( is_xvalue<Obj1>::value )
-				push_single( std::move( obj ) );
-			else
-				push_single( obj );
-			push( args ... );
+			push_single( std::forward<Obj1>( obj ) );
+			push( std::forward<ObjTX>(args) ... );
 		}
 
 		virtual double length() const { throw; }
@@ -1281,6 +1275,7 @@ namespace nodecpp::js {
 
 		virtual void push_single( JSVar var ) { arrayValues.push_back( var ); }
 		virtual void push_single( JSOwnObj&& obj ) { arrayValues.push_back( std::move( obj ) ); }
+		virtual void push_single( const JSOwnObj& obj ) { arrayValues.push_back( JSVar( obj ) ); }
 
 	public:
 		JSArray() {}
@@ -1454,6 +1449,12 @@ namespace nodecpp::js {
 	JSOwnObj JSOwnObj::concat( ArrT1 arr1, ArrTX ... args ) 
 	{
 		return ptr->concat( arr1, args ... );
+	}
+
+	template<class ... ObjTX>
+	void JSOwnObj::push( ObjTX&& ... args )
+	{
+		return ptr->push( std::forward<ObjTX>(args) ... );
 	}
 
 	template<class ArrT1, class ... ArrTX>
