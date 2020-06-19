@@ -7,6 +7,9 @@ script:
   - cmake -DCMAKE_BUILD_TYPE=Release ..
   - cmake --build .
   - ctest --output-on-failure -E foundation
+notifications:
+  email:
+    if: branch = master OR branch = develop
 jobs:
   include:
     - name: Linux GCC
@@ -51,6 +54,8 @@ jobs:
       script: ./checker/tools/travis-windows.bat
 
   allow_failures:        
+    - name: Linux GCC
+    - name: Linux Clang
     - name: macOS Clang
     - name: Windows Clang
     - name: Linux GCC (checker)
