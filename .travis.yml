@@ -1,0 +1,58 @@
+language: cpp
+os: linux
+dist: bionic
+script:
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE=Release ..
+  - cmake --build .
+  - ctest --output-on-failure -E foundation
+jobs:
+  include:
+    - name: Linux GCC
+      compiler: gcc
+    - name: Windows MSVC
+      os: windows
+      script:
+        - mkdir build
+        - cd build
+        - cmake -G "Visual Studio 15 2017 Win64" ..
+        - cmake --build . --config Release
+        - ctest -C Release --output-on-failure
+    - name: macOS Clang
+      os: osx        
+      compiler: clang
+    - name: Linux Clang
+      compiler: clang
+    - name: Windows Clang
+      os: windows
+      install: choco install ninja
+      script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-windows-clang.bat
+    - name: Linux GCC (checker)
+      compiler: gcc
+      cache: ccache
+      script: ./safe_memory/checker/tools/travis-ccache.sh
+    - name: macOS Clang (checker)
+      os: osx        
+      compiler: clang
+      cache: ccache
+      install: brew install ccache
+      script: ./safe_memory/checker/tools/travis-ccache.sh
+    - name: Windows MSVC (checker)
+      os: windows
+      env: CC=cl CXX=cl
+      install:
+        - choco install ninja
+        - choco install sccache --version=0.2.12
+      cache:
+        directories:
+          - $HOME/AppData/Local/Temp/chocolatey
+          - $HOME/AppData/Local/Mozilla/sccache      
+      script: ./checker/tools/travis-windows.bat
+
+  allow_failures:        
+    - name: macOS Clang
+    - name: Windows Clang
+    - name: Linux GCC (checker)
+    - name: macOS Clang (checker)
+    - name: Windows MSVC (checker)
