@@ -34,6 +34,7 @@
 #include <map>
 #include <typeinfo>
 #include <typeindex>
+#include <cassert>
 
 namespace nodecpp {
 
