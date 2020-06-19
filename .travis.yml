@@ -34,13 +34,17 @@ jobs:
     - name: Linux GCC (checker)
       compiler: gcc
       cache: ccache
-      script: ./safe_memory/checker/tools/travis-ccache.sh
+      script:
+        - cd safe_memory
+        - ./checker/tools/travis-ccache.sh
     - name: macOS Clang (checker)
       os: osx        
       compiler: clang
       cache: ccache
       install: brew install ccache
-      script: ./safe_memory/checker/tools/travis-ccache.sh
+      script:
+        - cd safe_memory
+        - ./checker/tools/travis-ccache.sh
     - name: Windows MSVC (checker)
       os: windows
       env: CC=cl CXX=cl
@@ -51,7 +55,9 @@ jobs:
         directories:
           - $HOME/AppData/Local/Temp/chocolatey
           - $HOME/AppData/Local/Mozilla/sccache      
-      script: ./checker/tools/travis-windows.bat
+      script:
+          - cd safe_memory
+          - ./checker/tools/travis-windows.bat
 
   allow_failures:        
     - name: Linux GCC
