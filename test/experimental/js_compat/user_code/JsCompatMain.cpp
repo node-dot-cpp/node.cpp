@@ -10,8 +10,13 @@
 
 
 
+nodecpp::stdvector<nodecpp::stdstring> argv;
+
 int main( int argc, char *argv_[] )
 {
+	for ( int i=0; i<argc; ++i )
+		argv.push_back( argv_[i] );
+
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
 #endif
