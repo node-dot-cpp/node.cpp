@@ -1,73 +1,33 @@
-#-------------------------------------------------------------------------------------------
-# Copyright (c) 2020, OLogN Technologies AG
-#-------------------------------------------------------------------------------------------
-
 cmake_minimum_required(VERSION 3.4)
-project(NodeDotCpp CXX)
+project(node_cpp)
 
-#find_package(Threads)
+find_package(Threads)
 
-include(CTest)
+set(CLIENT_NAME client.bin)
+#set(CTRL_CLIENT_NAME ctrl_client.bin)
+set(SERVER_NAME server.bin)
+set(LIB_NAME gcc_lto_workaround)
 
-set (CMAKE_MODULE_PATH 
-  "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/tools")
-include(CommonCppFlags)
+set(SOURCE_EXE ${PROJECT_SOURCE_DIR}/src/infra_main.cpp 					
+					${PROJECT_SOURCE_DIR}/src/net.cpp 
+					${PROJECT_SOURCE_DIR}/src/infrastructure.cpp 
+					${PROJECT_SOURCE_DIR}/src/tcp_socket/tcp_socket.cpp )
 
+set(CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/client/user_code/NetSocket.cpp)
+#set(CTRL_CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/ctrl_client/user_code/NetSocket.cpp)
+set(SERVER_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/server/user_code/NetSocket.cpp)
 
+set(SOURCE_LIB ${PROJECT_SOURCE_DIR}/safe_memory/library/gcc_lto_workaround/gcc_lto_workaround.cpp)
 
-add_subdirectory(safe_memory)
+add_subdirectory(${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc build)
 
-
-add_library(nodecpp_no_main STATIC
-   	src/infrastructure.cpp
-  	src/net.cpp
-#  	src/timers.cpp
-#    src/clustering_impl/clustering.cpp
-#    src/logging_impl/logging.cpp
-#    src/tcp_socket/listener_thread.cpp
-    src/tcp_socket/tcp_socket.cpp
-)
-
-# just in case some project needs a different main
-target_include_directories(nodecpp_no_main
-  PUBLIC include
-)
-
-add_library(nodecpp STATIC
-	src/infra_main.cpp
-)
-
-
-target_link_libraries(nodecpp_no_main SafeMemory)
-target_link_libraries(nodecpp nodecpp_no_main)
-
-if(MSVC)
-	target_compile_options(nodecpp_no_main PUBLIC /await)
-else()
-	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
-endif()
-
-
-
-
-add_executable(client
-	test/samples/client/user_code/NetSocket.cpp
-)
-
-target_link_libraries(client nodecpp)
-
-add_executable(server
-	test/samples/server/user_code/NetSocket.cpp
-)
-
-target_link_libraries(server nodecpp)
-
-add_executable(ctrl_client
-	test/samples/ctrl_client/user_code/NetSocket.cpp
-)
-
-target_link_libraries(ctrl_client nodecpp)
-
+include_directories(include	${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include 
+							${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
+							${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src  							 
+							${PROJECT_SOURCE_DIR}/safe_memory/library/src
+							${PROJECT_SOURCE_DIR}/include/nodecpp	
+							${PROJECT_SOURCE_DIR}/include	
+							${PROJECT_SOURCE_DIR}/src )
 
 set(DZ_INCLUDES -isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
 				-isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
@@ -81,6 +41,50 @@ set(DZ_INCLUDES -isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc
 set(DZ_DEFINES -DNDEBUG -DUSING_T_SOCKETS)
 
 
+if(MSVC OR MSYS OR MINGW)
+	option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
+	add_definitions(/W3)
+	add_definitions(/EHa)
+	add_definitions(/MD)
+	add_definitions(/await)
+else()
+	enable_testing()
+	add_definitions( -g )
+	add_definitions( -Wall )
+	add_definitions( -Wextra )
+	add_definitions( -Wno-unused-variable )
+	add_definitions( -Wno-unused-parameter )
+	add_definitions( -Wno-empty-body )
+	add_definitions(-lpthread)
+	add_compile_options(-O2)
+	set(CMAKE_CXX_STANDARD_REQUIRED on)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAG} -DNDEBUG -DUSING_T_SOCKETS ")
+endif()
+
+set(CMAKE_CXX_STANDARD 17)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/bin)
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	add_library( ${LIB_NAME} SHARED ${SOURCE_LIB})
+else()
+	unset(LIB_NAME)
+endif()
+
+add_library( ${LIB_NAME} SHARED ${SOURCE_LIB})
+add_executable(${CLIENT_NAME} ${SOURCE_EXE} ${CLIENT_SOURCE_EXE})
+#add_executable(${CTRL_CLIENT_NAME} ${SOURCE_EXE} ${CTRL_CLIENT_SOURCE_EXE})
+add_executable(${SERVER_NAME} ${SOURCE_EXE} ${SERVER_SOURCE_EXE})
+
+if(MSVC)
+	target_link_libraries( ${CLIENT_NAME} iibmalloc ${LIB_NAME})
+	target_link_libraries( ${SERVER_NAME} iibmalloc ${LIB_NAME})
+else()
+	target_link_libraries( ${CLIENT_NAME} iibmalloc ${LIB_NAME} pthread)
+	target_link_libraries( ${SERVER_NAME} iibmalloc ${LIB_NAME} pthread)
+endif()
 
 
 # -----------------------------------------------------------------------------
@@ -111,19 +115,19 @@ function(make_dz_files OUT_VAR LIST1 LIST2)
 endfunction()
 
 
-#make_dz_files(DZ_CLIENT_FILES SOURCE_EXE CLIENT_SOURCE_EXE)
+make_dz_files(DZ_CLIENT_FILES SOURCE_EXE CLIENT_SOURCE_EXE)
 
-#add_executable(dz-client.bin ${DZ_CLIENT_FILES})
+add_executable(dz-client.bin ${DZ_CLIENT_FILES})
 
-#make_dz_files(DZ_SERVER_FILES SOURCE_EXE SERVER_SOURCE_EXE)
+make_dz_files(DZ_SERVER_FILES SOURCE_EXE SERVER_SOURCE_EXE)
 
-#add_executable(dz-server.bin ${DZ_SERVER_FILES})
+add_executable(dz-server.bin ${DZ_SERVER_FILES})
 
 
 if(MSVC)
-#	target_link_libraries( dz-client.bin iibmalloc ${LIB_NAME})
-#	target_link_libraries( dz-server.bin iibmalloc ${LIB_NAME})
+	target_link_libraries( dz-client.bin iibmalloc ${LIB_NAME})
+	target_link_libraries( dz-server.bin iibmalloc ${LIB_NAME})
 else()
-#	target_link_libraries( dz-client.bin iibmalloc ${LIB_NAME} pthread)
-#	target_link_libraries( dz-server.bin iibmalloc ${LIB_NAME} pthread)
+	target_link_libraries( dz-client.bin iibmalloc ${LIB_NAME} pthread)
+	target_link_libraries( dz-server.bin iibmalloc ${LIB_NAME} pthread)
 endif()
