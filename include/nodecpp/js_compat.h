@@ -798,6 +798,9 @@ namespace nodecpp::js {
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 
+		template<class ... ObjTX>
+		void push( ObjTX&& ... args );
+
 		double length() const;
 		void setLength( double ln ) ;
 	};
@@ -961,6 +964,9 @@ namespace nodecpp::js {
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
 
+		template<class ... ObjTX>
+		void push( ObjTX&& ... args );
+
 		double length() const;
 		void setLength( double ln ) ;
 
@@ -1103,6 +1109,18 @@ namespace nodecpp::js {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type == Type::obj, "unexpected type: {}", (size_t)type ); 
 				return _asPtr().concat( arr1, args ... );
+			}
+		}
+
+		template<class ... ObjTX>
+		void push( ObjTX&& ... args )
+		{
+			if ( type == Type::var )
+				_asVar().push( std::forward<>(ObjTX) ... );
+			else
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type == Type::obj, "unexpected type: {}", (size_t)type ); 
+				_asPtr().push( std::forward<>(ObjTX) ... );
 			}
 		}
 
@@ -1470,6 +1488,18 @@ namespace nodecpp::js {
 		}
 	}
 
+	template<class ... ObjTX>
+	void JSVar::push( ObjTX&& ... args )
+	{
+		switch ( type )
+		{
+			case Type::softptr:
+				return (*_asSoft())->push( std::forward<ObjTX>(args) ... );
+			default:
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
+		}
+	}
+
 	template<class ArrT1, class ... ArrTX>
 	JSOwnObj JSObject::concat( ArrT1 arr1, ArrTX ... args )
 	{
@@ -1561,6 +1591,18 @@ namespace nodecpp::js {
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type == Type::value, "unexpected type: {}", (size_t)type ); 
 			return _asValue()->concat( arr1, args ... );
+		}
+	}
+
+	template<class ... ObjTX>
+	void JSRLValue::push( ObjTX&& ... args )
+	{
+		if ( type == Type::var )
+			return _asVar().concat( std::forward<ObjTX>(args) ... );
+		else 
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, type == Type::value, "unexpected type: {}", (size_t)type ); 
+			return _asValue()->concat( std::forward<ObjTX>(args) ... );
 		}
 	}
 
