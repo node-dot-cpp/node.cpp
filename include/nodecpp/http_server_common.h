@@ -329,7 +329,7 @@ namespace nodecpp {
 
 			EventEmitter<event::HttpRequest> eHttpRequest;
 			void on(nodecpp::string_literal name, event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
-				assert(name == event::HttpRequest::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::HttpRequest::name);
 				eHttpRequest.on(std::move(cb));
 			}
 

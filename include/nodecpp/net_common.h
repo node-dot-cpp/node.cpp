@@ -84,9 +84,9 @@ namespace nodecpp {
 		}
 
 		void reserve(size_t sz) {
-			assert(_size == 0);
-			assert(_capacity == 0);
-			assert(_data == nullptr);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _size == 0 ); 
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _capacity == 0 );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _data == nullptr );
 
 			size_t cp = std::max(sz, MIN_BUFFER);
 			std::unique_ptr<uint8_t[]> tmp(new uint8_t[cp]);
@@ -117,8 +117,8 @@ namespace nodecpp {
 		}
 
 		void trim(size_t sz) { // NOTE: keeps pointers
-			assert(sz <= _size);
-			assert(_data != nullptr || (_size == 0 && sz == 0) );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= _size );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _data != nullptr || (_size == 0 && sz == 0) );
 			_size -= sz;
 		}
 
@@ -127,8 +127,8 @@ namespace nodecpp {
 		}
 
 		void set_size(size_t sz) { // NOTE: keeps pointers
-			assert(sz <= _capacity);
-			assert(_data != nullptr);
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= _capacity );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, _data != nullptr );
 			_size = sz;
 		}
 
@@ -145,7 +145,7 @@ namespace nodecpp {
 		// reserving some bytes at front, and using an extra header pointer
 		// like linux kernel skbuff does.
 		void popFront(size_t sz) {
-			assert(sz <= size());
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz <= size() );
 			size_t remaining = size() - sz;
 			memmove(begin(), begin() + sz, remaining);
 			trim(sz);
@@ -185,30 +185,30 @@ namespace nodecpp {
 
 		// an attempt to follow node.js buffer-related interface
 		void writeUInt32LE(uint8_t value, size_t offset) {
-			assert( offset + 1 <= _capacity );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + 1 <= _capacity );
 			*(begin() + size()) = value;
 			if ( _size < offset + 4 )
 				_size = offset + 4;
 		}
 		void writeUInt32BE(uint32_t value, size_t offset) {
-			assert( false ); // TODO: implement
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false ); // TODO: implement
 		}
 		void writeUInt32LE(uint32_t value, size_t offset) {
-			assert( offset + 4 <= _capacity );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + 4 <= _capacity );
 			memcpy(begin() + size(), &value, 4 );
 			if ( _size < offset + 4 )
 				_size = offset + 4;
 		}
 		uint32_t readUInt8(size_t offset) const {
-			assert( offset + 1 <= _size );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + 1 <= _size );
 			return *(begin() + offset);
 		}
 		uint32_t readUInt32BE(size_t offset) const {
-			assert( false ); // TODO: implement
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false ); // TODO: implement
 			return 0;
 		}
 		uint8_t readUInt32LE(size_t offset) const {
-			assert( offset + 4 <= _size );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, offset + 4 <= _size );
 			return *reinterpret_cast<const uint32_t*>(begin() + offset);
 		}
 	};

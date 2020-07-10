@@ -629,7 +629,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Error::callback >::value);
-				assert(name == event::Close::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::Close::name);
 				eClose.on(std::move(cb));
 			}
 
@@ -637,7 +637,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Connection::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Connection::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Connection::callback, event::Error::callback >::value);
-				assert(name == event::Connection::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::Connection::name);
 				eConnection.on(std::move(cb));
 			}
 
@@ -645,7 +645,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Connection::callback >::value);
-				assert(name == event::Error::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::Error::name);
 				eError.on(std::move(cb));
 			}
 
@@ -653,7 +653,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Error::callback >::value);
-				assert(name == event::Listening::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::Listening::name);
 				eListening.on(std::move(cb));
 			}
 
@@ -661,7 +661,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Close::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Close::callback, event::Error::callback >::value);
-				assert(name == event::Close::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::Close::name);
 				eClose.once(std::move(cb));
 			}
 
@@ -669,7 +669,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Connection::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Connection::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Connection::callback, event::Error::callback >::value);
-				assert(name == event::Connection::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::Connection::name);
 				eConnection.once(std::move(cb));
 			}
 
@@ -677,7 +677,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Error::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Listening::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Connection::callback >::value);
-				assert(name == event::Error::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::Error::name);
 				eError.once(std::move(cb));
 			}
 
@@ -685,7 +685,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Listening::callback, event::Close::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Connection::callback >::value);
 				static_assert(!std::is_same< event::Listening::callback, event::Error::callback >::value);
-				assert(name == event::Listening::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::Listening::name);
 				eListening.once(std::move(cb));
 			}
 
@@ -696,7 +696,7 @@ namespace nodecpp {
 				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.on(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.on(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Error >::value) { eError.on(std::move(cb)); }
-				else assert(false);
+				else NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false);
 			}
 
 			template<class EV>
@@ -705,7 +705,7 @@ namespace nodecpp {
 				else if constexpr (std::is_same< EV, event::Connection >::value) { eConnection.once(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Listening >::value) { eListening.once(std::move(cb)); }
 				else if constexpr (std::is_same< EV, event::Error >::value) { eError.once(std::move(cb)); }
-				else assert(false);
+				else NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false);
 			}
 		};
 
