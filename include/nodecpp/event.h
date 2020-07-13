@@ -31,7 +31,7 @@
 #include <functional>
 #include <vector>
 
-#include "error.h"
+#include "_error.h"
 #include "net_common.h"
 
 namespace nodecpp
@@ -272,7 +272,8 @@ namespace nodecpp
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, current.listener );
 //					current.listener->*onMyEvent(args...);
-					auto ptr = current.listener.get().get_dereferencable();
+//					auto ptr = current.listener.get().get_dereferencable();
+					auto ptr = &(*(current.listener));
 					(ptr->*onMyEvent)(args...);
 #else
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
