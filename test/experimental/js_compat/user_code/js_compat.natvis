@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="::nodecpp::platform::ptrwithdatastructsdefs::optimized_ptr_with_zombie_property_">
+    <DisplayString>{{optimized_ptr_with_zombie_property_}}</DisplayString>
+    <Expand>
+      <Item Name="ptr">(void*)( (uintptr_t)ptr &amp; ~zombie_indicator)</Item>
+      <Item Name="is_zombie">((uintptr_t)ptr) == zombie_indicator</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_and_ptr_and_data_and_flags_64_&lt;*,*&gt;">
+    <DisplayString>{{optimized_allocated_ptr_and_ptr_and_data_and_flags_64_}}</DisplayString>
+    <Expand>
+      <Item Name="deref_ptr">(void*)(ptr &amp; ptrMask_)</Item>
+      <Item Name="alloc_ptr">(void*)( allocptr &amp; allocptrMask_)</Item>
+      <Item Name="is_zombie">(ptr &amp; ptrMask_) == zombie_indicator</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="nodecpp::safememory::owning_ptr_impl&lt;*&gt;">
+    <DisplayString>{{owning_ptr}}</DisplayString>
+    <Expand>
+      <ExpandedItem >($T1*)(*(uint64_t*)(&amp;t) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
+      <ExpandedItem >t</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="nodecpp::safememory::soft_ptr_impl&lt;*&gt;">
+    <DisplayString>{{soft_ptr}}</DisplayString>
+    <Expand>
+      <ExpandedItem >($T1*)(*(uint64_t*)(&amp;pointers) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
+      <ExpandedItem >pointers</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="nodecpp::safememory::owning_ptr_no_checks&lt;*&gt;">
+    <DisplayString>{{owning_ptr}}</DisplayString>
+    <Expand>
+      <ExpandedItem >($T1*)(t)</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="nodecpp::safememory::soft_ptr_no_checks&lt;*&gt;">
+    <DisplayString>{{soft_ptr}}</DisplayString>
+    <Expand>
+      <ExpandedItem >($T1*)(t)</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="nodecpp::js::JSString">
+    <DisplayString>{{value = {str_}}}</DisplayString>
+  </Type>
+  
+  <Type Name="nodecpp::js::JSVarBase">
+    <DisplayString Condition="type&gt; nodecpp::js::JSVarBase::Type::type_max || type &lt; 0">(uninitialized or ill-formed)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::undef">(undefined)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::boolean">{{boolean, value = {*(bool*)(basemem)}}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::num">{{number, value = {*(double*)(basemem)}}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::string">{{string, value = {((nodecpp::js::JSString*)(basemem))->str_}}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn0">function (0 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn1">function (1 arg)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn2">function (2 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn3">function (3 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn4">function (4 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn5">function (5 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn6">function (6 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn7">function (7 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn8">function (8 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn9">function (9 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn10">function (10 args)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::softptr">{{object}}</DisplayString>
+    <Expand>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::softptr">(nodecpp::safememory::soft_ptr_impl&lt;nodecpp::js::JSObject&gt;*)(basemem)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::num">(double*)(basemem)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::boolean">(bool*)(basemem)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::string">((nodecpp::js::JSString*)(basemem))->str_</ExpandedItem>
+    </Expand>
+  </Type>
+  
+  <Type Name="nodecpp::js::JSRLValue">
+    <DisplayString Condition="type&gt; nodecpp::js::JSRLValue::Type::type_max || type &lt; 0">(uninitialized or ill-formed)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::undef">(undefined)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::var">{{JSVar}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSRLValue::Type::value">{{JSObject}}</DisplayString>
+    <Expand>
+      <ExpandedItem Condition="type == nodecpp::js::JSRLValue::Type::var">(nodecpp::js::JSVar*)(basemem)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSRLValue::Type::value">(nodecpp::js::JSOwnObj*)(basemem)</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="nodecpp::js::JSVarOrOwn">
+    <DisplayString Condition="type&gt; nodecpp::js::JSVarOrOwn::Type::type_max || type &lt; 0">(uninitialized or ill-formed)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::undef">(undefined)</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::var">{{JSVar}}</DisplayString>
+    <DisplayString Condition="type == nodecpp::js::JSVarOrOwn::Type::obj">{{JSObject}}</DisplayString>
+    <Expand>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarOrOwn::Type::var">(nodecpp::js::JSVar*)(basemem)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarOrOwn::Type::obj">(nodecpp::js::JSOwnObj*)(basemem)</ExpandedItem>
+    </Expand>
+  </Type>
+</AutoVisualizer>

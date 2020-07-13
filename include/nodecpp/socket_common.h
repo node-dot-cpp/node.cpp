@@ -881,7 +881,7 @@ namespace nodecpp {
 				static_assert( !std::is_same< event::Close::callback, event::Drain::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::End::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Error::callback >::value );
-				assert( name == string_literal(event::Close::name) );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,  name == string_literal(event::Close::name) );
 				eClose.on(std::move(cb));
 			}
 			void on( string_literal name, event::Data::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
@@ -890,7 +890,7 @@ namespace nodecpp {
 				static_assert( !std::is_same< event::Data::callback, event::Drain::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::End::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Error::callback >::value );
-				assert( name == string_literal(event::Data::name) );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,  name == string_literal(event::Data::name) );
 				eData.on(std::move(cb));
 			}
 			void on(string_literal name, event::Error::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
@@ -899,7 +899,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Error::callback, event::Drain::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::End::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Data::callback >::value);
-				assert( name == string_literal(event::Error::name) );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,  name == string_literal(event::Error::name) );
 				eError.on(std::move(cb));
 			}
 			void on( string_literal name, event::Connect::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
@@ -917,7 +917,7 @@ namespace nodecpp {
 				else if ( name == string_literal(event::Accepted::name) )
 					eAccepted.on(std::move(cb));
 				else
-					assert(false);
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false);
 			}
 
 			void once( string_literal name, event::Close::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
@@ -926,7 +926,7 @@ namespace nodecpp {
 				static_assert( !std::is_same< event::Close::callback, event::Drain::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::End::callback >::value );
 				static_assert( !std::is_same< event::Close::callback, event::Error::callback >::value );
-				assert( name == string_literal(event::Close::name) );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,  name == string_literal(event::Close::name) );
 				eClose.once(std::move(cb));
 			}
 			void once( string_literal name, event::Data::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
@@ -935,7 +935,7 @@ namespace nodecpp {
 				static_assert( !std::is_same< event::Data::callback, event::Drain::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::End::callback >::value );
 				static_assert( !std::is_same< event::Data::callback, event::Error::callback >::value );
-				assert( name == string_literal(event::Data::name) );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,  name == string_literal(event::Data::name) );
 				eData.once(std::move(cb));
 			}
 			void once(string_literal name, event::Error::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
@@ -944,7 +944,7 @@ namespace nodecpp {
 				static_assert(!std::is_same< event::Error::callback, event::Drain::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::End::callback >::value);
 				static_assert(!std::is_same< event::Error::callback, event::Data::callback >::value);
-				assert(name == string_literal(event::Error::name));
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == string_literal(event::Error::name));
 				eError.once(std::move(cb));
 			}
 			void once( string_literal name, event::Connect::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
@@ -962,7 +962,7 @@ namespace nodecpp {
 				else if (name == string_literal(event::Accepted::name))
 					eAccepted.once(std::move(cb));
 				else
-					assert(false);
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false);
 			}
 
 			template<class EV>
@@ -974,7 +974,7 @@ namespace nodecpp {
 				else if constexpr ( std::is_same< EV, event::End >::value ) { eEnd.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Error >::value ) { eError.on(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Accepted >::value ) { eAccepted.on(std::move(cb)); }
-				else assert(false);
+				else NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false);
 			}
 
 			template<class EV>
@@ -986,7 +986,7 @@ namespace nodecpp {
 				else if constexpr ( std::is_same< EV, event::End >::value ) { eEnd.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Error >::value ) { eError.once(std::move(cb)); }
 				else if constexpr ( std::is_same< EV, event::Accepted >::value ) { eAccepted.once(std::move(cb)); }
-				else assert(false);
+				else NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false );
 			}
 
 		};

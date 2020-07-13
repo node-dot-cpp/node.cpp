@@ -88,17 +88,17 @@ namespace nodecpp
 	using vector = ::std::vector<T, nodecpp::safememory::iiballocator<T>>;
 
 	template<class T>
-	using stdvector = ::std::vector<T, nodecpp::safememory::stdallocator<T>>;
+	using stdvector = ::std::vector<T, nodecpp::stdallocator<T>>;
 
 	template<class Key, class T>
 	using map = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
 
 	template<class Key, class T>
-	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::stdallocator<std::pair<const Key,T>>>;
+	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::stdallocator<std::pair<const Key,T>>>;
 
 	using string = ::std::basic_string<char, std::char_traits<char>, nodecpp::safememory::iiballocator<char>>;
 
-	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::safememory::stdallocator<char>>;
+	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::stdallocator<char>>;
 
 	class string_literal
 	{
@@ -163,7 +163,7 @@ namespace nodecpp
 
 	template<class T>
 	T* stdalloc( size_t count ) {
-		nodecpp::safememory::stdallocator<T> stdall;
+		nodecpp::stdallocator<T> stdall;
 		T* ret = stdall.allocate( count );
 		for ( size_t i=0; i<count; ++i )
 			new (ret + i) T();
@@ -174,7 +174,7 @@ namespace nodecpp
 	void stddealloc( T* ptr, size_t count ) {
 		for ( size_t i=0; i<count; ++i )
 			(ptr + i)->~T();
-		nodecpp::safememory::stdallocator<T> stdall;
+		nodecpp::stdallocator<T> stdall;
 		stdall.deallocate( ptr, count );
 	}
 } // nodecpp
