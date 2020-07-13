@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+  <Type Name="::nodecpp::platform::ptrwithdatastructsdefs::optimized_ptr_with_zombie_property_">
+    <DisplayString>{{optimized_ptr_with_zombie_property_}}</DisplayString>
+    <Expand>
+      <Item Name="ptr">(void*)( (uintptr_t)ptr &amp; ~zombie_indicator)</Item>
+      <Item Name="is_zombie">((uintptr_t)ptr) == zombie_indicator</Item>
+    </Expand>
+  </Type>
+
   <Type Name="::nodecpp::platform::ptrwithdatastructsdefs::optimized_allocated_ptr_and_ptr_and_data_and_flags_64_&lt;*,*&gt;">
     <DisplayString>{{optimized_allocated_ptr_and_ptr_and_data_and_flags_64_}}</DisplayString>
     <Expand>
       <Item Name="deref_ptr">(void*)(ptr &amp; ptrMask_)</Item>
       <Item Name="alloc_ptr">(void*)( allocptr &amp; allocptrMask_)</Item>
       <Item Name="is_zombie">(ptr &amp; ptrMask_) == zombie_indicator</Item>
-    </Expand>
-  </Type>
-
-  <Type Name="::nodecpp::platform::ptrwithdatastructsdefs::optimized_ptr_with_zombie_property_">
-    <DisplayString>{{optimized_ptr_with_zombie_property_}}</DisplayString>
-    <Expand>
-      <Item Name="ptr">(void*)( (uintptr_t)ptr &amp; ~zombie_indicator)</Item>
-      <Item Name="is_zombie">((uintptr_t)ptr) == zombie_indicator</Item>
     </Expand>
   </Type>
 

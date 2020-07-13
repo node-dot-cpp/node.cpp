@@ -438,7 +438,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO;_DEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NODECPP_MEMORY_SAFETY_DBG_ADD_PTR_LIFECYCLE_INFO;_DEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -613,7 +613,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NODECPP_MEMORY_SAFETY_DBG_ADD_DESTRUCTION_INFO;NDEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NODECPP_MEMORY_SAFETY_DBG_ADD_PTR_LIFECYCLE_INFO;NDEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -685,7 +685,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
-    <ClInclude Include="..\..\..\..\include\nodecpp\ip_and_port.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\js_compat.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\logging.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\mallocator.h" />
@@ -698,6 +697,7 @@
     <ClInclude Include="..\user_code\maps\rainbow.h" />
     <ClInclude Include="..\user_code\maps\random.h" />
     <ClInclude Include="..\user_code\styles.h" />
+    <ClInclude Include="..\user_code\system\has-flag.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\user_code\js_compat.natvis" />

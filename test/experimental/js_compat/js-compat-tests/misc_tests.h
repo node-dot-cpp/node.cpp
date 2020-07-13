@@ -224,6 +224,7 @@ public:
 		console.log( "~~~~~~~~~~~~~~" );
 		console.log( JSVar(tmpObjToPush_2) );
 
+		JSVar ttext = "abc";
 		JSOwnObj badarr = makeJSArray({ 0, 0 });
 		JSVar badvar = ttext.split( "" );
 		badarr[0] = badvar;
