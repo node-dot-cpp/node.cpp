@@ -30,6 +30,7 @@
 #define INFRASTRUCTURE_H
 
 #include "../include/nodecpp/common.h"
+#include "../include/nodecpp/nls.h"
 
 #include "ev_queue.h"
 #include "tcp_socket/tcp_socket.h"
@@ -574,6 +575,7 @@ class Runnable : public RunnableBase
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
 			node->main();
+			::nodecpp::threadLocalData.binaryLog = &(node->binLog);
 			infra.runStandardLoop();
 			node = nullptr;
 

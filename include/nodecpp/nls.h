@@ -49,7 +49,7 @@ namespace nodecpp {
 
 		class JSModuleMap
 		{
-			using MapType = nodecpp::map<std::type_index, owning_ptr<js::JSModule>>;
+			using MapType = ::nodecpp::map<std::type_index, owning_ptr<js::JSModule>>;
 	#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			MapType _classModuleMap;
 			MapType& classModuleMap() { return _classModuleMap; }
@@ -130,7 +130,7 @@ namespace nodecpp {
 
 	struct NLS
 	{
-		record_and_replay_impl::BinaryLog binaryLog;
+		record_and_replay_impl::BinaryLog* binaryLog = nullptr;
 		js::JSModuleMap jsModuleMap;
 		nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> currentArgs;
 		js::LCG rng;

@@ -71,6 +71,8 @@ namespace nodecpp {
 //#include "assert.h"
 #include "mallocator.h"
 
+#include "../../src/record_and_replay.h"
+
 namespace nodecpp
 {
 	constexpr const char* nodecpp_module_id = "nodecpp";
@@ -218,6 +220,8 @@ namespace nodecpp::net {
 
 class NodeBase
 {
+public: // TODO: just for a while... of course, it should never be public... private only
+	nodecpp::record_and_replay_impl::BinaryLog binLog;
 public:
 	NodeBase() {}
 	virtual ~NodeBase() {}
