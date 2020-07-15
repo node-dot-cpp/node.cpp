@@ -31,6 +31,7 @@
 #include "common.h"
 #include <typeinfo>
 #include <typeindex>
+#include "../../src/record_and_replay.h"
 
 namespace nodecpp {
 
@@ -129,6 +130,7 @@ namespace nodecpp {
 
 	struct NLS
 	{
+		record_and_replay_impl::BinaryLog binaryLog;
 		js::JSModuleMap jsModuleMap;
 		nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> currentArgs;
 		js::LCG rng;
