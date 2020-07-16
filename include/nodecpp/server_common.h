@@ -29,6 +29,7 @@
 #define SERVER_COMMON_H
 
 #include "socket_common.h"
+#include "nls.h"
 
 namespace nodecpp {
 
@@ -380,13 +381,48 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
-						if constexpr ( std::is_same<SocketT, SocketBase>::value )
-							socket = server.dataForCommandProcessing.ahd_connection.sock;
+#ifdef NODECPP_DEBUG_AND_REPLAY
+						// TODO: rework with IDs
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+							if ( nodecpp::isException(myawaiting) )
+							{
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_conn_crh_except, nullptr, 0 );
+								throw nodecpp::getException(myawaiting);
+							}
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_conn_crh_ok, &(*(server.dataForCommandProcessing.ahd_connection.sock)), sizeof( void* ) );
+							if constexpr ( std::is_same<SocketT, SocketBase>::value )
+								socket = server.dataForCommandProcessing.ahd_connection.sock;
+							else
+								socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::server_conn_crh_except )
+								throw nodecpp::getException(myawaiting);
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::server_conn_crh_ok )
+							{
+								if constexpr ( std::is_same<SocketT, SocketBase>::value )
+									socket = server.dataForCommandProcessing.ahd_connection.sock;
+								else
+									socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+							}
+							else
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+						}
 						else
-							socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+#endif // NODECPP_DEBUG_AND_REPLAY
+						{
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+							if ( nodecpp::isException(myawaiting) )
+								throw nodecpp::getException(myawaiting);
+							if constexpr ( std::is_same<SocketT, SocketBase>::value )
+								socket = server.dataForCommandProcessing.ahd_connection.sock;
+							else
+								socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+						}
 					}
 				};
 				return connection_awaiter(*this, socket);
