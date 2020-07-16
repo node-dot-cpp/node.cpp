@@ -575,7 +575,9 @@ class Runnable : public RunnableBase
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
 			node->main();
+#ifdef NODECPP_DEBUG_AND_REPLAY
 			::nodecpp::threadLocalData.binaryLog = &(node->binLog);
+#endif // NODECPP_DEBUG_AND_REPLAY
 			infra.runStandardLoop();
 			node = nullptr;
 

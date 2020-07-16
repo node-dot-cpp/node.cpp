@@ -71,7 +71,9 @@ namespace nodecpp {
 //#include "assert.h"
 #include "mallocator.h"
 
+#ifdef NODECPP_DEBUG_AND_REPLAY
 #include "../../src/record_and_replay.h"
+#endif // NODECPP_DEBUG_AND_REPLAY
 
 namespace nodecpp
 {
@@ -220,8 +222,10 @@ namespace nodecpp::net {
 
 class NodeBase
 {
+#ifdef NODECPP_DEBUG_AND_REPLAY
 public: // TODO: just for a while... of course, it should never be public... private only
 	nodecpp::record_and_replay_impl::BinaryLog binLog;
+#endif // NODECPP_DEBUG_AND_REPLAY
 public:
 	NodeBase() {}
 	virtual ~NodeBase() {}
