@@ -30,6 +30,7 @@
 
 #include "net_common.h"
 #include "event.h"
+#include "nls.h"
 
 class OpaqueSocketData;
 
@@ -609,10 +610,39 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
-						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
-						socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
-						NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
+#ifdef NODECPP_DEBUG_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							{
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_except, nullptr, 0 );
+								throw nodecpp::getException(myawaiting);
+							}
+							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_ok, buff.begin(), buff.size() );
+							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_except )
+								throw nodecpp::getException(myawaiting);
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_ok )
+							{
+								buff.append( frame.ptr, frame.size );
+								NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
+							}
+							else
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+						}
+						else
+#endif // NODECPP_DEBUG_AND_REPLAY
+						{
+							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+								throw nodecpp::getException(myawaiting);
+							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
+							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
+						}
 					}
 				};
 				return read_data_awaiter(*this, buff, min_bytes, max_bytes);
