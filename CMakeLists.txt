@@ -37,11 +37,14 @@ add_library(nodecpp STATIC
 target_link_libraries(nodecpp_no_main safe_memory)
 target_link_libraries(nodecpp nodecpp_no_main)
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  # we need async exceptions
-	string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(nodecpp_no_main PUBLIC /await)
-else()
+	# remove the default exception option to remove warning
+	string( REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(nodecpp_no_main PUBLIC -fcoroutines-ts)
+	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
 endif()
 
