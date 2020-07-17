@@ -86,9 +86,17 @@ public:
 		FrameHeader* h = (FrameHeader*)writePos;
 		h->type = 0; // no records yet
 	}
-	void initForReplaying( void* buff, size_t sz ) {
+	void initForReplaying() { // TODO: subject for revision (currently serves rather for immediate development and debugging purposes)
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::not_using, "indeed: {}", (size_t)mode_ ); 
 		mode_ = Mode::replaying;
+		void* buff = nullptr;
+		size_t sz = 0;
+		{
+			void* buff = nodecpp::VirtualMemory::allocate( 1 << 26 );
+			FILE* f = fopen( "binlog.dat", "rb" );
+			if ( f != 0 )
+				sz = fread( buff, 1, 1<<26, f );
+		}
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > 0 ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff != nullptr ); 
 		size = sz;
@@ -100,6 +108,14 @@ public:
 		fh = (FrameHeader*)(lh + 1);
 	}
 	void deinit() {
+		if ( mode_ == Mode::recording )
+		{
+			// TODO: subject for revision (currently serves rather for immediate development and debugging purposes)
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mem != nullptr );
+			FILE* f = fopen( "binlog.dat", "wb" );
+			if ( f != 0 )
+				fwrite( mem, 1, writePos - mem, f );
+		}
 		if ( mem )
 			nodecpp::VirtualMemory::deallocate( mem, size );
 		mode_ = Mode::not_using;

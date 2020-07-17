@@ -100,9 +100,9 @@ int main( int argc, char *argv_[] )
 #ifdef NODECPP_RECORD_AND_REPLAY
 	nodecpp::record_and_replay_impl::BinaryLog::Mode replayMode = nodecpp::record_and_replay_impl::BinaryLog::Mode::not_using;
 	for ( int i=0; i<argc; ++i )
-		if ( argv_[i] == "-record" )
+		if ( argv[i] == "-record" )
 			replayMode = nodecpp::record_and_replay_impl::BinaryLog::Mode::recording;
-		else if ( argv_[i] == "-replay" )
+		else if ( argv[i] == "-replay" )
 			replayMode = nodecpp::record_and_replay_impl::BinaryLog::Mode::replaying;
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 	{
