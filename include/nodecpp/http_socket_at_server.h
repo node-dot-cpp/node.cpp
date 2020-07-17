@@ -244,10 +244,11 @@ namespace nodecpp {
 								throw nodecpp::getException(myawaiting);
 							}
 							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
-							::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok, &(d.sz1), sizeof( d.sz1 ) );
-							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr1, d.sz1 );
-							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( &(d.sz2), sizeof( d.sz2 ) );
-							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr2, d.sz2 );
+							::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok, &(d), sizeof( d ) );
+							if ( d.ptr1 != nullptr && d.sz1 != 0 )
+								::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr1, d.sz1 );
+							if ( d.ptr2 != nullptr && d.sz2 != 0 )
+								::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr2, d.sz2 );
 							::nodecpp::threadLocalData.binaryLog->addingFrameDone();
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
@@ -257,11 +258,38 @@ namespace nodecpp {
 								throw nodecpp::getException(myawaiting);
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok )
 							{
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ), "{} vs. {}", frame.size, sizeof( d ) ); 
 								uint8_t* buff = (uint8_t*)(frame.ptr);
-								d.sz1 = *(size_t*)(buff);
-								d.ptr1 = buff + sizeof( d.sz1 );
-								d.sz2 = *(size_t*)( buff + sizeof( d.sz1 ) + d.sz1 );
-								d.ptr2 = buff + sizeof( d.sz1 ) + d.sz1 + sizeof( d.sz2 );
+								memcpy( &d, buff, sizeof( d ) );
+								buff += sizeof( d );
+								if ( d.ptr1 != nullptr && d.sz1 != 0 )
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ) + d.sz1, "{} vs. {}", frame.size, sizeof( d ) + d.sz1 ); 
+									d.ptr1 = buff;
+									buff += d.sz1;
+								}
+								else
+								{
+									if ( d.ptr1 != nullptr )
+									{
+										d.ptr1 = buff;
+										NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, d.sz1 == 0, "indeed: {}", d.sz1 ); 
+									}
+								}
+								if ( d.ptr2 != nullptr && d.sz2 != 0 )
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ) + d.sz1 + d.sz2, "{} vs. {}", frame.size, sizeof( d ) + d.sz1 + d.sz2 ); 
+									d.ptr2 = buff;
+									buff += d.sz2;
+								}
+								else
+								{
+									if ( d.ptr2 != nullptr )
+									{
+										d.ptr2 = buff;
+										NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, d.sz2 == 0, "indeed: {}", d.sz2 ); 
+									}
+								}
 							}
 							else
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
@@ -319,10 +347,11 @@ namespace nodecpp {
 								throw nodecpp::getException(myawaiting);
 							}
 							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
-							::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok, &(d.sz1), sizeof( d.sz1 ) );
-							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr1, d.sz1 );
-							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( &(d.sz2), sizeof( d.sz2 ) );
-							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr2, d.sz2 );
+							::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok, &(d), sizeof( d ) );
+							if ( d.ptr1 != nullptr && d.sz1 != 0 )
+								::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr1, d.sz1 );
+							if ( d.ptr2 != nullptr && d.sz2 != 0 )
+								::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr2, d.sz2 );
 							::nodecpp::threadLocalData.binaryLog->addingFrameDone();
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
@@ -333,11 +362,38 @@ namespace nodecpp {
 								throw nodecpp::getException(myawaiting);
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok )
 							{
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ), "{} vs. {}", frame.size, sizeof( d ) ); 
 								uint8_t* buff = (uint8_t*)(frame.ptr);
-								d.sz1 = *(size_t*)(buff);
-								d.ptr1 = buff + sizeof( d.sz1 );
-								d.sz2 = *(size_t*)( buff + sizeof( d.sz1 ) + d.sz1 );
-								d.ptr2 = buff + sizeof( d.sz1 ) + d.sz1 + sizeof( d.sz2 );
+								memcpy( &d, buff, sizeof( d ) );
+								buff += sizeof( d );
+								if ( d.ptr1 != nullptr && d.sz1 != 0 )
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ) + d.sz1, "{} vs. {}", frame.size, sizeof( d ) + d.sz1 ); 
+									d.ptr1 = buff;
+									buff += d.sz1;
+								}
+								else
+								{
+									if ( d.ptr1 != nullptr )
+									{
+										d.ptr1 = buff;
+										NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, d.sz1 == 0, "indeed: {}", d.sz1 ); 
+									}
+								}
+								if ( d.ptr2 != nullptr && d.sz2 != 0 )
+								{
+									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ) + d.sz1 + d.sz2, "{} vs. {}", frame.size, sizeof( d ) + d.sz1 + d.sz2 ); 
+									d.ptr2 = buff;
+									buff += d.sz2;
+								}
+								else
+								{
+									if ( d.ptr2 != nullptr )
+									{
+										d.ptr2 = buff;
+										NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, d.sz2 == 0, "indeed: {}", d.sz2 ); 
+									}
+								}
 							}
 							else
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
