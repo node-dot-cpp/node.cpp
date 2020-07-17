@@ -37,7 +37,11 @@ class BinaryLog
 {
 public:
 	enum Mode { not_using, recording, replaying };
-	enum FrameType { incomplete = 0, sock_read_crh_ok, sock_read_crh_except, server_conn_crh_except, server_conn_crh_ok, type_max };
+	enum FrameType { incomplete = 0, 
+		sock_read_crh_ok, sock_read_crh_except, 
+		server_conn_crh_except, server_conn_crh_ok, 
+		http_sock_read_byte_crh_ok, http_sock_read_byte_crh_except, http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
+		type_max };
 
 	struct FrameData // ret value while reading
 	{

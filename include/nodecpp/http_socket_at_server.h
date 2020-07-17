@@ -167,9 +167,38 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
-						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
-						return socket.dataForCommandProcessing.readBuffer.read_byte();
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							{
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_byte_crh_except, nullptr, 0 );
+								throw nodecpp::getException(myawaiting);
+							}
+							uint8_t ret = socket.dataForCommandProcessing.readBuffer.read_byte();
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_byte_crh_ok, &ret, sizeof( ret ) );
+							return ret;
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_byte_crh_except )
+								throw nodecpp::getException(myawaiting);
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_byte_crh_ok )
+							{
+								NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size == 1, "indeed: {}", frame.size );
+								return *(uint8_t*)(frame.ptr);
+							}
+							else
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
+						{
+							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+								throw nodecpp::getException(myawaiting);
+							return socket.dataForCommandProcessing.readBuffer.read_byte();
+						}
 					}
 				};
 				return read_byte(*this);
@@ -204,9 +233,46 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
-						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
-						socket.dataForCommandProcessing.readBuffer.get_available_data( d );
+#ifdef NODECPP_RECORD_AND_REPLAY
+						static_assert( sizeof( d.sz1 ) == sizeof( size_t ) );
+						static_assert( sizeof( d.sz2 ) == sizeof( size_t ) );
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							{
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except, nullptr, 0 );
+								throw nodecpp::getException(myawaiting);
+							}
+							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
+							::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok, &(d.sz1), sizeof( d.sz1 ) );
+							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr1, d.sz1 );
+							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( &(d.sz2), sizeof( d.sz2 ) );
+							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr2, d.sz2 );
+							::nodecpp::threadLocalData.binaryLog->addingFrameDone();
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except )
+								throw nodecpp::getException(myawaiting);
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok )
+							{
+								uint8_t* buff = (uint8_t*)(frame.ptr);
+								d.sz1 = *(size_t*)(buff);
+								d.ptr1 = buff + sizeof( d.sz1 );
+								d.sz2 = *(size_t*)( buff + sizeof( d.sz1 ) + d.sz1 );
+								d.ptr2 = buff + sizeof( d.sz1 ) + d.sz1 + sizeof( d.sz2 );
+							}
+							else
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
+						{
+							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+								throw nodecpp::getException(myawaiting);
+							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
+						}
 					}
 				};
 				return data_awaiter(*this, d, minBytes);
@@ -241,10 +307,49 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
-						nodecpp::clearTimeout( to );
-						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
-						socket.dataForCommandProcessing.readBuffer.get_available_data( d );
+#ifdef NODECPP_RECORD_AND_REPLAY
+						static_assert( sizeof( d.sz1 ) == sizeof( size_t ) );
+						static_assert( sizeof( d.sz2 ) == sizeof( size_t ) );
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							nodecpp::clearTimeout( to );
+							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							{
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except, nullptr, 0 );
+								throw nodecpp::getException(myawaiting);
+							}
+							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
+							::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok, &(d.sz1), sizeof( d.sz1 ) );
+							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr1, d.sz1 );
+							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( &(d.sz2), sizeof( d.sz2 ) );
+							::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr2, d.sz2 );
+							::nodecpp::threadLocalData.binaryLog->addingFrameDone();
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							nodecpp::clearTimeout( to );
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except )
+								throw nodecpp::getException(myawaiting);
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok )
+							{
+								uint8_t* buff = (uint8_t*)(frame.ptr);
+								d.sz1 = *(size_t*)(buff);
+								d.ptr1 = buff + sizeof( d.sz1 );
+								d.sz2 = *(size_t*)( buff + sizeof( d.sz1 ) + d.sz1 );
+								d.ptr2 = buff + sizeof( d.sz1 ) + d.sz1 + sizeof( d.sz2 );
+							}
+							else
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
+						{
+							nodecpp::clearTimeout( to );
+							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+								throw nodecpp::getException(myawaiting);
+							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
+						}
 					}
 				};
 				return data_awaiter(*this, period, d);
