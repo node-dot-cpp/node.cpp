@@ -96,8 +96,24 @@ int main( int argc, char *argv_[] )
 	nodecpp::logging_impl::currentLog = &log;
 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, NodeFactoryMap::getInstance().getFacoryMap()->size() == 1, "Indeed: {}. Current implementation supports exactly 1 node per thread. More nodes is a pending dev", NodeFactoryMap::getInstance().getFacoryMap()->size() );
+
+#ifdef NODECPP_RECORD_AND_REPLAY
+	nodecpp::record_and_replay_impl::BinaryLog::Mode replayMode = nodecpp::record_and_replay_impl::BinaryLog::Mode::not_using;
+	for ( int i=0; i<argc; ++i )
+		if ( argv_[i] == "-record" )
+			replayMode = nodecpp::record_and_replay_impl::BinaryLog::Mode::recording;
+		else if ( argv_[i] == "-replay" )
+			replayMode = nodecpp::record_and_replay_impl::BinaryLog::Mode::replaying;
+	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
+	{
+		auto r = f.second->create();
+		r->replayMode = replayMode;
+		r->run();
+	}
+#else
 	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
 		f.second->create()->run();
+#endif // NODECPP_RECORD_AND_REPLAY
 
 	nodecpp::logging_impl::currentLog = nullptr; // TODO: this is thread-unsafe. Revise and make sure all other threads using nodecpp::logging_impl::currentLog has already exited
 

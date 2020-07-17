@@ -610,7 +610,7 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
-#ifdef NODECPP_DEBUG_AND_REPLAY
+#ifdef NODECPP_RECORD_AND_REPLAY
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
 							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
@@ -636,7 +636,7 @@ namespace nodecpp {
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
 						}
 						else
-#endif // NODECPP_DEBUG_AND_REPLAY
+#endif // NODECPP_RECORD_AND_REPLAY
 						{
 							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
 								throw nodecpp::getException(myawaiting);
@@ -693,7 +693,7 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
-#ifdef NODECPP_DEBUG_AND_REPLAY
+#ifdef NODECPP_RECORD_AND_REPLAY
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
 							nodecpp::clearTimeout( to );
@@ -721,7 +721,7 @@ namespace nodecpp {
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
 						}
 						else
-#endif // NODECPP_DEBUG_AND_REPLAY
+#endif // NODECPP_RECORD_AND_REPLAY
 						{
 							nodecpp::clearTimeout( to );
 							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )

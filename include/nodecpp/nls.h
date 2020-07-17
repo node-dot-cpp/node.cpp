@@ -130,9 +130,9 @@ namespace nodecpp {
 
 	struct NLS
 	{
-#ifdef NODECPP_DEBUG_AND_REPLAY
+#ifdef NODECPP_RECORD_AND_REPLAY
 		record_and_replay_impl::BinaryLog* binaryLog = nullptr;
-#endif // NODECPP_DEBUG_AND_REPLAY
+#endif // NODECPP_RECORD_AND_REPLAY
 		js::JSModuleMap jsModuleMap;
 		nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> currentArgs;
 		js::LCG rng;
