@@ -1,27 +1,17 @@
 language: cpp
 os: linux
 dist: bionic
-script:
-  - mkdir build
-  - cd build
-  - cmake -DCMAKE_BUILD_TYPE=Release ..
-  - cmake --build .
-  - ctest --output-on-failure -E foundation
 notifications:
   email:
     if: branch = master OR branch = develop
+script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-unix.sh
 jobs:
   include:
     - name: Linux GCC
       compiler: gcc
     - name: Windows MSVC
       os: windows
-      script:
-        - mkdir build
-        - cd build
-        - cmake -G "Visual Studio 15 2017 Win64" ..
-        - cmake --build . --config Release
-        - ctest -C Release --output-on-failure
+      script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-windows-msvc.bat
     - name: macOS Clang
       os: osx        
       compiler: clang
@@ -54,7 +44,7 @@ jobs:
       cache:
         directories:
           - $HOME/AppData/Local/Temp/chocolatey
-          - $HOME/AppData/Local/Mozilla/sccache      
+          - $HOME/AppData/Local/Mozilla/sccache
       script:
           - cd safe_memory
           - ./checker/tools/travis-windows.bat

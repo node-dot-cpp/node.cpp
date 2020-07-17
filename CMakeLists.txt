@@ -4,19 +4,16 @@
 
 cmake_minimum_required(VERSION 3.4)
 project(NodeDotCpp CXX)
-
-#find_package(Threads)
-
+set(CMAKE_CXX_STANDARD 17)
 include(CTest)
 
-set (CMAKE_MODULE_PATH 
-  "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/tools")
+set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/tools")
 include(CommonCppFlags)
-
-
 
 add_subdirectory(safe_memory)
 
+# just in case some project needs a different main
+# we define two libraries, 'nodecpp' and 'nodecpp_no_main'
 
 add_library(nodecpp_no_main STATIC
    	src/infrastructure.cpp
@@ -28,7 +25,6 @@ add_library(nodecpp_no_main STATIC
     src/tcp_socket/tcp_socket.cpp
 )
 
-# just in case some project needs a different main
 target_include_directories(nodecpp_no_main
   PUBLIC include
 )
@@ -38,16 +34,16 @@ add_library(nodecpp STATIC
 )
 
 
-target_link_libraries(nodecpp_no_main SafeMemory)
+target_link_libraries(nodecpp_no_main safe_memory)
 target_link_libraries(nodecpp nodecpp_no_main)
 
-if(MSVC)
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  # we need async exceptions
+	string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
 	target_compile_options(nodecpp_no_main PUBLIC /await)
 else()
 	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
 endif()
-
-
 
 
 add_executable(client
