@@ -663,14 +663,30 @@ public:
 		// TODO: check sockPtr validity
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (SOCKET)(sockPtr->dataForCommandProcessing.osSocket) != INVALID_SOCKET);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+		{
+			OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
+			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect, nullptr, 0 );
+			ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
+			ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index );
+			ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
+			ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
+		}
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+		{
+			auto frame = threadLocalData.binaryLog->readNextFrame();
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_connect, "UNEXPECTED FRAME TYPE  (indeed: {})", frame.type );
+		}
+#else
 		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
-		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
-		sockPtr->dataForCommandProcessing.refed = true;
 		ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
 		ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index );
 		ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Connecting);
 		ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
+#endif // NODECPP_RECORD_AND_REPLAY
+		sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Connecting;
+		sockPtr->dataForCommandProcessing.refed = true;
 	}
 	bool appWrite(net::SocketBase::DataForCommandProcessing& sockData, const uint8_t* data, uint32_t size);
 	bool appWrite2(net::SocketBase::DataForCommandProcessing& sockData, Buffer& b );
