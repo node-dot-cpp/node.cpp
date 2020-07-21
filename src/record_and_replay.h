@@ -64,6 +64,9 @@ private:
 		uint32_t size;
 	};
 
+	using PtrMapT = ::std::map<uintptr_t, void*, std::less<uintptr_t>, nodecpp::stdallocator<std::pair<const uintptr_t, void*>>>;
+	PtrMapT pointerMap;
+
 private:
 	Mode mode_ = Mode::not_using;
 	uint8_t* mem = nullptr;
@@ -198,6 +201,19 @@ public:
 		}
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "NO MORE FRAMES" ); 
 		return fd;
+	}
+	void addPointerMapping( uintptr_t oldValue, void* newValue ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::replaying, "indeed: {}", (size_t)mode_ ); 
+		auto insret = pointerMap.insert( std::make_pair( oldValue, newValue ) );
+		if ( !insret.second )
+			insret.first->second = newValue;
+	}
+	void* mapPointer( uintptr_t oldVal ) {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::replaying, "indeed: {}", (size_t)mode_ ); 
+		auto f = pointerMap.find( oldVal );
+		if ( f != pointerMap.end() )
+			return f->second;
+		return (void*)oldVal;
 	}
 
 	Mode mode() { return mode_; }
