@@ -664,19 +664,20 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, (SOCKET)(sockPtr->dataForCommandProcessing.osSocket) != INVALID_SOCKET);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 #ifdef NODECPP_RECORD_AND_REPLAY
-		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-		{
-			OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
-			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect, nullptr, 0 );
-			ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
-			ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index );
-			ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
-			ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
-		}
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 		{
 			auto frame = threadLocalData.binaryLog->readNextFrame();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_connect, "UNEXPECTED FRAME TYPE  (indeed: {})", frame.type );
+		}
+		else
+		{
+			OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
+			if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect, nullptr, 0 );
+			ioSockets.setRefed( sockPtr->dataForCommandProcessing.index, true );
+			ioSockets.setAssociated(sockPtr->dataForCommandProcessing.index );
+			ioSockets.setPollin(sockPtr->dataForCommandProcessing.index);
+			ioSockets.setPollout(sockPtr->dataForCommandProcessing.index);
 		}
 #else
 		OSLayer::appConnectSocket(sockPtr->dataForCommandProcessing.osSocket, ip, port );
@@ -710,7 +711,21 @@ protected:
 				entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Closed ) )
 		{
 			entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::Closing;
+#ifdef NODECPP_RECORD_AND_REPLAY
+			if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			{
+				auto frame = threadLocalData.binaryLog->readNextFrame();
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_closing, "UNEXPECTED FRAME TYPE  (indeed: {})", frame.type );
+			}
+			else
+			{
+				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_closing, nullptr, 0 );
+				pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
+			}
+#else
 			pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
+#endif // NODECPP_RECORD_AND_REPLAY
 		}
 	}
 	void errorCloseSocket(NetSocketEntry& entry, Error& err) //app-infra neutral
@@ -720,7 +735,21 @@ protected:
 				entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::Closed ) )
 		{
 			entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
+#ifdef NODECPP_RECORD_AND_REPLAY
+			if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			{
+				auto frame = threadLocalData.binaryLog->readNextFrame();
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_error_closing, "UNEXPECTED FRAME TYPE  (indeed: {})", frame.type );
+			}
+			else
+			{
+				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_error_closing, nullptr, 0 );
+				pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
+			}
+#else
 			pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
+#endif // NODECPP_RECORD_AND_REPLAY
 		}
 	}
 
@@ -733,7 +762,8 @@ public:
 	}
 	void appPause(size_t id) { 
 		auto& entry = appGetEntry(id);
-		entry.getClientSocketData()->paused = true; }
+		entry.getClientSocketData()->paused = true;
+	}
 	void appResume(size_t id) { 
 		auto& entry = appGetEntry(id);
 		entry.getClientSocketData()->paused = false; 
