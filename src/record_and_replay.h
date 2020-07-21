@@ -39,7 +39,7 @@ public:
 	enum Mode { not_using, recording, replaying };
 	enum FrameType { incomplete = 0, 
 		sock_read_crh_ok, sock_read_crh_except, 
-		server_conn_crh_except, server_conn_crh_ok, 
+		server_register, server_conn_crh_except, server_conn_crh_ok, 
 		http_sock_read_byte_crh_ok, http_sock_read_byte_crh_except, http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
 		type_max };
 
@@ -48,6 +48,16 @@ public:
 		void* ptr = nullptr;
 		size_t size = 0;
 		uint32_t type = 0;
+	};
+
+	// some helper structures for particualr frame types
+	struct ServerOrSocketRegisterFrameData
+	{
+		enum ObjectType { Undefined, ClientSocket, ServerSocket, AgentServer };
+		ObjectType type;
+		size_t index;
+		uintptr_t ptr;
+		uint64_t socket;
 	};
 
 private:
