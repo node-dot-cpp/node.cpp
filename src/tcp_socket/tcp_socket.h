@@ -1566,7 +1566,7 @@ public:
 					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 					{
 						record_and_replay_impl::BinaryLog::SocketEvent edata;
-						edata.ptr = (uintptr_t)(entry.getClientSocketData());
+						edata.ptr = (uintptr_t)(&(*entry.getServerSocket()));
 						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_close_event_1, &edata, sizeof( edata ) );
 					}
 #endif // NODECPP_RECORD_AND_REPLAY
@@ -1578,7 +1578,7 @@ public:
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
 							record_and_replay_impl::BinaryLog::SocketEvent edata;
-							edata.ptr = (uintptr_t)(entry.getClientSocketData());
+							edata.ptr = (uintptr_t)(&(*entry.getServerSocket()));
 							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_close_event_2_crh, &edata, sizeof( edata ) );
 						}
 #endif // NODECPP_RECORD_AND_REPLAY
@@ -1593,7 +1593,7 @@ public:
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
 							record_and_replay_impl::BinaryLog::SocketEvent edata;
-							edata.ptr = (uintptr_t)(entry.getClientSocketData());
+							edata.ptr = (uintptr_t)(&(*entry.getServerSocket()));
 							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_close_event_2_call, &edata, sizeof( edata ) );
 						}
 #endif // NODECPP_RECORD_AND_REPLAY
@@ -1649,7 +1649,7 @@ public:
 								if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 								{
 									record_and_replay_impl::BinaryLog::SocketEvent edata;
-									edata.ptr = (uintptr_t)(entry.getClientSocketData());
+									edata.ptr = (uintptr_t)(&(*entry.getServerSocket()));
 									::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_listening_event_crh, &edata, sizeof( edata ) );
 								}
 #endif // NODECPP_RECORD_AND_REPLAY
@@ -1662,7 +1662,7 @@ public:
 								if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 								{
 									record_and_replay_impl::BinaryLog::SocketEvent edata;
-									edata.ptr = (uintptr_t)(entry.getClientSocketData());
+									edata.ptr = (uintptr_t)(entry.getServerSocketData());
 									::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_listening_event_call, &edata, sizeof( edata ) );
 								}
 #endif // NODECPP_RECORD_AND_REPLAY
@@ -1774,7 +1774,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
 			record_and_replay_impl::BinaryLog::SocketEvent edata;
-			edata.ptr = (uintptr_t)(entry.getClientSocketData());
+			edata.ptr = (uintptr_t)(&(*entry.getServerSocket()));
 			::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::server_make_socket_input, &edata, sizeof( edata ) );
 			::nodecpp::threadLocalData.binaryLog->continueAddingFrame( &osd, sizeof( osd ) );
 			::nodecpp::threadLocalData.binaryLog->addingFrameDone();
