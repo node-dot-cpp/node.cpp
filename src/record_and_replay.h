@@ -38,13 +38,18 @@ class BinaryLog
 public:
 	enum Mode { not_using, recording, replaying };
 	enum FrameType { incomplete = 0, 
-		server_register, server_conn_crh_except, server_conn_crh_ok, 
 		// client socket
 		sock_register, sock_connect, sock_accepted, 
 		sock_read_event_crh, sock_read_event_call, sock_read_crh_ok, sock_read_crh_except, 
 		sock_connect_event_crh, sock_connect_event_call, sock_drain_event_crh, sock_drain_event_call, 
 		sock_closing, sock_error_closing, sock_process_close_event, sock_remote_ended_call, 
 		sock_update_state, 
+		// server socket
+		server_register, server_listen, 
+		server_make_socket_input, server_make_socket_output, server_consume_socket_event_crh, server_consume_socket_event_call,
+		server_close_event_1, server_close_event_2_crh, server_close_event_2_call, server_error_event_call,
+		server_listening_event_crh, server_listening_event_call, 
+		server_conn_crh_except, server_conn_crh_ok, 
 		http_sock_read_byte_crh_ok, http_sock_read_byte_crh_except, http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
 		type_max
 	};
@@ -83,6 +88,12 @@ public:
 		uintptr_t ptr;
 		bool err;
 		bool used;
+	};
+
+	struct serverConsumeSocket
+	{
+		uintptr_t ptr;
+		uintptr_t sockPtr;
 	};
 
 private:
