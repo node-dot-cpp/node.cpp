@@ -1347,7 +1347,7 @@ public:
 	}
 	template<class DataForCommandProcessing>
 	void appUnref(DataForCommandProcessing& dataForCommandProcessing) { 
-		dataForCommandProcessing.refed = true;
+		dataForCommandProcessing.refed = false;
 	}
 	template<class DataForCommandProcessing>
 	void appReportBeingDestructed(DataForCommandProcessing& dataForCommandProcessing) {
