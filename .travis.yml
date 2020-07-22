@@ -31,13 +31,18 @@ jobs:
       os: osx        
       compiler: clang
       cache: ccache
+      env:
+        - HOMEBREW_NO_AUTO_UPDATE=1
+        - HOMEBREW_NO_INSTALL_CLEANUP=1
       install: brew install ccache
       script:
         - cd safe_memory
         - ./checker/tools/travis-ccache.sh
     - name: Windows MSVC (checker)
       os: windows
-      env: CC=cl CXX=cl
+      env:
+        - CC=cl
+        - CXX=cl
       install:
         - choco install ninja
         - choco install sccache --version=0.2.12
@@ -48,6 +53,21 @@ jobs:
       script:
           - cd safe_memory
           - ./checker/tools/travis-windows.bat
+    - name: Windows MSVC (sccache-warmup)
+      os: windows
+      env:
+        - CC=cl
+        - CXX=cl
+      install:
+        - choco install ninja
+        - choco install sccache --version=0.2.12
+      cache:
+        directories:
+          - $HOME/AppData/Local/Temp/chocolatey
+          - $HOME/AppData/Local/Mozilla/sccache
+      script:
+          - cd safe_memory
+          - ./checker/tools/travis-windows-sccache-warmup.bat
 
   allow_failures:        
     - name: Linux GCC
@@ -57,3 +77,5 @@ jobs:
     - name: Linux GCC (checker)
     - name: macOS Clang (checker)
     - name: Windows MSVC (checker)
+    - name: Windows MSVC (sccache-warmup)
+
