@@ -38,10 +38,16 @@ class BinaryLog
 public:
 	enum Mode { not_using, recording, replaying };
 	enum FrameType { incomplete = 0, 
-		sock_register, sock_connect, sock_closing, sock_error_closing, sock_process_close_event, sock_accepted, sock_read_crh_ok, sock_read_crh_except, 
 		server_register, server_conn_crh_except, server_conn_crh_ok, 
+		// client socket
+		sock_register, sock_connect, sock_accepted, 
+		sock_read_event_crh, sock_read_event_call, sock_read_crh_ok, sock_read_crh_except, 
+		sock_connect_event_crh, sock_connect_event_call, sock_drain_event_crh, sock_drain_event_call, 
+		sock_closing, sock_error_closing, sock_process_close_event, sock_remote_ended_call, 
+		sock_update_state, 
 		http_sock_read_byte_crh_ok, http_sock_read_byte_crh_except, http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
-		type_max };
+		type_max
+	};
 
 	struct FrameData // ret value while reading
 	{
@@ -64,6 +70,12 @@ public:
 		size_t index;
 		uintptr_t ptr;
 		uint64_t socket;
+	};
+
+	struct SocketUpdateState
+	{
+		uintptr_t ptr;
+		int state;
 	};
 
 	struct SocketCloseEvent
