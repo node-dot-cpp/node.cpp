@@ -38,7 +38,7 @@ class BinaryLog
 public:
 	enum Mode { not_using, recording, replaying };
 	enum FrameType { incomplete = 0, 
-		sock_register, sock_connect, sock_closing, sock_error_closing, sock_read_crh_ok, sock_read_crh_except, 
+		sock_register, sock_connect, sock_closing, sock_error_closing, sock_process_close_event, sock_accepted, sock_read_crh_ok, sock_read_crh_except, 
 		server_register, server_conn_crh_except, server_conn_crh_ok, 
 		http_sock_read_byte_crh_ok, http_sock_read_byte_crh_except, http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
 		type_max };
@@ -51,6 +51,12 @@ public:
 	};
 
 	// some helper structures for particualr frame types
+
+	struct SocketEvent
+	{
+		uintptr_t ptr;
+	};
+
 	struct ServerOrSocketRegisterFrameData
 	{
 		enum ObjectType { Undefined, ClientSocket, ServerSocket, AgentServer };
@@ -58,6 +64,13 @@ public:
 		size_t index;
 		uintptr_t ptr;
 		uint64_t socket;
+	};
+
+	struct SocketCloseEvent
+	{
+		uintptr_t ptr;
+		bool err;
+		bool used;
 	};
 
 private:

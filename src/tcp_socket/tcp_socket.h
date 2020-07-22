@@ -803,6 +803,21 @@ public:
 				{
 					auto& entry = ioSockets.at(current.first);
 					bool err = entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::ErrorClosing;
+#ifdef NODECPP_RECORD_AND_REPLAY
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+					{
+						record_and_replay_impl::BinaryLog::SocketCloseEvent edata;
+						edata.ptr = (uintptr_t)(entry.getClientSocketData());
+						edata.err = err;
+						edata.used = entry.isUsed();
+						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_error_closing, &edata, sizeof( edata ) );
+					}
+					else if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+					{
+						// TODO REPLAY: implement as a part of main replaying loop
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "must be implemented as a part of main replaying loop" );
+					}
+#endif // NODECPP_RECORD_AND_REPLAY
 					if ( (SOCKET)(entry.getClientSocketData()->osSocket) != INVALID_SOCKET)
 					{
 						if(err) // if error closing, then discard all buffers
@@ -852,6 +867,19 @@ sessionCreationtime += infraGetCurrentTime() - now;
 //				if (entry.isValid())
 				if (entry.isUsed())
 				{
+#ifdef NODECPP_RECORD_AND_REPLAY
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+					{
+						record_and_replay_impl::BinaryLog::SocketEvent edata;
+						edata.ptr = (uintptr_t)(entry.getClientSocketData());
+						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_accepted, &edata, sizeof( edata ) );
+					}
+					else if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+					{
+						// TODO REPLAY: implement as a part of main replaying loop
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "must be implemented as a part of main replaying loop" );
+					}
+#endif // NODECPP_RECORD_AND_REPLAY
 					auto hr = entry.getClientSocketData()->ahd_accepted;
 					if ( hr )
 					{
