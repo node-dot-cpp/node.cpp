@@ -10,6 +10,22 @@ include(CTest)
 set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/tools")
 include(CommonCppFlags)
 
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # first thing so it applies to all dependencies
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+    endif()
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        # coroutine needs libc++ at this time
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+    endif()
+endif()
+
+
+
 add_subdirectory(safe_memory)
 
 # just in case some project needs a different main
@@ -27,6 +43,7 @@ add_library(nodecpp_no_main STATIC
 
 target_include_directories(nodecpp_no_main
   PUBLIC include
+  PUBLIC src
 )
 
 add_library(nodecpp STATIC
@@ -37,37 +54,48 @@ add_library(nodecpp STATIC
 target_link_libraries(nodecpp_no_main safe_memory)
 target_link_libraries(nodecpp nodecpp_no_main)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_options(nodecpp_no_main PUBLIC /await)
-	# remove the default exception option to remove warning
-	string( REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	target_compile_options(nodecpp_no_main PUBLIC -Wno-unknown-attributes -Wno-c++17-extensions)
-	target_compile_options(nodecpp_no_main PUBLIC -fcoroutines-ts -stdlib=libc++)
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+		target_compile_options(nodecpp_no_main PUBLIC /await)
+	endif()
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
 	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
-	set_target_properties(nodecpp_no_main PROPERTIES LINK_FLAGS -lc++experimental LINK_FLAGS -lc++abi)
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+		target_compile_definitions(nodecpp PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
+		target_compile_options(nodecpp_no_main PUBLIC -Wno-unknown-attributes -Wno-c++17-extensions)
+		target_compile_options(nodecpp_no_main PUBLIC -fcoroutines-ts)
+#        set_target_properties(foundation PROPERTIES LINK_OPTIONS -lc++)
+	endif()
+
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
 	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+		target_compile_definitions(nodecpp PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
+		target_compile_options(nodecpp_no_main PUBLIC -Wno-unknown-attributes -Wno-c++17-extensions)
+	endif()
 endif()
 
 
-add_executable(client
-	test/samples/client/user_code/NetSocket.cpp
+add_executable(TcpClientSample
+	samples/tcp_client/user_code/TcpClientSample.cpp
 )
 
-target_link_libraries(client nodecpp)
+target_link_libraries(TcpClientSample nodecpp)
 
-add_executable(server
-	test/samples/server/user_code/NetSocket.cpp
+add_executable(TcpServerSample
+	samples/tcp_server/user_code/TcpServerSample.cpp
 )
 
-target_link_libraries(server nodecpp)
+target_link_libraries(TcpServerSample nodecpp)
 
-add_executable(ctrl_client
-	test/samples/ctrl_client/user_code/NetSocket.cpp
+add_executable(HttpServerSample
+	samples/http_server/user_code/HttpServerSample.cpp
 )
 
-target_link_libraries(ctrl_client nodecpp)
+target_link_libraries(HttpServerSample nodecpp)
 
 
 set(DZ_INCLUDES -isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
