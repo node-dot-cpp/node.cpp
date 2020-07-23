@@ -4,6 +4,8 @@ dist: bionic
 addons:
   apt:
     packages:
+      - clang-9
+      - libc++-9-dev
       - libc++1-9
 notifications:
   email:
@@ -21,7 +23,7 @@ jobs:
       compiler: clang
     - name: Linux Clang
       env:
-        - CC=clang++-9
+        - CC=clang-9
         - CXX=clang++-9
     - name: Windows Clang
       os: windows
