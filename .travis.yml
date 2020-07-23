@@ -1,6 +1,10 @@
 language: cpp
 os: linux
 dist: bionic
+addons:
+  apt:
+    packages:
+      - libc++1-9
 notifications:
   email:
     if: branch = master OR branch = develop
@@ -16,7 +20,9 @@ jobs:
       os: osx        
       compiler: clang
     - name: Linux Clang
-      compiler: clang
+      env:
+        - CC=clang++-9
+        - CXX=clang++-9
     - name: Windows Clang
       os: windows
       install: choco install ninja
