@@ -7,6 +7,7 @@ addons:
       - clang-9
       - libc++-9-dev
       - libc++1-9
+      - libpthread-stubs0-dev
 notifications:
   email:
     if: branch = master OR branch = develop
