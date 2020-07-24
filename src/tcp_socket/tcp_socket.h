@@ -974,7 +974,7 @@ private:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent edata;
 					edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
-					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_event_crh, &edata, sizeof( edata ) );
+					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_failed_event_crh, &edata, sizeof( edata ) );
 				}
 #endif // NODECPP_RECORD_AND_REPLAY
 				internal_usage_only::internal_getsockopt_so_error(entry.getClientSocketData()->osSocket);
@@ -1007,21 +1007,29 @@ private:
 				}
 				else
 				{
-#ifdef NODECPP_RECORD_AND_REPLAY
-					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-					{
-						record_and_replay_impl::BinaryLog::SocketEvent edata;
-						edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
-						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_event_crh, &edata, sizeof( edata ) );
-					}
-#endif // NODECPP_RECORD_AND_REPLAY
 					if ( total_received_sz >= required_min_sz )
 					{
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							record_and_replay_impl::BinaryLog::SocketEvent edata;
+							edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_event_crh, &edata, sizeof( edata ) );
+						}
+#endif // NODECPP_RECORD_AND_REPLAY
 						entry.getClientSocketData()->ahd_read.h = nullptr;
 						hr();
 					}
 					else
 					{
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							record_and_replay_impl::BinaryLog::SocketEvent edata;
+							edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_failed_event_crh, &edata, sizeof( edata ) );
+						}
+#endif // NODECPP_RECORD_AND_REPLAY
 						entry.getClientSocketData()->ahd_read.h = nullptr;
 						nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 						hr();
