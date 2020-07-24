@@ -263,7 +263,7 @@ if ( pollRetMax < retval )
 			short revents = ioSockets.reventsAt(ioSockets.awakerSockIdx);
 			if ( revents && (int64_t)(ioSockets.socketsAt(ioSockets.awakerSockIdx)) > 0 )
 			{
-#ifdef NODECPP_ENABLE_CLUSTERING
+#ifdef USE_TEMP_PERF_CTRS
 ++zeroSockCnt;
 #endif // USE_TEMP_PERF_CTRS
 				++processed;
@@ -335,7 +335,7 @@ size_t now2 = infraGetCurrentTime();
 				if ( revents && (int64_t)(ioSockets.socketsAt(i)) > 0 ) // on Windows WSAPoll() may set revents to a non-zero value despite the socket is invalid
 				{
 #endif
-#ifdef NODECPP_ENABLE_CLUSTERING
+#ifdef USE_TEMP_PERF_CTRS
 ++eventCnt;
 #endif // USE_TEMP_PERF_CTRS
 					++processed;

@@ -7,7 +7,6 @@ addons:
       - clang-9
       - libc++-9-dev
       - libc++1-9
-      - libpthread-stubs0-dev
 notifications:
   email:
     if: branch = master OR branch = develop
@@ -21,11 +20,13 @@ jobs:
       script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-windows-msvc.bat
     - name: macOS Clang
       os: osx        
-      compiler: clang
+      script:
+        - cd tools
+        - ./travis-clang-9-samples.sh
     - name: Linux Clang
-      env:
-        - CC=clang-9
-        - CXX=clang++-9
+      script:
+        - cd tools
+        - ./travis-clang-9-samples.sh
     - name: Windows Clang
       os: windows
       install: choco install ninja
