@@ -55,6 +55,7 @@ namespace nodecpp {
 #include <iibmalloc.h>*/
 #include <safe_ptr.h>
 #include "awaitable.h"
+#include "basic_collections.h"
 
 #include <utility>
 
@@ -88,121 +89,12 @@ using GlobalObjectAllocator = Mallocator<T>;
 
 namespace nodecpp
 {
-	template<class T>
-	using vector = ::std::vector<T, nodecpp::safememory::iiballocator<T>>;
-
-	template<class T>
-	using stdvector = ::std::vector<T, nodecpp::stdallocator<T>>;
-
-	template<class Key, class T>
-	using map = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
-
-	template<class Key, class T>
-	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::stdallocator<std::pair<const Key,T>>>;
-
-	using string = ::std::basic_string<char, std::char_traits<char>, nodecpp::safememory::iiballocator<char>>;
-
-	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::stdallocator<char>>;
-
-	class string_literal
-	{
-		const char* str;
-	public:
-		string_literal() : str( nullptr ) {}
-		string_literal( const char* str_) : str( str_ ) {}
-		string_literal( const string_literal& other ) : str( other.str ) {}
-		string_literal& operator = ( const string_literal& other ) {str = other.str; return *this;}
-		string_literal( string_literal&& other ) : str( other.str ) {}
-		string_literal& operator = ( string_literal&& other ) {str = other.str; return *this;}
-
-		bool operator == ( const string_literal& other ) const { return strcmp( str, other.str ) == 0; }
-		bool operator != ( const string_literal& other ) const { return strcmp( str, other.str ) != 0; }
-
-//		bool operator == ( const char* other ) const { return strcmp( str, other.str ) == 0; }
-//		bool operator != ( const char* other ) const { return strcmp( str, other.str ) != 0; }
-
-		const char* c_str() const { return str; }
-	};
-
-	template <typename... Args>
-	inline nodecpp::string format(
-		const char* format_str, const Args &... args) {
-		nodecpp::string s;
-	  ::fmt::format_to( std::back_inserter(s), format_str, args... );
-	  return s;
-	}
-
-	template <typename... Args>
-	inline nodecpp::string format(
-		const nodecpp::string& format_str, const Args &... args) {
-		nodecpp::string s;
-	  ::fmt::format_to( std::back_inserter(s), format_str.c_str(), args... );
-	  return s;
-	}
-
-	template <typename... Args>
-	inline nodecpp::string format(
-		const nodecpp::string_literal& format_str, const Args &... args) {
-		nodecpp::string s;
-	  ::fmt::format_to( std::back_inserter(s), format_str.c_str(), args... );
-	  return s;
-	}
-
-	template<class T>
-	T* alloc( size_t count ) {
-		nodecpp::safememory::iiballocator<T> iiball;
-		T* ret = iiball.allocate( count );
-		for ( size_t i=0; i<count; ++i )
-			new (ret + i) T();
-		return ret;
-	}
-
-	template<class T>
-	void dealloc( T* ptr, size_t count ) {
-		for ( size_t i=0; i<count; ++i )
-			(ptr + i)->~T();
-		nodecpp::safememory::iiballocator<T> iiball;
-		iiball.deallocate( ptr, count );
-	}
-
-	template<class T>
-	T* stdalloc( size_t count ) {
-		nodecpp::stdallocator<T> stdall;
-		T* ret = stdall.allocate( count );
-		for ( size_t i=0; i<count; ++i )
-			new (ret + i) T();
-		return ret;
-	}
-
-	template<class T>
-	void stddealloc( T* ptr, size_t count ) {
-		for ( size_t i=0; i<count; ++i )
-			(ptr + i)->~T();
-		nodecpp::stdallocator<T> stdall;
-		stdall.deallocate( ptr, count );
-	}
-} // nodecpp
-
-namespace nodecpp
-{
 #ifndef NODECPP_NO_COROUTINES
 	using handler_ret_type = ::nodecpp::awaitable<void>;
 #else
 	using handler_ret_type = void;
 #endif // NODECPP_NO_COROUTINES
 
-/*	struct awaitable_handle_data
-	{
-#ifndef NODECPP_NO_COROUTINES
-		using handler_fn_type = std::experimental::coroutine_handle<>;
-		handler_fn_type h = nullptr;
-#else
-		using handler_fn_type = void (*)();
-		handler_fn_type h = nullptr;
-#endif
-		bool is_exception = false;
-		std::exception exception; // TODO: consider possibility of switching to nodecpp::error
-	};*/
 #ifndef NODECPP_NO_COROUTINES
 	using awaitable_handle_t = std::experimental::coroutine_handle<>;
 #else

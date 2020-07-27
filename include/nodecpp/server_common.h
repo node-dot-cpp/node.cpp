@@ -650,6 +650,7 @@ namespace nodecpp {
 			}
 
 			void emitListening(size_t id, Address addr) {
+				// TODO: revise together with a point of call (for the source of id and addr)
 				//this->id = id;
 				this->dataForCommandProcessing.index = id;
 				this->dataForCommandProcessing.localAddress = std::move(addr);

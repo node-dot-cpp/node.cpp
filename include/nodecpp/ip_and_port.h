@@ -29,6 +29,7 @@
 #define IP_AND_PORT_H
 
 #include "common.h"
+#include "basic_collections.h"
 
 namespace nodecpp {
 	

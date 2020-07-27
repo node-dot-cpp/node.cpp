@@ -30,6 +30,7 @@
 
 #include "../include/nodecpp/common.h"
 #include <page_allocator.h>
+#include "../include/nodecpp/ip_and_port.h"
 
 namespace nodecpp::record_and_replay_impl {
 
@@ -47,6 +48,7 @@ public:
 		// server socket
 		server_register, server_register_2, server_listen, 
 		server_make_socket_input, server_make_socket_output, server_consume_socket_event_crh, server_consume_socket_event_call,
+//		server_all_conn_ended, 
 		server_close_event_1, server_close_event_2_crh, server_close_event_2_call, server_error_event_call,
 		server_listening_event_crh, server_listening_event_call, 
 		server_conn_crh_except, server_conn_crh_ok, 
@@ -98,10 +100,23 @@ public:
 		uintptr_t commProcDataPtr;
 	};
 
+	struct ServerMakeSocketOutput
+	{
+		uintptr_t sockPtr;
+		Ip4 remoteIp;
+		Port remotePort;
+	};
+
 	struct serverConsumeSocket
 	{
 		uintptr_t ptr;
 		uintptr_t sockPtr;
+	};
+
+	struct ServerCloseEvent_2
+	{
+		uintptr_t ptr;
+		bool err;
 	};
 
 private:
