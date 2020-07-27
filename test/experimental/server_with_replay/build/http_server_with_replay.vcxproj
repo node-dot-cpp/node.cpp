@@ -611,6 +611,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\awaitable.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\basic_collections.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\cluster.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\error.h" />
@@ -635,6 +636,7 @@
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket_base.h" />
     <ClInclude Include="..\..\..\..\src\tcp_socket\listener_thread_impl.h" />
+    <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket_replaying_loop.h" />
     <ClInclude Include="..\user_code\HttpServerWithReplay.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
