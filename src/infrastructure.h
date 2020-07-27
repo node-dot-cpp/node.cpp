@@ -38,6 +38,11 @@
 #include "../include/nodecpp/timers.h"
 #include <functional>
 
+#ifdef NODECPP_RECORD_AND_REPLAY
+#include "tcp_socket/tcp_socket_replaying_loop.h"
+#endif // NODECPP_RECORD_AND_REPLAY
+
+
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
 	If the user doesn't store it, timeout will fire normally, and after that all
@@ -430,27 +435,65 @@ now2 = infraGetCurrentTime();
 inline
 void registerWithInfraAndAcquireSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t)
 {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	netSocketManagerBase->appAcquireSocket(t);
+#ifdef NODECPP_RECORD_AND_REPLAY
+	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
+		NodeReplayer::registerAndAssignSocket(t);
+	}
+	else
+#endif // NODECPP_RECORD_AND_REPLAY
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
+		netSocketManagerBase->appAcquireSocket(t);
+	}
 }
 
 inline
 void registerWithInfraAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t, OpaqueSocketData& sdata)
 {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	netSocketManagerBase->appAssignSocket(t, sdata);
+#ifdef NODECPP_RECORD_AND_REPLAY
+	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
+		NodeReplayer::registerAndAssignSocket(t);
+	}
+	else
+#endif // NODECPP_RECORD_AND_REPLAY
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
+		netSocketManagerBase->appAssignSocket(t, sdata);
+	}
 }
 
 inline
 void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 {
-	netSocketManagerBase->appConnectSocket(s, ip, port);
+#ifdef NODECPP_RECORD_AND_REPLAY
+	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+	{
+		return NodeReplayer::appConnectSocket(s, ip, port);
+	}
+	else
+#endif // NODECPP_RECORD_AND_REPLAY
+	{
+		netSocketManagerBase->appConnectSocket(s, ip, port);
+	}
 }
 
 inline
 void registerServer(soft_ptr<net::ServerBase> t)
 {
-	return netServerManagerBase->appAddServer(t);
+#ifdef NODECPP_RECORD_AND_REPLAY
+	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+	{
+		return NodeReplayer::appAddServer(t);
+	}
+	else
+#endif // NODECPP_RECORD_AND_REPLAY
+	{
+		return netServerManagerBase->appAddServer(t);
+	}
 }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
@@ -591,6 +634,7 @@ class Runnable : public RunnableBase
 		killAllZombies();
 		interceptNewDeleteOperators(false);
 	}
+
 public:
 	using NodeType = Node;
 	Runnable() {}

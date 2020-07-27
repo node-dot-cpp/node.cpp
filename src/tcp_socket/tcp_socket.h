@@ -634,27 +634,19 @@ private:
 	void registerAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr, SocketRiia& s)
 	{
 #ifdef NODECPP_RECORD_AND_REPLAY
-		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadLocalData.binaryLog->mode() != record_and_replay_impl::BinaryLog::Mode::replaying );
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
-			auto frame = threadLocalData.binaryLog->readNextFrame();
-			if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_register )
-			{
-				record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData* data = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData*>( frame.ptr );
-				threadLocalData.binaryLog->addPointerMapping( data->ptr, &(*ptr) );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data->type == record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData::ObjectType::ClientSocket );
-				ptr->dataForCommandProcessing.osSocket = s.release();
-				NetSocketEntry entry( data->index, ptr );
-			}
-			else
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+			record_and_replay_impl::BinaryLog::SocketEvent data;
+			data.ptr = (uintptr_t)(&(*ptr));
+			::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::sock_register, &data, sizeof( data ) );
+			::nodecpp::threadLocalData.binaryLog->continueAddingFrame( &s, sizeof( SocketRiia ) );
+			::nodecpp::threadLocalData.binaryLog->addingFrameDone();
 		}
-		else
 #endif // NODECPP_RECORD_AND_REPLAY
-		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
-			ptr->dataForCommandProcessing.osSocket = s.release();
-			ioSockets.addEntry<net::SocketBase>(ptr);
-		}
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
+		ptr->dataForCommandProcessing.osSocket = s.release();
+		ioSockets.addEntry<net::SocketBase>(ptr);
 	}
 
 public:

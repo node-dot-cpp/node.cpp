@@ -35,6 +35,7 @@
 
 using namespace nodecpp;
 
+extern thread_local NodeBase* thisThreadNode;
 class NodeReplayer
 {
 public:
@@ -49,17 +50,16 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.writeBuffer.empty());
 	}
 
-	static void registerAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr, SocketRiia& s)
+	static void registerAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr)
 	{
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 		{
 			auto frame = threadLocalData.binaryLog->readNextFrame();
 			if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_register )
 			{
-				record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData* data = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData*>( frame.ptr );
+				record_and_replay_impl::BinaryLog::SocketEvent* data = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( frame.ptr );
 				threadLocalData.binaryLog->addPointerMapping( data->ptr, &(*ptr) );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data->type == record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData::ObjectType::ClientSocket );
-				ptr->dataForCommandProcessing.osSocket = s.release();
+				ptr->dataForCommandProcessing.osSocket = reinterpret_cast<SocketRiia*>(reinterpret_cast<uint8_t*>(frame.ptr) + sizeof(record_and_replay_impl::BinaryLog::SocketEvent))->release();
 //				NetSocketEntry entry( data->index, ptr );
 			}
 			else
@@ -143,9 +143,10 @@ public:
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 
+
 	template<class DataForCommandProcessing>
 	static void appListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying );
 		Port myPort = Port::fromHost(port);
 #ifdef NODECPP_ENABLE_CLUSTERING
 #ifdef NODECPP_RECORD_AND_REPLAY
@@ -162,8 +163,10 @@ public:
 #endif // NODECPP_ENABLE_CLUSTERING
 		auto frame = threadLocalData.binaryLog->readNextFrame();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::server_listen, "indeed type = {}", frame.type );
-		record_and_replay_impl::BinaryLog::SocketEvent* data = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( frame.ptr );
+		record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( frame.ptr );
 		DataForCommandProcessing* dfcp = reinterpret_cast<DataForCommandProcessing*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
+
+		nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 		dfcp->refed = true;
 		dfcp->localAddress.ip = ip;
@@ -172,7 +175,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dfcp->index != 0 );
 	}
 
-	static void replayLoop()
+	static void runReplayingLoop()
 	{
 		record_and_replay_impl::BinaryLog::FrameData fd;
 		for(;;)
@@ -452,6 +455,70 @@ public:
 				}
 			}
 		}
+	}
+
+	template<class Node>
+	void internalRunForReplaying()
+	{
+		interceptNewDeleteOperators(true);
+		{
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.init();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.init();
+#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+
+#ifdef NODECPP_ENABLE_CLUSTERING
+#error not yet implemented
+			if ( isMaster )
+			{
+				uintptr_t readHandle = initInterThreadCommSystemAndGetReadHandleForMainThread();
+				infra.ioSockets.setAwakerSocket( readHandle );
+			}
+			else
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData != nullptr );
+				infra.ioSockets.setAwakerSocket( startupData->readHandle );
+			}
+#endif
+			// from now on all internal structures are ready to use; let's run their "users"
+#ifdef NODECPP_ENABLE_CLUSTERING
+#error not yet implemented
+			nodecpp::postinitThreadClusterObject();
+			if ( isMaster )
+			{
+				size_t listenerCnt = 1;
+				auto argv = getArgv();
+				for ( size_t i=1; i<argv.size(); ++i )
+				{
+					if ( argv[i].size() > 13 && argv[i].substr(0,13) == "numlisteners=" )
+						listenerCnt = atol(argv[i].c_str() + 13);
+				}
+				for ( size_t i=0; i<listenerCnt; ++i )
+					createListenerThread();
+			}
+#endif // NODECPP_ENABLE_CLUSTERING
+
+			owning_ptr<Node> node;
+			node = make_owning<Node>();
+			thisThreadNode = &(*node); 
+			node->binLog.initForReplaying();
+			::nodecpp::threadLocalData.binaryLog = &(node->binLog);
+			// NOTE!!! 
+			// By coincidence it so happened that both void Node::main() and nodecpp::handler_ret_type Node::main() are currently treated in the same way.
+			// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
+			// http://www.gotw.ca/gotw/071.htm and 
+			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
+			node->main();
+			runReplayingLoop();
+			node = nullptr;
+
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+		}
+		killAllZombies();
+		interceptNewDeleteOperators(false);
 	}
 };
 

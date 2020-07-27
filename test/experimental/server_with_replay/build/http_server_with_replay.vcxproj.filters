@@ -135,7 +135,9 @@
     <ClInclude Include="..\..\..\..\src\tcp_socket\tcp_socket_replaying_loop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\include\nodecpp\basic_collections.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\basic_collections.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
