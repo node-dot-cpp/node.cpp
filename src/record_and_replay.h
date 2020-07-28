@@ -101,6 +101,14 @@ public:
 		uintptr_t commProcDataPtr;
 	};
 
+	struct ServerListen
+	{
+		uintptr_t ptr;
+		Ip4 ip;
+		uint16_t port;
+		int backlog;
+	};
+
 	struct ServerMakeSocketOutput
 	{
 		uintptr_t sockPtr;
@@ -163,6 +171,28 @@ public:
 		FrameHeader* h = (FrameHeader*)writePos;
 		h->type = 0; // no records yet
 	}
+	size_t dbgWalkThrougFrames()
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::replaying, "indeed: {}", (size_t)mode_ ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mem ); 
+		size_t ret = 0;
+		LogHeader* lh = (LogHeader*)(mem);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, lh->size <= size, "indeed: {} vs. {}", lh->size, size ); 
+		FrameHeader* frame = (FrameHeader*)(lh + 1);
+		for ( ; ; ++ret )
+		{
+			if ( (uint8_t*)frame + sizeof( FrameHeader ) < mem + size && frame->type && (uint8_t*)frame + sizeof( FrameHeader ) + frame->size <= mem + size) {
+				printf( "[%zd] frame type %d, size %d\n", ret, frame->type, frame->size );
+				frame = (FrameHeader*)( (uint8_t*)(frame + 1) + frame->size );
+			}
+			else
+			{
+				printf( " -> NO MORE FRAMES\n" );
+				break;
+			}
+		}
+		return ret;
+	}
 	void initForReplaying() { // TODO: subject for revision (currently serves rather for immediate development and debugging purposes)
 		constexpr size_t maxBuffsize = 1 << 26;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::not_using, "indeed: {}", (size_t)mode_ ); 
@@ -188,6 +218,7 @@ public:
 		LogHeader* lh = (LogHeader*)(mem);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, lh->size <= sz, "indeed: {} vs. {}", lh->size, sz ); 
 		fh = (FrameHeader*)(lh + 1);
+printf( " Binary buffer initialized. Buffer size: %zd bytes, %zd frames\n", sz, dbgWalkThrougFrames() );
 	}
 	void deinit() {
 		if ( mode_ == Mode::recording )
@@ -203,6 +234,7 @@ public:
 		mode_ = Mode::not_using;
 	}
 
+	size_t frameIdx = 0;
 	void addFrame( uint32_t frameType, void* data, uint32_t sz) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::recording, "indeed: {}", (size_t)mode_ ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, currentFrameSize == 0, "indeed: {}", currentFrameSize ); 
@@ -227,6 +259,7 @@ public:
 		FrameHeader* hnext = (FrameHeader*)writePos;
 		hnext->type = 0;
 		h->type = frameType;
+printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, h->type, h->size );
 	}
 	void startAddingFrame( uint32_t frameType, void* data, uint32_t sz) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::recording, "indeed: {}", (size_t)mode_ ); 
@@ -236,6 +269,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, currentFrameSize == 0, "indeed: {}", currentFrameSize ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, currentFrameType == 0, "indeed: {}", currentFrameType ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, fh == nullptr ); 
+		currentFrameType = frameType;
 		fh = (FrameHeader*)writePos;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, fh->type == 0 ); 
 		memcpy( fh + 1, data, sz );
@@ -247,6 +281,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data != nullptr ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mem + size >= writePos + sz ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, currentFrameSize != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, currentFrameType != 0 ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, fh != nullptr ); 
 		memcpy( writePos, data, sz );
 		writePos += sz;
@@ -255,19 +290,23 @@ public:
 	void addingFrameDone() {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::recording, "indeed: {}", (size_t)mode_ ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, currentFrameSize != 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, currentFrameType != 0 ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, fh != nullptr ); 
 		FrameHeader* hnext = (FrameHeader*)writePos;
 		hnext->type = 0;
 		fh->size = currentFrameSize;
 		fh->type = currentFrameType;
+printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size );
 		fh = nullptr;
 		currentFrameSize = 0;
+		currentFrameType = 0;
 	}
 
 	FrameData readNextFrame() {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::replaying, "indeed: {}", (size_t)mode_ ); 
 		FrameData fd;
-		if ( (uint8_t*)fh + sizeof( FrameHeader ) < mem + size && fh->type && (uint8_t*)fh + sizeof( FrameHeader ) + fh->size < mem + size) {
+		if ( (uint8_t*)fh + sizeof( FrameHeader ) < mem + size && fh->type && (uint8_t*)fh + sizeof( FrameHeader ) + fh->size <= mem + size) {
+printf( " -> frame type %d\n", fh->type );
 			fd.size = fh->size;
 			fd.type = fh->type;
 			fd.ptr = fh + 1;

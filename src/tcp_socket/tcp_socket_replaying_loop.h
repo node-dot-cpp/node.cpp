@@ -374,6 +374,18 @@ public:
 					break;
 				}
 
+				/*case record_and_replay_impl::BinaryLog::FrameType::server_listen:
+				{
+					record_and_replay_impl::BinaryLog::ServerListen* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerListen*>( fd.ptr );
+					net::ServerBase::DataForCommandProcessing* serverDataPtr = reinterpret_cast<net::ServerBase::DataForCommandProcessing*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
+					serverDataPtr->refed = true;
+					serverDataPtr->localAddress.ip = edata->ip;
+					serverDataPtr->localAddress.port = edata->port;
+					serverDataPtr->localAddress.family = nodecpp::string_literal( "IPv4" );
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, serverDataPtr->index != 0 );
+					break;
+				}*/
+
 				case record_and_replay_impl::BinaryLog::FrameType::server_listening_event_crh:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
@@ -456,6 +468,12 @@ public:
 					serverPtr->emitError( e );
 					if (serverPtr->dataForCommandProcessing.isErrorEventHandler())
 						serverPtr->dataForCommandProcessing.handleErrorEvent( serverSoftPtr, e );
+					break;
+				}
+
+				default:
+				{
+					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, false, "unexpected frame type {}", fd.type ); 
 					break;
 				}
 			}

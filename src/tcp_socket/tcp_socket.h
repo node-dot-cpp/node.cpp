@@ -33,6 +33,10 @@
 #include "../clustering_impl/clustering_impl.h"
 #include "../clustering_impl/interthread_comm.h"
 
+#ifdef NODECPP_RECORD_AND_REPLAY
+#include "tcp_socket/tcp_socket_replaying_loop.h"
+#endif // NODECPP_RECORD_AND_REPLAY
+
 using namespace nodecpp;
 
 class NetSocketEntry {
@@ -1405,6 +1409,13 @@ public:
 
 	template<class DataForCommandProcessing>
 	void appListen(DataForCommandProcessing& dataForCommandProcessing, nodecpp::Ip4 ip, uint16_t port, int backlog) { //TODO:CLUSTERING alt impl
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+		{
+			NodeReplayer::appListen( dataForCommandProcessing, ip, port, backlog );
+			return;
+		}
+#endif // NODECPP_RECORD_AND_REPLAY
 		Port myPort = Port::fromHost(port);
 #ifdef NODECPP_ENABLE_CLUSTERING
 #ifdef NODECPP_RECORD_AND_REPLAY
@@ -1434,8 +1445,11 @@ public:
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
-			record_and_replay_impl::BinaryLog::SocketEvent edata;
+			record_and_replay_impl::BinaryLog::ServerListen edata;
 			edata.ptr = (uintptr_t)(&dataForCommandProcessing);
+			edata.ip = ip;
+			edata.port = port;
+			edata.backlog = backlog;
 			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_listen, &edata, sizeof( edata ) );
 		}
 #endif // NODECPP_RECORD_AND_REPLAY
@@ -1456,10 +1470,18 @@ public:
 	}
 	template<class DataForCommandProcessing>
 	void appRef(DataForCommandProcessing& dataForCommandProcessing) { 
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			return;
+#endif // NODECPP_RECORD_AND_REPLAY
 		dataForCommandProcessing.refed = true;
 	}
 	template<class DataForCommandProcessing>
 	void appUnref(DataForCommandProcessing& dataForCommandProcessing) { 
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			return;
+#endif // NODECPP_RECORD_AND_REPLAY
 		dataForCommandProcessing.refed = false;
 	}
 	template<class DataForCommandProcessing>
@@ -1810,7 +1832,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 			if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 			{
 				record_and_replay_impl::BinaryLog::serverConsumeSocket edata;
-				edata.ptr = (uintptr_t)(&(*entry.getServerSocketData()));
+				edata.ptr = (uintptr_t)(&(*entry.getServerSocket()));
 				edata.sockPtr = (uintptr_t)(&(*ptr));
 				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_consume_socket_event_crh, &edata, sizeof( edata ) );
 			}
@@ -1825,7 +1847,7 @@ sessionCreationtime += infraGetCurrentTime() - now;
 			if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 			{
 				record_and_replay_impl::BinaryLog::serverConsumeSocket edata;
-				edata.ptr = (uintptr_t)(&(*entry.getServerSocketData()));
+				edata.ptr = (uintptr_t)(&(*entry.getServerSocket()));
 				edata.sockPtr = (uintptr_t)(&(*ptr));
 				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_consume_socket_event_call, &edata, sizeof( edata ) );
 			}
