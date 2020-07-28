@@ -5,6 +5,7 @@ addons:
   apt:
     packages:
       - clang-9
+      - llvm-9-dev
       - libc++-9-dev
       - libc++1-9
 notifications:
