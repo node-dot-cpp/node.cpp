@@ -21,7 +21,8 @@ jobs:
       os: windows
       script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-windows-msvc.bat
     - name: macOS Clang
-      os: osx        
+      os: osx
+      osx_image: xcode12u
       script:
         - cd tools
         - ./travis-clang-9-samples.sh
