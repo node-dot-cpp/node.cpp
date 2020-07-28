@@ -42,12 +42,19 @@ public:
 
 class MySampleTNode : public NodeBase
 {
+	size_t callCtr = 0;
 public:
 
 	class MyHttpServer : public net::HttpServer<MySampleTNode>
 	{
+		nodecpp::log::Log log;
 	public:
-		MyHttpServer() {}
+		MyHttpServer() {
+			log.add( stdout );
+			nodecpp::logging_impl::currentLog = &log;
+			nodecpp::logging_impl::instanceId = 0;
+			log.setCriticalLevel( nodecpp::log::LogLevel::err );
+		}
 		MyHttpServer(MySampleTNode* node) : HttpServer<MySampleTNode>(node) {}
 		virtual ~MyHttpServer() {}
 	};
@@ -75,6 +82,7 @@ public:
 		try { 
 			for(;;) { 
 				co_await srv->a_request(request, response); 
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "receiving request # {}", callCtr++ );
 				Buffer b1(0x1000);
 				co_await request->a_readBody( b1 );
 				yetSimpleProcessing( request, response );
@@ -93,11 +101,14 @@ public:
 			auto queryValues = Url::parseUrlQueryString( request->getUrl() );
 			auto& value = queryValues["value"];
 			if (value.toStr() == ""){
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "   replying \"no value specified\"" );
 				co_await response->end("no value specified");
 			} else if (value.toStr() == "close"){
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "   proceeding to closing" );
 				srv->close();
 				co_await response->end("closing server...");
 			} else {
+				log::default_log::info( log::ModuleID(nodecpp_module_id), "   replying \"{}\"", value.toStr() );
 				co_await response->end( value.toStr() );
 			}
 		} else {

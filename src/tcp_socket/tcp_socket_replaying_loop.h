@@ -458,7 +458,7 @@ public:
 	}
 
 	template<class Node>
-	void internalRunForReplaying()
+	static void run()
 	{
 		interceptNewDeleteOperators(true);
 		{

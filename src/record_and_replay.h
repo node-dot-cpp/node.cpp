@@ -163,15 +163,20 @@ public:
 		h->type = 0; // no records yet
 	}
 	void initForReplaying() { // TODO: subject for revision (currently serves rather for immediate development and debugging purposes)
+		constexpr size_t maxBuffsize = 1 << 26;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::not_using, "indeed: {}", (size_t)mode_ ); 
 		mode_ = Mode::replaying;
 		void* buff = nullptr;
 		size_t sz = 0;
+		buff = nodecpp::VirtualMemory::allocate( maxBuffsize );
+		FILE* f = fopen( "binlog.dat", "rb" );
+		if ( f != 0 )
+			sz = fread( buff, 1, maxBuffsize, f );
+		else
 		{
-			void* buff = nodecpp::VirtualMemory::allocate( 1 << 26 );
-			FILE* f = fopen( "binlog.dat", "rb" );
-			if ( f != 0 )
-				sz = fread( buff, 1, 1<<26, f );
+			nodecpp::VirtualMemory::deallocate( buff, maxBuffsize );
+			buff = nullptr;
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "Failed to open a default binary log for replaying" ); 
 		}
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > 0 ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff != nullptr ); 
