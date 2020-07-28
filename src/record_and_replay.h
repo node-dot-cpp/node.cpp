@@ -54,6 +54,8 @@ public:
 		server_conn_crh_except, server_conn_crh_ok, 
 		// http support
 		http_sock_read_byte_crh_ok, http_sock_read_byte_crh_except, http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
+		// common
+		coro_await_ready_res, coro_await_ready_yes, coro_await_redy_no, 
 		// control
 		type_max
 	};
@@ -154,6 +156,8 @@ private:
 	uint8_t* writePos = nullptr;
 	size_t currentFrameSize = 0;
 	uint32_t currentFrameType = 0;
+
+	size_t frameIdx = 0;
 public:
 	BinaryLog() {}
 	~BinaryLog() { deinit(); }
@@ -234,7 +238,6 @@ printf( " Binary buffer initialized. Buffer size: %zd bytes, %zd frames\n", sz, 
 		mode_ = Mode::not_using;
 	}
 
-	size_t frameIdx = 0;
 	void addFrame( uint32_t frameType, void* data, uint32_t sz) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::recording, "indeed: {}", (size_t)mode_ ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, currentFrameSize == 0, "indeed: {}", currentFrameSize ); 
@@ -306,7 +309,7 @@ printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size )
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::replaying, "indeed: {}", (size_t)mode_ ); 
 		FrameData fd;
 		if ( (uint8_t*)fh + sizeof( FrameHeader ) < mem + size && fh->type && (uint8_t*)fh + sizeof( FrameHeader ) + fh->size <= mem + size) {
-printf( " -> frame type %d\n", fh->type );
+printf( "  [-%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size );
 			fd.size = fh->size;
 			fd.type = fh->type;
 			fd.ptr = fh + 1;

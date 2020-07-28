@@ -599,6 +599,21 @@ namespace nodecpp {
 					~read_data_awaiter() {}
 
 					bool await_ready() {
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							bool ret = socket.dataForCommandProcessing.readBuffer.used_size() >= min_bytes;
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
+							return ret;
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+							return *(reinterpret_cast<bool*>(frame.ptr));
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
 						return socket.dataForCommandProcessing.readBuffer.used_size() >= min_bytes;
 					}
 
@@ -673,6 +688,21 @@ namespace nodecpp {
 					~read_data_awaiter() {}
 
 					bool await_ready() {
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							bool ret = socket.dataForCommandProcessing.readBuffer.used_size() >= min_bytes;
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
+							return ret;
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+							return *(reinterpret_cast<bool*>(frame.ptr));
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
 						return socket.dataForCommandProcessing.readBuffer.used_size() >= min_bytes;
 					}
 
@@ -750,8 +780,25 @@ namespace nodecpp {
 					~write_data_awaiter() {}
 
 					bool await_ready() {
-						write_ok = socket.write2( buff ); // so far we do it sync TODO: extend implementation for more complex (= requiring really async processing) cases
-						return write_ok; // false means waiting (incl. exceptional cases)
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							bool ret = socket.write2( buff );
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
+							return ret;
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+							return *(reinterpret_cast<bool*>(frame.ptr));
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
+						{
+							write_ok = socket.write2( buff ); // so far we do it sync TODO: extend implementation for more complex (= requiring really async processing) cases
+							return write_ok; // false means waiting (incl. exceptional cases)
+						}
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
@@ -783,6 +830,21 @@ namespace nodecpp {
 					~drain_awaiter() {}
 
 					bool await_ready() {
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							bool ret = socket.dataForCommandProcessing.writeBuffer.empty();
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
+							return ret;
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+							return *(reinterpret_cast<bool*>(frame.ptr));
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
 						return socket.dataForCommandProcessing.writeBuffer.empty();
 					}
 
@@ -817,6 +879,21 @@ namespace nodecpp {
 					~drain_awaiter() {}
 
 					bool await_ready() {
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							bool ret = socket.dataForCommandProcessing.writeBuffer.empty();
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
+							return ret;
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+							return *(reinterpret_cast<bool*>(frame.ptr));
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
 						return socket.dataForCommandProcessing.writeBuffer.empty();
 					}
 
