@@ -23,9 +23,6 @@ jobs:
     - name: macOS Clang
       os: osx
       osx_image: xcode12u
-      script:
-        - cd tools
-        - ./travis-clang-9-samples.sh
     - name: Linux Clang
       script:
         - cd tools
