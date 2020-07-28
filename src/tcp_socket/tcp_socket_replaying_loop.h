@@ -55,11 +55,13 @@ public:
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 		{
 			auto frame = threadLocalData.binaryLog->readNextFrame();
-			if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_register )
+			if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_register_2 )
 			{
-				record_and_replay_impl::BinaryLog::SocketEvent* data = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( frame.ptr );
+				record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData* data = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData*>( frame.ptr );
 				threadLocalData.binaryLog->addPointerMapping( data->ptr, &(*ptr) );
-				ptr->dataForCommandProcessing.osSocket = reinterpret_cast<SocketRiia*>(reinterpret_cast<uint8_t*>(frame.ptr) + sizeof(record_and_replay_impl::BinaryLog::SocketEvent))->release();
+				ptr->dataForCommandProcessing.osSocket = data->index;
+				ptr->dataForCommandProcessing.osSocket = data->socket;
+//				ptr->dataForCommandProcessing.osSocket = reinterpret_cast<SocketRiia*>(reinterpret_cast<uint8_t*>(frame.ptr) + sizeof(record_and_replay_impl::BinaryLog::SocketEvent))->release();
 //				NetSocketEntry entry( data->index, ptr );
 			}
 			else
@@ -113,13 +115,15 @@ public:
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 		{
 			auto frame = threadLocalData.binaryLog->readNextFrame();
-			if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::server_register )
+			if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::server_register_2 )
 			{
 				record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData* data = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData*>( frame.ptr );
 				threadLocalData.binaryLog->addPointerMapping( data->ptr, &(*ptr) );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data->type == record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData::ObjectType::ServerSocket );
 				ptr->dataForCommandProcessing.osSocket = data->socket;
 				ptr->dataForCommandProcessing.index = data->index;
+				threadLocalData.binaryLog->addPointerMapping( data->ptr, &(*ptr) );
+				threadLocalData.binaryLog->addPointerMapping( data->dataForCommProcPtr, &(ptr->dataForCommandProcessing) );
 			}
 			else
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 

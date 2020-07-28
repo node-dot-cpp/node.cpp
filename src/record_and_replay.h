@@ -78,6 +78,7 @@ public:
 		ObjectType type;
 		size_t index;
 		uintptr_t ptr;
+		uintptr_t dataForCommProcPtr;
 		uint64_t socket;
 	};
 

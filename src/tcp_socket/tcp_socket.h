@@ -47,32 +47,34 @@ public:
 
 	NetSocketEntry(size_t index) : state(State::Unused), index(index) {}
 	NetSocketEntry(size_t index, nodecpp::safememory::soft_ptr<net::SocketBase> ptr) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ClientSocket, ptr) {
-/*#ifdef NODECPP_RECORD_AND_REPLAY
+#ifdef NODECPP_RECORD_AND_REPLAY
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
 			record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData data;
 			data.type = record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData::ObjectType::ClientSocket;
 			data.index = index;
 			data.ptr = (uintptr_t)(&(*ptr));
+			data.dataForCommProcPtr = (uintptr_t)(&(ptr->dataForCommandProcessing));
 			data.socket = ptr->dataForCommandProcessing.osSocket;
 			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_register_2, &data, sizeof( data ) );
 		}
-#endif // NODECPP_RECORD_AND_REPLAY*/
+#endif // NODECPP_RECORD_AND_REPLAY
 		ptr->dataForCommandProcessing.index = index;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 	}
 	NetSocketEntry(size_t index, nodecpp::safememory::soft_ptr<net::ServerBase> ptr) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket, ptr) {
-/*#ifdef NODECPP_RECORD_AND_REPLAY
+#ifdef NODECPP_RECORD_AND_REPLAY
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
 			record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData data;
 			data.type = record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData::ObjectType::ServerSocket;
 			data.index = index;
 			data.ptr = (uintptr_t)(&(*ptr));
+			data.dataForCommProcPtr = (uintptr_t)(&(ptr->dataForCommandProcessing));
 			data.socket = ptr->dataForCommandProcessing.osSocket;
 			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_register_2, &data, sizeof( data ) );
 		}
-#endif // NODECPP_RECORD_AND_REPLAY*/
+#endif // NODECPP_RECORD_AND_REPLAY
 		ptr->dataForCommandProcessing.index = index;
 #ifndef NODECPP_ENABLE_CLUSTERING
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
@@ -633,7 +635,7 @@ public:
 private:
 	void registerAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr, SocketRiia& s)
 	{
-#ifdef NODECPP_RECORD_AND_REPLAY
+/*#ifdef NODECPP_RECORD_AND_REPLAY
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadLocalData.binaryLog->mode() != record_and_replay_impl::BinaryLog::Mode::replaying );
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
@@ -643,7 +645,7 @@ private:
 			::nodecpp::threadLocalData.binaryLog->continueAddingFrame( &s, sizeof( SocketRiia ) );
 			::nodecpp::threadLocalData.binaryLog->addingFrameDone();
 		}
-#endif // NODECPP_RECORD_AND_REPLAY
+#endif // NODECPP_RECORD_AND_REPLAY*/
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Uninitialized);
 		ptr->dataForCommandProcessing.osSocket = s.release();
 		ioSockets.addEntry<net::SocketBase>(ptr);
@@ -1296,13 +1298,13 @@ public:
 		}
 		ptr->dataForCommandProcessing.osSocket = s.release();
 #ifdef NODECPP_RECORD_AND_REPLAY
-		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+		/*if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
 			record_and_replay_impl::BinaryLog::serverRegister edata;
 			edata.ptr = (uintptr_t)(&(*ptr));
 			edata.commProcDataPtr = (uintptr_t)(&(ptr->dataForCommandProcessing));
 			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_register, &edata, sizeof( edata ) );
-		}
+		}*/
 #endif // NODECPP_RECORD_AND_REPLAY
 			addServerEntry(ptr);
 #else
@@ -1462,6 +1464,10 @@ public:
 	}
 	template<class DataForCommandProcessing>
 	void appReportBeingDestructed(DataForCommandProcessing& dataForCommandProcessing) {
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			return;
+#endif // NODECPP_RECORD_AND_REPLAY
 		size_t id = dataForCommandProcessing.index;
 #ifndef NODECPP_ENABLE_CLUSTERING
 		ioSockets.setUnused(id); 
