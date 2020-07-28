@@ -58,6 +58,7 @@ public:
 			if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_register_2 )
 			{
 				record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData* data = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData*>( frame.ptr );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data->type == record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData::ObjectType::ClientSocket );
 				threadLocalData.binaryLog->addPointerMapping( data->ptr, &(*ptr) );
 				ptr->dataForCommandProcessing.osSocket = data->index;
 				ptr->dataForCommandProcessing.osSocket = data->socket;
@@ -118,12 +119,11 @@ public:
 			if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::server_register_2 )
 			{
 				record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData* data = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData*>( frame.ptr );
-				threadLocalData.binaryLog->addPointerMapping( data->ptr, &(*ptr) );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, data->type == record_and_replay_impl::BinaryLog::ServerOrSocketRegisterFrameData::ObjectType::ServerSocket );
-				ptr->dataForCommandProcessing.osSocket = data->socket;
-				ptr->dataForCommandProcessing.index = data->index;
 				threadLocalData.binaryLog->addPointerMapping( data->ptr, &(*ptr) );
 				threadLocalData.binaryLog->addPointerMapping( data->dataForCommProcPtr, &(ptr->dataForCommandProcessing) );
+				ptr->dataForCommandProcessing.osSocket = data->socket;
+				ptr->dataForCommandProcessing.index = data->index;
 			}
 			else
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
@@ -413,6 +413,7 @@ public:
 					record_and_replay_impl::BinaryLog::ServerMakeSocketOutput* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerMakeSocketOutput*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->sockPtr ) );
 					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					infraAddAccepted( sockSoftPtr );
 					sockPtr->dataForCommandProcessing._remote.ip = edata->remoteIp;
 					sockPtr->dataForCommandProcessing._remote.port = edata->remotePort.getHost();
 					break;

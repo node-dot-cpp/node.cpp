@@ -1667,7 +1667,7 @@ public:
 								if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 								{
 									record_and_replay_impl::BinaryLog::SocketEvent edata;
-									edata.ptr = (uintptr_t)(entry.getServerSocketData());
+									edata.ptr = (uintptr_t)(&(*entry.getServerSocket()));
 									::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_listening_event_call, &edata, sizeof( edata ) );
 								}
 #endif // NODECPP_RECORD_AND_REPLAY
