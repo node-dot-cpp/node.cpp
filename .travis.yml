@@ -6,8 +6,9 @@ addons:
     packages:
       - clang-9
       - llvm-9-dev
+      - libclang-9-dev
+      - libc++abi-9-dev
       - libc++-9-dev
-      - libc++1-9
 notifications:
   email:
     if: branch = master OR branch = develop
