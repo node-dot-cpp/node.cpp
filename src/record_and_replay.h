@@ -55,7 +55,7 @@ public:
 		// http support
 		http_sock_read_byte_crh_ok, http_sock_read_byte_crh_except, http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
 		// common
-		coro_await_ready_res, coro_await_ready_yes, coro_await_redy_no, 
+		coro_await_ready_res, 
 		// control
 		type_max
 	};

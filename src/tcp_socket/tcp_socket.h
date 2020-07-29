@@ -1264,6 +1264,10 @@ public:
 
 	template<class DataForCommandProcessing>
 	void appClose(DataForCommandProcessing& serverData) {
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			return;
+#endif // NODECPP_RECORD_AND_REPLAY
 		size_t id = serverData.index;
 #ifndef NODECPP_ENABLE_CLUSTERING
 		auto& entry = appGetEntry(id);
@@ -1297,6 +1301,10 @@ public:
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 	void appReportAllAceptedConnectionsEnded(net::ServerBase::DataForCommandProcessing& serverData) {
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			return;
+#endif // NODECPP_RECORD_AND_REPLAY
 		size_t id = serverData.index;
 		auto& entry = appGetEntry(id);
 		if (!entry.isUsed())
