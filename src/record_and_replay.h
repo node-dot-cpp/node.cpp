@@ -39,6 +39,8 @@ class BinaryLog
 public:
 	enum Mode { not_using, recording, replaying };
 	enum FrameType { incomplete = 0, 
+		// node
+		node_main_call,
 		// client socket
 		sock_register, sock_register_2, sock_connect, sock_accepted, 
 		sock_read_event_crh, sock_read_failed_event_crh, sock_read_event_call, sock_read_crh_ok, sock_read_crh_except, 
@@ -331,6 +333,13 @@ printf( "  [-%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size )
 		if ( f != pointerMap.end() )
 			return f->second;
 		return (void*)oldVal;
+	}
+
+	uint32_t nextFrameType() {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::replaying, "indeed: {}", (size_t)mode_ ); 
+		if ( (uint8_t*)fh + sizeof( FrameHeader ) < mem + size )
+			return fh->type;
+		return 0;
 	}
 
 	Mode mode() { return mode_; }

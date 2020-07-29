@@ -622,6 +622,10 @@ class Runnable : public RunnableBase
 			// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
+#ifdef NODECPP_RECORD_AND_REPLAY
+			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
+				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
+#endif // NODECPP_RECORD_AND_REPLAY
 			node->main();
 			infra.runStandardLoop();
 			node = nullptr;

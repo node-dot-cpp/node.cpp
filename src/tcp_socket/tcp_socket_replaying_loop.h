@@ -549,8 +549,15 @@ public:
 			// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
-			node->main();
-			runReplayingLoop();
+			if ( threadLocalData.binaryLog->nextFrameType() == record_and_replay_impl::BinaryLog::FrameType::node_main_call )
+			{
+				auto frame = threadLocalData.binaryLog->readNextFrame();
+				NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::node_main_call );
+				node->main();
+				runReplayingLoop();
+			}
+			else
+				NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, false, "starting from snapshot is not yet implemented" );
 			node = nullptr;
 
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
