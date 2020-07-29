@@ -83,7 +83,7 @@ public:
 		sockPtr->dataForCommandProcessing.refed = true;
 	}
 
-	static void closeSocket( net::SocketBase* sockPtr ) //app-infra neutral
+	/*static void closeSocket( net::SocketBase* sockPtr ) //app-infra neutral
 	{
 		if ( !( sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::Closing ||
 				sockPtr->dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::ErrorClosing ||
@@ -105,7 +105,7 @@ public:
 			auto frame = threadLocalData.binaryLog->readNextFrame();
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_error_closing, "UNEXPECTED FRAME TYPE  (indeed: {})", frame.type );
 		}
-	}
+	}*/
 
 //	enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
 //	ShouldEmit _infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);
@@ -287,6 +287,24 @@ public:
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
 					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					sockPtr->dataForCommandProcessing.state = (net::SocketBase::DataForCommandProcessing::State)( edata->state );
+					break;
+				}
+
+				case record_and_replay_impl::BinaryLog::FrameType::sock_closing:
+				{
+					record_and_replay_impl::BinaryLog::SocketUpdateState* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketUpdateState*>( fd.ptr );
+					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
+					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Closing;
+					break;
+				}
+
+				case record_and_replay_impl::BinaryLog::FrameType::sock_error_preclosing:
+				{
+					record_and_replay_impl::BinaryLog::SocketUpdateState* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketUpdateState*>( fd.ptr );
+					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
+					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
 					break;
 				}
 

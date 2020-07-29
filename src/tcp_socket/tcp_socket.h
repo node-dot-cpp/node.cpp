@@ -718,7 +718,11 @@ protected:
 			else
 			{
 				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_closing, nullptr, 0 );
+				{
+					record_and_replay_impl::BinaryLog::SocketEvent edata;
+					edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
+					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_closing, &edata, sizeof( edata ) );
+				}
 				pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( false, Error())));
 			}
 #else
@@ -737,12 +741,16 @@ protected:
 			if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 			{
 				auto frame = threadLocalData.binaryLog->readNextFrame();
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_error_closing, "UNEXPECTED FRAME TYPE  (indeed: {})", frame.type );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_error_preclosing, "UNEXPECTED FRAME TYPE  (indeed: {})", frame.type );
 			}
 			else
 			{
 				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_error_closing, nullptr, 0 );
+				{
+					record_and_replay_impl::BinaryLog::SocketEvent edata;
+					edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
+					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_error_preclosing, &edata, sizeof( edata ) );
+				}
 				pendingCloseEvents.push_back(std::make_pair( entry.index, std::make_pair( true, err)));
 			}
 #else
@@ -753,9 +761,17 @@ protected:
 
 public:
 	void appRef(size_t id) { 
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			return;
+#endif // NODECPP_RECORD_AND_REPLAY
 		ioSockets.setRefed( id, true );
 	}
 	void appUnref(size_t id) { 
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			return;
+#endif // NODECPP_RECORD_AND_REPLAY
 		ioSockets.setRefed( id, false );
 	}
 	void appPause(size_t id) { 
@@ -767,6 +783,10 @@ public:
 		entry.getClientSocketData()->paused = false; 
 	}
 	void appReportBeingDestructed(size_t id) { 
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+			return;
+#endif // NODECPP_RECORD_AND_REPLAY
 		/*auto& entry = appGetEntry(id);
 		//entry.getClientSocketData()->refed = false; 
 		entry.setUnused(); */

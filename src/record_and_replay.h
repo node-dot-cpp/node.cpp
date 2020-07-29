@@ -43,7 +43,7 @@ public:
 		sock_register, sock_register_2, sock_connect, sock_accepted, 
 		sock_read_event_crh, sock_read_failed_event_crh, sock_read_event_call, sock_read_crh_ok, sock_read_crh_except, 
 		sock_connect_event_crh, sock_connect_event_call, sock_drain_event_crh, sock_drain_event_call, 
-		sock_closing, sock_error_closing, sock_process_close_event, sock_remote_ended_call, 
+		sock_closing, sock_error_preclosing, sock_error_closing, sock_process_close_event, sock_remote_ended_call, 
 		sock_update_state, 
 		// server socket
 		server_register, server_register_2, server_listen, 
