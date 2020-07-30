@@ -148,15 +148,16 @@ public:
 class NetSockets
 {
 private:
-	using NetSocketEntryVectorT = nodecpp::vector<NetSocketEntry>;
+	using NetSocketEntryVectorT = nodecpp::stdvector<NetSocketEntry>;
+	using PllFdVectorT = nodecpp::stdvector<pollfd>;
 	NetSocketEntryVectorT ourSide;
 	NetSocketEntryVectorT ourSideAccum;
 #ifdef NODECPP_ENABLE_CLUSTERING
 	nodecpp::vector<NetSocketEntry> slaveServers;
 	static constexpr size_t SlaveServerEntryMinIndex = (((size_t)~((size_t)0))>>1)+1;
 #endif // NODECPP_ENABLE_CLUSTERING
-	nodecpp::vector<pollfd> osSide;
-	nodecpp::vector<pollfd> osSideAccum;
+	PllFdVectorT osSide;
+	PllFdVectorT osSideAccum;
 	size_t associatedCount = 0;
 	size_t usedCount = 0;
 public:
@@ -176,7 +177,7 @@ private:
 		if ( ourSide.size() <= compactionMinSize || usedCount < ourSide.size() / 2 )
 			return;
 		NetSocketEntryVectorT ourSideNew;
-		nodecpp::vector<pollfd> osSideNew;
+		PllFdVectorT osSideNew;
 		ourSideNew.reserve(capacity_); 
 		osSideNew.reserve(capacity_);
 		ourSideNew.emplace_back(0); 
@@ -579,8 +580,8 @@ public:
 
 protected:
 	NetSockets& ioSockets; // TODO: improve
-	nodecpp::vector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
-	nodecpp::vector<size_t> pendingAcceptedEvents;
+	nodecpp::stdvector<std::pair<size_t, std::pair<bool, Error>>> pendingCloseEvents;
+	nodecpp::stdvector<size_t> pendingAcceptedEvents;
 
 public:
 	NetSocketManagerBase(NetSockets& ioSockets_) : ioSockets( ioSockets_) {}
@@ -1240,10 +1241,10 @@ class NetServerManagerBase
 protected:
 	//mb: ioSockets[0] is always reserved and invalid.
 	NetSockets& ioSockets; // TODO: improve
-	nodecpp::vector<std::pair<size_t, bool>> pendingCloseEvents;
+	nodecpp::stdvector<std::pair<size_t, bool>> pendingCloseEvents;
 	PendingEvQueue pendingEvents;
-	nodecpp::vector<Error> errorStore;
-	nodecpp::vector<size_t> pendingListenEvents;
+	nodecpp::stdvector<Error> errorStore;
+	nodecpp::stdvector<size_t> pendingListenEvents;
 
 #ifdef NODECPP_ENABLE_CLUSTERING
 	struct AcceptedSocketData
@@ -1253,8 +1254,8 @@ protected:
 		Ip4 remoteIp;
 		Port remotePort;
 	};
-	nodecpp::vector<AcceptedSocketData> acceptedSockets;
-	nodecpp::vector<size_t> receivedListeningEvs;
+	nodecpp::stdvector<AcceptedSocketData> acceptedSockets;
+	nodecpp::stdvector<size_t> receivedListeningEvs;
 #endif // NODECPP_ENABLE_CLUSTERING
 
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
@@ -1675,7 +1676,7 @@ public:
 #endif // NODECPP_RECORD_AND_REPLAY
 		while ( pendingListenEvents.size() )
 		{
-			nodecpp::vector<size_t> currentPendingListenEvents = std::move( pendingListenEvents );
+			nodecpp::stdvector<size_t> currentPendingListenEvents = std::move( pendingListenEvents );
 			for (auto& current : currentPendingListenEvents)
 			{
 				if (ioSockets.isValidId(current))
