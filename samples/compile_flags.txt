@@ -5,6 +5,8 @@
 -isystem
 ../safe_memory/library/src/iibmalloc/src
 -isystem
+../safe_memory/library/include
+-isystem
 ../safe_memory/library/src
 -isystem
 ../include

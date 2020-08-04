@@ -79,6 +79,10 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 
+#-------------------------------------------------------------------------------------------
+# Tests and samples
+#-------------------------------------------------------------------------------------------
+
 add_executable(TcpClientSample
 	samples/tcp_client/user_code/TcpClientSample.cpp
 )
@@ -97,62 +101,65 @@ add_executable(HttpServerSample
 
 target_link_libraries(HttpServerSample nodecpp)
 
+# -----------------------------------------------------------------------------
+# Below this line targets to run checker and dezombiefier intrumentation
+# So far only tested with ninja generator under windows
+# -----------------------------------------------------------------------------
 
-set(DZ_INCLUDES -isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
-				-isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
-				-isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src 
-				-isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src
-				-isystem ${PROJECT_SOURCE_DIR}/include/nodecpp
-				-isystem ${PROJECT_SOURCE_DIR}/include
-				-isystem ${PROJECT_SOURCE_DIR}/src
+set(DZ_INCLUDES -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
+				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
+				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src 
+				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/include
+				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src
+				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/include/nodecpp
+				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/include
+				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/src
 				)
 
-set(DZ_DEFINES -DNDEBUG -DUSING_T_SOCKETS)
+set(DZ_DEFINES -DNDEBUG)
+set(DZ_FLAGS -std=c++17 -fcoroutines-ts)
 
+function(dz_add_executable ATARGET)
 
+    get_target_property(TARGET_SOURCE_DIR ${ATARGET} SOURCE_DIR)
+    get_target_property(TARGET_BINARY_DIR ${ATARGET} BINARY_DIR)
+    get_target_property(TARGET_SOURCES ${ATARGET} SOURCES)
 
-
-# -----------------------------------------------------------------------------
-# Below this line targets to build intrumented (dezombiefied) client and server
-# So far only tested with ninja generator under windows
-# target names are 'dz-client.bin' and 'dz-server.bin'
-# -----------------------------------------------------------------------------
-
-function(make_dz_files OUT_VAR LIST1 LIST2)
-
-	foreach(EACH IN LISTS ${LIST1} ${LIST2})
+	foreach(EACH IN LISTS TARGET_SOURCES)
 
 		get_filename_component(P ${EACH} DIRECTORY)
 		get_filename_component(N ${EACH} NAME_WE)
 		get_filename_component(E ${EACH} EXT)
 
-		string(CONCAT DZ_NAME ${P} "/" ${N} ".dz" ${E})
+		string(CONCAT DZ_NAME ${TARGET_BINARY_DIR} "/" ${P} "/" ${N} ".dz" ${E})
+		string(CONCAT FULL_NAME ${TARGET_SOURCE_DIR} "/" ${EACH})
+
 
 		add_custom_command(
 		    OUTPUT  ${DZ_NAME}
-		    COMMAND nodecpp-instrument ${EACH} -- -fcoroutines-ts -std=c++17 ${DZ_DEFINES} ${DZ_INCLUDES}
+		    COMMAND nodecpp-checker ${FULL_NAME} -- ${DZ_FLAGS} ${DZ_DEFINES} ${DZ_INCLUDES}
+		    COMMAND nodecpp-instrument ${FULL_NAME} -o=${DZ_NAME} -- ${DZ_FLAGS} ${DZ_DEFINES} ${DZ_INCLUDES}
+#			MAIN_DEPENDENCY ${FULL_NAME}
 		)
 
 		list(APPEND DZ_FILES ${DZ_NAME})
 
 	endforeach()
-	set(${OUT_VAR} ${DZ_FILES} PARENT_SCOPE)
+	
+    get_target_property(TARGET_NAME ${ATARGET} NAME)
+    string(CONCAT DZ_TARGET_NAME ${TARGET_NAME} "-dz")
+    
+	add_executable(${DZ_TARGET_NAME} ${DZ_FILES})
+	target_link_libraries(${DZ_TARGET_NAME} nodecpp)
+
 endfunction()
 
+option(NODECPP_CHECK_AND_DZ_SAMPLES "Check and Dezombiefy samples" OFF)
 
-#make_dz_files(DZ_CLIENT_FILES SOURCE_EXE CLIENT_SOURCE_EXE)
+if(NODECPP_CHECK_AND_DZ_SAMPLES)
+	dz_add_executable(TcpClientSample)
 
-#add_executable(dz-client.bin ${DZ_CLIENT_FILES})
+	dz_add_executable(TcpServerSample)
 
-#make_dz_files(DZ_SERVER_FILES SOURCE_EXE SERVER_SOURCE_EXE)
-
-#add_executable(dz-server.bin ${DZ_SERVER_FILES})
-
-
-if(MSVC)
-#	target_link_libraries( dz-client.bin iibmalloc ${LIB_NAME})
-#	target_link_libraries( dz-server.bin iibmalloc ${LIB_NAME})
-else()
-#	target_link_libraries( dz-client.bin iibmalloc ${LIB_NAME} pthread)
-#	target_link_libraries( dz-server.bin iibmalloc ${LIB_NAME} pthread)
+	dz_add_executable(HttpServerSample)
 endif()

@@ -604,11 +604,11 @@ namespace nodecpp {
 
 			struct HeaderHolder
 			{
-				const char* key;
+				const char* key = nullptr;
 				enum ValType { undef, str, num };
-				ValType valType;
-				const char* valStr;
-				size_t valNum;
+				ValType valType = undef;
+				const char* valStr = nullptr;
+				size_t valNum = 0;
 				HeaderHolder( const char* key_, const char* val ) { key = key_; valType = ValType::str; valStr = val; }
 				HeaderHolder( nodecpp::string key_, const char* val ) { key = key_.c_str(); valType = ValType::str; valStr = val; }
 				HeaderHolder( nodecpp::string_literal key_, const char* val ) { key = key_.c_str(); valType = ValType::str; valStr = val; }

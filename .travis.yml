@@ -65,8 +65,11 @@ jobs:
           - $HOME/AppData/Local/Temp/chocolatey
           - $HOME/AppData/Local/Mozilla/sccache
       script:
-          - cd safe_memory
-          - ./checker/tools/travis-windows.bat
+        - cd safe_memory/checker
+        - ./checkout.bat
+        - ./tools/travis-windows.bat
+        - cd ..
+        - ./tools/travis-check-and-dz.bat
     - name: Windows MSVC (sccache-warmup)
       os: windows
       env:
@@ -80,8 +83,9 @@ jobs:
           - $HOME/AppData/Local/Temp/chocolatey
           - $HOME/AppData/Local/Mozilla/sccache
       script:
-          - cd safe_memory
-          - ./checker/tools/travis-windows-sccache-warmup.bat
+        - cd safe_memory/checker
+        - ./checkout.bat
+        - ./tools/travis-windows-sccache-warmup.bat
 
   allow_failures:        
     - name: Linux GCC

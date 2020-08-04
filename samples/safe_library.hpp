@@ -405,6 +405,11 @@ namespace nodecpp {
 
 		class HttpServerResponse 
 		{
+			class HeaderHolder
+			{
+				void toStr();
+			};
+			
 			HttpServerResponse& operator = (HttpServerResponse&& other);
 			void clear();
 

@@ -16,6 +16,7 @@
     "nodecpp::net::HttpServerBase",
     "nodecpp::net::HttpServerBase::a_request::connection_awaiter",
     "nodecpp::net::HttpServerResponse",
+    "nodecpp::net::HttpServerResponse::HeaderHolder",
     "nodecpp::net::HttpSocket",
     "nodecpp::net::HttpSocketBase",
     "nodecpp::net::HttpSocketBase::a_continueGetting::continue_getting_awaiter",
