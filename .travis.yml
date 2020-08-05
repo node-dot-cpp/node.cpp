@@ -68,7 +68,7 @@ jobs:
         - cd safe_memory/checker
         - ./checkout.bat
         - ./tools/travis-windows.bat
-        - cd ..
+        - cd ../..
         - ./tools/travis-check-and-dz.bat
     - name: Windows MSVC (sccache-warmup)
       os: windows
