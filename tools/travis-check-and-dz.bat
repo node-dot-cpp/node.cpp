@@ -16,7 +16,7 @@ rmdir /S /Q build\travis
 mkdir build\travis
 cd build\travis
 
-cmake -DNODECPP_CHECK_AND_DZ_SAMPLES=ON -DCMAKE_CXX_COMPILER_LAUNCHER="sccache" -DCMAKE_BUILD_TYPE=Release -G Ninja ..\..
+cmake -DNODECPP_CHECK_AND_DZ_SAMPLES=ON -DCMAKE_BUILD_TYPE=Release -G Ninja ..\..
 @if ERRORLEVEL 1 exit /b %ERRORLEVEL%
 
 cmake --build .

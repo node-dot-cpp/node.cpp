@@ -9,6 +9,7 @@ addons:
       - libclang-9-dev
       - libc++abi-9-dev
       - libc++-9-dev
+      - ninja-build
 notifications:
   email:
     if: branch = master OR branch = develop
@@ -27,20 +28,22 @@ jobs:
       script:
         - cd tools
         - ./travis-clang-9-samples.sh
-    - name: Linux Clang2
-      env:
-        - CC=clang-9
-        - CXX=clang++-9
     - name: Windows Clang
       os: windows
       install: choco install ninja
       script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-windows-clang.bat
-    - name: Linux GCC (checker)
-      compiler: gcc
+    - name: Linux Clang (checker)
       cache: ccache
+      env:
+        - CC=clang-9
+        - CXX=clang++-9
+        - CMAKE_CXX_COMPILER_LAUNCHER=ccache
       script:
-        - cd safe_memory
-        - ./checker/tools/travis-ccache.sh
+        - cd safe_memory/checker
+        - ./checkout.sh
+        - ./tools/travis-build.sh
+        - cd ../..
+        - ./tools/travis-check-and-dz.sh
     - name: macOS Clang (checker)
       os: osx        
       compiler: clang
@@ -48,15 +51,23 @@ jobs:
       env:
         - HOMEBREW_NO_AUTO_UPDATE=1
         - HOMEBREW_NO_INSTALL_CLEANUP=1
-      install: brew install ccache
+        - CMAKE_CXX_COMPILER_LAUNCHER=ccache
+      install:
+        - brew install ccache
+        - brew install sccache
+        - brew install ninja
       script:
-        - cd safe_memory
-        - ./checker/tools/travis-ccache.sh
+        - cd safe_memory/checker
+        - ./checkout.sh
+        - ./tools/travis-build.sh
+        - cd ../..
+        - ./tools/travis-check-and-dz.sh
     - name: Windows MSVC (checker)
       os: windows
       env:
         - CC=cl
         - CXX=cl
+        - CMAKE_CXX_COMPILER_LAUNCHER=sccache
       install:
         - choco install ninja
         - choco install sccache --version=0.2.12
@@ -75,6 +86,7 @@ jobs:
       env:
         - CC=cl
         - CXX=cl
+        - CMAKE_CXX_COMPILER_LAUNCHER=sccache
       install:
         - choco install ninja
         - choco install sccache --version=0.2.12
@@ -86,14 +98,12 @@ jobs:
         - cd safe_memory/checker
         - ./checkout.bat
         - ./tools/travis-windows-sccache-warmup.bat
-
   allow_failures:        
     - name: Linux GCC
     - name: Linux Clang
-    - name: Linux Clang2
     - name: macOS Clang
     - name: Windows Clang
-    - name: Linux GCC (checker)
+    - name: Linux Clang (checker)
     - name: macOS Clang (checker)
     - name: Windows MSVC (checker)
     - name: Windows MSVC (sccache-warmup)
