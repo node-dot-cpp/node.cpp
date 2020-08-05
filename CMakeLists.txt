@@ -83,11 +83,30 @@ endif()
 # Tests and samples
 #-------------------------------------------------------------------------------------------
 
+
+add_executable(HttpServerSample
+	samples/http_server/user_code/HttpServerSample.cpp
+)
+
+target_link_libraries(HttpServerSample nodecpp)
+
+add_executable(HttpServerWithHandlersSample
+	samples/http_server_handlers/user_code/HttpServerWithHandlersSample.cpp
+)
+
+target_link_libraries(HttpServerWithHandlersSample nodecpp)
+
 add_executable(TcpClientSample
 	samples/tcp_client/user_code/TcpClientSample.cpp
 )
 
 target_link_libraries(TcpClientSample nodecpp)
+
+add_executable(TcpClientWithHandlersSample
+	samples/tcp_client_handlers/user_code/TcpClientWithHandlersSample.cpp
+)
+
+target_link_libraries(TcpClientWithHandlersSample nodecpp)
 
 add_executable(TcpServerSample
 	samples/tcp_server/user_code/TcpServerSample.cpp
@@ -95,11 +114,13 @@ add_executable(TcpServerSample
 
 target_link_libraries(TcpServerSample nodecpp)
 
-add_executable(HttpServerSample
-	samples/http_server/user_code/HttpServerSample.cpp
+add_executable(TcpServerWithHandlersSample
+	samples/tcp_server_handlers/user_code/TcpServerWithHandlersSample.cpp
 )
 
-target_link_libraries(HttpServerSample nodecpp)
+target_link_libraries(TcpServerWithHandlersSample nodecpp)
+
+
 
 # -----------------------------------------------------------------------------
 # Below this line targets to run checker and dezombiefier intrumentation
@@ -157,9 +178,10 @@ endfunction()
 option(NODECPP_CHECK_AND_DZ_SAMPLES "Check and Dezombiefy samples" OFF)
 
 if(NODECPP_CHECK_AND_DZ_SAMPLES)
-	dz_add_executable(TcpClientSample)
-
-	dz_add_executable(TcpServerSample)
-
 	dz_add_executable(HttpServerSample)
+	dz_add_executable(HttpServerWithHandlersSample)
+	dz_add_executable(TcpServerSample)
+	dz_add_executable(TcpServerWithHandlersSample)
+	dz_add_executable(TcpClientSample)
+	dz_add_executable(TcpClientWithHandlersSample)
 endif()

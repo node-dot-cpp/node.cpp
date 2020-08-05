@@ -13,49 +13,24 @@ addons:
 notifications:
   email:
     if: branch = master OR branch = develop
-script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-unix.sh
 jobs:
   include:
-    - name: Linux GCC
-      compiler: gcc
     - name: Windows MSVC
       os: windows
       script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-windows-msvc.bat
-    - name: macOS Clang
-      os: osx
-      osx_image: xcode12u
     - name: Linux Clang
-      script:
-        - cd tools
-        - ./travis-clang-9-samples.sh
-    - name: Windows Clang
-      os: windows
-      install: choco install ninja
-      script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-windows-clang.bat
+      cache: ccache
+      env:
+        - CC=clang-9
+        - CXX=clang++-9
+        - CMAKE_CXX_COMPILER_LAUNCHER=ccache
+      script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-unix.sh
     - name: Linux Clang (checker)
       cache: ccache
       env:
         - CC=clang-9
         - CXX=clang++-9
         - CMAKE_CXX_COMPILER_LAUNCHER=ccache
-      script:
-        - cd safe_memory/checker
-        - ./checkout.sh
-        - ./tools/travis-build.sh
-        - cd ../..
-        - ./tools/travis-check-and-dz.sh
-    - name: macOS Clang (checker)
-      os: osx        
-      compiler: clang
-      cache: ccache
-      env:
-        - HOMEBREW_NO_AUTO_UPDATE=1
-        - HOMEBREW_NO_INSTALL_CLEANUP=1
-        - CMAKE_CXX_COMPILER_LAUNCHER=ccache
-      install:
-        - brew install ccache
-        - brew install sccache
-        - brew install ninja
       script:
         - cd safe_memory/checker
         - ./checkout.sh
@@ -99,12 +74,8 @@ jobs:
         - ./checkout.bat
         - ./tools/travis-windows-sccache-warmup.bat
   allow_failures:        
-    - name: Linux GCC
     - name: Linux Clang
-    - name: macOS Clang
-    - name: Windows Clang
     - name: Linux Clang (checker)
-    - name: macOS Clang (checker)
     - name: Windows MSVC (checker)
     - name: Windows MSVC (sccache-warmup)
 
