@@ -137,8 +137,8 @@ set(DZ_INCLUDES -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iib
 				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/src
 				)
 
-set(DZ_DEFINES -DNDEBUG)
-set(DZ_FLAGS -std=c++17 -fcoroutines-ts)
+set(DZ_DEFINES -DNDEBUG -DNODECPP_ENABLE_CLUSTERING)
+set(DZ_FLAGS -std=c++17 -fcoroutines-ts -stdlib=libc++)
 
 function(dz_add_executable ATARGET)
 
@@ -152,9 +152,10 @@ function(dz_add_executable ATARGET)
 		get_filename_component(N ${EACH} NAME_WE)
 		get_filename_component(E ${EACH} EXT)
 
-		string(CONCAT DZ_NAME ${TARGET_BINARY_DIR} "/" ${P} "/" ${N} ".dz" ${E})
+#		string(CONCAT DZ_NAME ${TARGET_BINARY_DIR} "/" ${P} "/" ${N} ".dz" ${E})
+# mb:use TARGET_SOURCE_DIR until we make local includes work
+		string(CONCAT DZ_NAME ${TARGET_SOURCE_DIR} "/" ${P} "/" ${N} ".dz" ${E})
 		string(CONCAT FULL_NAME ${TARGET_SOURCE_DIR} "/" ${EACH})
-
 
 		add_custom_command(
 		    OUTPUT  ${DZ_NAME}
