@@ -138,7 +138,13 @@ set(DZ_INCLUDES -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iib
 				)
 
 set(DZ_DEFINES -DNDEBUG -DNODECPP_ENABLE_CLUSTERING)
-set(DZ_FLAGS -std=c++17 -fcoroutines-ts -stdlib=libc++)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	set(DZ_FLAGS -std=c++17 -fcoroutines-ts)
+else()
+	set(DZ_FLAGS -std=c++17 -fcoroutines-ts -stdlib=libc++)
+endif()
+
 
 function(dz_add_executable ATARGET)
 
