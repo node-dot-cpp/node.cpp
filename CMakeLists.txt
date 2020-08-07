@@ -127,15 +127,26 @@ target_link_libraries(TcpServerWithHandlersSample nodecpp)
 # So far only tested with ninja generator under windows
 # -----------------------------------------------------------------------------
 
-set(DZ_INCLUDES -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
-				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
-				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src 
-				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/include
-				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src
-				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/include/nodecpp
-				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/include
-				-isystem ${CMAKE_CURRENT_SOURCE_DIR}/src
-				)
+set(DZ_INCLUDES 
+    # this five path are for ubuntu libc++
+    -resource-dir /usr/lib/llvm-9/lib/clang/9.0.0
+    -isystem /usr/lib/llvm-9/bin/../include/c++/v1
+    -isystem /usr/lib/llvm-9/lib/clang/9.0.0/include
+
+    #this two path are for MaxOS libc++
+    -isystem /Library/Developer/CommandLineTools/usr/include/c++/v1
+    -isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+
+    #all path below are from nodecpp
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src 
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/include
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include/nodecpp
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
 set(DZ_DEFINES -DNDEBUG -DNODECPP_ENABLE_CLUSTERING)
 
@@ -186,9 +197,9 @@ option(NODECPP_CHECK_AND_DZ_SAMPLES "Check and Dezombiefy samples" OFF)
 
 if(NODECPP_CHECK_AND_DZ_SAMPLES)
 	dz_add_executable(HttpServerSample)
-	dz_add_executable(HttpServerWithHandlersSample)
+#	dz_add_executable(HttpServerWithHandlersSample)
 	dz_add_executable(TcpServerSample)
-	dz_add_executable(TcpServerWithHandlersSample)
+#	dz_add_executable(TcpServerWithHandlersSample)
 	dz_add_executable(TcpClientSample)
-	dz_add_executable(TcpClientWithHandlersSample)
+#	dz_add_executable(TcpClientWithHandlersSample)
 endif()

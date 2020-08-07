@@ -36,7 +36,7 @@ jobs:
         - ./checkout.sh
         - ./tools/travis-build.sh
         - cd ../..
-        - ./tools/travis-check-and-dz.sh
+        - ./tools/travis-check-and-instrument.sh
     - name: Windows MSVC (checker)
       os: windows
       env:
@@ -55,7 +55,7 @@ jobs:
         - ./checkout.bat
         - ./tools/travis-windows.bat
         - cd ../..
-        - ./tools/travis-check-and-dz.bat
+        - ./tools/travis-check-and-instrument.bat
     - name: Windows MSVC (sccache-warmup)
       os: windows
       env:

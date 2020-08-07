@@ -29,6 +29,22 @@ namespace std {
 			void operator=(function&);
 		};
 
+        // containers below are not really safe, but we allow them until we
+        // we get our own safe containers library
+
+        class vector {
+            void size();
+            void operator[](int);
+        };
+
+        class basic_string {
+            void size();
+            void substr();
+
+        };
+
+        class fake {};
+        void operator==(fake, fake);
 	}
 
 	namespace experimental {
