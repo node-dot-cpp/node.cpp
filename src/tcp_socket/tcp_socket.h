@@ -1143,6 +1143,7 @@ private:
 				}
 				else
 				{
+#ifdef NODECPP_RECORD_AND_REPLAY
 					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 					{
 						record_and_replay_impl::BinaryLog::SocketUpdateState edata;
@@ -1150,6 +1151,7 @@ private:
 						edata.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
 						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_update_state, &edata, sizeof( edata ) );
 					}
+#endif // NODECPP_RECORD_AND_REPLAY
 //!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"infraProcessRemoteEnded() leads to internal_shutdown_send()...");
 					internal_usage_only::internal_shutdown_send(entry.getClientSocketData()->osSocket);
 					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::LocalEnded;

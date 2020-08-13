@@ -650,10 +650,14 @@ public:
 #else
 	void run() override
 	{
+#ifndef NODECPP_RECORD_AND_REPLAY
+			internalRun();
+#else
 		if ( replayMode != nodecpp::record_and_replay_impl::BinaryLog::Mode::replaying )
 			internalRun();
 		else
 			NodeReplayer::run<Node>();
+#endif // NODECPP_RECORD_AND_REPLAY
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
 };
