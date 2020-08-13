@@ -30,12 +30,18 @@
 #define INFRASTRUCTURE_H
 
 #include "../include/nodecpp/common.h"
+#include "../include/nodecpp/nls.h"
 
 #include "ev_queue.h"
 #include "tcp_socket/tcp_socket.h"
 
 #include "../include/nodecpp/timers.h"
 #include <functional>
+
+#ifdef NODECPP_RECORD_AND_REPLAY
+#include "tcp_socket/tcp_socket_replaying_loop.h"
+#endif // NODECPP_RECORD_AND_REPLAY
+
 
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
@@ -429,27 +435,65 @@ now2 = infraGetCurrentTime();
 inline
 void registerWithInfraAndAcquireSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t)
 {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	netSocketManagerBase->appAcquireSocket(t);
+#ifdef NODECPP_RECORD_AND_REPLAY
+	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
+		NodeReplayer::registerAndAssignSocket(t);
+	}
+	else
+#endif // NODECPP_RECORD_AND_REPLAY
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
+		netSocketManagerBase->appAcquireSocket(t);
+	}
 }
 
 inline
 void registerWithInfraAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t, OpaqueSocketData& sdata)
 {
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
-	netSocketManagerBase->appAssignSocket(t, sdata);
+#ifdef NODECPP_RECORD_AND_REPLAY
+	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
+		NodeReplayer::registerAndAssignSocket(t);
+	}
+	else
+#endif // NODECPP_RECORD_AND_REPLAY
+	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, t );
+		netSocketManagerBase->appAssignSocket(t, sdata);
+	}
 }
 
 inline
 void connectSocket(net::SocketBase* s, const char* ip, uint16_t port)
 {
-	netSocketManagerBase->appConnectSocket(s, ip, port);
+#ifdef NODECPP_RECORD_AND_REPLAY
+	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+	{
+		return NodeReplayer::appConnectSocket(s, ip, port);
+	}
+	else
+#endif // NODECPP_RECORD_AND_REPLAY
+	{
+		netSocketManagerBase->appConnectSocket(s, ip, port);
+	}
 }
 
 inline
 void registerServer(soft_ptr<net::ServerBase> t)
 {
-	return netServerManagerBase->appAddServer(t);
+#ifdef NODECPP_RECORD_AND_REPLAY
+	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+	{
+		return NodeReplayer::appAddServer(t);
+	}
+	else
+#endif // NODECPP_RECORD_AND_REPLAY
+	{
+		return netServerManagerBase->appAddServer(t);
+	}
 }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
@@ -568,11 +612,20 @@ class Runnable : public RunnableBase
 
 			node = make_owning<Node>();
 			thisThreadNode = &(*node); 
+#ifdef NODECPP_RECORD_AND_REPLAY
+			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
+				node->binLog.initForRecording( 26 );
+			::nodecpp::threadLocalData.binaryLog = &(node->binLog);
+#endif // NODECPP_RECORD_AND_REPLAY
 			// NOTE!!! 
 			// By coincidence it so happened that both void Node::main() and nodecpp::handler_ret_type Node::main() are currently treated in the same way.
 			// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
 			// http://www.gotw.ca/gotw/071.htm and 
 			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
+#ifdef NODECPP_RECORD_AND_REPLAY
+			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
+				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
+#endif // NODECPP_RECORD_AND_REPLAY
 			node->main();
 			infra.runStandardLoop();
 			node = nullptr;
@@ -585,6 +638,7 @@ class Runnable : public RunnableBase
 		killAllZombies();
 		interceptNewDeleteOperators(false);
 	}
+
 public:
 	using NodeType = Node;
 	Runnable() {}
@@ -596,7 +650,10 @@ public:
 #else
 	void run() override
 	{
-		return internalRun();
+		if ( replayMode != nodecpp::record_and_replay_impl::BinaryLog::Mode::replaying )
+			internalRun();
+		else
+			NodeReplayer::run<Node>();
 	}
 #endif // NODECPP_ENABLE_CLUSTERING
 };

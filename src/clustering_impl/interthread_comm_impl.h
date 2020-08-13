@@ -70,13 +70,13 @@ public:
 	bool is_full() { return size() == maxsz; }
 
 	void push_back(T&& t) {
-		assert(size() < maxsz);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, size() < maxsz);
 		new(tbuffer(head)) T(std::move(t));
 		head = (head + 1) & mask;
 	}
 
 	T pop_front() {
-		assert(size() > 0);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, size() > 0);
 		T* ttail = tbuffer(tail);
 		T ret = std::move(*ttail);
 		ttail->~T();
@@ -124,7 +124,7 @@ public:
 
 			if (killflag)
 				return;
-			assert(!coll.is_full());
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.is_full());
 			coll.push_back(std::move(it));
 			size_t sz = coll.size();
 			hwmsize = std::max(hwmsize, sz);
@@ -141,7 +141,7 @@ public:
 		if (killflag)
 			return std::pair<bool, T>(false, T());
 
-		assert(coll.size() > 0);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, coll.size() > 0);
 //		T ret = std::move(coll.front());
 //		coll.pop_front();
 		T ret = std::move(coll.pop_front());
@@ -159,7 +159,7 @@ public:
 		if (killflag)
 			return 0;
 
-		assert(coll.size() > 0);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, coll.size() > 0);
 		size_t sz2move = count <= coll.size() ? count : coll.size();
 		for ( size_t i=0; i<sz2move; ++i )
 			messages[i] = std::move(coll.pop_front());

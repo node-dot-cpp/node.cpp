@@ -27,7 +27,7 @@
 
 #include "tcp_socket.h"
 #include "../../include/nodecpp/common.h"
-#include "../../include/nodecpp/error.h"
+#include "../../include/nodecpp/_error.h"
 #include "../infrastructure.h"
 
 

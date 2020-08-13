@@ -31,7 +31,7 @@
 #include <functional>
 #include <vector>
 
-#include "error.h"
+#include "_error.h"
 #include "net_common.h"
 
 namespace nodecpp
