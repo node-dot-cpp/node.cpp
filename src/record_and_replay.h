@@ -188,7 +188,7 @@ public:
 		for ( ; ; ++ret )
 		{
 			if ( (uint8_t*)frame + sizeof( FrameHeader ) < mem + size && frame->type && (uint8_t*)frame + sizeof( FrameHeader ) + frame->size <= mem + size) {
-				printf( "[%zd] frame type %d, size %d\n", ret, frame->type, frame->size );
+//				printf( "[%zd] frame type %d, size %d\n", ret, frame->type, frame->size );
 				frame = (FrameHeader*)( (uint8_t*)(frame + 1) + frame->size );
 			}
 			else
@@ -264,7 +264,7 @@ printf( " Binary buffer initialized. Buffer size: %zd bytes, %zd frames\n", sz, 
 		FrameHeader* hnext = (FrameHeader*)writePos;
 		hnext->type = 0;
 		h->type = frameType;
-printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, h->type, h->size );
+//printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, h->type, h->size );
 	}
 	void startAddingFrame( uint32_t frameType, void* data, uint32_t sz) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::recording, "indeed: {}", (size_t)mode_ ); 
@@ -301,7 +301,7 @@ printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, h->type, h->size );
 		hnext->type = 0;
 		fh->size = currentFrameSize;
 		fh->type = currentFrameType;
-printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size );
+//printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size );
 		fh = nullptr;
 		currentFrameSize = 0;
 		currentFrameType = 0;
@@ -311,7 +311,7 @@ printf( "  [+%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size )
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, mode_ == Mode::replaying, "indeed: {}", (size_t)mode_ ); 
 		FrameData fd;
 		if ( (uint8_t*)fh + sizeof( FrameHeader ) < mem + size && fh->type && (uint8_t*)fh + sizeof( FrameHeader ) + fh->size <= mem + size) {
-printf( "  [-%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size );
+//printf( "  [-%zd] -> frame type %d, size %d\n", frameIdx++, fh->type, fh->size );
 			fd.size = fh->size;
 			fd.type = fh->type;
 			fd.ptr = fh + 1;
