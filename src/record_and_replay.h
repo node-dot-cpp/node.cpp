@@ -316,9 +316,10 @@ printf( " Binary buffer initialized. Buffer size: %zd bytes, %zd frames\n", sz, 
 			fd.type = fh->type;
 			fd.ptr = fh + 1;
 			fh = (FrameHeader*)( (uint8_t*)(fh + 1) + fh->size );
+			++frameIdx;
 			return fd;
 		}
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "NO MORE FRAMES" ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "NO MORE FRAMES (already read: {})", frameIdx ); 
 		return fd;
 	}
 	void addPointerMapping( uintptr_t oldValue, void* newValue ) {
