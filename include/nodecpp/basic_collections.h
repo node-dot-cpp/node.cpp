@@ -36,6 +36,7 @@
 #include <list>
 #include <array>
 #include <algorithm>
+#include <malloc_based_allocator.h>
 
 namespace nodecpp
 {
