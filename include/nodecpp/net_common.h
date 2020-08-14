@@ -738,7 +738,13 @@ namespace nodecpp {
 		template<class UserHandlerType>
 		class UserHandlerClassPatterns
 		{
-			using MapType = nodecpp::map<std::type_index, std::pair<UserHandlerType, bool>>;
+			//mb: hash functor with required SAFE_MEMORY attributes
+			struct SAFE_MEMORY_DEEP_CONST HashStdIndex {
+				SAFE_MEMORY_NO_SIDE_EFFECT std::size_t operator()(const std::type_index& _Keyval) const noexcept {
+					return (_Keyval.hash_code());
+				}
+			};
+			using MapType = nodecpp::map<std::type_index, std::pair<UserHandlerType, bool>, HashStdIndex>;
 #ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			MapType _patterns;
 			MapType& patterns() { return _patterns; }

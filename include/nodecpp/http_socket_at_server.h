@@ -1166,7 +1166,7 @@ namespace nodecpp {
 			{
 				co_await readEOL( ch );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, key.size() );
-				message.header.insert( std::make_pair( message.makeLower( key ), "" ));
+				message.header.insert( std::make_pair( message.makeLower( key ), nodecpp::string() ));
 				CO_RETURN;
 			}
 			ch = co_await skipSpaces( ch );

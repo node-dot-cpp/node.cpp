@@ -49,7 +49,13 @@ namespace nodecpp {
 
 		class JSModuleMap
 		{
-			using MapType = ::nodecpp::map<std::type_index, nodecpp::safememory::owning_ptr<js::JSModule>>;
+			//mb: hash functor with required SAFE_MEMORY attributes
+			struct SAFE_MEMORY_DEEP_CONST HashStdIndex {
+				SAFE_MEMORY_NO_SIDE_EFFECT std::size_t operator()(const std::type_index& _Keyval) const noexcept {
+					return (_Keyval.hash_code());
+				}
+			};
+			using MapType = ::nodecpp::map<std::type_index, nodecpp::safememory::owning_ptr<js::JSModule>, HashStdIndex>;
 	#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			MapType _classModuleMap;
 			MapType& classModuleMap() { return _classModuleMap; }

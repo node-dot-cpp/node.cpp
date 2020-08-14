@@ -56,10 +56,10 @@ namespace nodecpp
 	template<class T>
 	using stdvector = ::std::vector<T, nodecpp::stdallocator<T>>;
 
+	template<class Key, class T, class Hash = ::safe_memory::hash<Key>>
+	using map = ::safe_memory::unordered_map<Key, T, Hash>;
 	// template<class Key, class T>
-	// using map = ::safe_memory::unordered_map<Key, T>;
-	template<class Key, class T>
-	using map = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
+	// using map = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
 
 	template<class Key, class T>
 	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::stdallocator<std::pair<const Key,T>>>;
