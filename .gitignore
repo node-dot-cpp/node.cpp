@@ -1,4 +1,5 @@
-
+/build/
+.vscode/
 .vs
 x64
 Release

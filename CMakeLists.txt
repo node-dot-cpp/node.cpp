@@ -1,133 +1,205 @@
+#-------------------------------------------------------------------------------------------
+# Copyright (c) 2020, OLogN Technologies AG
+#-------------------------------------------------------------------------------------------
+
 cmake_minimum_required(VERSION 3.4)
-project(node_cpp)
-
-find_package(Threads)
-
-set(CLIENT_NAME client.bin)
-#set(CTRL_CLIENT_NAME ctrl_client.bin)
-set(SERVER_NAME server.bin)
-set(LIB_NAME gcc_lto_workaround)
-
-set(SOURCE_EXE ${PROJECT_SOURCE_DIR}/src/infra_main.cpp 					
-					${PROJECT_SOURCE_DIR}/src/net.cpp 
-					${PROJECT_SOURCE_DIR}/src/infrastructure.cpp 
-					${PROJECT_SOURCE_DIR}/src/tcp_socket/tcp_socket.cpp )
-
-set(CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/client/user_code/NetSocket.cpp)
-#set(CTRL_CLIENT_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/ctrl_client/user_code/NetSocket.cpp)
-set(SERVER_SOURCE_EXE  ${PROJECT_SOURCE_DIR}/test/samples/server/user_code/NetSocket.cpp)
-
-set(SOURCE_LIB ${PROJECT_SOURCE_DIR}/safe_memory/library/gcc_lto_workaround/gcc_lto_workaround.cpp)
-
-add_subdirectory(${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc build)
-
-include_directories(include	${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include 
-							${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
-							${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src  							 
-							${PROJECT_SOURCE_DIR}/safe_memory/library/src
-							${PROJECT_SOURCE_DIR}/include/nodecpp	
-							${PROJECT_SOURCE_DIR}/include	
-							${PROJECT_SOURCE_DIR}/src )
-
-set(DZ_INCLUDES -isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
-				-isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
-				-isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src 
-				-isystem ${PROJECT_SOURCE_DIR}/safe_memory/library/src
-				-isystem ${PROJECT_SOURCE_DIR}/include/nodecpp
-				-isystem ${PROJECT_SOURCE_DIR}/include
-				-isystem ${PROJECT_SOURCE_DIR}/src
-				)
-
-set(DZ_DEFINES -DNDEBUG -DUSING_T_SOCKETS)
-
-
-if(MSVC OR MSYS OR MINGW)
-	option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
-	add_definitions(/W3)
-	add_definitions(/EHa)
-	add_definitions(/MD)
-	add_definitions(/await)
-else()
-	enable_testing()
-	add_definitions( -g )
-	add_definitions( -Wall )
-	add_definitions( -Wextra )
-	add_definitions( -Wno-unused-variable )
-	add_definitions( -Wno-unused-parameter )
-	add_definitions( -Wno-empty-body )
-	add_definitions(-lpthread)
-	add_compile_options(-O2)
-	set(CMAKE_CXX_STANDARD_REQUIRED on)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAG} -DNDEBUG -DUSING_T_SOCKETS ")
-endif()
-
+project(NodeDotCpp CXX)
 set(CMAKE_CXX_STANDARD 17)
+include(CTest)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/bin)
+set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/tools")
+include(CommonCppFlags)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	add_library( ${LIB_NAME} SHARED ${SOURCE_LIB})
-else()
-	unset(LIB_NAME)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # first thing so it applies to all dependencies
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+    endif()
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        # coroutine needs libc++ at this time
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+    endif()
 endif()
 
-add_library( ${LIB_NAME} SHARED ${SOURCE_LIB})
-add_executable(${CLIENT_NAME} ${SOURCE_EXE} ${CLIENT_SOURCE_EXE})
-#add_executable(${CTRL_CLIENT_NAME} ${SOURCE_EXE} ${CTRL_CLIENT_SOURCE_EXE})
-add_executable(${SERVER_NAME} ${SOURCE_EXE} ${SERVER_SOURCE_EXE})
 
-if(MSVC)
-	target_link_libraries( ${CLIENT_NAME} iibmalloc ${LIB_NAME})
-	target_link_libraries( ${SERVER_NAME} iibmalloc ${LIB_NAME})
-else()
-	target_link_libraries( ${CLIENT_NAME} iibmalloc ${LIB_NAME} pthread)
-	target_link_libraries( ${SERVER_NAME} iibmalloc ${LIB_NAME} pthread)
+
+add_subdirectory(safe_memory)
+
+# just in case some project needs a different main
+# we define two libraries, 'nodecpp' and 'nodecpp_no_main'
+
+add_library(nodecpp_no_main STATIC
+   	src/infrastructure.cpp
+  	src/net.cpp
+#  	src/timers.cpp
+#    src/clustering_impl/clustering.cpp
+#    src/logging_impl/logging.cpp
+#    src/tcp_socket/listener_thread.cpp
+    src/tcp_socket/tcp_socket.cpp
+)
+
+target_include_directories(nodecpp_no_main
+  PUBLIC include
+  PUBLIC src
+)
+
+add_library(nodecpp STATIC
+	src/infra_main.cpp
+)
+
+
+target_link_libraries(nodecpp_no_main safe_memory)
+target_link_libraries(nodecpp nodecpp_no_main)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+		target_compile_options(nodecpp_no_main PUBLIC /await)
+	endif()
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
+	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
+
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+		target_compile_definitions(nodecpp PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
+		target_compile_options(nodecpp_no_main PUBLIC -Wno-unknown-attributes -Wno-c++17-extensions)
+		target_compile_options(nodecpp_no_main PUBLIC -fcoroutines-ts)
+#        set_target_properties(foundation PROPERTIES LINK_OPTIONS -lc++)
+	endif()
+
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
+	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+		target_compile_definitions(nodecpp PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
+		target_compile_options(nodecpp_no_main PUBLIC -Wno-unknown-attributes -Wno-c++17-extensions)
+	endif()
 endif()
+
+
+#-------------------------------------------------------------------------------------------
+# Tests and samples
+#-------------------------------------------------------------------------------------------
+
+
+add_executable(HttpServerSample
+	samples/http_server/user_code/HttpServerSample.cpp
+)
+
+target_link_libraries(HttpServerSample nodecpp)
+
+add_executable(HttpServerWithHandlersSample
+	samples/http_server_handlers/user_code/HttpServerWithHandlersSample.cpp
+)
+
+target_link_libraries(HttpServerWithHandlersSample nodecpp)
+
+add_executable(TcpClientSample
+	samples/tcp_client/user_code/TcpClientSample.cpp
+)
+
+target_link_libraries(TcpClientSample nodecpp)
+
+add_executable(TcpClientWithHandlersSample
+	samples/tcp_client_handlers/user_code/TcpClientWithHandlersSample.cpp
+)
+
+target_link_libraries(TcpClientWithHandlersSample nodecpp)
+
+add_executable(TcpServerSample
+	samples/tcp_server/user_code/TcpServerSample.cpp
+)
+
+target_link_libraries(TcpServerSample nodecpp)
+
+add_executable(TcpServerWithHandlersSample
+	samples/tcp_server_handlers/user_code/TcpServerWithHandlersSample.cpp
+)
+
+target_link_libraries(TcpServerWithHandlersSample nodecpp)
+
 
 
 # -----------------------------------------------------------------------------
-# Below this line targets to build intrumented (dezombiefied) client and server
+# Below this line targets to run checker and dezombiefier intrumentation
 # So far only tested with ninja generator under windows
-# target names are 'dz-client.bin' and 'dz-server.bin'
 # -----------------------------------------------------------------------------
 
-function(make_dz_files OUT_VAR LIST1 LIST2)
+set(DZ_INCLUDES 
+    # this five path are for ubuntu libc++
+    -resource-dir /usr/lib/llvm-9/lib/clang/9.0.0
+    -isystem /usr/lib/llvm-9/bin/../include/c++/v1
+    -isystem /usr/lib/llvm-9/lib/clang/9.0.0/include
 
-	foreach(EACH IN LISTS ${LIST1} ${LIST2})
+    #this two path are for MaxOS libc++
+    -isystem /Library/Developer/CommandLineTools/usr/include/c++/v1
+    -isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+
+    #all path below are from nodecpp
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/include 
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src 
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/include
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include/nodecpp
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+set(DZ_DEFINES -DNDEBUG -DNODECPP_ENABLE_CLUSTERING)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	set(DZ_FLAGS -std=c++17 -fcoroutines-ts)
+else()
+	set(DZ_FLAGS -std=c++17 -fcoroutines-ts -stdlib=libc++)
+endif()
+
+
+function(dz_add_executable ATARGET)
+
+    get_target_property(TARGET_SOURCE_DIR ${ATARGET} SOURCE_DIR)
+    get_target_property(TARGET_BINARY_DIR ${ATARGET} BINARY_DIR)
+    get_target_property(TARGET_SOURCES ${ATARGET} SOURCES)
+
+	foreach(EACH IN LISTS TARGET_SOURCES)
 
 		get_filename_component(P ${EACH} DIRECTORY)
 		get_filename_component(N ${EACH} NAME_WE)
 		get_filename_component(E ${EACH} EXT)
 
-		string(CONCAT DZ_NAME ${P} "/" ${N} ".dz" ${E})
+#		string(CONCAT DZ_NAME ${TARGET_BINARY_DIR} "/" ${P} "/" ${N} ".dz" ${E})
+# mb:use TARGET_SOURCE_DIR until we make local includes work
+		string(CONCAT DZ_NAME ${TARGET_SOURCE_DIR} "/" ${P} "/" ${N} ".dz" ${E})
+		string(CONCAT FULL_NAME ${TARGET_SOURCE_DIR} "/" ${EACH})
 
 		add_custom_command(
 		    OUTPUT  ${DZ_NAME}
-		    COMMAND nodecpp-instrument ${EACH} -- -fcoroutines-ts -std=c++17 ${DZ_DEFINES} ${DZ_INCLUDES}
+		    COMMAND nodecpp-checker ${FULL_NAME} -- ${DZ_FLAGS} ${DZ_DEFINES} ${DZ_INCLUDES}
+		    COMMAND nodecpp-instrument ${FULL_NAME} -o=${DZ_NAME} -- ${DZ_FLAGS} ${DZ_DEFINES} ${DZ_INCLUDES}
+#			MAIN_DEPENDENCY ${FULL_NAME}
 		)
 
 		list(APPEND DZ_FILES ${DZ_NAME})
 
 	endforeach()
-	set(${OUT_VAR} ${DZ_FILES} PARENT_SCOPE)
+	
+    get_target_property(TARGET_NAME ${ATARGET} NAME)
+    string(CONCAT DZ_TARGET_NAME ${TARGET_NAME} "-dz")
+    
+	add_executable(${DZ_TARGET_NAME} ${DZ_FILES})
+	target_link_libraries(${DZ_TARGET_NAME} nodecpp)
+
 endfunction()
 
+option(NODECPP_CHECK_AND_DZ_SAMPLES "Check and Dezombiefy samples" OFF)
 
-make_dz_files(DZ_CLIENT_FILES SOURCE_EXE CLIENT_SOURCE_EXE)
-
-add_executable(dz-client.bin ${DZ_CLIENT_FILES})
-
-make_dz_files(DZ_SERVER_FILES SOURCE_EXE SERVER_SOURCE_EXE)
-
-add_executable(dz-server.bin ${DZ_SERVER_FILES})
-
-
-if(MSVC)
-	target_link_libraries( dz-client.bin iibmalloc ${LIB_NAME})
-	target_link_libraries( dz-server.bin iibmalloc ${LIB_NAME})
-else()
-	target_link_libraries( dz-client.bin iibmalloc ${LIB_NAME} pthread)
-	target_link_libraries( dz-server.bin iibmalloc ${LIB_NAME} pthread)
+if(NODECPP_CHECK_AND_DZ_SAMPLES)
+	dz_add_executable(HttpServerSample)
+#	dz_add_executable(HttpServerWithHandlersSample)
+	dz_add_executable(TcpServerSample)
+#	dz_add_executable(TcpServerWithHandlersSample)
+	dz_add_executable(TcpClientSample)
+#	dz_add_executable(TcpClientWithHandlersSample)
 endif()

@@ -28,9 +28,9 @@
 #ifndef RECORD_AND_REPLAY_H
 #define RECORD_AND_REPLAY_H
 
-#include "../include/nodecpp/common.h"
+#include <nodecpp/common.h>
 #include <page_allocator.h>
-#include "../include/nodecpp/ip_and_port.h"
+#include <nodecpp/ip_and_port.h>
 
 namespace nodecpp::record_and_replay_impl {
 

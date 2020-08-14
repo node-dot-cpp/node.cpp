@@ -1,0 +1,81 @@
+language: cpp
+os: linux
+dist: bionic
+addons:
+  apt:
+    packages:
+      - clang-9
+      - llvm-9-dev
+      - libclang-9-dev
+      - libc++abi-9-dev
+      - libc++-9-dev
+      - ninja-build
+notifications:
+  email:
+    if: branch = master OR branch = develop
+jobs:
+  include:
+    - name: Windows MSVC
+      os: windows
+      script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-windows-msvc.bat
+    - name: Linux Clang
+      cache: ccache
+      env:
+        - CC=clang-9
+        - CXX=clang++-9
+        - CMAKE_CXX_COMPILER_LAUNCHER=ccache
+      script: ./safe_memory/library/src/iibmalloc/src/foundation/tools/travis-unix.sh
+    - name: Linux Clang (checker)
+      cache: ccache
+      env:
+        - CC=clang-9
+        - CXX=clang++-9
+        - CMAKE_CXX_COMPILER_LAUNCHER=ccache
+      script:
+        - cd safe_memory/checker
+        - ./checkout.sh
+        - ./tools/travis-build.sh
+        - cd ../..
+        - ./tools/travis-check-and-instrument.sh
+    - name: Windows MSVC (checker)
+      os: windows
+      env:
+        - CC=cl
+        - CXX=cl
+        - CMAKE_CXX_COMPILER_LAUNCHER=sccache
+      install:
+        - choco install ninja
+        - choco install sccache --version=0.2.12
+      cache:
+        directories:
+          - $HOME/AppData/Local/Temp/chocolatey
+          - $HOME/AppData/Local/Mozilla/sccache
+      script:
+        - cd safe_memory/checker
+        - ./checkout.bat
+        - ./tools/travis-windows.bat
+        - cd ../..
+        - ./tools/travis-check-and-instrument.bat
+    - name: Windows MSVC (sccache-warmup)
+      os: windows
+      env:
+        - CC=cl
+        - CXX=cl
+        - CMAKE_CXX_COMPILER_LAUNCHER=sccache
+      install:
+        - choco install ninja
+        - choco install sccache --version=0.2.12
+      cache:
+        directories:
+          - $HOME/AppData/Local/Temp/chocolatey
+          - $HOME/AppData/Local/Mozilla/sccache
+      script:
+        - cd safe_memory/checker
+        - ./checkout.bat
+        - ./tools/travis-windows-sccache-warmup.bat
+  allow_failures:        
+    - name: Linux Clang
+    - name: Linux Clang (checker)
+    - name: Windows MSVC (checker)
+    - name: Windows MSVC (sccache-warmup)
+

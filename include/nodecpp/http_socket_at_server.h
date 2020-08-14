@@ -467,11 +467,11 @@ namespace nodecpp {
 					for ( ; pos<d.sz1; ++pos )
 						if ( d.ptr1[pos] == '\n' )
 						{
-							line.append( (const char*)(d.ptr1), pos + 1 );
+							line.append_unsafe( (const char*)(d.ptr1), pos + 1 );
 							dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 							CO_RETURN;
 						}
-					line += nodecpp::string( (const char*)(d.ptr1), pos );
+					line.append_unsafe( (const char*)(d.ptr1), pos );
 					dataForCommandProcessing.readBuffer.skip_data( pos );
 					pos = 0;
 					if ( d.ptr2 && d.sz2 )
@@ -479,11 +479,11 @@ namespace nodecpp {
 						for ( ; pos<d.sz2; ++pos )
 							if ( d.ptr2[pos] == '\n' )
 							{
-								line += nodecpp::string( (const char*)(d.ptr2), pos + 1 );
+								line.append_unsafe( (const char*)(d.ptr2), pos + 1 );
 								dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 								CO_RETURN;
 							}
-						line += nodecpp::string( (const char*)(d.ptr2), pos );
+						line.append_unsafe( (const char*)(d.ptr2), pos );
 						dataForCommandProcessing.readBuffer.skip_data( pos );
 						pos = 0;
 					}
@@ -810,11 +810,11 @@ namespace nodecpp {
 
 			struct HeaderHolder
 			{
-				const char* key;
+				const char* key = nullptr;
 				enum ValType { undef, str, num };
-				ValType valType;
-				const char* valStr;
-				size_t valNum;
+				ValType valType = undef;
+				const char* valStr = nullptr;
+				size_t valNum = 0;
 				HeaderHolder( const char* key_, const char* val ) { key = key_; valType = ValType::str; valStr = val; }
 				HeaderHolder( nodecpp::string key_, const char* val ) { key = key_.c_str(); valType = ValType::str; valStr = val; }
 				HeaderHolder( nodecpp::string_literal key_, const char* val ) { key = key_.c_str(); valType = ValType::str; valStr = val; }
@@ -1166,7 +1166,7 @@ namespace nodecpp {
 			{
 				co_await readEOL( ch );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, key.size() );
-				message.header.insert( std::make_pair( message.makeLower( key ), "" ));
+				message.header.insert( std::make_pair( message.makeLower( key ), nodecpp::string() ));
 				CO_RETURN;
 			}
 			ch = co_await skipSpaces( ch );
