@@ -26,7 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 #include "infrastructure.h"
-#include "../../include/nodecpp/nls.h"
+#include <nodecpp/nls.h>
 
 #include <time.h>
 #include <climits>

@@ -125,7 +125,7 @@ namespace nodecpp {
 				size_t endEq = url.find_first_of( "=", start );
 				if ( endEq == nodecpp::string::npos )
 				{
-					q.add( url.substr( start, endEq-start ), "" );
+					q.add( url.substr( start, endEq-start ), nodecpp::string_literal("") );
 					break;
 				}
 				size_t endAmp = url.find_first_of( "&", endEq+ 1  );
@@ -155,7 +155,7 @@ namespace nodecpp {
 				size_t endEq = url.find_first_of( "=", start );
 				if ( endEq == nodecpp::string::npos )
 				{
-					q.add( url.substr( start, endEq-start ), "" );
+					q.add( url.substr( start, endEq-start ), nodecpp::string_literal("") );
 					break;
 				}
 				size_t endAmp = url.find_first_of( "&", endEq+ 1  );

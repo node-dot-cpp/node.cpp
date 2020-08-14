@@ -53,7 +53,7 @@ namespace nodecpp {
 /*#include <foundation.h>
 #include <nodecpp_assert.h>
 #include <iibmalloc.h>*/
-#include <safe_ptr.h>
+#include <safe_memory/safe_ptr.h>
 #include "awaitable.h"
 #include "basic_collections.h"
 
@@ -73,7 +73,7 @@ namespace nodecpp {
 #include "mallocator.h"
 
 #ifdef NODECPP_RECORD_AND_REPLAY
-#include "../../src/record_and_replay.h"
+#include <nodecpp/record_and_replay.h>
 #endif // NODECPP_RECORD_AND_REPLAY
 
 namespace nodecpp

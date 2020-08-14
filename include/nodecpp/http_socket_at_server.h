@@ -467,11 +467,11 @@ namespace nodecpp {
 					for ( ; pos<d.sz1; ++pos )
 						if ( d.ptr1[pos] == '\n' )
 						{
-							line.append( (const char*)(d.ptr1), pos + 1 );
+							line.append_unsafe( (const char*)(d.ptr1), pos + 1 );
 							dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 							CO_RETURN;
 						}
-					line += nodecpp::string( (const char*)(d.ptr1), pos );
+					line.append_unsafe( (const char*)(d.ptr1), pos );
 					dataForCommandProcessing.readBuffer.skip_data( pos );
 					pos = 0;
 					if ( d.ptr2 && d.sz2 )
@@ -479,11 +479,11 @@ namespace nodecpp {
 						for ( ; pos<d.sz2; ++pos )
 							if ( d.ptr2[pos] == '\n' )
 							{
-								line += nodecpp::string( (const char*)(d.ptr2), pos + 1 );
+								line.append_unsafe( (const char*)(d.ptr2), pos + 1 );
 								dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
 								CO_RETURN;
 							}
-						line += nodecpp::string( (const char*)(d.ptr2), pos );
+						line.append_unsafe( (const char*)(d.ptr2), pos );
 						dataForCommandProcessing.readBuffer.skip_data( pos );
 						pos = 0;
 					}
