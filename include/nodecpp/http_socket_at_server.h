@@ -51,7 +51,7 @@ namespace nodecpp {
 			friend class IncomingHttpMessageAtServer;
 			friend class HttpServerResponse;
 
-			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
+			::nodecpp::awaitable<bool> getRequest( IncomingHttpMessageAtServer& message );
 			nodecpp::handler_ret_type getRequest2( IncomingHttpMessageAtServer& message );
 
 			struct RRPair
@@ -303,7 +303,7 @@ namespace nodecpp {
 				CircularByteBuffer::ReadUntilStatus rus = dataForCommandProcessing.readBuffer.read_ready_data_until( b, what ); //;
 				while ( rus == CircularByteBuffer::ReadUntilStatus::waiting )
 				{ 
-//					co_await a_someDataAvailable();
+					co_await a_someDataAvailable();
 					bool isData = dataForCommandProcessing.readBuffer.used_size() >= 1;
 					if ( isData )
 					{
@@ -617,13 +617,21 @@ namespace nodecpp {
 
 					// now we can reasonably expect a new request
 					auto& rrPair = rrQueue.getHead();
-					co_await getRequest( *(rrPair.request) );
+					bool ok = co_await getRequest( *(rrPair.request) );
 
-					nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
-					if ( rrQueue.canPush() )
-						continue;
-					auto cg = a_continueGetting();
-					co_await cg;
+					if ( ok )
+					{
+						nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
+						if ( rrQueue.canPush() )
+							continue;
+						auto cg = a_continueGetting();
+						co_await cg;
+					}
+					else
+					{
+						end();
+						CO_RETURN;
+					}
 				}
 				CO_RETURN;
 			}
@@ -1139,26 +1147,30 @@ namespace nodecpp {
 		}
 
 		inline
-		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
+		::nodecpp::awaitable<bool> HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
 			nodecpp::string line;
-			co_await readLine(line);
-//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
-			if ( !message.parseMethod( line ) )
+			bool ok = co_await readLine(line);
+			if ( ok )
 			{
-				// TODO: report error
-				end();
-				CO_RETURN;
+//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+				if ( !message.parseMethod( line ) )
+				{
+					// TODO: report error
+					CO_RETURN false;
+				}
 			}
+			else
+				CO_RETURN false;
 
 			do
 			{
-				co_await readLine(line);
+				ok = co_await readLine(line);
 //				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
-			while ( message.parseHeaderEntry( line ) );
+			while ( ok && message.parseHeaderEntry( line ) );
 
-			CO_RETURN;
+			CO_RETURN ok;
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
