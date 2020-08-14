@@ -284,7 +284,7 @@ namespace nodecpp {
 		size_t remaining_capacity() const { return alloc_size() - 1 - used_size(); }
 		bool empty() const { return begin == end; }
 		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
-
+#if 0
 		// direct access to data
 		struct AvailableDataDescriptor
 		{
@@ -316,7 +316,7 @@ namespace nodecpp {
 				d.sz2 = 0;
 			}
 		}
-
+#endif // 0
 		// writer-related
 		bool append( const uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )
@@ -470,7 +470,7 @@ namespace nodecpp {
 				}
 			}
 		}
-
+#if 0
 		void skip_data( size_t bytes2skip ) // "read" without reading
 		{
 			if ( begin <= end )
@@ -505,7 +505,7 @@ namespace nodecpp {
 				}
 			}
 		}
-
+#endif
 		template<class Reader>
 		void read( Reader& reader, size_t& bytesRead, size_t target_sz ) {
 			bytesRead = 0;
