@@ -65,11 +65,11 @@ bool SocketBase::write2(Buffer& b)
 	return netSocketManagerBase->appWrite2(dataForCommandProcessing, b);
 }
 void SocketBase::registerMeAndAcquireSocket() {
-	nodecpp::safememory::soft_ptr<SocketBase> p = myThis.getSoftPtr<SocketBase>(this);
+	nodecpp::soft_ptr<SocketBase> p = myThis.getSoftPtr<SocketBase>(this);
 	registerWithInfraAndAcquireSocket(p);
 }
 void SocketBase::registerMeAndAssignSocket(OpaqueSocketData& sdata) {
-	nodecpp::safememory::soft_ptr<SocketBase> p = myThis.getSoftPtr<SocketBase>(this);
+	nodecpp::soft_ptr<SocketBase> p = myThis.getSoftPtr<SocketBase>(this);
 	registerWithInfraAndAssignSocket(p, sdata);
 }
 
@@ -85,23 +85,23 @@ void SocketBase::connect(uint16_t port, const char* ip) {
 
 
 ServerBase::ServerBase() {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+	nodecpp::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 //	registerServer(this->node, p);
 }
 
 /*ServerBase::ServerBase(int typeID) {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+	nodecpp::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	registerServerByID(this->node, p, typeID);
 }*/
 
 /*ServerBase::ServerBase(acceptedSocketCreationRoutineType socketCreationCB) {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+	nodecpp::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	acceptedSocketCreationRoutine = std::move( socketCreationCB );
 	//	registerServer(this->node, p);
 }*/
 
 /*ServerBase::ServerBase(int typeID, acceptedSocketCreationRoutineType socketCreationCB) {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+	nodecpp::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	acceptedSocketCreationRoutine = std::move( socketCreationCB );
 	registerServerByID(this->node, p, typeID);
 }*/
@@ -135,7 +135,7 @@ void ServerBase::reportAllAceptedConnectionsEnded()
 
 void ServerBase::listen(uint16_t port, const char* ip, int backlog)
 {
-	nodecpp::safememory::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
+	nodecpp::soft_ptr<ServerBase> p = myThis.getSoftPtr<ServerBase>(this);
 	dataForCommandProcessing.userHandlers.from(ServerBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying( std::type_index(typeid(*this))), this);
 	netServerManagerBase->appListen(dataForCommandProcessing, ip, port, backlog);
 }

@@ -433,7 +433,7 @@ now2 = infraGetCurrentTime();
 };
 
 inline
-void registerWithInfraAndAcquireSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t)
+void registerWithInfraAndAcquireSocket(nodecpp::soft_ptr<net::SocketBase> t)
 {
 #ifdef NODECPP_RECORD_AND_REPLAY
 	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
@@ -450,7 +450,7 @@ void registerWithInfraAndAcquireSocket(nodecpp::safememory::soft_ptr<net::Socket
 }
 
 inline
-void registerWithInfraAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> t, OpaqueSocketData& sdata)
+void registerWithInfraAndAssignSocket(nodecpp::soft_ptr<net::SocketBase> t, OpaqueSocketData& sdata)
 {
 #ifdef NODECPP_RECORD_AND_REPLAY
 	if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
@@ -635,7 +635,7 @@ class Runnable : public RunnableBase
 			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		}
-		killAllZombies();
+		nodecpp::safememory::killAllZombies();
 		interceptNewDeleteOperators(false);
 	}
 

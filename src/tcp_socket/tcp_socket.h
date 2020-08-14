@@ -50,7 +50,7 @@ public:
 	OpaqueEmitter emitter;
 
 	NetSocketEntry(size_t index) : state(State::Unused), index(index) {}
-	NetSocketEntry(size_t index, nodecpp::safememory::soft_ptr<net::SocketBase> ptr) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ClientSocket, ptr) {
+	NetSocketEntry(size_t index, nodecpp::soft_ptr<net::SocketBase> ptr) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ClientSocket, ptr) {
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
@@ -66,7 +66,7 @@ public:
 		ptr->dataForCommandProcessing.index = index;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 	}
-	NetSocketEntry(size_t index, nodecpp::safememory::soft_ptr<net::ServerBase> ptr) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket, ptr) {
+	NetSocketEntry(size_t index, nodecpp::soft_ptr<net::ServerBase> ptr) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::ServerSocket, ptr) {
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 		{
@@ -87,7 +87,7 @@ public:
 #endif // NODECPP_ENABLE_CLUSTERING
 	}
 #ifdef NODECPP_ENABLE_CLUSTERING
-	NetSocketEntry(size_t index, nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::AgentServer, ptr) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntry(size_t index, nodecpp::soft_ptr<Cluster::AgentServer> ptr) : state(State::SockIssued), index(index), emitter(OpaqueEmitter::ObjectType::AgentServer, ptr) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 #endif // #ifdef NODECPP_ENABLE_CLUSTERING
 	
 	NetSocketEntry(const NetSocketEntry& other) = delete;
@@ -105,13 +105,13 @@ public:
 	void setUnused() {state = State::Unused; index = 0;}
 
 	const OpaqueEmitter& getEmitter() const { return emitter; }
-	nodecpp::safememory::soft_ptr<net::SocketBase> getClientSocket() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr(); }
-	nodecpp::safememory::soft_ptr<net::ServerBase> getServerSocket() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr(); }
+	nodecpp::soft_ptr<net::SocketBase> getClientSocket() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr(); }
+	nodecpp::soft_ptr<net::ServerBase> getServerSocket() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr(); }
 	net::SocketBase::DataForCommandProcessing* getClientSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ClientSocket); return emitter.getClientSocketPtr() ? &( emitter.getClientSocketPtr()->dataForCommandProcessing ) : nullptr; }
 	net::ServerBase::DataForCommandProcessing* getServerSocketData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::ServerSocket); return emitter.getServerSocketPtr() ? &( emitter.getServerSocketPtr()->dataForCommandProcessing ) : nullptr; }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-	nodecpp::safememory::soft_ptr<Cluster::AgentServer> getAgentServer() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::AgentServer); return emitter.getAgentServerPtr(); }
+	nodecpp::soft_ptr<Cluster::AgentServer> getAgentServer() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::AgentServer); return emitter.getAgentServerPtr(); }
 	Cluster::AgentServer::DataForCommandProcessing* getAgentServerData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,emitter.isValid()); NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, emitter.objectType == OpaqueEmitter::ObjectType::AgentServer); return emitter.getAgentServerPtr() ? &( emitter.getAgentServerPtr()->dataForCommandProcessing ) : nullptr; }
 #endif // NODECPP_ENABLE_CLUSTERING
 
@@ -299,7 +299,7 @@ public:
 	bool isValidId( size_t idx ) { return idx >= reserved_capacity && idx < ourSide.size() + ourSideAccum.size(); }
 
 	template<class SocketType>
-	void addEntry(nodecpp::safememory::soft_ptr<SocketType> ptr) {
+	void addEntry(nodecpp::soft_ptr<SocketType> ptr) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 		for (size_t i = reserved_capacity; i != ourSide.size(); ++i) // skip ourSide[0]
@@ -364,7 +364,7 @@ public:
 		return slaveServers.at(idx - SlaveServerEntryMinIndex);
 	}
 	template<class SocketType>
-	void addSlaveServerEntry(nodecpp::safememory::soft_ptr<SocketType> ptr) {
+	void addSlaveServerEntry(nodecpp::soft_ptr<SocketType> ptr) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, getCluster().isWorker() );
 		for (size_t i = 0; i != slaveServers.size(); ++i) // skip ourSide[0]
 		{
@@ -615,13 +615,13 @@ public:
 		ioSockets.setPollin(id);
 	}
 
-	void appAcquireSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr)
+	void appAcquireSocket(nodecpp::soft_ptr<net::SocketBase> ptr)
 	{
 		SocketRiia s( OSLayer::appAcquireSocket() );
 		registerAndAssignSocket(ptr, s);
 	}
 
-	void appAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr, OpaqueSocketData& sdata)
+	void appAssignSocket(nodecpp::soft_ptr<net::SocketBase> ptr, OpaqueSocketData& sdata)
 	{
 		SocketRiia s( sdata.s.release() );
 		registerAndAssignSocket(ptr, s);
@@ -638,7 +638,7 @@ public:
 	static OpaqueSocketData createOpaqueSocketData( SOCKET socket ) { return OpaqueSocketData( socket ); }
 
 private:
-	void registerAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr, SocketRiia& s)
+	void registerAndAssignSocket(nodecpp::soft_ptr<net::SocketBase> ptr, SocketRiia& s)
 	{
 /*#ifdef NODECPP_RECORD_AND_REPLAY
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, threadLocalData.binaryLog->mode() != record_and_replay_impl::BinaryLog::Mode::replaying );
@@ -1317,7 +1317,7 @@ public:
 		}
 		pendingCloseEvents.emplace_back(id, false);
 	}
-	void appAddServer(nodecpp::safememory::soft_ptr<net::ServerBase> ptr) { //TODO:CLUSTERING alt impl
+	void appAddServer(nodecpp::soft_ptr<net::ServerBase> ptr) { //TODO:CLUSTERING alt impl
 #ifndef NODECPP_ENABLE_CLUSTERING
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
@@ -1364,7 +1364,7 @@ public:
 #ifdef NODECPP_RECORD_AND_REPLAY
 #error not(yet) implemented
 #endif // NODECPP_RECORD_AND_REPLAY
-	void appAddAgentServer(nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr) {
+	void appAddAgentServer(nodecpp::soft_ptr<Cluster::AgentServer> ptr) {
 		SocketRiia s(internal_usage_only::internal_make_tcp_socket());
 		if (!s)
 		{
@@ -1558,10 +1558,10 @@ public:
 #endif // NODECPP_ENABLE_CLUSTERING
 
 protected:
-	void addServerEntry(nodecpp::safememory::soft_ptr<net::ServerBase> ptr);
+	void addServerEntry(nodecpp::soft_ptr<net::ServerBase> ptr);
 #ifdef NODECPP_ENABLE_CLUSTERING
-	void addSlaveServerEntry(nodecpp::safememory::soft_ptr<net::ServerBase> ptr);
-	void addAgentServerEntry(nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr);
+	void addSlaveServerEntry(nodecpp::soft_ptr<net::ServerBase> ptr);
+	void addAgentServerEntry(nodecpp::soft_ptr<Cluster::AgentServer> ptr);
 #endif // NODECPP_ENABLE_CLUSTERING
 	NetSocketEntry& appGetEntry(size_t id) { return ioSockets.at(id); }
 	const NetSocketEntry& appGetEntry(size_t id) const { return ioSockets.at(id); }

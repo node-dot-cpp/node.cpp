@@ -50,12 +50,12 @@ public:
 
 public:
 	// server
-	nodecpp::handler_ret_type onCloseWorkingServer(nodecpp::safememory::soft_ptr<MyWorkingServer> server, bool haserror) {
+	nodecpp::handler_ret_type onCloseWorkingServer(nodecpp::soft_ptr<MyWorkingServer> server, bool haserror) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "working server: closed!");
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onWorkingData(nodecpp::safememory::soft_ptr<MyWorkingSocket> socket, Buffer& buffer)
+	nodecpp::handler_ret_type onWorkingData(nodecpp::soft_ptr<MyWorkingSocket> socket, Buffer& buffer)
 	{
 		if ( buffer.size() < 2 )
 		{
@@ -95,7 +95,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onWorkingEnd(nodecpp::safememory::soft_ptr<MyWorkingSocket> socket)
+	nodecpp::handler_ret_type onWorkingEnd(nodecpp::soft_ptr<MyWorkingSocket> socket)
 	{
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "working server socket: onEnd!");
 		Buffer b;
@@ -106,12 +106,12 @@ public:
 	}
 
 	// ctrl server
-	nodecpp::handler_ret_type onCloseStatServer(nodecpp::safememory::soft_ptr<MyStatServer> server, bool hasError) {
+	nodecpp::handler_ret_type onCloseStatServer(nodecpp::soft_ptr<MyStatServer> server, bool hasError) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "stat server: closed!");
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onStatData(nodecpp::safememory::soft_ptr<MyStatSocket> socket, Buffer& buffer)
+	nodecpp::handler_ret_type onStatData(nodecpp::soft_ptr<MyStatSocket> socket, Buffer& buffer)
 	{
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -124,7 +124,7 @@ public:
 		}
 	}
 
-	nodecpp::handler_ret_type onStatEnd(nodecpp::safememory::soft_ptr<MyStatSocket> socket)
+	nodecpp::handler_ret_type onStatEnd(nodecpp::soft_ptr<MyStatSocket> socket)
 	{
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "stat server socket: onEnd!");
 		Buffer b;
@@ -134,8 +134,8 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::safememory::owning_ptr<MyWorkingServer> srv;
-	nodecpp::safememory::owning_ptr<MyStatServer> srvCtrl;
+	nodecpp::owning_ptr<MyWorkingServer> srv;
+	nodecpp::owning_ptr<MyStatServer> srvCtrl;
 };
 
 #endif // TCP_SERVER_WITH_HANDLERS_SAMPLE_H

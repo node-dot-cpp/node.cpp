@@ -247,12 +247,12 @@ nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_
 }
 
 void ListenerThreadWorker::AgentServer::addServerSocketAndStartListening( SOCKET socket) { 
-	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
+	nodecpp::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
 	netServerManagerBaseForListenerThread.appAddAgentServerSocketAndStartListening(myPtr, socket); 
 }
 
 void ListenerThreadWorker::AgentServer::acquireSharedServerSocketAndStartListening(int backlog) { 
-	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
+	nodecpp::soft_ptr<ListenerThreadWorker::AgentServer> myPtr = myThis.getSoftPtr<ListenerThreadWorker::AgentServer>(this);
 	netServerManagerBaseForListenerThread.acquireSharedServerSocketAndStartListening(myPtr, backlog); 
 }
 

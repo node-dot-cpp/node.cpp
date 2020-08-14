@@ -88,14 +88,14 @@ public:
 	{
 		for (;;)
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			nodecpp::soft_ptr<nodecpp::net::SocketBase> socket;
 			co_await srv->a_connection<nodecpp::net::SocketBase>( socket );
 			socketLoop(socket);
 		}
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type socketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	nodecpp::handler_ret_type socketLoop(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
@@ -119,14 +119,14 @@ public:
 	{
 		for (;;)
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			nodecpp::soft_ptr<nodecpp::net::SocketBase> socket;
 			co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket );
 			socketCtrlLoop(socket);
 		}
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type socketCtrlLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	nodecpp::handler_ret_type socketCtrlLoop(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer r_buff(0x200);
 		for (;;)
@@ -149,7 +149,7 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
 
-	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -164,8 +164,8 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srv; 
-	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase>  srvCtrl;
+	nodecpp::owning_ptr<nodecpp::net::ServerBase> srv; 
+	nodecpp::owning_ptr<nodecpp::net::ServerBase>  srvCtrl;
 
 #elif IMPL_VERSION == 21
 
@@ -200,7 +200,7 @@ public:
 #ifndef AUTOMATED_TESTING_ONLY
 		for (;;)
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			nodecpp::soft_ptr<nodecpp::net::SocketBase> socket;
 			co_await srv->a_connection<nodecpp::net::SocketBase>( socket );
 			socketLoop(socket);
 		}
@@ -209,7 +209,7 @@ public:
 		size_t acceptanceTime = 0;
 		while ( acceptanceTime < maxAcceptanceTime )
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			nodecpp::soft_ptr<nodecpp::net::SocketBase> socket;
 			try { co_await srv->a_connection<nodecpp::net::SocketBase>( socket, maxAcceptanceTime - acceptanceTime ); } catch ( ... ) { break; }
 			socketLoop(socket);
 			acceptanceTime = nodecpp::time::now() - startTime;
@@ -220,7 +220,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type socketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	nodecpp::handler_ret_type socketLoop(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer r_buff(0x200);
 #ifndef AUTOMATED_TESTING_ONLY
@@ -250,7 +250,7 @@ public:
 #ifndef AUTOMATED_TESTING_ONLY
 		for (;;)
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			nodecpp::soft_ptr<nodecpp::net::SocketBase> socket;
 			co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket );
 			socketCtrlLoop(socket);
 		}
@@ -259,7 +259,7 @@ public:
 		size_t acceptanceTime = 0;
 		while ( acceptanceTime < maxAcceptanceTime )
 		{
-			nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket;
+			nodecpp::soft_ptr<nodecpp::net::SocketBase> socket;
 			try { co_await srvCtrl->a_connection<nodecpp::net::SocketBase>( socket, maxAcceptanceTime - acceptanceTime ); } catch ( ... ) { break; }
 			socketLoop(socket);
 			acceptanceTime = nodecpp::time::now() - startTime;
@@ -270,7 +270,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type socketCtrlLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	nodecpp::handler_ret_type socketCtrlLoop(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer r_buff(0x200);
 #ifndef AUTOMATED_TESTING_ONLY
@@ -297,7 +297,7 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
 
-	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -312,8 +312,8 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srv; 
-	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase>  srvCtrl;
+	nodecpp::owning_ptr<nodecpp::net::ServerBase> srv; 
+	nodecpp::owning_ptr<nodecpp::net::ServerBase>  srvCtrl;
 
 #elif IMPL_VERSION == 3
 
@@ -370,7 +370,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onConnectionx(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionx(nodecpp::soft_ptr<MyServerSocketOne> server, nodecpp::soft_ptr<net::SocketBase> socket) { 
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 		//srv.unref();
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
@@ -393,7 +393,7 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, nodecpp::soft_ptr<net::SocketBase> socket) { 
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr ); 
@@ -419,14 +419,14 @@ public:
 	using SockTypeServerCtrlSocket = nodecpp::net::SocketBase;
 
 	using ServerType = MyServerSocketOne;
-	nodecpp::safememory::owning_ptr<ServerType> srv; 
+	nodecpp::owning_ptr<ServerType> srv; 
 
 	using CtrlServerType = MyServerSocketTwo;
-	nodecpp::safememory::owning_ptr<CtrlServerType>  srvCtrl;
+	nodecpp::owning_ptr<CtrlServerType>  srvCtrl;
 
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
-	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -492,15 +492,15 @@ public:
 	// server
 	class MyServerSocketOne; // just forward declaration
 public:
-	nodecpp::handler_ret_type onListening(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
+	nodecpp::handler_ret_type onListening(nodecpp::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onListening2(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
+	nodecpp::handler_ret_type onListening2(nodecpp::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening2()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+	nodecpp::handler_ret_type onConnection(nodecpp::soft_ptr<MyServerSocketOne> server, nodecpp::soft_ptr<net::SocketBase> socket) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 
@@ -525,11 +525,11 @@ public:
 	// ctrl server
 	class MyServerSocketTwo; // just forward declaration
 public:
-	nodecpp::handler_ret_type onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address addr) {
+	nodecpp::handler_ret_type onListeningCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address addr) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, nodecpp::soft_ptr<net::SocketBase> socket) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 
@@ -577,7 +577,7 @@ public:
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onListening()!");
 			CO_RETURN;
 		}
-		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+		nodecpp::handler_ret_type onConnection(nodecpp::soft_ptr<net::SocketBase> socket) {
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			CO_RETURN;
@@ -595,20 +595,20 @@ public:
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onListening()!");
 			CO_RETURN;
 		}
-		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+		nodecpp::handler_ret_type onConnection(nodecpp::soft_ptr<net::SocketBase> socket) {
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			CO_RETURN;
 		}
 	};
 
-	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv;
-	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl;
+	nodecpp::owning_ptr<MyServerSocketOne> srv;
+	nodecpp::owning_ptr<MyServerSocketTwo> srvCtrl;
 
 	using EmitterType = nodecpp::net::SocketTEmitter</*net::SocketO, net::Socket*/>;
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter</*net::ServerO, net::Server*/>;
 
-	nodecpp::handler_ret_type serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	nodecpp::handler_ret_type serverSocketLoop(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer buffer(0x20);
 
@@ -669,7 +669,7 @@ public:
 
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type serverCtrlSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	nodecpp::handler_ret_type serverCtrlSocketLoop(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer buffer(0x20);
 		Buffer reply(sizeof(stats));
@@ -716,7 +716,7 @@ public:
 			}
 		}
 	}
-	/*nodecpp::handler_ret_type onDataCtrlServerSocket_1(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	/*nodecpp::handler_ret_type onDataCtrlServerSocket_1(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -730,7 +730,7 @@ public:
 		}
 		CO_RETURN;
 	}*/
-	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -786,15 +786,15 @@ public:
 // server
 public:
 	class MyServerSocketOne; // just forward declaration
-	nodecpp::handler_ret_type onListening(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
+	nodecpp::handler_ret_type onListening(nodecpp::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onListening2(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
+	nodecpp::handler_ret_type onListening2(nodecpp::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address addr) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening2()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+	nodecpp::handler_ret_type onConnection(nodecpp::soft_ptr<MyServerSocketOne> server, nodecpp::soft_ptr<net::SocketBase> socket) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 		nodecpp::Buffer r_buff(0x200);
@@ -818,11 +818,11 @@ public:
 	// ctrl server
 public:
 	class MyServerSocketTwo; // just forward declaration
-	nodecpp::handler_ret_type onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address addr) {
+	nodecpp::handler_ret_type onListeningCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address addr) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+	nodecpp::handler_ret_type onConnectionCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, nodecpp::soft_ptr<net::SocketBase> socket) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
 		NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 		nodecpp::Buffer r_buff(0x200);
@@ -860,7 +860,7 @@ public:
 
 	public:
 		MyServerSocketOne() {
-//			nodecpp::safememory::soft_ptr<MyServerSocketOne> p = myThis.getSoftPtr<MyServerSocketOne>(this);
+//			nodecpp::soft_ptr<MyServerSocketOne> p = myThis.getSoftPtr<MyServerSocketOne>(this);
 //			registerServer<MySampleTNode, MyServerSocketOne>( p );
 		}
 		virtual ~MyServerSocketOne() {}
@@ -869,7 +869,7 @@ public:
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onListening()!");
 			CO_RETURN;
 		}
-		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+		nodecpp::handler_ret_type onConnection(nodecpp::soft_ptr<net::SocketBase> socket) {
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketOne::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			CO_RETURN;
@@ -883,12 +883,12 @@ public:
 
 	public:
 		MyServerSocketTwo() {
-//			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
+//			nodecpp::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
 //			registerServer<MySampleTNode, MyServerSocketTwo>( p );
 		}
 		MyServerSocketTwo(int k) {
 			printf( "k=%d\n", k );
-//			nodecpp::safememory::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
+//			nodecpp::soft_ptr<MyServerSocketTwo> p = myThis.getSoftPtr<MyServerSocketTwo>(this);
 //			registerServer<MySampleTNode, MyServerSocketTwo>( p );
 		}
 		virtual ~MyServerSocketTwo() {}
@@ -897,17 +897,17 @@ public:
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onListening()!");
 			CO_RETURN;
 		}
-		nodecpp::handler_ret_type onConnection(nodecpp::safememory::soft_ptr<net::SocketBase> socket) {
+		nodecpp::handler_ret_type onConnection(nodecpp::soft_ptr<net::SocketBase> socket) {
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "MyServerSocketTwo::onConnection()!");
 			NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, socket != nullptr);
 			CO_RETURN;
 		}
 	};
 
-	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv, srv_1;
-	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl, srvCtrl_1;
+	nodecpp::owning_ptr<MyServerSocketOne> srv, srv_1;
+	nodecpp::owning_ptr<MyServerSocketTwo> srvCtrl, srvCtrl_1;
 
-	nodecpp::handler_ret_type serverSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	nodecpp::handler_ret_type serverSocketLoop(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer buffer(0x20);
 
@@ -959,7 +959,7 @@ public:
 
 		CO_RETURN;
 	}
-	nodecpp::handler_ret_type serverCtrlSocketLoop(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	nodecpp::handler_ret_type serverCtrlSocketLoop(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		nodecpp::Buffer buffer(0x20);
 		Buffer reply(sizeof(stats));
@@ -997,7 +997,7 @@ public:
 			}
 		}
 	}
-	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	nodecpp::handler_ret_type onDataCtrlServerSocket_(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 
 		size_t requestedSz = buffer.begin()[1];
 		if (requestedSz)
@@ -1081,13 +1081,13 @@ public:
 	// handler implementations at node itself
 
 	class MyServerSocketOne; // just forward declaration
-	nodecpp::handler_ret_type onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {
+	nodecpp::handler_ret_type onListeningServer(nodecpp::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening()!");
 		CO_RETURN;
 	}
 
 	class MyServerSocketTwo; // just forward declaration
-	nodecpp::handler_ret_type onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {
+	nodecpp::handler_ret_type onListeningCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");
 		CO_RETURN;
 	}
@@ -1106,9 +1106,9 @@ public:
 		MyServerSocketOne() {}
 		MyServerSocketOne(MySampleTNode* node) : ServerType(node) {}
 		virtual ~MyServerSocketOne() {}
-		nodecpp::handler_ret_type onConnectionServer(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+		nodecpp::handler_ret_type onConnectionServer(nodecpp::soft_ptr<net::SocketBase> socket) { 
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
-			soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
+			soft_ptr<MySocketSocketOne> socketPtr = nodecpp::soft_ptr_static_cast<MySocketSocketOne>(socket);
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			CO_RETURN;
 		}
@@ -1123,16 +1123,16 @@ public:
 		MyServerSocketTwo() {}
 		MyServerSocketTwo(MySampleTNode* node) : ServerType(node) {}
 		virtual ~MyServerSocketTwo() {}
-		nodecpp::handler_ret_type onConnectionCtrl(nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+		nodecpp::handler_ret_type onConnectionCtrl(nodecpp::soft_ptr<net::SocketBase> socket) { 
 			log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
-			soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
+			soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::soft_ptr_static_cast<MySocketSocketTwo>(socket);
 			NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 			CO_RETURN;
 		}
 	};
 
-	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv;
-	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl;
+	nodecpp::owning_ptr<MyServerSocketOne> srv;
+	nodecpp::owning_ptr<MyServerSocketTwo> srvCtrl;
 	
 	// sockets
 	
@@ -1317,30 +1317,30 @@ public:
 
 
 	class MyServerSocketOne; // just forward declaration
-	void onConnectionServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	void onConnectionServer(nodecpp::soft_ptr<MyServerSocketOne> server, nodecpp::soft_ptr<net::SocketBase> socket) { 
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnection()!");
-		soft_ptr<MySocketSocketOne> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketOne>(socket);
+		soft_ptr<MySocketSocketOne> socketPtr = nodecpp::soft_ptr_static_cast<MySocketSocketOne>(socket);
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {
+	void onListeningServer(nodecpp::soft_ptr<MyServerSocketOne> server, size_t id, nodecpp::net::Address a) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListening()!");
 	}
-	void onCloseServer(nodecpp::safememory::soft_ptr<MyServerSocketOne> server, bool hasError) {
+	void onCloseServer(nodecpp::soft_ptr<MyServerSocketOne> server, bool hasError) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onClose()!");
 		srv->unref();
 	}
 
 
 	class MyServerSocketTwo; // just forward declaration
-	void onConnectionCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { 
+	void onConnectionCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, nodecpp::soft_ptr<net::SocketBase> socket) { 
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onConnectionCtrl()!");
-		soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::safememory::soft_ptr_static_cast<MySocketSocketTwo>(socket);
+		soft_ptr<MySocketSocketTwo> socketPtr = nodecpp::soft_ptr_static_cast<MySocketSocketTwo>(socket);
 		socketPtr->myNode = this;
 		NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, socket ); 
 	}
-	void onListeningCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");}
-	void onCloseServerCtrl(nodecpp::safememory::soft_ptr<MyServerSocketTwo> server, bool hasError) {
+	void onListeningCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, size_t id, nodecpp::net::Address a) {log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onListeninCtrlg()!");}
+	void onCloseServerCtrl(nodecpp::soft_ptr<MyServerSocketTwo> server, bool hasError) {
 		log::default_log::info( log::ModuleID(nodecpp_module_id), "server: onCloseCtrl()!");
 		srvCtrl->unref();
 	}
@@ -1379,8 +1379,8 @@ public:
 		virtual ~MyServerSocketTwo() {}
 	};
 
-	nodecpp::safememory::owning_ptr<MyServerSocketOne> srv;
-	nodecpp::safememory::owning_ptr<MyServerSocketTwo> srvCtrl;
+	nodecpp::owning_ptr<MyServerSocketOne> srv;
+	nodecpp::owning_ptr<MyServerSocketTwo> srvCtrl;
 	
 	// sockets
 	
@@ -1648,8 +1648,8 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srv;
-	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srvCtrl;
+	nodecpp::owning_ptr<nodecpp::net::ServerBase> srv;
+	nodecpp::owning_ptr<nodecpp::net::ServerBase> srvCtrl;
 
 	using EmitterTypeForServer = nodecpp::net::ServerTEmitter<>;
 	using EmitterType = nodecpp::net::SocketTEmitter<>;
@@ -1658,7 +1658,7 @@ public:
 #error
 #endif // IMPL_VERSION
 
-	nodecpp::handler_ret_type onDataServerSocket_(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
+	nodecpp::handler_ret_type onDataServerSocket_(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket, Buffer& buffer) {
 		if ( buffer.size() < 2 )
 		{
 //			log::default_log::info( log::ModuleID(nodecpp_module_id), "Insufficient data on socket idx = {}", *(socket->getExtra()) );

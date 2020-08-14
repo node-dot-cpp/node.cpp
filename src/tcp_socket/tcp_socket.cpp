@@ -970,18 +970,18 @@ void OSLayer::errorCloseSocket(net::SocketBase::DataForCommandProcessing& sockDa
 	}
 }
 
-void NetServerManagerBase::addServerEntry(nodecpp::safememory::soft_ptr<net::ServerBase> ptr)
+void NetServerManagerBase::addServerEntry(nodecpp::soft_ptr<net::ServerBase> ptr)
 {
 	ioSockets.addEntry<net::ServerBase>( ptr );
 }
 
 #ifdef NODECPP_ENABLE_CLUSTERING
-void NetServerManagerBase::addSlaveServerEntry(nodecpp::safememory::soft_ptr<net::ServerBase> ptr)
+void NetServerManagerBase::addSlaveServerEntry(nodecpp::soft_ptr<net::ServerBase> ptr)
 {
 	ioSockets.addSlaveServerEntry<net::ServerBase>( ptr );
 }
 
-void NetServerManagerBase::addAgentServerEntry(nodecpp::safememory::soft_ptr<Cluster::AgentServer> ptr)
+void NetServerManagerBase::addAgentServerEntry(nodecpp::soft_ptr<Cluster::AgentServer> ptr)
 {
 	ioSockets.addEntry<Cluster::AgentServer>( ptr );
 }

@@ -45,7 +45,7 @@ namespace nodecpp {
 			using DataParentType = void;
 
 		public:
-			nodecpp::safememory::soft_this_ptr<ServerBase> myThis;
+			nodecpp::soft_this_ptr<ServerBase> myThis;
 		public:
 			class DataForCommandProcessing {
 			public:
@@ -82,25 +82,25 @@ namespace nodecpp {
 				public:
 					// originating from member functions of ServertBase-derived classes
 					template<class T> using userListenMemberHandler = nodecpp::handler_ret_type (T::*)(size_t, nodecpp::net::Address);
-					template<class T> using userConnectionMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<net::SocketBase>);
+					template<class T> using userConnectionMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::soft_ptr<net::SocketBase>);
 					template<class T> using userCloseMemberHandler = nodecpp::handler_ret_type (T::*)(bool);
 					template<class T> using userErrorMemberHandler = nodecpp::handler_ret_type (T::*)(Error&);
 
 					// originating from member functions of NodeBase-derived classes
-					template<class T, class ServerT> using userListenNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, size_t, nodecpp::net::Address);
-					template<class T, class ServerT> using userConnectionNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, nodecpp::safememory::soft_ptr<net::SocketBase>);
-					template<class T, class ServerT> using userCloseNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, bool);
-					template<class T, class ServerT> using userErrorNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::safememory::soft_ptr<ServerT>, Error&);
+					template<class T, class ServerT> using userListenNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::soft_ptr<ServerT>, size_t, nodecpp::net::Address);
+					template<class T, class ServerT> using userConnectionNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::soft_ptr<ServerT>, nodecpp::soft_ptr<net::SocketBase>);
+					template<class T, class ServerT> using userCloseNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::soft_ptr<ServerT>, bool);
+					template<class T, class ServerT> using userErrorNodeMemberHandler = nodecpp::handler_ret_type (T::*)(nodecpp::soft_ptr<ServerT>, Error&);
 
-					using userDefListenHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<ServerBase>, size_t, nodecpp::net::Address);
-					using userDefConnectionHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<ServerBase>, nodecpp::safememory::soft_ptr<net::SocketBase>);
-					using userDefCloseHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<ServerBase>, bool);
-					using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::safememory::soft_ptr<ServerBase>, Error&);
+					using userDefListenHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::soft_ptr<ServerBase>, size_t, nodecpp::net::Address);
+					using userDefConnectionHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::soft_ptr<ServerBase>, nodecpp::soft_ptr<net::SocketBase>);
+					using userDefCloseHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::soft_ptr<ServerBase>, bool);
+					using userDefErrorHandlerFnT = nodecpp::handler_ret_type (*)(void*, nodecpp::soft_ptr<ServerBase>, Error&);
 
 					// originating from member functions of ServerBase-derived classes
 
 					template<class ObjectT, userListenMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::handler_ret_type listenHandler( void* objPtr, nodecpp::safememory::soft_ptr<ServerBase> serverPtr, size_t id, nodecpp::net::Address addr )
+					static nodecpp::handler_ret_type listenHandler( void* objPtr, nodecpp::soft_ptr<ServerBase> serverPtr, size_t id, nodecpp::net::Address addr )
 					{
 						//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(id, addr);
@@ -108,7 +108,7 @@ namespace nodecpp {
 					}
 
 					template<class ObjectT, userConnectionMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::handler_ret_type connectionHandler( void* objPtr, nodecpp::safememory::soft_ptr<ServerBase> serverPtr, nodecpp::safememory::soft_ptr<net::SocketBase> socket )
+					static nodecpp::handler_ret_type connectionHandler( void* objPtr, nodecpp::soft_ptr<ServerBase> serverPtr, nodecpp::soft_ptr<net::SocketBase> socket )
 					{
 						//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(socket);
@@ -116,7 +116,7 @@ namespace nodecpp {
 					}
 
 					template<class ObjectT, userCloseMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::handler_ret_type closeHandler( void* objPtr, nodecpp::safememory::soft_ptr<ServerBase> serverPtr, bool hadError )
+					static nodecpp::handler_ret_type closeHandler( void* objPtr, nodecpp::soft_ptr<ServerBase> serverPtr, bool hadError )
 					{
 						//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(hadError);
@@ -124,7 +124,7 @@ namespace nodecpp {
 					}
 
 					template<class ObjectT, userErrorMemberHandler<ObjectT> MemberFnT>
-					static nodecpp::handler_ret_type errorHandler( void* objPtr, nodecpp::safememory::soft_ptr<ServerBase> serverPtr, Error& e )
+					static nodecpp::handler_ret_type errorHandler( void* objPtr, nodecpp::soft_ptr<ServerBase> serverPtr, Error& e )
 					{
 						//NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, reinterpret_cast<ObjectT*>(objPtr) == reinterpret_cast<ObjectT*>(serverPtr) ); 
 						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(e);
@@ -134,30 +134,30 @@ namespace nodecpp {
 					// originating from member functions of NodeBase-derived classes
 
 					template<class ObjectT, class ServerT, userListenNodeMemberHandler<ObjectT, ServerT> MemberFnT>
-					static nodecpp::handler_ret_type listenHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<ServerBase> serverPtr, size_t id, nodecpp::net::Address addr )
+					static nodecpp::handler_ret_type listenHandlerFromNode( void* objPtr, nodecpp::soft_ptr<ServerBase> serverPtr, size_t id, nodecpp::net::Address addr )
 					{
-						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), id, addr);
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::soft_ptr_reinterpret_cast<ServerT>(serverPtr), id, addr);
 						CO_RETURN;
 					}
 
 					template<class ObjectT, class ServerT, userConnectionNodeMemberHandler<ObjectT, ServerT> MemberFnT>
-					static nodecpp::handler_ret_type connectionHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<ServerBase> serverPtr, nodecpp::safememory::soft_ptr<net::SocketBase> socket )
+					static nodecpp::handler_ret_type connectionHandlerFromNode( void* objPtr, nodecpp::soft_ptr<ServerBase> serverPtr, nodecpp::soft_ptr<net::SocketBase> socket )
 					{
-						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), socket);
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::soft_ptr_reinterpret_cast<ServerT>(serverPtr), socket);
 						CO_RETURN;
 					}
 
 					template<class ObjectT, class ServerT, userCloseNodeMemberHandler<ObjectT, ServerT> MemberFnT>
-					static nodecpp::handler_ret_type closeHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<ServerBase> serverPtr, bool hadError )
+					static nodecpp::handler_ret_type closeHandlerFromNode( void* objPtr, nodecpp::soft_ptr<ServerBase> serverPtr, bool hadError )
 					{
-						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), hadError);
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::soft_ptr_reinterpret_cast<ServerT>(serverPtr), hadError);
 						CO_RETURN;
 					}
 
 					template<class ObjectT, class ServerT, userErrorNodeMemberHandler<ObjectT, ServerT> MemberFnT>
-					static nodecpp::handler_ret_type errorHandlerFromNode( void* objPtr, nodecpp::safememory::soft_ptr<ServerBase> serverPtr, Error& e )
+					static nodecpp::handler_ret_type errorHandlerFromNode( void* objPtr, nodecpp::soft_ptr<ServerBase> serverPtr, Error& e )
 					{
-						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::safememory::soft_ptr_reinterpret_cast<ServerT>(serverPtr), e);
+						((reinterpret_cast<ObjectT*>(objPtr))->*MemberFnT)(nodecpp::soft_ptr_reinterpret_cast<ServerT>(serverPtr), e);
 						CO_RETURN;
 					}
 
@@ -241,16 +241,16 @@ namespace nodecpp {
 				UserHandlers userHandlers;
 
 				bool isListenEventHandler() { return userHandlers.userDefListenHandlers.willHandle(); }
-				void handleListenEvent(nodecpp::safememory::soft_ptr<ServerBase> server, size_t id, nodecpp::net::Address address) { userHandlers.userDefListenHandlers.execute(server, id, address); }
+				void handleListenEvent(nodecpp::soft_ptr<ServerBase> server, size_t id, nodecpp::net::Address address) { userHandlers.userDefListenHandlers.execute(server, id, address); }
 
 				bool isConnectionEventHandler() { return userHandlers.userDefConnectionHandlers.willHandle(); }
-				void handleConnectionEvent(nodecpp::safememory::soft_ptr<ServerBase> server, nodecpp::safememory::soft_ptr<net::SocketBase> socket) { userHandlers.userDefConnectionHandlers.execute(server, socket); }
+				void handleConnectionEvent(nodecpp::soft_ptr<ServerBase> server, nodecpp::soft_ptr<net::SocketBase> socket) { userHandlers.userDefConnectionHandlers.execute(server, socket); }
 
 				bool isCloseEventHandler() { return userHandlers.userDefCloseHandlers.willHandle(); }
-				void handleCloseEvent(nodecpp::safememory::soft_ptr<ServerBase> server, bool hasError) { userHandlers.userDefCloseHandlers.execute(server, hasError); }
+				void handleCloseEvent(nodecpp::soft_ptr<ServerBase> server, bool hasError) { userHandlers.userDefCloseHandlers.execute(server, hasError); }
 
 				bool isErrorEventHandler() { return userHandlers.userDefErrorHandlers.willHandle(); }
-				void handleErrorEvent(nodecpp::safememory::soft_ptr<ServerBase> server, Error& e) { userHandlers.userDefErrorHandlers.execute(server, e); }
+				void handleErrorEvent(nodecpp::soft_ptr<ServerBase> server, Error& e) { userHandlers.userDefErrorHandlers.execute(server, e); }
 			};
 			DataForCommandProcessing dataForCommandProcessing;
 
@@ -356,14 +356,14 @@ namespace nodecpp {
 			}
 
 			template<class SocketT>
-			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket) { 
+			auto a_connection(nodecpp::soft_ptr<SocketT>& socket) { 
 
 				struct connection_awaiter {
 					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
-					nodecpp::safememory::soft_ptr<SocketT>& socket;
+					nodecpp::soft_ptr<SocketT>& socket;
 
-					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_) : server( server_ ), socket( socket_ ) {}
+					connection_awaiter(ServerBase& server_, nodecpp::soft_ptr<SocketT>& socket_) : server( server_ ), socket( socket_ ) {}
 
 					connection_awaiter(const connection_awaiter &) = delete;
 					connection_awaiter &operator = (const connection_awaiter &) = delete;
@@ -395,7 +395,7 @@ namespace nodecpp {
 							if constexpr ( std::is_same<SocketT, SocketBase>::value )
 								socket = server.dataForCommandProcessing.ahd_connection.sock;
 							else
-								socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+								socket = nodecpp::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
@@ -407,7 +407,7 @@ namespace nodecpp {
 								if constexpr ( std::is_same<SocketT, SocketBase>::value )
 									socket = server.dataForCommandProcessing.ahd_connection.sock;
 								else
-									socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+									socket = nodecpp::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 							}
 							else
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
@@ -421,7 +421,7 @@ namespace nodecpp {
 							if constexpr ( std::is_same<SocketT, SocketBase>::value )
 								socket = server.dataForCommandProcessing.ahd_connection.sock;
 							else
-								socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+								socket = nodecpp::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 						}
 					}
 				};
@@ -429,16 +429,16 @@ namespace nodecpp {
 			}
 
 			template<class SocketT>
-			auto a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket, uint32_t period) { 
+			auto a_connection(nodecpp::soft_ptr<SocketT>& socket, uint32_t period) { 
 
 				struct connection_awaiter {
 					std::experimental::coroutine_handle<> myawaiting = nullptr;
 					ServerBase& server;
-					nodecpp::safememory::soft_ptr<SocketT>& socket;
+					nodecpp::soft_ptr<SocketT>& socket;
 					uint32_t period;
 					nodecpp::Timeout to;
 
-					connection_awaiter(ServerBase& server_, nodecpp::safememory::soft_ptr<SocketT>& socket_, uint32_t period_) : server( server_ ), socket( socket_ ), period( period_ ) {}
+					connection_awaiter(ServerBase& server_, nodecpp::soft_ptr<SocketT>& socket_, uint32_t period_) : server( server_ ), socket( socket_ ), period( period_ ) {}
 
 					connection_awaiter(const connection_awaiter &) = delete;
 					connection_awaiter &operator = (const connection_awaiter &) = delete;
@@ -480,7 +480,7 @@ namespace nodecpp {
 							if constexpr ( std::is_same<SocketT, SocketBase>::value )
 								socket = server.dataForCommandProcessing.ahd_connection.sock;
 							else
-								socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+								socket = nodecpp::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
@@ -493,7 +493,7 @@ namespace nodecpp {
 								if constexpr ( std::is_same<SocketT, SocketBase>::value )
 									socket = server.dataForCommandProcessing.ahd_connection.sock;
 								else
-									socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+									socket = nodecpp::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 							}
 							else
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
@@ -508,7 +508,7 @@ namespace nodecpp {
 							if constexpr ( std::is_same<SocketT, SocketBase>::value )
 								socket = server.dataForCommandProcessing.ahd_connection.sock;
 							else
-								socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+								socket = nodecpp::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 						}
 					}
 				};
@@ -598,7 +598,7 @@ namespace nodecpp {
 				owning_ptr<SocketBase> sock_;
 				NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, acceptedSocketCreationRoutine != nullptr);
 				sock_ = acceptedSocketCreationRoutine( sdata );
-				nodecpp::safememory::soft_ptr<ServerBase> myPtr = myThis.getSoftPtr<ServerBase>(this);
+				nodecpp::soft_ptr<ServerBase> myPtr = myThis.getSoftPtr<ServerBase>(this);
 				sock_->myServerSocket = myPtr;
 				sock_->dataForCommandProcessing._local = dataForCommandProcessing.localAddress;
 				soft_ptr<SocketBase> retSock( sock_ );
@@ -630,7 +630,7 @@ namespace nodecpp {
 			EventEmitterSupportingListeners<event::Listening, ServerListener, &ServerListener::onListening> eListening;
 			EventEmitterSupportingListeners<event::Error, ServerListener, &ServerListener::onError> eError;
 
-			nodecpp::vector<nodecpp::safememory::owning_ptr<ServerListener>> ownedListeners;
+			nodecpp::vector<nodecpp::owning_ptr<ServerListener>> ownedListeners;
 #else
 			EventEmitter<event::Close> eClose;
 			EventEmitter<event::Connection> eConnection;
@@ -673,28 +673,28 @@ namespace nodecpp {
 			}
 
 #ifndef NODECPP_MSVC_BUG_379712_WORKAROUND_NO_LISTENER
-			void on( nodecpp::safememory::soft_ptr<ServerListener> l) {
+			void on( nodecpp::soft_ptr<ServerListener> l) {
 				eClose.on(l);
 				eConnection.on(l);
 				eListening.on(l);
 				eError.on(l);
 			}
 
-			void once( nodecpp::safememory::soft_ptr<ServerListener> l) {
+			void once( nodecpp::soft_ptr<ServerListener> l) {
 				eClose.once(l);
 				eConnection.once(l);
 				eListening.once(l);
 				eError.once(l);
 			}
 
-			void on( nodecpp::safememory::owning_ptr<ServerListener>& l) {
-				nodecpp::safememory::soft_ptr<ServerListener> sl( l );
+			void on( nodecpp::owning_ptr<ServerListener>& l) {
+				nodecpp::soft_ptr<ServerListener> sl( l );
 				ownedListeners.emplace_back( std::move( l ) );
 				on( sl );
 			}
 
-			void once( nodecpp::safememory::owning_ptr<ServerListener>& l) {
-				nodecpp::safememory::soft_ptr<ServerListener> sl( l );
+			void once( nodecpp::owning_ptr<ServerListener>& l) {
+				nodecpp::soft_ptr<ServerListener> sl( l );
 				ownedListeners.emplace_back( std::move( l ) );
 				once( sl );
 			}
@@ -789,7 +789,7 @@ namespace nodecpp {
 			forceReleasingAllCoroHandles();
 			if ( myServerSocket != nullptr ) 
 			{
-				nodecpp::safememory::soft_ptr<SocketBase> myPtr = myThis.getSoftPtr<SocketBase>(this);
+				nodecpp::soft_ptr<SocketBase> myPtr = myThis.getSoftPtr<SocketBase>(this);
 				myServerSocket->removeSocket(myPtr);
 			}
 		}
@@ -815,9 +815,9 @@ namespace nodecpp {
 
 		template<class ServerT, class SocketT, class ... Types>
 		static
-		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
+		nodecpp::owning_ptr<ServerT> createServer(Types&& ... args) {
 			static_assert( std::is_base_of< ServerBase, ServerT >::value );
-			nodecpp::safememory::owning_ptr<ServerT> retServer = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
+			nodecpp::owning_ptr<ServerT> retServer = nodecpp::make_owning<ServerT>(::std::forward<Types>(args)...);
 			if constexpr ( !std::is_same<typename ServerT::NodeType, void>::value )
 			{
 				static_assert( std::is_base_of< NodeBase, typename ServerT::NodeType >::value );
@@ -830,7 +830,7 @@ namespace nodecpp {
 			if constexpr ( std::is_same< typename ServerT::DataParentType, void >::value )
 			{
 				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
-						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
+						nodecpp::owning_ptr<SocketT> ret = nodecpp::make_owning<SocketT>();
 						ret->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*ret));
 						ret->registerMeAndAssignSocket(sdata);
 						return ret;
@@ -840,14 +840,14 @@ namespace nodecpp {
 			{
 				auto myDataParent = retServer->getDataParent();
 				retServer->setAcceptedSocketCreationRoutine( [myDataParent](OpaqueSocketData& sdata) {
-						nodecpp::safememory::owning_ptr<SocketT> retSock;
+						nodecpp::owning_ptr<SocketT> retSock;
 						if constexpr ( std::is_same<typename SocketT::DataParentType, typename ServerT::DataParentType >::value )
 						{
-							retSock = nodecpp::safememory::make_owning<SocketT>(myDataParent);
+							retSock = nodecpp::make_owning<SocketT>(myDataParent);
 						}
 						else
 						{
-							retSock = nodecpp::safememory::make_owning<SocketT>();
+							retSock = nodecpp::make_owning<SocketT>();
 						}
 						retSock->dataForCommandProcessing.userHandlers.from(SocketBase::DataForCommandProcessing::userHandlerClassPattern.getPatternForApplying<SocketT>(), &(*retSock));
 						retSock->registerMeAndAssignSocket(sdata);
@@ -860,7 +860,7 @@ namespace nodecpp {
 
 		template<class ServerT, class ... Types>
 		static
-		nodecpp::safememory::owning_ptr<ServerT> createServer(Types&& ... args) {
+		nodecpp::owning_ptr<ServerT> createServer(Types&& ... args) {
 			return createServer<ServerT, SocketBase>(::std::forward<Types>(args)...);
 		}
 

@@ -56,8 +56,8 @@ namespace nodecpp {
 
 			struct RRPair
 			{
-				nodecpp::safememory::owning_ptr<IncomingHttpMessageAtServer> request;
-				nodecpp::safememory::owning_ptr<HttpServerResponse> response;
+				nodecpp::owning_ptr<IncomingHttpMessageAtServer> request;
+				nodecpp::owning_ptr<HttpServerResponse> response;
 				bool active = false;
 			};
 
@@ -77,7 +77,7 @@ namespace nodecpp {
 						nodecpp::dealloc( cbuff, size );
 					}
 				}
-				void init( nodecpp::safememory::soft_ptr<HttpSocketBase> );
+				void init( nodecpp::soft_ptr<HttpSocketBase> );
 				bool canPush() { return head - tail < ((uint64_t)1<<sizeExp); }
 				bool release( size_t idx )
 				{
@@ -513,7 +513,7 @@ namespace nodecpp {
 					auto& rrPair = rrQueue.getHead();
 					co_await getRequest( *(rrPair.request) );
 
-					nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
+					nodecpp::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
 					if ( rrQueue.canPush() )
 						continue;
 					auto cg = a_continueGetting();
@@ -723,7 +723,7 @@ namespace nodecpp {
 			Buffer headerBuff;
 
 		private:
-			nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> myRequest;
+			nodecpp::soft_ptr<IncomingHttpMessageAtServer> myRequest;
 			typedef std::map<nodecpp::string, nodecpp::string> header_t;
 			header_t header;
 			size_t contentLength = 0;
@@ -1014,7 +1014,7 @@ namespace nodecpp {
 		};
 
 		inline
-		void HttpServerBase::onNewRequest( nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::safememory::soft_ptr<HttpServerResponse> response )
+		void HttpServerBase::onNewRequest( nodecpp::soft_ptr<IncomingHttpMessageAtServer> request, nodecpp::soft_ptr<HttpServerResponse> response )
 		{
 //printf( "entering onNewRequest()  %s\n", ahd_request.h == nullptr ? "ahd_request.h is nullptr" : "" );
 			if ( ahd_request.h != nullptr )
@@ -1209,18 +1209,18 @@ namespace nodecpp {
 		}
 
 		template<size_t sizeExp>
-		void HttpSocketBase::RRQueue<sizeExp>::init( nodecpp::safememory::soft_ptr<HttpSocketBase> socket ) {
+		void HttpSocketBase::RRQueue<sizeExp>::init( nodecpp::soft_ptr<HttpSocketBase> socket ) {
 			size_t size = ((size_t)1 << sizeExp);
 			cbuff = nodecpp::alloc<RRPair>( size ); // TODO: use nodecpp::a
 			//cbuff = new RRPair [size];
 			for ( size_t i=0; i<size; ++i )
 			{
-				cbuff[i].request = nodecpp::safememory::make_owning<IncomingHttpMessageAtServer>();
-				cbuff[i].response = nodecpp::safememory::make_owning<HttpServerResponse>();
-				nodecpp::safememory::soft_ptr<IncomingHttpMessageAtServer> tmprq = (cbuff[i].request);
-				nodecpp::safememory::soft_ptr<HttpServerResponse> tmrsp = (cbuff[i].response);
-				cbuff[i].response->counterpart = nodecpp::safememory::soft_ptr_reinterpret_cast<HttpMessageBase>(tmprq);
-				cbuff[i].request->counterpart = nodecpp::safememory::soft_ptr_reinterpret_cast<HttpMessageBase>(tmrsp);
+				cbuff[i].request = nodecpp::make_owning<IncomingHttpMessageAtServer>();
+				cbuff[i].response = nodecpp::make_owning<HttpServerResponse>();
+				nodecpp::soft_ptr<IncomingHttpMessageAtServer> tmprq = (cbuff[i].request);
+				nodecpp::soft_ptr<HttpServerResponse> tmrsp = (cbuff[i].response);
+				cbuff[i].response->counterpart = nodecpp::soft_ptr_reinterpret_cast<HttpMessageBase>(tmprq);
+				cbuff[i].request->counterpart = nodecpp::soft_ptr_reinterpret_cast<HttpMessageBase>(tmrsp);
 				cbuff[i].request->sock = socket;
 				cbuff[i].response->sock = socket;
 				cbuff[i].response->myRequest = cbuff[i].request;

@@ -99,7 +99,7 @@ class MySampleTNode : public NodeBase
 
 	using ClientSockType = MySocketOne;
 
-	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
+	nodecpp::owning_ptr<ClientSockType> clientSock;
 
 public:
 	MySampleTNode()
@@ -132,7 +132,7 @@ public:
 	using EmitterType = nodecpp::net::SocketTEmitter<clientSocketHD>;
 	using EmitterTypeForServer = void;
 
-	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;*/
+	nodecpp::owning_ptr<ClientSockType> clientSock;*/
 };
 
 #endif // NET_SOCKET_H

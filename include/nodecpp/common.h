@@ -53,7 +53,7 @@ namespace nodecpp {
 /*#include <foundation.h>
 #include <nodecpp_assert.h>
 #include <iibmalloc.h>*/
-#include <safe_memory/safe_ptr.h>
+#include <nodecpp/safe_ptr.h>
 #include "awaitable.h"
 #include "basic_collections.h"
 
@@ -81,8 +81,6 @@ namespace nodecpp
 	constexpr const char* nodecpp_module_id = "nodecpp";
 }
 
-
-using namespace ::nodecpp::safememory;
 
 template<class T>
 using GlobalObjectAllocator = Mallocator<T>;

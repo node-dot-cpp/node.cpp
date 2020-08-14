@@ -173,7 +173,7 @@ namespace nodecpp
 	}
 
 	void Cluster::AgentServer::registerServer() { 
-		nodecpp::safememory::soft_ptr<Cluster::AgentServer> myPtr = myThis.getSoftPtr<Cluster::AgentServer>(this);
+		nodecpp::soft_ptr<Cluster::AgentServer> myPtr = myThis.getSoftPtr<Cluster::AgentServer>(this);
 		::registerAgentServer(myPtr); 
 	}
 	void Cluster::AgentServer::listen(uint16_t port, nodecpp::Ip4 ip, int backlog)

@@ -176,8 +176,8 @@ namespace nodecpp::js {
 	{
 		friend class JSVar;
 
-		using owningptr2jsobj = nodecpp::safememory::owning_ptr<JSObject>;
-		using owningptr2jsarr = nodecpp::safememory::owning_ptr<JSArray>;
+		using owningptr2jsobj = nodecpp::owning_ptr<JSObject>;
+		using owningptr2jsarr = nodecpp::owning_ptr<JSArray>;
 		owningptr2jsobj ptr;
 
 	public:
@@ -221,7 +221,7 @@ namespace nodecpp::js {
 		template<class callback> // expected: td::function<void(JSRLValue)>, td::function<void(JSRLValue, JSVar)>, td::function<void(JSRLValue, size_t)>, td::function<void(JSRLValue, JSVar, JSVar)>, td::function<void(JSRLValue, size_t, JSVar)>
 		void forEach( callback cb );
 
-		nodecpp::safememory::owning_ptr<JSArray> keys();
+		nodecpp::owning_ptr<JSArray> keys();
 
 		template<class ArrT1, class ... ArrTX>
 		JSOwnObj concat( ArrT1 arr1, ArrTX ... args );
@@ -281,7 +281,7 @@ namespace nodecpp::js {
 		static_assert( sizeof( Fn9Struct ) == fnsz );
 		static_assert( sizeof( Fn10Struct ) == fnsz );
 
-		static constexpr size_t own_ptr_alignment = std::alignment_of_v<nodecpp::safememory::owning_ptr<int>>;
+		static constexpr size_t own_ptr_alignment = std::alignment_of_v<nodecpp::owning_ptr<int>>;
 		static constexpr size_t fn_alignment = std::alignment_of_v<Fn1Struct>;
 		static_assert(std::alignment_of_v<Fn1Struct> == fn_alignment );
 		static_assert( std::alignment_of_v<Fn2Struct> == fn_alignment );
@@ -293,15 +293,15 @@ namespace nodecpp::js {
 		static_assert( std::alignment_of_v<Fn8Struct> == fn_alignment );
 		static_assert( std::alignment_of_v<Fn9Struct> == fn_alignment );
 		static_assert( std::alignment_of_v<Fn10Struct> == fn_alignment );
-		static constexpr size_t soft_ptr_alignment = std::alignment_of_v<nodecpp::safememory::soft_ptr<int>>;
+		static constexpr size_t soft_ptr_alignment = std::alignment_of_v<nodecpp::soft_ptr<int>>;
 		static constexpr size_t js_str_alignment = std::alignment_of_v<JSString>;
 		static constexpr size_t basemem_alignment1 = own_ptr_alignment > soft_ptr_alignment ? own_ptr_alignment : soft_ptr_alignment;
 		static constexpr size_t basemem_alignment2 = basemem_alignment1 > fn_alignment ? basemem_alignment1 : fn_alignment;
 		static constexpr size_t basemem_alignment = basemem_alignment2 > js_str_alignment ? basemem_alignment2 : js_str_alignment;
 
 		static constexpr size_t memsz1 = fnsz > (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16) ? fnsz : (sizeof( JSString ) > 16 ? sizeof( JSString ) : 16);
-		static constexpr size_t memsz2 = sizeof(nodecpp::safememory::owning_ptr<int>) > memsz1 ? sizeof(nodecpp::safememory::owning_ptr<int>) : memsz1;
-		static constexpr size_t memsz3 = sizeof(nodecpp::safememory::soft_ptr<int>) > memsz2 ? sizeof(nodecpp::safememory::soft_ptr<int>) : memsz2;
+		static constexpr size_t memsz2 = sizeof(nodecpp::owning_ptr<int>) > memsz1 ? sizeof(nodecpp::owning_ptr<int>) : memsz1;
+		static constexpr size_t memsz3 = sizeof(nodecpp::soft_ptr<int>) > memsz2 ? sizeof(nodecpp::soft_ptr<int>) : memsz2;
 		static constexpr size_t memsz = ((memsz3 - 1)/sizeof(uintptr_t)+1)*sizeof(uintptr_t);
 
 		alignas(basemem_alignment) uint8_t basemem[ memsz ];
@@ -309,8 +309,8 @@ namespace nodecpp::js {
 		enum Type { undef, boolean, num, string, softptr, fn0, fn1, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, fn10, type_max };
 		Type type = Type::undef;
 
-		using softptr2jsobj = nodecpp::safememory::soft_ptr<JSObject>;
-		using softptr2jsarr = nodecpp::safememory::soft_ptr<JSArray>;
+		using softptr2jsobj = nodecpp::soft_ptr<JSObject>;
+		using softptr2jsarr = nodecpp::soft_ptr<JSArray>;
 
 		bool* _asBool() { return reinterpret_cast<bool*>( basemem ); }
 		double* _asNum() { return reinterpret_cast<double*>( basemem ); }
@@ -955,7 +955,7 @@ namespace nodecpp::js {
 		template<class callback> // expected: td::function<void(JSRLValue)>, td::function<void(JSRLValue, JSVar)>, td::function<void(JSRLValue, size_t)>, td::function<void(JSRLValue, JSVar, JSVar)>, td::function<void(JSRLValue, size_t, JSVar)>
 		void forEach( callback cb );
 
-		nodecpp::safememory::owning_ptr<JSArray> keys();
+		nodecpp::owning_ptr<JSArray> keys();
 
 		JSOwnObj split(  const JSVar& separator, JSVar maxCount ) const; // TODO: implement!
 		JSOwnObj split( const JSVar& separator ) const { return split( separator, INT32_MAX ); }
@@ -1024,11 +1024,11 @@ namespace nodecpp::js {
 			new(&(_asVar()))JSVar( var );
 			type = Type::var;
 		}
-		JSInit( nodecpp::safememory::owning_ptr<JSObject>&& obj ) {
+		JSInit( nodecpp::owning_ptr<JSObject>&& obj ) {
 			new(&(_asPtr()))OwnedT( std::move( obj ) );
 			type = Type::obj;
 		}
-		JSInit( nodecpp::safememory::owning_ptr<JSArray>&& arr ) {
+		JSInit( nodecpp::owning_ptr<JSArray>&& arr ) {
 			new(&(_asPtr()))OwnedT( std::move( arr ) );
 			type = Type::obj;
 		}
@@ -1134,10 +1134,10 @@ namespace nodecpp::js {
 		friend class JSArray;
 
 	protected:
-		nodecpp::safememory::soft_this_ptr<JSObject> myThis;
+		nodecpp::soft_this_ptr<JSObject> myThis;
 		nodecpp::map<nodecpp::string, JSVarOrOwn> keyValuePairs;
 
-		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
+		virtual void concat_impl_add_me( nodecpp::owning_ptr<JSArray>& ret );
 
 		void toString_( nodecpp::string& ret, const nodecpp::string offset, const nodecpp::string separator ) const { 
 			if ( keyValuePairs.size() == 0 )
@@ -1163,7 +1163,7 @@ namespace nodecpp::js {
 			}
 		}
 
-		void concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr );
+		void concat_impl_1( nodecpp::owning_ptr<JSArray>& ret, JSVar arr );
 
 		virtual void push_single( JSVar var ) { throw std::exception(); }
 		virtual void push_single( JSOwnObj&& obj ) { throw std::exception(); }
@@ -1210,7 +1210,7 @@ namespace nodecpp::js {
 			ret += " }";
 			return ret; 
 		}
-		nodecpp::safememory::owning_ptr<JSArray> keys();
+		nodecpp::owning_ptr<JSArray> keys();
 		virtual void forEach( std::function<void(JSRLValue)> cb ) { return; }
 		virtual void forEach( std::function<void(JSRLValue, JSVar)> cb ) { return; }
 		virtual void forEach( std::function<void(JSRLValue, size_t)> cb ) { return; }
@@ -1246,14 +1246,14 @@ namespace nodecpp::js {
 		}
 
 		template<class ArrT, class ArrT1, class ... ArrTX>
-		void concat_impl( nodecpp::safememory::owning_ptr<JSArray>& ret, ArrT arr, ArrT1 arr1, ArrTX ... args)
+		void concat_impl( nodecpp::owning_ptr<JSArray>& ret, ArrT arr, ArrT1 arr1, ArrTX ... args)
 		{
 			concat_impl_1( ret, arr );
 			concat_impl( ret, arr1, args ... );
 		}
 
 		template<class ArrT>
-		void concat_impl( nodecpp::safememory::owning_ptr<JSArray>& ret, ArrT arr )
+		void concat_impl( nodecpp::owning_ptr<JSArray>& ret, ArrT arr )
 		{
 			concat_impl_1( ret, arr );
 		}
@@ -1288,7 +1288,7 @@ namespace nodecpp::js {
 
 		nodecpp::vector<JSVarOrOwn> arrayValues;
 
-		virtual void concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret );
+		virtual void concat_impl_add_me( nodecpp::owning_ptr<JSArray>& ret );
 		int indexof_impl( const JSVar& var, int idx ) const;
 
 		virtual void push_single( JSVar var ) { arrayValues.push_back( var ); }
@@ -1365,14 +1365,14 @@ namespace nodecpp::js {
 		}
 		virtual void forEach( std::function<void(JSRLValue, JSVar idx, JSVar arr)> cb )
 		{
-			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
+			nodecpp::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
 			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
 				if ( arrayValues[idx].type != JSVarOrOwn::Type::undef )
 					cb( arrayValues[idx], JSVar((double)idx), JSVar( myPtr ) );
 		}
 		virtual void forEach( std::function<void(JSRLValue, size_t idx, JSVar arr)> cb )
 		{
-			nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
+			nodecpp::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
 			for ( size_t idx = 0; idx<arrayValues.size(); ++idx )
 				if ( arrayValues[idx].type != JSVarOrOwn::Type::undef )
 					cb( arrayValues[idx], idx, JSVar( myPtr ) );
@@ -1718,7 +1718,7 @@ namespace nodecpp::js {
 		auto trial = nodecpp::threadLocalData.jsModuleMap.getJsModuleExported<T>();
 		if ( trial.first )
 			return trial.second->exports();
-		owning_ptr<JSModule> pt = nodecpp::safememory::make_owning<T>();
+		owning_ptr<JSModule> pt = nodecpp::make_owning<T>();
 		auto ret = nodecpp::threadLocalData.jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
 		return ret.second->exports();
@@ -1730,7 +1730,7 @@ namespace nodecpp::js {
 		auto trial = nodecpp::threadLocalData.jsModuleMap.getJsModuleExported<T>();
 		if ( trial.first )
 			return *(trial.second);
-		owning_ptr<JSModule> pt = nodecpp::safememory::make_owning<T>();
+		owning_ptr<JSModule> pt = nodecpp::make_owning<T>();
 		auto ret = nodecpp::threadLocalData.jsModuleMap.addJsModuleExported<T>( std::move( pt ) );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret.first ); 
 		return *(ret.second);
