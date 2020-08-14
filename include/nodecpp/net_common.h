@@ -391,13 +391,16 @@ namespace nodecpp {
 				return ReadUntilStatus::waiting;
 
 			uint8_t curr;
-			while ( begin < workingEnd && *begin != what && b.capacity() - b.size() )
+			while ( begin < workingEnd && *begin != what && b.capacity() > b.size() )
 			{
 				curr = *begin++;
-				b.append( curr );
+				b.appendUint8( curr );
 			}
-			if ( curr == what )
+			if ( begin < workingEnd && *begin == what )
+			{
+				b.appendUint8( *begin++ );
 				return ReadUntilStatus::done;
+			}
 			else if ( b.capacity() == b.size() )
 				return ReadUntilStatus::insufficient_buffer;
 			else
