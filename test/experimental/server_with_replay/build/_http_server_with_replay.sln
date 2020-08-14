@@ -1,0 +1,66 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30128.74
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http_server_with_replay", "http_server_with_replay.vcxproj", "{2016F6D0-BDAC-42A1-A543-D732D98DE406}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		automated_testing_debug|x64 = automated_testing_debug|x64
+		automated_testing_debug|x86 = automated_testing_debug|x86
+		automated_testing_release|x64 = automated_testing_release|x64
+		automated_testing_release|x86 = automated_testing_release|x86
+		dbg_with_clustering|x64 = dbg_with_clustering|x64
+		dbg_with_clustering|x86 = dbg_with_clustering|x86
+		debug_with_replay|x64 = debug_with_replay|x64
+		debug_with_replay|x86 = debug_with_replay|x86
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		debug-clang|x64 = debug-clang|x64
+		debug-clang|x86 = debug-clang|x86
+		release_with_clustering|x64 = release_with_clustering|x64
+		release_with_clustering|x86 = release_with_clustering|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x64.ActiveCfg = automated_testing_debug|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x64.Build.0 = automated_testing_debug|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x86.ActiveCfg = automated_testing_debug|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_debug|x86.Build.0 = automated_testing_debug|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x64.ActiveCfg = automated_testing_release|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x64.Build.0 = automated_testing_release|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x86.ActiveCfg = automated_testing_release|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.automated_testing_release|x86.Build.0 = automated_testing_release|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x64.ActiveCfg = dbg_with_clustering|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x64.Build.0 = dbg_with_clustering|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x86.ActiveCfg = dbg_with_clustering|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.dbg_with_clustering|x86.Build.0 = dbg_with_clustering|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug_with_replay|x64.ActiveCfg = debug_with_replay|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug_with_replay|x64.Build.0 = debug_with_replay|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug_with_replay|x86.ActiveCfg = debug_with_replay|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug_with_replay|x86.Build.0 = debug_with_replay|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.ActiveCfg = Debug|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x64.Build.0 = Debug|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x86.ActiveCfg = Debug|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Debug|x86.Build.0 = Debug|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug-clang|x64.ActiveCfg = debug-clang|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug-clang|x64.Build.0 = debug-clang|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug-clang|x86.ActiveCfg = debug-clang|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.debug-clang|x86.Build.0 = debug-clang|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.release_with_clustering|x64.ActiveCfg = release_with_clustering|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.release_with_clustering|x64.Build.0 = release_with_clustering|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.release_with_clustering|x86.ActiveCfg = release_with_clustering|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.release_with_clustering|x86.Build.0 = release_with_clustering|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x64.ActiveCfg = Release|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x64.Build.0 = Release|x64
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x86.ActiveCfg = Release|Win32
+		{2016F6D0-BDAC-42A1-A543-D732D98DE406}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F5C81B3E-221C-45A6-BF0D-FFF86FDE0C79}
+	EndGlobalSection
+EndGlobal

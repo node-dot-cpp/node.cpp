@@ -4,5 +4,3 @@
 *.cmd text eol=crlf
 *.sln text eol=crlf
 *.vcproj text eol=crlf
-*.vcxproj text eol=crlf
-

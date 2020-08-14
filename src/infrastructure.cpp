@@ -26,6 +26,7 @@
 * -------------------------------------------------------------------------------*/
 
 #include "infrastructure.h"
+#include "../../include/nodecpp/nls.h"
 
 #include <time.h>
 #include <climits>
@@ -49,6 +50,13 @@
 #endif
 #include <sys/resource.h>
 #endif
+
+
+namespace nodecpp {
+
+thread_local NLS threadLocalData;
+
+} // namespace nodecpp
 
 
 uint64_t infraGetCurrentTime()
