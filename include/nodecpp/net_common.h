@@ -234,7 +234,6 @@ namespace nodecpp {
 					return false;
 			}
 			size_t new_alloc_size = ((size_t)1) << new_size_exp;
-//			std::unique_ptr<uint8_t[]> new_buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc( new_alloc_size )));
 			std::unique_ptr<uint8_t[]> new_buff( new uint8_t[new_alloc_size] );
 			size_t sz = 0;
 			if ( begin <= end )
@@ -263,7 +262,6 @@ namespace nodecpp {
 	public:
 		CircularByteBuffer(size_t sz_exp = 16) { 
 			size_exp = sz_exp; 
-//			buff = std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(malloc(alloc_size())));
 			buff = std::unique_ptr<uint8_t[]>(new uint8_t[alloc_size()]);
 			begin = end = buff.get();
 		}
@@ -284,39 +282,7 @@ namespace nodecpp {
 		size_t remaining_capacity() const { return alloc_size() - 1 - used_size(); }
 		bool empty() const { return begin == end; }
 		size_t alloc_size() const { return ((size_t)1)<<size_exp; }
-#if 0
-		// direct access to data
-		struct AvailableDataDescriptor
-		{
-			uint8_t* ptr1;
-			uint8_t* ptr2;
-			size_t sz1;
-			size_t sz2;
-		};
-		void get_available_data(AvailableDataDescriptor& d)
-		{
-			d.ptr1 = begin;
-			if ( begin < end )
-			{
-				d.sz1 = end - begin;
-				d.ptr2 = nullptr;
-				d.sz2 = 0;
-			}
-			else if ( begin > end )
-			{
-				d.sz1 = buff.get() + alloc_size() - begin;
-				d.ptr2 = buff.get();
-				d.sz2 = end - buff.get();
-			}
-			else
-			{
-				d.ptr1 = nullptr;
-				d.sz1 = 0;
-				d.ptr2 = nullptr;
-				d.sz2 = 0;
-			}
-		}
-#endif // 0
+
 		// writer-related
 		bool append( const uint8_t* ptr, size_t sz ) { 
 			if ( sz > remaining_capacity() )
@@ -473,42 +439,7 @@ namespace nodecpp {
 				}
 			}
 		}
-#if 0
-		void skip_data( size_t bytes2skip ) // "read" without reading
-		{
-			if ( begin <= end )
-			{
-				size_t diff = (size_t)(end - begin);
-				size_t sz2skip = bytes2skip >= diff ? diff : bytes2skip;
-				begin += sz2skip;
-			}
-			else
-			{
-				size_t sz2skip = buff.get() + alloc_size() - begin;
-				if ( sz2skip > bytes2skip )
-				{
-					begin += bytes2skip;
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin < buff.get() + alloc_size() );
-				}
-				else if ( sz2skip < bytes2skip )
-				{
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin + sz2skip == buff.get() + alloc_size() );
-					begin = buff.get();
-					size_t sz2skip2 = bytes2skip - sz2skip;
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
-					size_t diff = (size_t)(end - begin);
-					if ( sz2skip2 > diff )
-						sz2skip2 = diff;
-					begin += sz2skip2;
-					NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin <= end );
-				}
-				else
-				{
-					begin = buff.get();
-				}
-			}
-		}
-#endif
+
 		template<class Reader>
 		void read( Reader& reader, size_t& bytesRead, size_t target_sz ) {
 			bytesRead = 0;
