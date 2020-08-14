@@ -381,6 +381,54 @@ namespace nodecpp {
 		void get_ready_data( Buffer& b ) {
 			get_ready_data( b, b.capacity() );
 		}
+
+		enum ReadUntilStatus { done, waiting, insufficient_buffer };
+
+		ReadUntilStatus read_ready_data_until_impl( Buffer& b, uint8_t what, uint8_t* workingEnd )
+		{
+
+			if ( begin == workingEnd )
+				return ReadUntilStatus::waiting;
+
+			uint8_t curr;
+			while ( begin < workingEnd && *begin != what && b.capacity() - b.size() )
+			{
+				curr = *begin++;
+				b.append( curr );
+			}
+			if ( curr == what )
+				return ReadUntilStatus::done;
+			else if ( b.capacity() == b.size() )
+				return ReadUntilStatus::insufficient_buffer;
+			else
+			{
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin == workingEnd );
+				return ReadUntilStatus::waiting;
+			}
+		}
+
+		ReadUntilStatus read_ready_data_until( Buffer& b, uint8_t what )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.size() == 0 );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.capacity() != 0 );
+
+			if ( begin == end )
+				return ReadUntilStatus::waiting;
+			if ( begin < end )
+			{
+				return read_ready_data_until_impl( b, what, end );
+			}
+			else
+			{
+				auto firstRet = read_ready_data_until_impl( b, what, buff.get() + alloc_size() );
+				if ( begin == buff.get() + alloc_size() )
+					begin = buff.get();
+				if ( firstRet == ReadUntilStatus::done || firstRet == ReadUntilStatus::insufficient_buffer )
+					return firstRet;
+				return read_ready_data_until_impl( b, what, end );
+			}
+		}
+
 		void get_ready_data( Buffer& b, size_t bytes2read ) {
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.size() == 0 );
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, bytes2read <= b.capacity(), "indeed: {} vs. {}", bytes2read, b.capacity() );
@@ -422,6 +470,7 @@ namespace nodecpp {
 				}
 			}
 		}
+
 		void skip_data( size_t bytes2skip ) // "read" without reading
 		{
 			if ( begin <= end )
