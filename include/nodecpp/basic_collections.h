@@ -38,19 +38,19 @@
 #include <algorithm>
 
 #include <malloc_based_allocator.h>
+#include <safe_memory/safe_ptr.h>
 #include <safe_memory/vector.h>
 #include <safe_memory/unordered_map.h>
 #include <safe_memory/string.h>
 #include <safe_memory/string_literal.h>
 #include <safe_memory/string_format.h>
 
-
 namespace nodecpp
 {
 	template<class T>
 	using vector = ::safe_memory::vector<T>;
 	// template<class T>
-	// using vector = ::std::vector<T, nodecpp::safememory::iiballocator<T>>;
+	// using vector = ::std::vector<T, ::nodecpp::safememory::iiballocator<T>>;
 
 	template<class T>
 	using stdvector = ::std::vector<T, nodecpp::stdallocator<T>>;
@@ -58,13 +58,13 @@ namespace nodecpp
 	template<class Key, class T, class Hash = ::safe_memory::hash<Key>>
 	using map = ::safe_memory::unordered_map<Key, T, Hash>;
 	// template<class Key, class T>
-	// using map = ::std::map<Key, T, std::less<Key>, nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
+	// using map = ::std::map<Key, T, std::less<Key>, ::nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
 
 	template<class Key, class T>
 	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::stdallocator<std::pair<const Key,T>>>;
 
 	using string = ::safe_memory::string;
-	// using string = ::std::basic_string<char, std::char_traits<char>, nodecpp::safememory::iiballocator<char>>;
+	// using string = ::std::basic_string<char, std::char_traits<char>, ::nodecpp::safememory::iiballocator<char>>;
 
 	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::stdallocator<char>>;
 
@@ -97,7 +97,7 @@ namespace nodecpp
 
 	template<class T>
 	T* alloc( size_t count ) {
-		nodecpp::safememory::iiballocator<T> iiball;
+		::nodecpp::safememory::iiballocator<T> iiball;
 		T* ret = iiball.allocate( count );
 		for ( size_t i=0; i<count; ++i )
 			new (ret + i) T();
@@ -108,7 +108,7 @@ namespace nodecpp
 	void dealloc( T* ptr, size_t count ) {
 		for ( size_t i=0; i<count; ++i )
 			(ptr + i)->~T();
-		nodecpp::safememory::iiballocator<T> iiball;
+		::nodecpp::safememory::iiballocator<T> iiball;
 		iiball.deallocate( ptr, count );
 	}
 

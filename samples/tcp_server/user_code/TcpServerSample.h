@@ -113,8 +113,8 @@ public:
 		CO_RETURN;
 	}
 
-	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srv;
-	nodecpp::safememory::owning_ptr<nodecpp::net::ServerBase> srvCtrl;
+	nodecpp::owning_ptr<nodecpp::net::ServerBase> srv;
+	nodecpp::owning_ptr<nodecpp::net::ServerBase> srvCtrl;
 };
 
 #endif // TCP_SERVER_SAMPLE_H

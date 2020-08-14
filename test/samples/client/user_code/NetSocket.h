@@ -67,7 +67,7 @@ public:
 
 	using ClientSockType = nodecpp::net::SocketBase;
 
-	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<nodecpp::net::SocketBase> socket)
+	awaitable<void> doWhateverWithIncomingData(nodecpp::soft_ptr<nodecpp::net::SocketBase> socket)
 	{
 		for (;;)
 		{
@@ -157,7 +157,7 @@ public:
 
 	using ClientSockType = MySocketOne;
 
-	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<ClientSockType> socket)
+	awaitable<void> doWhateverWithIncomingData(nodecpp::soft_ptr<ClientSockType> socket)
 	{
 		for (;;)
 		{
@@ -232,7 +232,7 @@ public:
 		CO_RETURN;
 	}
 	
-	nodecpp::handler_ret_type onWhateverConnect(nodecpp::safememory::soft_ptr<MySocketOne> socket) 
+	nodecpp::handler_ret_type onWhateverConnect(nodecpp::soft_ptr<MySocketOne> socket) 
 	{
 		printf( "onWhateverConnect()\n" );
 		Buffer buf(2);
@@ -253,7 +253,7 @@ public:
 
 	using ClientSockType = MySocketOne;
 
-	awaitable<void> doWhateverWithIncomingData(nodecpp::safememory::soft_ptr<MySocketOne> socket)
+	awaitable<void> doWhateverWithIncomingData(nodecpp::soft_ptr<MySocketOne> socket)
 	{
 		for (;;)
 		{
@@ -314,7 +314,7 @@ public:
 	}
 
 	class MySocketOne; // just forward declaration
-	nodecpp::handler_ret_type onWhateverConnect(nodecpp::safememory::soft_ptr<MySocketOne> socket) 
+	nodecpp::handler_ret_type onWhateverConnect(nodecpp::soft_ptr<MySocketOne> socket) 
 	{
 		printf( "MySampleTNode::onWhateverConnect() with extra = %d\n", *(socket->getExtra()) );
 		CO_RETURN;
@@ -414,7 +414,7 @@ public:
 	}
 
 	class MySocketOne; // just forward declaration
-	nodecpp::handler_ret_type onWhateverConnect(nodecpp::safememory::soft_ptr<MySocketOne> socket) 
+	nodecpp::handler_ret_type onWhateverConnect(nodecpp::soft_ptr<MySocketOne> socket) 
 	{
 		printf( "MySampleTNode::onWhateverConnect() with extra = %d\n", *(socket->getExtra()) );
 		CO_RETURN;
@@ -435,7 +435,7 @@ public:
 
 	public:
 		MySocketOne() {
-//			nodecpp::safememory::soft_ptr<MySocketOne> p = myThis.getSoftPtr<MySocketOne>(this);
+//			nodecpp::soft_ptr<MySocketOne> p = myThis.getSoftPtr<MySocketOne>(this);
 ///			registerMeAndAcquireSocket<MySampleTNode, MySocketOne>( p );
 		}
 		virtual ~MySocketOne() {}
@@ -641,7 +641,7 @@ public:
 #error
 #endif
 
-	nodecpp::safememory::owning_ptr<ClientSockType> clientSock;
+	nodecpp::owning_ptr<ClientSockType> clientSock;
 };
 
 #endif // NET_SOCKET_H

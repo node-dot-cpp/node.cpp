@@ -90,7 +90,7 @@ public:
 		});
 
 		JSOwnObj* pobj = &array_of_arrays1;
-		nodecpp::safememory::owning_ptr<JSObject>* pown = reinterpret_cast<nodecpp::safememory::owning_ptr<JSObject>*>(pobj);
+		nodecpp::owning_ptr<JSObject>* pown = reinterpret_cast<nodecpp::owning_ptr<JSObject>*>(pobj);
 		JSObject& obj1 = *(*pown);
 
 		JSOwnObj arr1 = makeJSArray({0, 0 });

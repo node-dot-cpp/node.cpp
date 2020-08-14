@@ -565,7 +565,7 @@ public:
 			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		}
-		killAllZombies();
+		nodecpp::safememory::killAllZombies();
 		interceptNewDeleteOperators(false);
 	}
 };

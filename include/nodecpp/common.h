@@ -82,8 +82,6 @@ namespace nodecpp
 }
 
 
-using namespace ::nodecpp::safememory;
-
 template<class T>
 using GlobalObjectAllocator = Mallocator<T>;
 

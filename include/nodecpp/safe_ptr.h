@@ -38,18 +38,9 @@ namespace nodecpp
 	using ::safe_memory::soft_this_ptr;
 	using ::safe_memory::nullable_ptr;
 
-	using ::nodecpp::safememory::make_owning;
-	// using ::nodecpp::safememory::make_owning_2;
-	// using ::nodecpp::safememory::soft_ptr_in_constructor;
-	// using ::nodecpp::safememory::soft_ptr_static_cast;
-	// using ::nodecpp::safememory::soft_ptr_reinterpret_cast;
-	// using ::nodecpp::safememory::nullable_cast;
-
-	// using ::nodecpp::safememory::make_owning_t;
-
-
-	// using ::nodecpp::safememory::memory_safety;
-	// using ::nodecpp::safememory::safeness_declarator;
+	using ::safe_memory::make_owning;
+	using ::safe_memory::soft_ptr_static_cast;
+	using ::safe_memory::soft_ptr_reinterpret_cast;
 } // nodecpp
 
 

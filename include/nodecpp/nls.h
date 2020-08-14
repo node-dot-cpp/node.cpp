@@ -64,7 +64,7 @@ namespace nodecpp {
 				if ( pattern != classModuleMap().end() )
 				{
 					nodecpp::soft_ptr<js::JSModule> svar0 = pattern->second;
-					nodecpp::soft_ptr<UserClass> svar = soft_ptr_static_cast<UserClass>(svar0);
+					nodecpp::soft_ptr<UserClass> svar = nodecpp::soft_ptr_static_cast<UserClass>(svar0);
 					return std::make_pair( true, svar );
 				}
 				else
@@ -77,7 +77,7 @@ namespace nodecpp {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, check.second, "failed to insert exported value to map; insertion already done for this type" ); 
 	//			nodecpp::soft_ptr<UserClass> svar = check.first->second;
 				nodecpp::soft_ptr<js::JSModule> svar0 = check.first->second;
-				nodecpp::soft_ptr<UserClass> svar = soft_ptr_static_cast<UserClass>(svar0);
+				nodecpp::soft_ptr<UserClass> svar = nodecpp::soft_ptr_static_cast<UserClass>(svar0);
 				return std::make_pair( true, svar );
 			}
 		public:
