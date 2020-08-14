@@ -40,9 +40,9 @@ thread_local NLS threadLocalData;
 
 class JSStackMan // just a helper
 {
-	nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> args;
+	nodecpp::soft_ptr<nodecpp::js::JSArray> args;
 public:
-	JSStackMan( nodecpp::safememory::soft_ptr<nodecpp::js::JSArray> args_ ) {
+	JSStackMan( nodecpp::soft_ptr<nodecpp::js::JSArray> args_ ) {
 		args = nodecpp::threadLocalData.currentArgs;
 		nodecpp::threadLocalData.currentArgs = args_;
 	}
@@ -133,7 +133,7 @@ namespace nodecpp::js {
 	{
 		return ptr->indexOf( var );
 	}
-	nodecpp::safememory::owning_ptr<JSArray> JSOwnObj::keys()
+	nodecpp::owning_ptr<JSArray> JSOwnObj::keys()
 	{
 		return ptr->keys();
 	}
@@ -349,7 +349,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()() { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray();
+		nodecpp::owning_ptr<JSArray> args = makeJSArray();
 		JSStackMan restorer( args );
 		switch ( type )
 		{
@@ -369,7 +369,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -390,7 +390,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -411,7 +411,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -432,7 +432,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -453,7 +453,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -474,7 +474,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -495,7 +495,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -516,7 +516,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -537,7 +537,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -558,7 +558,7 @@ namespace nodecpp::js {
 	}
 
 	JSVar JSVar::operator()( JSVar obj1, JSVar obj2, JSVar obj3, JSVar obj4, JSVar obj5, JSVar obj6, JSVar obj7, JSVar obj8, JSVar obj9, JSVar obj10 ) { 
-		nodecpp::safememory::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9, obj10 } );
+		nodecpp::owning_ptr<JSArray> args = makeJSArray( { obj1, obj2, obj3, obj4, obj5, obj6, obj7, obj8, obj9, obj10 } );
 		JSStackMan restorer( args );
 
 		switch ( type )
@@ -1424,7 +1424,7 @@ namespace nodecpp::js {
 		}
 	}
 
-	nodecpp::safememory::owning_ptr<JSArray> JSVar::keys()
+	nodecpp::owning_ptr<JSArray> JSVar::keys()
 	{
 		switch ( type )
 		{
@@ -1448,7 +1448,7 @@ namespace nodecpp::js {
 				return (*_asSoft())->keys();
 			default:
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type: {}", (size_t)type ); 
-				return nodecpp::safememory::owning_ptr<JSArray>();
+				return nodecpp::owning_ptr<JSArray>();
 		}
 	}
 
@@ -1549,7 +1549,7 @@ namespace nodecpp::js {
 	{
 		if ( type != Type::string )
 			throw;
-		nodecpp::safememory::owning_ptr<JSArray> ret = makeJSArray();
+		nodecpp::owning_ptr<JSArray> ret = makeJSArray();
 //		const nodecpp::string& str = _asStr()->str();
 		const char* str = _asStr()->str().c_str();
 		if ( re.flags() & JSRegExp::Flags::g )
@@ -2485,13 +2485,13 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////   JSObject ////
 
-	void JSObject::concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret )
+	void JSObject::concat_impl_add_me( nodecpp::owning_ptr<JSArray>& ret )
 	{
-		nodecpp::safememory::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
+		nodecpp::soft_ptr<JSObject> myPtr = myThis.getSoftPtr<JSObject>(this);
 		ret->arrayValues.push_back( JSVar( myPtr ) );
 	}
 
-	void JSObject::concat_impl_1( nodecpp::safememory::owning_ptr<JSArray>& ret, JSVar arr )
+	void JSObject::concat_impl_1( nodecpp::owning_ptr<JSArray>& ret, JSVar arr )
 	{
 		if ( arr.type == JSVar::Type::softptr )
 			(*(arr._asSoft()))->concat_impl_add_me( ret );
@@ -2499,9 +2499,9 @@ namespace nodecpp::js {
 			ret->arrayValues.push_back( arr );
 	}
 
-	nodecpp::safememory::owning_ptr<JSArray> JSObject::keys()
+	nodecpp::owning_ptr<JSArray> JSObject::keys()
 	{
-		nodecpp::safememory::owning_ptr<JSArray> ret = makeJSArray();
+		nodecpp::owning_ptr<JSArray> ret = makeJSArray();
 		for ( auto& elem : keyValuePairs )
 			ret->arrayValues.push_back( JSVar( elem.first ) );
 		return ret;
@@ -2509,7 +2509,7 @@ namespace nodecpp::js {
 
 	////////////////////////////////////////////////////////////   JSArray ////
 
-	void JSArray::concat_impl_add_me( nodecpp::safememory::owning_ptr<JSArray>& ret )
+	void JSArray::concat_impl_add_me( nodecpp::owning_ptr<JSArray>& ret )
 	{
 		for ( auto& el : arrayValues )
 		{

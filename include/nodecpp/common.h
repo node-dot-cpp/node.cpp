@@ -53,7 +53,7 @@ namespace nodecpp {
 /*#include <foundation.h>
 #include <nodecpp_assert.h>
 #include <iibmalloc.h>*/
-#include <safe_memory/safe_ptr.h>
+#include <nodecpp/safe_ptr.h>
 #include "awaitable.h"
 #include "basic_collections.h"
 

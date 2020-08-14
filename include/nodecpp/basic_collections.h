@@ -38,7 +38,6 @@
 #include <algorithm>
 
 #include <malloc_based_allocator.h>
-#include <safe_memory/safe_ptr.h>
 #include <safe_memory/vector.h>
 #include <safe_memory/unordered_map.h>
 #include <safe_memory/string.h>

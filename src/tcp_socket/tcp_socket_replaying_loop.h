@@ -50,7 +50,7 @@ public:
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,ptr->dataForCommandProcessing.writeBuffer.empty());
 	}
 
-	static void registerAndAssignSocket(nodecpp::safememory::soft_ptr<net::SocketBase> ptr)
+	static void registerAndAssignSocket(nodecpp::soft_ptr<net::SocketBase> ptr)
 	{
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 		{
@@ -110,7 +110,7 @@ public:
 //	enum ShouldEmit { EmitNone, EmitConnect, EmitDrain };
 //	ShouldEmit _infraProcessWriteEvent(net::SocketBase::DataForCommandProcessing& sockData);
 
-	static void appAddServer(nodecpp::safememory::soft_ptr<net::ServerBase> ptr)
+	static void appAddServer(nodecpp::soft_ptr<net::ServerBase> ptr)
 	{
 #ifndef NODECPP_ENABLE_CLUSTERING
 		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
@@ -191,7 +191,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketCloseEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketCloseEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					if ( edata->err && edata->used ) //if error closing, then first error event
 					{
 						Error e; // TODO-REPLAY: we may need to save an actual value of 'current.second.second' in the recorded call
@@ -213,7 +213,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					auto hr = sockPtr->dataForCommandProcessing.ahd_accepted;
 					if ( hr )
 					{
@@ -233,7 +233,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					auto hr = sockPtr->dataForCommandProcessing.ahd_read.h;
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, hr );
 //					Error e;
@@ -248,7 +248,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					auto hr = sockPtr->dataForCommandProcessing.ahd_read.h;
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, hr );
 					sockPtr->dataForCommandProcessing.ahd_read.h = nullptr;
@@ -260,7 +260,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					Buffer recvBuffer;
 					recvBuffer.append( reinterpret_cast<uint8_t*>( fd.ptr ) + sizeof( record_and_replay_impl::BinaryLog::SocketEvent ), fd.size - sizeof( record_and_replay_impl::BinaryLog::SocketEvent ) );
 					sockPtr->emitData( recvBuffer);
@@ -273,7 +273,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					sockPtr->dataForCommandProcessing.remoteEnded = true;
 					sockPtr->emitEnd();
 					if (sockPtr->dataForCommandProcessing.isEndEventHandler())
@@ -285,7 +285,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketUpdateState* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketUpdateState*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					sockPtr->dataForCommandProcessing.state = (net::SocketBase::DataForCommandProcessing::State)( edata->state );
 					break;
 				}
@@ -294,7 +294,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketUpdateState* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketUpdateState*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::Closing;
 					break;
 				}
@@ -303,7 +303,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketUpdateState* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketUpdateState*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					sockPtr->dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::ErrorClosing;
 					break;
 				}
@@ -315,7 +315,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					auto hr = sockPtr->dataForCommandProcessing.ahd_connect;
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, hr );
 					sockPtr->dataForCommandProcessing.ahd_connect = nullptr;
@@ -327,7 +327,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					sockPtr->emitConnect();
 					if (sockPtr->dataForCommandProcessing.isConnectEventHandler())
 						sockPtr->dataForCommandProcessing.handleConnectEvent(sockSoftPtr);
@@ -338,7 +338,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					auto hr = sockPtr->dataForCommandProcessing.ahd_drain;
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, hr );
 					sockPtr->dataForCommandProcessing.ahd_drain = nullptr;
@@ -350,7 +350,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					auto hr = sockPtr->dataForCommandProcessing.ahd_accepted;
 					sockPtr->emitDrain();
 					if (sockPtr->dataForCommandProcessing.isDrainEventHandler())
@@ -362,7 +362,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					serverPtr->internalCleanupBeforeClosing();
 					break;
 				}
@@ -371,7 +371,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::ServerCloseEvent_2* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerCloseEvent_2*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					auto hr = serverPtr->dataForCommandProcessing.ahd_close;
 					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, hr != nullptr ); 
 					serverPtr->dataForCommandProcessing.ahd_close = nullptr;
@@ -385,7 +385,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::ServerCloseEvent_2* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerCloseEvent_2*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					serverPtr->emitClose( edata->err );
 					if (serverPtr->dataForCommandProcessing.isCloseEventHandler())
 						serverPtr->dataForCommandProcessing.handleCloseEvent( serverSoftPtr, edata->err );
@@ -408,7 +408,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					auto hr = serverPtr->dataForCommandProcessing.ahd_listen;
 					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, hr != nullptr ); 
 					serverPtr->dataForCommandProcessing.ahd_listen = nullptr;
@@ -420,7 +420,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					// TODO: revise around serverPtr->dataForCommandProcessing.index
 					serverPtr->emitListening(serverPtr->dataForCommandProcessing.index, serverPtr->dataForCommandProcessing.localAddress);
 					if ( serverPtr->dataForCommandProcessing.isListenEventHandler() )
@@ -432,7 +432,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					OpaqueSocketData& osd = *reinterpret_cast<OpaqueSocketData*>( reinterpret_cast<uint8_t*>(fd.ptr) + sizeof(record_and_replay_impl::BinaryLog::SocketEvent));
 					auto ptr = serverPtr->makeSocket( osd );
 					break;
@@ -442,7 +442,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::ServerMakeSocketOutput* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::ServerMakeSocketOutput*>( fd.ptr );
 					net::SocketBase* sockPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->sockPtr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
+					nodecpp::soft_ptr<net::SocketBase> sockSoftPtr = sockPtr->myThis.getSoftPtr<net::SocketBase>(sockPtr);
 					infraAddAccepted( sockSoftPtr );
 					sockPtr->dataForCommandProcessing._remote.ip = edata->remoteIp;
 					sockPtr->dataForCommandProcessing._remote.port = edata->remotePort.getHost();
@@ -453,9 +453,9 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::serverConsumeSocket* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::serverConsumeSocket*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-//					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+//					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					net::SocketBase* socketPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->sockPtr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> socketSoftPtr = socketPtr->myThis.getSoftPtr<net::SocketBase>(socketPtr);
+					nodecpp::soft_ptr<net::SocketBase> socketSoftPtr = socketPtr->myThis.getSoftPtr<net::SocketBase>(socketPtr);
 					auto hr = serverPtr->dataForCommandProcessing.ahd_connection.h;
 					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, hr != nullptr ); 
 					serverPtr->dataForCommandProcessing.ahd_connection.sock = socketSoftPtr;
@@ -468,9 +468,9 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::serverConsumeSocket* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::serverConsumeSocket*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					net::SocketBase* socketPtr = reinterpret_cast<net::SocketBase*>( threadLocalData.binaryLog->mapPointer( edata->sockPtr ) );
-					nodecpp::safememory::soft_ptr<net::SocketBase> socketSoftPtr = socketPtr->myThis.getSoftPtr<net::SocketBase>(socketPtr);
+					nodecpp::soft_ptr<net::SocketBase> socketSoftPtr = socketPtr->myThis.getSoftPtr<net::SocketBase>(socketPtr);
 					serverPtr->emitConnection( socketSoftPtr );
 					if (serverPtr->dataForCommandProcessing.isConnectionEventHandler())
 						serverPtr->dataForCommandProcessing.handleConnectionEvent( serverSoftPtr, socketSoftPtr );
@@ -481,7 +481,7 @@ public:
 				{
 					record_and_replay_impl::BinaryLog::SocketEvent* edata = reinterpret_cast<record_and_replay_impl::BinaryLog::SocketEvent*>( fd.ptr );
 					net::ServerBase* serverPtr = reinterpret_cast<net::ServerBase*>( threadLocalData.binaryLog->mapPointer( edata->ptr ) );
-					nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
+					nodecpp::soft_ptr<net::ServerBase> serverSoftPtr = serverPtr->myThis.getSoftPtr<net::ServerBase>(serverPtr);
 					Error e;
 					serverPtr->emitError( e );
 					if (serverPtr->dataForCommandProcessing.isErrorEventHandler())

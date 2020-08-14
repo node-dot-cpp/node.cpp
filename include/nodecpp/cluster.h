@@ -110,7 +110,7 @@ namespace nodecpp
 			id_ = id; 
 		}
 
-		nodecpp::safememory::owning_ptr<nodecpp::net::SocketBase> ctrlServer; // TODO: this might be a temporary solution
+		nodecpp::owning_ptr<nodecpp::net::SocketBase> ctrlServer; // TODO: this might be a temporary solution
 
 	public:
 		Worker(const Worker&) = delete;
@@ -345,7 +345,7 @@ namespace nodecpp
 			};
 			nodecpp::vector<SlaveServerData> socketsToSlaves;
 		public:
-			nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
+			nodecpp::soft_this_ptr<AgentServer> myThis;
 		public:
 			class DataForCommandProcessing {
 			public:
@@ -405,7 +405,7 @@ namespace nodecpp
 
 		public:
 			AgentServer(Cluster& myCluster_) /*: myCluster( myCluster_ )*/ {
-				nodecpp::safememory::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
+				nodecpp::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
 			}
 			virtual ~AgentServer() {
 				reportBeingDestructed();
@@ -429,11 +429,11 @@ namespace nodecpp
 
 
 		};
-		nodecpp::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
+		nodecpp::vector<nodecpp::owning_ptr<AgentServer>> agentServers;
 
-		nodecpp::safememory::soft_ptr<AgentServer> createAgentServer() {
-			nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>(*this);
-			nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
+		nodecpp::soft_ptr<AgentServer> createAgentServer() {
+			nodecpp::owning_ptr<AgentServer> newServer = nodecpp::make_owning<AgentServer>(*this);
+			nodecpp::soft_ptr<AgentServer> ret = newServer;
 #ifndef NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
 			newServer->registerServer();
 #endif // NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
@@ -467,7 +467,7 @@ namespace nodecpp
 				}
 			}
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "processRequestForListeningAtMaster() for thread id: {} Addr {}:{}, requestID {}, and entryIndex = {:x} requires actually creating a new Agent server (curr num of Agent servers: {})", targetThreadId.slotId, address.ip.toStr(), address.port, requestID, entryIndex, agentServers.size() );
-			nodecpp::safememory::soft_ptr<AgentServer> server = createAgentServer();
+			nodecpp::soft_ptr<AgentServer> server = createAgentServer();
 			server->requestID = requestID;
 			server->socketsToSlaves.push_back( slaveData );
 #ifdef NODECPP_USE_SHARED_SOCKS_FOR_LISTENERS
@@ -511,7 +511,7 @@ nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_
 			AgentServer::SlaveServerData slaveData;
 			slaveData.entryIndex = mh.entryIdx;
 			slaveData.targetThreadId = targetThreadId;
-			nodecpp::safememory::soft_ptr<AgentServer> agent;
+			nodecpp::soft_ptr<AgentServer> agent;
 			for ( auto& server : agentServers )
 			{
 				if ( server != nullptr && 

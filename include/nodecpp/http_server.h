@@ -47,10 +47,10 @@ namespace nodecpp {
 
 		template<class ServerT, class RequestT, class ... Types>
 		static
-		nodecpp::safememory::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
+		nodecpp::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
 			static_assert( std::is_base_of< HttpServerBase, ServerT >::value );
 			static_assert( std::is_base_of< IncomingHttpMessageAtServer, RequestT >::value );
-			nodecpp::safememory::owning_ptr<ServerT> retServer = nodecpp::safememory::make_owning<ServerT>(::std::forward<Types>(args)...);
+			nodecpp::owning_ptr<ServerT> retServer = nodecpp::make_owning<ServerT>(::std::forward<Types>(args)...);
 			if constexpr ( !std::is_same<typename ServerT::NodeType, void>::value )
 			{
 				static_assert( std::is_base_of< NodeBase, typename ServerT::NodeType >::value );
@@ -64,7 +64,7 @@ namespace nodecpp {
 			{
 				using SocketT = HttpSocket< RequestT, void>;
 				retServer->setAcceptedSocketCreationRoutine( [](OpaqueSocketData& sdata) {
-						nodecpp::safememory::owning_ptr<SocketT> ret = nodecpp::safememory::make_owning<SocketT>();
+						nodecpp::owning_ptr<SocketT> ret = nodecpp::make_owning<SocketT>();
 						ret->registerMeAndAssignSocket(sdata);
 						return ret;
 					} );
@@ -74,14 +74,14 @@ namespace nodecpp {
 				auto myDataParent = retServer->getDataParent();
 				retServer->setAcceptedSocketCreationRoutine( [myDataParent](OpaqueSocketData& sdata) {
 						using SocketT = HttpSocket<RequestT, typename ServerT::DataParentType>;
-						nodecpp::safememory::owning_ptr<SocketT> retSock;
+						nodecpp::owning_ptr<SocketT> retSock;
 						if constexpr ( std::is_base_of< NodeBase, typename ServerT::DataParentType >::value )
 						{
-							retSock = nodecpp::safememory::make_owning<SocketT>(myDataParent);
+							retSock = nodecpp::make_owning<SocketT>(myDataParent);
 						}
 						else
 						{
-							retSock = nodecpp::safememory::make_owning<SocketT>();
+							retSock = nodecpp::make_owning<SocketT>();
 						}
 						retSock->registerMeAndAssignSocket(sdata);
 						return retSock;
@@ -94,7 +94,7 @@ namespace nodecpp {
 
 		template<class ServerT, class ... Types>
 		static
-		nodecpp::safememory::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
+		nodecpp::owning_ptr<ServerT> createHttpServer(Types&& ... args) {
 			return createHttpServer<ServerT, IncomingHttpMessageAtServer, Types ...>(::std::forward<Types>(args)...);
 		}
 

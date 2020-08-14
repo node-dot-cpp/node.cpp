@@ -113,7 +113,7 @@ public:
 		size_t nextStep = 0;*/
 
 	public:
-		nodecpp::safememory::soft_this_ptr<AgentServer> myThis;
+		nodecpp::soft_this_ptr<AgentServer> myThis;
 	public:
 		class DataForCommandProcessing {
 		public:
@@ -168,7 +168,7 @@ public:
 
 	public:
 		AgentServer() {
-			nodecpp::safememory::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
+			nodecpp::soft_ptr<AgentServer> p = myThis.getSoftPtr<AgentServer>(this);
 		}
 		virtual ~AgentServer() {
 			//reportBeingDestructed();
@@ -189,11 +189,11 @@ public:
 	};
 
 private:
-	nodecpp::vector<nodecpp::safememory::owning_ptr<AgentServer>> agentServers;
+	nodecpp::vector<nodecpp::owning_ptr<AgentServer>> agentServers;
 
-	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithSharedSocket(size_t entryIndex, nodecpp::Ip4 ip, uint16_t port, int backlog) {
-		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
-		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
+	nodecpp::soft_ptr<AgentServer> createAgentServerWithSharedSocket(size_t entryIndex, nodecpp::Ip4 ip, uint16_t port, int backlog) {
+		nodecpp::owning_ptr<AgentServer> newServer = nodecpp::make_owning<AgentServer>();
+		nodecpp::soft_ptr<AgentServer> ret = newServer;
 		newServer->entryIndexAtSlave = entryIndex;
 		newServer->dataForCommandProcessing.localAddress.ip = ip;
 		newServer->dataForCommandProcessing.localAddress.port = port;
@@ -208,9 +208,9 @@ private:
 		return ret;
 	}
 
-	nodecpp::safememory::soft_ptr<AgentServer> createAgentServerWithExistingSocket( size_t entryIndex, SOCKET sock, nodecpp::Ip4 ip, uint16_t port ) {
-		nodecpp::safememory::owning_ptr<AgentServer> newServer = nodecpp::safememory::make_owning<AgentServer>();
-		nodecpp::safememory::soft_ptr<AgentServer> ret = newServer;
+	nodecpp::soft_ptr<AgentServer> createAgentServerWithExistingSocket( size_t entryIndex, SOCKET sock, nodecpp::Ip4 ip, uint16_t port ) {
+		nodecpp::owning_ptr<AgentServer> newServer = nodecpp::make_owning<AgentServer>();
+		nodecpp::soft_ptr<AgentServer> ret = newServer;
 		newServer->entryIndexAtSlave = entryIndex;
 		newServer->dataForCommandProcessing.localAddress.ip = ip;
 		newServer->dataForCommandProcessing.localAddress.port = port;
@@ -247,14 +247,14 @@ class NetSocketEntryForListenerThread {
 	// TODO: revise everything around being 'refed'
 	enum State { Unused, SockIssued, SockAssociated, SockClosed }; // TODO: revise!
 	State state = State::Unused;
-	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr;
+	nodecpp::soft_ptr<ListenerThreadWorker::AgentServer> ptr;
 
 public:
 	size_t index;
 	bool refed = false;
 
 	NetSocketEntryForListenerThread(size_t index) : state(State::Unused), index(index) {}
-	NetSocketEntryForListenerThread(size_t index, nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr_) : state(State::SockIssued), index(index), ptr( ptr_ ) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
+	NetSocketEntryForListenerThread(size_t index, nodecpp::soft_ptr<ListenerThreadWorker::AgentServer> ptr_) : state(State::SockIssued), index(index), ptr( ptr_ ) {ptr->dataForCommandProcessing.index = index;NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );}
 	
 	NetSocketEntryForListenerThread(const NetSocketEntryForListenerThread& other) = delete;
 	NetSocketEntryForListenerThread& operator=(const NetSocketEntryForListenerThread& other) = delete;
@@ -268,7 +268,7 @@ public:
 //	void setSocketClosed() {NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, state != State::Unused ); state = State::SockClosed;}
 //	void setUnused() {state = State::Unused; index = 0;}
 
-	nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> getAgentServer() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr != nullptr); return ptr; }
+	nodecpp::soft_ptr<ListenerThreadWorker::AgentServer> getAgentServer() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr != nullptr); return ptr; }
 	ListenerThreadWorker::AgentServer::DataForCommandProcessing* getAgentServerData() const { NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr != nullptr); return ptr != nullptr ? &( ptr->dataForCommandProcessing ) : nullptr; }
 
 	void updateIndex( size_t idx ) {
@@ -343,7 +343,7 @@ public:
 	size_t size() const {return ourSide.size() - 1; }
 	bool isValidId( size_t idx ) { return idx >= reserved_capacity && idx < ourSide.size(); }
 
-	void addEntry(nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr) {
+	void addEntry(nodecpp::soft_ptr<ListenerThreadWorker::AgentServer> ptr) {
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ourSide.size() == osSide.size() );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ptr->dataForCommandProcessing.osSocket > 0 );
 		for (size_t i = reserved_capacity; i != ourSide.size(); ++i) // skip ourSide[0]
@@ -486,7 +486,7 @@ protected:
 	nodecpp::IPFAMILY family = nodecpp::string_literal( "IPv4" );
 
 public:
-	void appAddAgentServerSocketAndStartListening( nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr, SOCKET socket)
+	void appAddAgentServerSocketAndStartListening( nodecpp::soft_ptr<ListenerThreadWorker::AgentServer> ptr, SOCKET socket)
 	{
 		ptr->dataForCommandProcessing.osSocket = socket;
 		ioSockets.addEntry( ptr );
@@ -498,7 +498,7 @@ public:
 		ioSockets.setRefed(ptr->dataForCommandProcessing.index, true);
 	}
 
-	void acquireSharedServerSocketAndStartListening( nodecpp::safememory::soft_ptr<ListenerThreadWorker::AgentServer> ptr, int backlog)
+	void acquireSharedServerSocketAndStartListening( nodecpp::soft_ptr<ListenerThreadWorker::AgentServer> ptr, int backlog)
 	{
 		SocketRiia s(internal_usage_only::internal_make_shared_tcp_socket());
 		if (!s)
