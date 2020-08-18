@@ -464,6 +464,182 @@ namespace nodecpp {
 			SocketBase& setNoDelay(bool noDelay = true);
 			SocketBase& setKeepAlive(bool enable = false);
 
+// begin [perimeter calls for record and replay]
+			void rrOnAccepted()
+			{
+#ifdef NODECPP_RECORD_AND_REPLAY
+				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+				{
+					record_and_replay_impl::BinaryLog::SocketEvent edata;
+					edata.ptr = (uintptr_t)(this);
+					::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_accepted, &edata, sizeof( edata ) );
+				}
+				else if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+				{
+					// TODO REPLAY: implement as a part of main replaying loop
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "must be implemented as a part of main replaying loop" );
+				}
+#endif // NODECPP_RECORD_AND_REPLAY
+				auto hr = dataForCommandProcessing.ahd_accepted;
+				if ( hr )
+				{
+					dataForCommandProcessing.ahd_accepted = nullptr;
+					hr();
+				}
+				else // TODO: make sure we never have both cases in the same time
+				{
+					emitAccepted();
+					if (dataForCommandProcessing.isAcceptedEventHandler())
+					{
+						nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+						dataForCommandProcessing.handleAcceptedEvent(sockSoftPtr);
+					}
+				}
+			}
+#if 0
+			void rrOnRemoteEnded()
+			{
+#ifdef NODECPP_RECORD_AND_REPLAY
+				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+				{
+					// TODO REPLAY: implement as a part of main replaying loop
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "must be implemented as a part of main replaying loop" );
+				}
+#endif // NODECPP_RECORD_AND_REPLAY
+				if (!dataForCommandProcessing.remoteEnded)
+				{
+#ifdef NODECPP_RECORD_AND_REPLAY
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+					{
+						record_and_replay_impl::BinaryLog::SocketEvent edata;
+						edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
+						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_remote_ended_call, &edata, sizeof( edata ) );
+					}
+#endif // NODECPP_RECORD_AND_REPLAY
+					dataForCommandProcessing.remoteEnded = true;
+					ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
+
+					entry.getClientSocket()->emitEnd();
+					if (dataForCommandProcessing.isEndEventHandler())
+						dataForCommandProcessing.handleEndEvent(entry.getClientSocket());
+
+					if (dataForCommandProcessing.state == net::SocketBase::DataForCommandProcessing::LocalEnded)
+					{
+						//pendingCloseEvents.emplace_back(entry.index, false);
+						closeSocket(entry);
+					}
+					else if (!dataForCommandProcessing.allowHalfOpen && dataForCommandProcessing.state != net::SocketBase::DataForCommandProcessing::LocalEnding)
+					{
+						if (!dataForCommandProcessing.writeBuffer.empty())
+						{
+#ifdef NODECPP_RECORD_AND_REPLAY
+							if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+							{
+								record_and_replay_impl::BinaryLog::SocketUpdateState edata;
+								edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
+								edata.state = net::SocketBase::DataForCommandProcessing::LocalEnding;
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_update_state, &edata, sizeof( edata ) );
+							}
+#endif // NODECPP_RECORD_AND_REPLAY
+							dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::LocalEnding;
+						}
+						else
+						{
+#ifdef NODECPP_RECORD_AND_REPLAY
+							if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+							{
+								record_and_replay_impl::BinaryLog::SocketUpdateState edata;
+								edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
+								edata.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_update_state, &edata, sizeof( edata ) );
+							}
+#endif // NODECPP_RECORD_AND_REPLAY
+		//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"infraProcessRemoteEnded() leads to internal_shutdown_send()...");
+							internal_usage_only::internal_shutdown_send(dataForCommandProcessing.osSocket);
+							dataForCommandProcessing.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
+							closeSocket(entry);
+						}
+					}
+				}
+				else
+				{
+					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Unexpected end on socket {}, already ended", dataForCommandProcessing.osSocket);
+				}
+			}
+#endif // 0
+			void rrOnConnected()
+			{
+#ifdef NODECPP_RECORD_AND_REPLAY
+				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+				{
+					// TODO REPLAY: implement as a part of main replaying loop
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "must be implemented as a part of main replaying loop" );
+				}
+				record_and_replay_impl::BinaryLog::SocketEvent edata;
+				edata.ptr = (uintptr_t)(&dataForCommandProcessing);
+#endif // NODECPP_RECORD_AND_REPLAY
+				auto hr = dataForCommandProcessing.ahd_connect;
+				if ( hr )
+				{
+#ifdef NODECPP_RECORD_AND_REPLAY
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect_event_crh, &edata, sizeof( edata ) );
+#endif // NODECPP_RECORD_AND_REPLAY
+					dataForCommandProcessing.ahd_connect = nullptr;
+					hr();
+				}
+				else
+				{
+#ifdef NODECPP_RECORD_AND_REPLAY
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect_event_call, &edata, sizeof( edata ) );
+#endif // NODECPP_RECORD_AND_REPLAY
+					emitConnect();
+					if (dataForCommandProcessing.isConnectEventHandler())
+					{
+						nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+						dataForCommandProcessing.handleConnectEvent(sockSoftPtr);
+					}
+				}
+			}
+
+			void rrOnDrain()
+			{
+#ifdef NODECPP_RECORD_AND_REPLAY
+				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+				{
+					// TODO REPLAY: implement as a part of main replaying loop
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "must be implemented as a part of main replaying loop" );
+				}
+				record_and_replay_impl::BinaryLog::SocketEvent edata;
+				edata.ptr = (uintptr_t)(&dataForCommandProcessing);
+#endif // NODECPP_RECORD_AND_REPLAY
+				auto hr = dataForCommandProcessing.ahd_drain;
+				if ( hr )
+				{
+#ifdef NODECPP_RECORD_AND_REPLAY
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_drain_event_crh, &edata, sizeof( edata ) );
+#endif // NODECPP_RECORD_AND_REPLAY
+					dataForCommandProcessing.ahd_drain = nullptr;
+					hr();
+				}
+				else // TODO: make sure we never have both cases in the same time
+				{
+#ifdef NODECPP_RECORD_AND_REPLAY
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_drain_event_call, &edata, sizeof( edata ) );
+#endif // NODECPP_RECORD_AND_REPLAY
+					emitDrain();
+					if (dataForCommandProcessing.isDrainEventHandler())
+					{
+						nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+						dataForCommandProcessing.handleDrainEvent(sockSoftPtr);
+					}
+				}
+			}
+// end [perimeter calls for record and replay]
+
 
 #ifndef NODECPP_NO_COROUTINES
 
