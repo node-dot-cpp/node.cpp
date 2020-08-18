@@ -639,35 +639,35 @@ namespace nodecpp {
 				if ( dataForCommandProcessing.ahd_accepted != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_accepted;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_accepted = nullptr;
 					hr();
 				}
 				if ( dataForCommandProcessing.ahd_connect != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_connect;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_connect = nullptr;
 					hr();
 				}
 				if ( dataForCommandProcessing.ahd_read.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_read.h;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_read.h = nullptr;
 					hr();
 				}
 				if ( dataForCommandProcessing.ahd_write.h != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_write.h;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_write.h = nullptr;
 					hr();
 				}
 				if ( dataForCommandProcessing.ahd_drain != nullptr )
 				{
 					auto hr = dataForCommandProcessing.ahd_drain;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					dataForCommandProcessing.ahd_drain = nullptr;
 					hr();
 				}
@@ -691,15 +691,15 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
+						nodecpp::setCoroStatusOk(awaiting);
 						socket.dataForCommandProcessing.ahd_connect = awaiting;
 						myawaiting = awaiting;
 					}
 
 					auto await_resume() {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
+						if ( nodecpp::isCoroException(myawaiting) )
+							throw nodecpp::getCoroException(myawaiting);
 					}
 				};
 				connect( port, ip );
@@ -726,7 +726,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
+						nodecpp::setCoroStatusOk(awaiting);
 						socket.dataForCommandProcessing.ahd_connect = awaiting;
 						to = nodecpp::setTimeoutForAction( awaiting, period );
 						myawaiting = awaiting;
@@ -735,8 +735,8 @@ namespace nodecpp {
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
+						if ( nodecpp::isCoroException(myawaiting) )
+							throw nodecpp::getCoroException(myawaiting);
 					}
 				};
 				connect( port, ip );
@@ -786,7 +786,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
-						nodecpp::setNoException(awaiting);
+						nodecpp::setCoroStatusOk(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
 					}
@@ -795,10 +795,10 @@ namespace nodecpp {
 #ifdef NODECPP_RECORD_AND_REPLAY
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
 							{
 								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_except, nullptr, 0 );
-								throw nodecpp::getException(myawaiting);
+								throw nodecpp::getCoroException(myawaiting);
 							}
 							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_ok, buff.begin(), buff.size() );
@@ -808,7 +808,7 @@ namespace nodecpp {
 						{
 							auto frame = threadLocalData.binaryLog->readNextFrame();
 							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_except )
-								throw nodecpp::getException(myawaiting);
+								throw nodecpp::getCoroException(myawaiting);
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_ok )
 							{
 								buff.append( frame.ptr, frame.size );
@@ -820,8 +820,8 @@ namespace nodecpp {
 						else
 #endif // NODECPP_RECORD_AND_REPLAY
 						{
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-								throw nodecpp::getException(myawaiting);
+							if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
+								throw nodecpp::getCoroException(myawaiting);
 							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
 						}
@@ -875,17 +875,9 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
-						nodecpp::setNoException(awaiting);
+						nodecpp::setCoroStatusOk(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
-						/*to = std::move( nodecpp::setTimeout( [this](){
-								auto h = socket.dataForCommandProcessing.ahd_read.h;
-								socket.dataForCommandProcessing.ahd_read.h = nullptr;
-								socket.dataForCommandProcessing.ahd_read.is_exception = true;
-								socket.dataForCommandProcessing.ahd_read.exception = std::exception(); // TODO: switch to our exceptions ASAP!
-								h();
-							}, 
-							period ) );*/
 						to = nodecpp::setTimeoutForAction( awaiting, period );
 					}
 
@@ -894,10 +886,10 @@ namespace nodecpp {
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
 							nodecpp::clearTimeout( to );
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
 							{
 								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_except, nullptr, 0 );
-								throw nodecpp::getException(myawaiting);
+								throw nodecpp::getCoroException(myawaiting);
 							}
 							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_ok, buff.begin(), buff.size() );
@@ -908,7 +900,7 @@ namespace nodecpp {
 							nodecpp::clearTimeout( to );
 							auto frame = threadLocalData.binaryLog->readNextFrame();
 							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_except )
-								throw nodecpp::getException(myawaiting);
+								throw nodecpp::getCoroException(myawaiting);
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_ok )
 							{
 								buff.append( frame.ptr, frame.size );
@@ -921,8 +913,8 @@ namespace nodecpp {
 #endif // NODECPP_RECORD_AND_REPLAY
 						{
 							nodecpp::clearTimeout( to );
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-								throw nodecpp::getException(myawaiting);
+							if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
+								throw nodecpp::getCoroException(myawaiting);
 							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
 						}
@@ -967,7 +959,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = 1;
-						nodecpp::setNoException(awaiting);
+						nodecpp::setCoroStatusOk(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
 					}
@@ -976,10 +968,10 @@ namespace nodecpp {
 #ifdef NODECPP_RECORD_AND_REPLAY
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
+							if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
 							{
 								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except, nullptr, 0 );
-								throw nodecpp::getException(myawaiting);
+								throw nodecpp::getCoroException(myawaiting);
 							}
 							bool ret = socket.dataForCommandProcessing.readBuffer.used_size() >= 1;
 							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
@@ -989,7 +981,7 @@ namespace nodecpp {
 						{
 							auto frame = threadLocalData.binaryLog->readNextFrame();
 							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except )
-								throw nodecpp::getException(myawaiting);
+								throw nodecpp::getCoroException(myawaiting);
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok )
 							{
 								auto frame = threadLocalData.binaryLog->readNextFrame();
@@ -1002,8 +994,8 @@ namespace nodecpp {
 						else
 #endif // NODECPP_RECORD_AND_REPLAY
 						{
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-								throw nodecpp::getException(myawaiting);
+							if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
+								throw nodecpp::getCoroException(myawaiting);
 //							return socket.dataForCommandProcessing.readBuffer.used_size() >= 1;
 						}
 					}
@@ -1069,14 +1061,14 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !write_ok ); // otherwise, why are we here?
-						nodecpp::setNoException(awaiting);
+						nodecpp::setCoroStatusOk(awaiting);
 						myawaiting = awaiting;
 						socket.dataForCommandProcessing.ahd_write.h = awaiting;
 					}
 
 					auto await_resume() {
-						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
+						if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
+							throw nodecpp::getCoroException(myawaiting);
 					}
 				};
 				return write_data_awaiter(*this, buff);
@@ -1116,14 +1108,14 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
-						nodecpp::setNoException(awaiting);
+						nodecpp::setCoroStatusOk(awaiting);
 						myawaiting = awaiting;
 						socket.dataForCommandProcessing.ahd_drain = awaiting;
 					}
 
 					auto await_resume() {
-						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
+						if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
+							throw nodecpp::getCoroException(myawaiting);
 					}
 				};
 				return drain_awaiter(*this);
@@ -1165,7 +1157,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
-						nodecpp::setNoException(awaiting);
+						nodecpp::setCoroStatusOk(awaiting);
 						socket.dataForCommandProcessing.ahd_drain = awaiting;
 						myawaiting = awaiting;
 						to = nodecpp::setTimeoutForAction( awaiting, period );
@@ -1173,8 +1165,8 @@ namespace nodecpp {
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
-						if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
+						if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
+							throw nodecpp::getCoroException(myawaiting);
 					}
 				};
 				return drain_awaiter(*this, period);

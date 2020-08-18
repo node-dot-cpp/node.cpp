@@ -977,7 +977,7 @@ private:
 				errorCloseSocket(entry, e);
 
 				entry.getClientSocketData()->ahd_read.h = nullptr;
-				nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+				nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 				hr();
 			}
 			else
@@ -1026,7 +1026,7 @@ private:
 						}
 #endif // NODECPP_RECORD_AND_REPLAY
 						entry.getClientSocketData()->ahd_read.h = nullptr;
-						nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+						nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 						hr();
 					}
 					infraProcessRemoteEnded(entry);

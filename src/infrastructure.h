@@ -542,14 +542,14 @@ auto a_timeout_impl(uint32_t ms) {
         }
 
         void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-			nodecpp::setNoException(awaiting);
+			nodecpp::setCoroStatusOk(awaiting);
             who_is_awaiting = awaiting;
 			to = timeoutManager->appSetTimeout(awaiting, duration);
         }
 
 		auto await_resume() {
-			if ( nodecpp::isException(who_is_awaiting) )
-				throw nodecpp::getException(who_is_awaiting);
+			if ( nodecpp::isCoroException(who_is_awaiting) )
+				throw nodecpp::getCoroException(who_is_awaiting);
 		}
     };
     return timeout_awaiter(ms);

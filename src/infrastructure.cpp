@@ -180,7 +180,7 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 			auto hr = h.h;
 			if ( h.setExceptionWhenDone )
 			{
-				nodecpp::setException(h.h, std::exception()); // TODO: switch to our exceptions ASAP!
+				nodecpp::setCoroException(h.h, std::exception()); // TODO: switch to our exceptions ASAP!
 			}
 			h.h = nullptr;
 			hr();

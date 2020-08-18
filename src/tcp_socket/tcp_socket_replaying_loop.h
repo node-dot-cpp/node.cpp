@@ -239,7 +239,7 @@ public:
 //					Error e;
 //					errorCloseSocket( sockPtr, e );
 					sockPtr->dataForCommandProcessing.ahd_read.h = nullptr;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					hr();
 					break;
 				}
@@ -376,7 +376,7 @@ public:
 					NODECPP_ASSERT( nodecpp::module_id, nodecpp::assert::AssertLevel::critical, hr != nullptr ); 
 					serverPtr->dataForCommandProcessing.ahd_close = nullptr;
 					if ( edata->err )
-						nodecpp::setException( hr, std::exception() ); // TODO: switch to our exceptions ASAP!
+						nodecpp::setCoroException( hr, std::exception() ); // TODO: switch to our exceptions ASAP!
 					hr();
 					break;
 				}
