@@ -1082,20 +1082,8 @@ private:
 #endif // NODECPP_RECORD_AND_REPLAY
 		if (!entry.getClientSocketData()->remoteEnded)
 		{
-#ifdef NODECPP_RECORD_AND_REPLAY
-			if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-			{
-				record_and_replay_impl::BinaryLog::SocketEvent edata;
-				edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
-				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_remote_ended_call, &edata, sizeof( edata ) );
-			}
-#endif // NODECPP_RECORD_AND_REPLAY
-			entry.getClientSocketData()->remoteEnded = true;
 			ioSockets.unsetPollin(entry.index); // if(!remoteEnded && !paused) events |= POLLIN;
-
-			entry.getClientSocket()->emitEnd();
-			if (entry.getClientSocketData()->isEndEventHandler())
-				entry.getClientSocketData()->handleEndEvent(entry.getClientSocket());
+			entry.getClientSocket()->rrOnRemoteEnded();
 
 			if (entry.getClientSocketData()->state == net::SocketBase::DataForCommandProcessing::LocalEnded)
 			{
@@ -1106,31 +1094,13 @@ private:
 			{
 				if (!entry.getClientSocketData()->writeBuffer.empty())
 				{
-#ifdef NODECPP_RECORD_AND_REPLAY
-					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-					{
-						record_and_replay_impl::BinaryLog::SocketUpdateState edata;
-						edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
-						edata.state = net::SocketBase::DataForCommandProcessing::LocalEnding;
-						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_update_state, &edata, sizeof( edata ) );
-					}
-#endif // NODECPP_RECORD_AND_REPLAY
-					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::LocalEnding;
+					entry.getClientSocket()->rrUpdateState( net::SocketBase::DataForCommandProcessing::LocalEnding );
 				}
 				else
 				{
-#ifdef NODECPP_RECORD_AND_REPLAY
-					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-					{
-						record_and_replay_impl::BinaryLog::SocketUpdateState edata;
-						edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
-						edata.state = net::SocketBase::DataForCommandProcessing::LocalEnded;
-						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_update_state, &edata, sizeof( edata ) );
-					}
-#endif // NODECPP_RECORD_AND_REPLAY
 //!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"infraProcessRemoteEnded() leads to internal_shutdown_send()...");
 					internal_usage_only::internal_shutdown_send(entry.getClientSocketData()->osSocket);
-					entry.getClientSocketData()->state = net::SocketBase::DataForCommandProcessing::LocalEnded;
+					entry.getClientSocket()->rrUpdateState( net::SocketBase::DataForCommandProcessing::LocalEnded );
 					closeSocket(entry);
 				}
 			}
