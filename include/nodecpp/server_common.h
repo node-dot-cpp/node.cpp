@@ -79,7 +79,7 @@ namespace nodecpp {
 
 
 // end [perimeter calls for record and replay]
-				void rrProcessListen( nodecpp::Ip4 ip, uint16_t port, int backlog )
+				void rrProcessListen( IPFAMILY family, nodecpp::Ip4 ip, uint16_t port, int backlog )
 				{
 #ifdef NODECPP_RECORD_AND_REPLAY
 					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )

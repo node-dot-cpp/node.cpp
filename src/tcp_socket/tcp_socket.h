@@ -1402,7 +1402,7 @@ public:
 		if (!internal_usage_only::internal_listen_tcp_socket(dataForCommandProcessing.osSocket, backlog)) {
 			throw Error();
 		}
-		dataForCommandProcessing.rrProcessListen( ip, port, backlog );
+		dataForCommandProcessing.rrProcessListen( family, ip, port, backlog );
 		ioSockets.setAssociated(dataForCommandProcessing.index);
 		ioSockets.setPollin(dataForCommandProcessing.index);
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
