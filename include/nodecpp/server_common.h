@@ -77,6 +77,33 @@ namespace nodecpp {
 				awaitable_connection_handle_data ahd_connection;
 				awaitable_handle_t ahd_close = nullptr;
 
+
+// end [perimeter calls for record and replay]
+				void rrProcessListen( nodecpp::Ip4 ip, uint16_t port, int backlog )
+				{
+#ifdef NODECPP_RECORD_AND_REPLAY
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+					{
+						// TODO REPLAY: implement as a part of main replaying loop
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "must be implemented as a part of main replaying loop" );
+					}
+					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+					{
+						record_and_replay_impl::BinaryLog::ServerListen edata;
+						edata.ptr = (uintptr_t)(this);
+						edata.ip = ip;
+						edata.port = port;
+						edata.backlog = backlog;
+						::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_listen, &edata, sizeof( edata ) );
+					}
+#endif // NODECPP_RECORD_AND_REPLAY
+					refed = true;
+					localAddress.ip = ip;
+					localAddress.port = port;
+					localAddress.family = family;
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, index != 0 );
+				}
+// end [perimeter calls for record and replay]
 				struct UserHandlersCommon
 				{
 				public:

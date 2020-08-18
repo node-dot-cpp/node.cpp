@@ -1402,22 +1402,7 @@ public:
 		if (!internal_usage_only::internal_listen_tcp_socket(dataForCommandProcessing.osSocket, backlog)) {
 			throw Error();
 		}
-#ifdef NODECPP_RECORD_AND_REPLAY
-		if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-		{
-			record_and_replay_impl::BinaryLog::ServerListen edata;
-			edata.ptr = (uintptr_t)(&dataForCommandProcessing);
-			edata.ip = ip;
-			edata.port = port;
-			edata.backlog = backlog;
-			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_listen, &edata, sizeof( edata ) );
-		}
-#endif // NODECPP_RECORD_AND_REPLAY
-		dataForCommandProcessing.refed = true;
-		dataForCommandProcessing.localAddress.ip = ip;
-		dataForCommandProcessing.localAddress.port = port;
-		dataForCommandProcessing.localAddress.family = family;
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, dataForCommandProcessing.index != 0 );
+		dataForCommandProcessing.rrProcessListen( ip, port, backlog );
 		ioSockets.setAssociated(dataForCommandProcessing.index);
 		ioSockets.setPollin(dataForCommandProcessing.index);
 		ioSockets.setRefed(dataForCommandProcessing.index, true);
