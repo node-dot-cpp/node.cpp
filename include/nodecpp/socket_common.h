@@ -524,6 +524,26 @@ namespace nodecpp {
 				}
 			}
 
+			void rrOnReadHandler( Buffer& recvBuffer )
+			{
+#ifdef NODECPP_RECORD_AND_REPLAY
+				if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+				{
+					record_and_replay_impl::BinaryLog::SocketEvent edata;
+					edata.ptr = (uintptr_t)(this);
+					::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_event_call, &edata, sizeof( edata ) );
+					::nodecpp::threadLocalData.binaryLog->continueAddingFrame( recvBuffer.begin(), recvBuffer.size() );
+					::nodecpp::threadLocalData.binaryLog->addingFrameDone();
+				}
+#endif // NODECPP_RECORD_AND_REPLAY
+				emitData( recvBuffer );
+				if (dataForCommandProcessing.isDataEventHandler())
+				{
+					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+					dataForCommandProcessing.handleDataEvent(sockSoftPtr, recvBuffer);
+				}
+			}
+
 			void rrUpdateState( DataForCommandProcessing::State state )
 			{
 #ifdef NODECPP_RECORD_AND_REPLAY

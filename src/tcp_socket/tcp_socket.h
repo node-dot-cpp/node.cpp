@@ -1041,20 +1041,7 @@ private:
 			{
 				if (recvBuffer.size() != 0)
 				{
-#ifdef NODECPP_RECORD_AND_REPLAY
-					if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-					{
-						record_and_replay_impl::BinaryLog::SocketEvent edata;
-						edata.ptr = (uintptr_t)(&(*entry.getClientSocket()));
-						::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_event_call, &edata, sizeof( edata ) );
-						::nodecpp::threadLocalData.binaryLog->continueAddingFrame( recvBuffer.begin(), recvBuffer.size() );
-						::nodecpp::threadLocalData.binaryLog->addingFrameDone();
-					}
-#endif // NODECPP_RECORD_AND_REPLAY
-					entry.getClientSocket()->emitData( recvBuffer);
-					if (entry.getClientSocketData()->isDataEventHandler())
-						entry.getClientSocketData()->handleDataEvent(entry.getClientSocket(), recvBuffer);
-					
+					entry.getClientSocket()->rrOnReadHandler( recvBuffer );
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, recvBuffer.capacity() == recvBufferCapacity );
 				}
 				else //if (!entry.remoteEnded)
