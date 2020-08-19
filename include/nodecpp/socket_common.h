@@ -758,7 +758,7 @@ namespace nodecpp {
 						myawaiting = awaiting;
 					}
 
-					auto await_resume() {
+					::nodecpp::awaitable<::nodecpp::CoroStandardOutcomes> await_resume() {
 #ifdef NODECPP_RECORD_AND_REPLAY
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
@@ -770,10 +770,12 @@ namespace nodecpp {
 							if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
 							{
 								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_timeout, nullptr, 0 );
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
 							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_ok, nullptr, 0 );
+							CO_RETURN CoroStandardOutcomes::ok;
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
@@ -782,12 +784,13 @@ namespace nodecpp {
 								throw nodecpp::getCoroException(myawaiting);
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_timeout )
 							{
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_ok )
 							{
-								return;
+								CO_RETURN CoroStandardOutcomes::ok;
 							}
 							else
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
@@ -802,9 +805,11 @@ namespace nodecpp {
 								throw nodecpp::getCoroException(myawaiting);
 							if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
 							{
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
+							CO_RETURN CoroStandardOutcomes::ok;
 						}
 					}
 				};
@@ -950,7 +955,7 @@ namespace nodecpp {
 						to = nodecpp::setTimeoutForAction( awaiting, period );
 					}
 
-					auto await_resume() {
+					::nodecpp::awaitable<::nodecpp::CoroStandardOutcomes> await_resume() {
 #ifdef NODECPP_RECORD_AND_REPLAY
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
@@ -963,12 +968,14 @@ namespace nodecpp {
 							else if ( myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
 							{
 								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_timeout, nullptr, 0 );
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
 							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_ok, buff.begin(), buff.size() );
 							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
+							CO_RETURN CoroStandardOutcomes::ok;
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
@@ -978,13 +985,15 @@ namespace nodecpp {
 								throw nodecpp::getCoroException(myawaiting);
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_timeout )
 							{
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_read_crh_ok )
 							{
 								buff.append( frame.ptr, frame.size );
 								NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
+								CO_RETURN CoroStandardOutcomes::ok;
 							}
 							else
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
@@ -998,11 +1007,13 @@ namespace nodecpp {
 								throw nodecpp::getCoroException(myawaiting);
 							if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
 							{
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
 							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
+							CO_RETURN CoroStandardOutcomes::ok;
 						}
 					}
 				};
@@ -1294,7 +1305,7 @@ namespace nodecpp {
 						to = nodecpp::setTimeoutForAction( awaiting, period );
 					}
 
-					auto await_resume() {
+					::nodecpp::awaitable<::nodecpp::CoroStandardOutcomes> await_resume() {
 #ifdef NODECPP_RECORD_AND_REPLAY
 						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
 						{
@@ -1306,10 +1317,12 @@ namespace nodecpp {
 							if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
 							{
 								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_drain_event_crh_timeout, nullptr, 0 );
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
 							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_ok, nullptr, 0 );
+							CO_RETURN CoroStandardOutcomes::ok;
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
@@ -1318,12 +1331,13 @@ namespace nodecpp {
 								throw nodecpp::getCoroException(myawaiting);
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_timeout )
 							{
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
 							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_ok )
 							{
-								return;
+								CO_RETURN CoroStandardOutcomes::ok;
 							}
 							else
 								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
@@ -1337,9 +1351,11 @@ namespace nodecpp {
 								throw nodecpp::getCoroException(myawaiting);
 							if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
 							{
-								std::exception e;
-								throw e; // TODO: switch to nodecpp exceptions
+								//std::exception e;
+								//throw e; // TODO: switch to nodecpp exceptions
+								CO_RETURN CoroStandardOutcomes::timeout;
 							}
+							CO_RETURN CoroStandardOutcomes::ok;
 						}
 					}
 				};
