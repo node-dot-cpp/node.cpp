@@ -635,8 +635,14 @@ namespace nodecpp {
 						{
 							nodecpp::clearTimeout( to );
 							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+							// TODO: revise order of checking conditions to favour success
 							if ( nodecpp::isCoroException(myawaiting) )
 								throw nodecpp::getCoroException(myawaiting);
+							if ( nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
+							{
+								std::exception e;
+								throw e; // TODO: switch to nodecpp exceptions
+							}
 							if constexpr ( std::is_same<SocketT, SocketBase>::value )
 								socket = server.dataForCommandProcessing.ahd_connection.sock;
 							else
@@ -711,8 +717,14 @@ namespace nodecpp {
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
+						// TODO: revise order of checking conditions to favour success
 						if ( nodecpp::isCoroException(myawaiting) )
 							throw nodecpp::getCoroException(myawaiting);
+						if (  nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
+						{
+							std::exception e;
+							throw e; // TODO: switch to nodecpp exceptions
+						}
 					}
 				};
 				close();

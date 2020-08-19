@@ -735,8 +735,14 @@ namespace nodecpp {
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isCoroException(myawaiting) )
+						// TODO: revise order of checking conditions to favour success
+						if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
 							throw nodecpp::getCoroException(myawaiting);
+						if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
+						{
+							std::exception e;
+							throw e; // TODO: switch to nodecpp exceptions
+						}
 					}
 				};
 				connect( port, ip );
@@ -913,8 +919,14 @@ namespace nodecpp {
 #endif // NODECPP_RECORD_AND_REPLAY
 						{
 							nodecpp::clearTimeout( to );
+							// TODO: revise order of checking conditions to favour success
 							if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
 								throw nodecpp::getCoroException(myawaiting);
+							if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
+							{
+								std::exception e;
+								throw e; // TODO: switch to nodecpp exceptions
+							}
 							socket.dataForCommandProcessing.readBuffer.get_ready_data( buff, max_bytes );
 							NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, buff.size() >= min_bytes, "{} vs. {}", buff.size(), min_bytes);
 						}
@@ -1184,8 +1196,14 @@ namespace nodecpp {
 
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
+						// TODO: revise order of checking conditions to favour success
 						if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
 							throw nodecpp::getCoroException(myawaiting);
+						if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
+						{
+							std::exception e;
+							throw e; // TODO: switch to nodecpp exceptions
+						}
 					}
 				};
 				return drain_awaiter(*this, period);
