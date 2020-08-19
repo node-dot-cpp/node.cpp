@@ -770,6 +770,41 @@ namespace nodecpp {
 					}
 
 					auto await_resume() {
+#ifdef NODECPP_RECORD_AND_REPLAY
+						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
+						{
+							if ( nodecpp::isCoroException(myawaiting) )
+							{
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_close_crh_except, nullptr, 0 );
+								throw nodecpp::getCoroException(myawaiting);
+							}
+							if (  myawaiting != nullptr && nodecpp::getCoroStatus(myawaiting) == CoroStandardOutcomes::timeout )
+							{
+								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_close_crh_timeout, nullptr, 0 );
+								std::exception e;
+								throw e; // TODO: switch to nodecpp exceptions
+							}
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::server_close_crh_ok, nullptr, 0 );
+						}
+						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
+						{
+							auto frame = threadLocalData.binaryLog->readNextFrame();
+							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::server_close_crh_except )
+								throw nodecpp::getCoroException(myawaiting);
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::server_close_crh_timeout )
+							{
+								std::exception e;
+								throw e; // TODO: switch to nodecpp exceptions
+							}
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::server_close_crh_ok )
+							{
+								return;
+							}
+							else
+								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
+						}
+						else
+#endif // NODECPP_RECORD_AND_REPLAY
 						{
 							nodecpp::clearTimeout( to );
 							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
