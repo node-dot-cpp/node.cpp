@@ -56,7 +56,7 @@ public:
 		server_listening_event_crh, server_listening_event_call, 
 		server_conn_crh_except, server_conn_crh_ok, 
 		// http support
-		http_sock_read_byte_crh_ok, http_sock_read_byte_crh_except, http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
+		http_sock_read_data_crh_ok, http_sock_read_data_crh_except, 
 		// common
 		coro_await_ready_res, 
 		// control
