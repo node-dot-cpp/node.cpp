@@ -706,6 +706,7 @@ namespace nodecpp {
 								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_except, nullptr, 0 );
 								throw nodecpp::getCoroException(myawaiting);
 							}
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_ok, nullptr, 0 );
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
@@ -772,6 +773,7 @@ namespace nodecpp {
 								std::exception e;
 								throw e; // TODO: switch to nodecpp exceptions
 							}
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_ok, nullptr, 0 );
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
@@ -1225,13 +1227,14 @@ namespace nodecpp {
 								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_except, nullptr, 0 );
 								throw nodecpp::getCoroException(myawaiting);
 							}
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_ok, nullptr, 0 );
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
 							auto frame = threadLocalData.binaryLog->readNextFrame();
 							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_except )
 								throw nodecpp::getCoroException(myawaiting);
-							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_ok )
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_ok )
 							{
 								return;
 							}
@@ -1306,6 +1309,7 @@ namespace nodecpp {
 								std::exception e;
 								throw e; // TODO: switch to nodecpp exceptions
 							}
+							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_ok, nullptr, 0 );
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
 						{
@@ -1317,7 +1321,7 @@ namespace nodecpp {
 								std::exception e;
 								throw e; // TODO: switch to nodecpp exceptions
 							}
-							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_connect_crh_ok )
+							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::sock_drain_crh_ok )
 							{
 								return;
 							}
