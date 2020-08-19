@@ -251,7 +251,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						server.ahd_request.h = awaiting;
 						myawaiting = awaiting;
 					}
@@ -292,7 +292,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						server.ahd_request.h = awaiting;
 						myawaiting = awaiting;
 						to = nodecpp::setTimeoutForAction( server.ahd_request.h, period );

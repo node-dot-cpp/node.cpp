@@ -472,7 +472,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						server.dataForCommandProcessing.ahd_listen = awaiting;
 						myawaiting = awaiting;
 					}
@@ -507,7 +507,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						server.dataForCommandProcessing.ahd_connection.h = awaiting;
 						myawaiting = awaiting;
 					}
@@ -582,7 +582,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						server.dataForCommandProcessing.ahd_connection.h = awaiting;
 						myawaiting = awaiting;
 						/*to = std::move( nodecpp::setTimeout( [this](){
@@ -666,7 +666,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						server.dataForCommandProcessing.ahd_close = awaiting;
 						myawaiting = awaiting;
 					}
@@ -702,7 +702,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						myawaiting = awaiting;
 						server.dataForCommandProcessing.ahd_close = awaiting;
 						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period );

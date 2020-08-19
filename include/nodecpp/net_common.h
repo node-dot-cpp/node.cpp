@@ -37,6 +37,8 @@
 
 namespace nodecpp {
 
+	enum CoroStandardOutcomes { ok, timeout, insufficient_buffer, incomplete_result };
+
 	//TODO quick and temp implementation
 	static constexpr size_t MIN_BUFFER = 1024;
 

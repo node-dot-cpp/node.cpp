@@ -127,7 +127,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.ahd_continueGetting = awaiting;
 						myawaiting = awaiting;
 					}
@@ -176,7 +176,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
 					}

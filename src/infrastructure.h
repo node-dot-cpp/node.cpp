@@ -60,7 +60,6 @@ struct TimeoutEntryHandlerData
 	std::function<void()> cb = nullptr; // is assumed to be self-contained in terms of required action
 //	nodecpp::awaitable_handle_data::handler_fn_type h = nullptr;
 	awaitable_handle_t h = nullptr;
-	bool setExceptionWhenDone = false; // is used to indicate that a handle is released because of timeout and not because of its "regular" event
 };
 
 struct TimeoutEntry : public TimeoutEntryHandlerData
@@ -79,7 +78,7 @@ class TimeoutManager
 	std::unordered_map<uint64_t, TimeoutEntry> timers;
 	std::multimap<uint64_t, uint64_t> nextTimeouts;
 	template<class H>
-	nodecpp::Timeout appSetTimeoutImpl(H h, bool indicateThrowing, int32_t ms)
+	nodecpp::Timeout appSetTimeoutImpl(H h, int32_t ms)
 	{
 		if (ms == 0) ms = 1;
 		else if (ms < 0) ms = std::numeric_limits<int32_t>::max();
@@ -87,7 +86,6 @@ class TimeoutManager
 		uint64_t id = ++lastId;
 
 		TimeoutEntry entry;
-		entry.setExceptionWhenDone = indicateThrowing;
 		entry.id = id;
 		static_assert( !std::is_same<std::function<void()>, awaitable_handle_t>::value ); // we're in trouble anyway and not only here :)
 		static_assert( std::is_same<H, std::function<void()>>::value || std::is_same<H, awaitable_handle_t>::value );
@@ -122,13 +120,12 @@ public:
 	void appSetTimeout(TimeoutEntry& entry);
 	void appClearTimeout(TimeoutEntry& entry);
 
-	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms) { return appSetTimeoutImpl( cb, false, ms ); }
+	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms) { return appSetTimeoutImpl( cb, ms ); }
 	void appClearTimeout(const nodecpp::Timeout& to);
 	void appRefresh(uint64_t id);
 #ifndef NODECPP_NO_COROUTINES
-//	nodecpp::Timeout appSetTimeout(std::experimental::coroutine_handle<> h, int32_t ms) { return appSetTimeoutImpl( h, false, ms ); }
-	nodecpp::Timeout appSetTimeout(awaitable_handle_t ahd, int32_t ms) { return appSetTimeoutImpl( ahd, false, ms ); }
-	nodecpp::Timeout appSetTimeoutForAction(awaitable_handle_t ahd, int32_t ms) { return appSetTimeoutImpl( ahd, true, ms ); }
+	nodecpp::Timeout appSetTimeout(awaitable_handle_t ahd, int32_t ms) { return appSetTimeoutImpl( ahd, ms ); }
+	nodecpp::Timeout appSetTimeoutForAction(awaitable_handle_t ahd, int32_t ms) { return appSetTimeoutImpl( ahd, ms ); }
 #endif
 	void appTimeoutDestructor(uint64_t id);
 
@@ -542,7 +539,7 @@ auto a_timeout_impl(uint32_t ms) {
         }
 
         void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-			nodecpp::setCoroStatusOk(awaiting);
+			nodecpp::initCoroData(awaiting);
             who_is_awaiting = awaiting;
 			to = timeoutManager->appSetTimeout(awaiting, duration);
         }

@@ -691,7 +691,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.dataForCommandProcessing.ahd_connect = awaiting;
 						myawaiting = awaiting;
 					}
@@ -726,7 +726,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.dataForCommandProcessing.ahd_connect = awaiting;
 						to = nodecpp::setTimeoutForAction( awaiting, period );
 						myawaiting = awaiting;
@@ -786,7 +786,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
 					}
@@ -875,7 +875,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = min_bytes;
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
 						to = nodecpp::setTimeoutForAction( awaiting, period );
@@ -959,7 +959,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						socket.dataForCommandProcessing.ahd_read.min_bytes = 1;
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.dataForCommandProcessing.ahd_read.h = awaiting;
 						myawaiting = awaiting;
 					}
@@ -1021,7 +1021,26 @@ namespace nodecpp {
 				}
 				CO_RETURN rus == CircularByteBuffer::ReadUntilStatus::done;
 			}
-
+#if 0
+			::nodecpp::awaitable<bool> a_readUntil( uint32_t period, Buffer& b, uint8_t what ) { 
+				CircularByteBuffer::ReadUntilStatus rus = dataForCommandProcessing.readBuffer.read_ready_data_until( b, what ); //;
+				while ( rus == CircularByteBuffer::ReadUntilStatus::waiting )
+				{ 
+					co_await a_someDataAvailable(period);
+					bool isData = dataForCommandProcessing.readBuffer.used_size() >= 1;
+					if ( isData )
+					{
+						rus = dataForCommandProcessing.readBuffer.read_ready_data_until( b, what );
+						if ( rus == CircularByteBuffer::ReadUntilStatus::done )
+							CO_RETURN true;
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rus != CircularByteBuffer::ReadUntilStatus::insufficient_buffer ); 
+					}
+					else
+						CO_RETURN false;
+				}
+				CO_RETURN rus == CircularByteBuffer::ReadUntilStatus::done;
+			}
+#endif // 0
 			auto a_write(Buffer& buff) { 
 
 				struct write_data_awaiter {
@@ -1061,7 +1080,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !write_ok ); // otherwise, why are we here?
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						myawaiting = awaiting;
 						socket.dataForCommandProcessing.ahd_write.h = awaiting;
 					}
@@ -1108,7 +1127,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						myawaiting = awaiting;
 						socket.dataForCommandProcessing.ahd_drain = awaiting;
 					}
@@ -1157,7 +1176,7 @@ namespace nodecpp {
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !socket.dataForCommandProcessing.writeBuffer.empty() ); // otherwise, why are we here?
-						nodecpp::setCoroStatusOk(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.dataForCommandProcessing.ahd_drain = awaiting;
 						myawaiting = awaiting;
 						to = nodecpp::setTimeoutForAction( awaiting, period );
