@@ -37,7 +37,7 @@
 
 namespace nodecpp {
 
-	enum CoroStandardOutcomes { ok, timeout, insufficient_buffer, incomplete_result };
+	enum CoroStandardOutcomes { ok, timeout, insufficient_buffer, in_progress, failed };
 
 	//TODO quick and temp implementation
 	static constexpr size_t MIN_BUFFER = 1024;
@@ -350,13 +350,11 @@ namespace nodecpp {
 			get_ready_data( b, b.capacity() );
 		}
 
-		enum ReadUntilStatus { done, waiting, insufficient_buffer };
-
-		ReadUntilStatus read_ready_data_until_impl( Buffer& b, uint8_t what, uint8_t* workingEnd )
+		CoroStandardOutcomes read_ready_data_until_impl( Buffer& b, uint8_t what, uint8_t* workingEnd )
 		{
 
 			if ( begin == workingEnd )
-				return ReadUntilStatus::waiting;
+				return CoroStandardOutcomes::in_progress;
 
 			uint8_t curr;
 			while ( begin < workingEnd && *begin != what && b.capacity() > b.size() )
@@ -367,24 +365,24 @@ namespace nodecpp {
 			if ( begin < workingEnd && *begin == what )
 			{
 				b.appendUint8( *begin++ );
-				return ReadUntilStatus::done;
+				return CoroStandardOutcomes::ok;
 			}
 			else if ( b.capacity() == b.size() )
-				return ReadUntilStatus::insufficient_buffer;
+				return CoroStandardOutcomes::insufficient_buffer;
 			else
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, begin == workingEnd );
-				return ReadUntilStatus::waiting;
+				return CoroStandardOutcomes::in_progress;
 			}
 		}
 
-		ReadUntilStatus read_ready_data_until( Buffer& b, uint8_t what )
+		CoroStandardOutcomes read_ready_data_until( Buffer& b, uint8_t what )
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.size() == 0 );
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, b.capacity() != 0 );
 
 			if ( begin == end )
-				return ReadUntilStatus::waiting;
+				return CoroStandardOutcomes::in_progress;
 			if ( begin < end )
 			{
 				return read_ready_data_until_impl( b, what, end );
@@ -394,7 +392,7 @@ namespace nodecpp {
 				auto firstRet = read_ready_data_until_impl( b, what, buff.get() + alloc_size() );
 				if ( begin == buff.get() + alloc_size() )
 					begin = buff.get();
-				if ( firstRet == ReadUntilStatus::done || firstRet == ReadUntilStatus::insufficient_buffer )
+				if ( firstRet == CoroStandardOutcomes::ok || firstRet == CoroStandardOutcomes::insufficient_buffer )
 					return firstRet;
 				return read_ready_data_until_impl( b, what, end );
 			}

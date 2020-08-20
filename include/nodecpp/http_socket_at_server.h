@@ -51,8 +51,12 @@ namespace nodecpp {
 			friend class IncomingHttpMessageAtServer;
 			friend class HttpServerResponse;
 
-			::nodecpp::awaitable<bool> getRequest( IncomingHttpMessageAtServer& message );
-			nodecpp::handler_ret_type getRequest2( IncomingHttpMessageAtServer& message );
+#ifndef NODECPP_NO_COROUTINES
+			static constexpr size_t maxHeaderSize = 0x4000;
+			Buffer lineBuffer;
+#endif // NODECPP_NO_COROUTINES
+
+			::nodecpp::awaitable<CoroStandardOutcomes> getRequest( IncomingHttpMessageAtServer& message );
 
 			struct RRPair
 			{
@@ -141,13 +145,17 @@ namespace nodecpp {
 				return continue_getting_awaiter(*this);
 			}
 
-			::nodecpp::awaitable<bool> readLine(nodecpp::string& line)
+			::nodecpp::awaitable<CoroStandardOutcomes> readLine(nodecpp::string& line)
 			{
-				Buffer b(0x1000);
-				bool ok = co_await a_readUntil( b, '\n' );
-				if ( ok )
-					line = nodecpp::string( (const char*)(b.begin()), b.size() );
-				CO_RETURN ok;
+				lineBuffer.clear();
+				CoroStandardOutcomes ret = co_await a_readUntil( lineBuffer, '\n' );
+				if ( ret == CoroStandardOutcomes::ok )
+				{
+					line = nodecpp::string( (const char*)(lineBuffer.begin()), lineBuffer.size() );
+					CO_RETURN CoroStandardOutcomes::ok;
+				}
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == CoroStandardOutcomes::insufficient_buffer ); 
+				CO_RETURN ret;
 			}
 
 #endif // NODECPP_NO_COROUTINES
@@ -163,9 +171,9 @@ namespace nodecpp {
 				{
 					// now we can reasonably expect a new request
 					auto& rrPair = rrQueue.getHead();
-					bool ok = co_await getRequest( *(rrPair.request) );
+					CoroStandardOutcomes status = co_await getRequest( *(rrPair.request) );
 
-					if ( ok )
+					if ( status == CoroStandardOutcomes::ok ) // the most likely outcome
 					{
 						nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
 						if ( rrQueue.canPush() )
@@ -175,6 +183,7 @@ namespace nodecpp {
 					}
 					else
 					{
+						// TODO: switch status, report the other side an error, if applicable ( "413 Entity Too Large" for insufficient_buffer, for instance)
 						end();
 						CO_RETURN;
 					}
@@ -686,36 +695,39 @@ namespace nodecpp {
 		}
 
 		inline
-		::nodecpp::awaitable<bool> HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
+		::nodecpp::awaitable<CoroStandardOutcomes> HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
 			nodecpp::string line;
-			bool ok = co_await readLine(line);
-			if ( ok )
+			CoroStandardOutcomes status = co_await readLine(line);
+			if ( status == CoroStandardOutcomes::ok )
 			{
 //				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 				if ( !message.parseMethod( line ) )
 				{
 					// TODO: report error
-					CO_RETURN false;
+					CO_RETURN CoroStandardOutcomes::failed;
 				}
 			}
 			else
-				CO_RETURN false;
+				CO_RETURN status;
 
 			do
 			{
-				ok = co_await readLine(line);
+				status = co_await readLine(line);
 //				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
-			while ( ok && message.parseHeaderEntry( line ) );
+			while ( status == CoroStandardOutcomes::ok && message.parseHeaderEntry( line ) );
 
-			CO_RETURN message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body || message.readStatus == IncomingHttpMessageAtServer::ReadStatus::completed;
+			CO_RETURN message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body || message.readStatus == IncomingHttpMessageAtServer::ReadStatus::completed ? CoroStandardOutcomes::ok : CoroStandardOutcomes::failed;
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		inline
 		HttpSocketBase::HttpSocketBase() {
+#ifndef NODECPP_NO_COROUTINES
+			lineBuffer.reserve(maxHeaderSize);
+#endif // NODECPP_NO_COROUTINES
 			rrQueue.init( myThis.getSoftPtr<HttpSocketBase>(this) );
 			run(); // TODO: think about proper time for this call
 		}

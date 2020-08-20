@@ -1020,7 +1020,7 @@ namespace nodecpp {
 				return read_data_awaiter(*this, period, buff, min_bytes, max_bytes);
 			}
 
-			auto a_someDataAvailable() { 
+			auto a_someDataAvailable() { // resumed on data availablity or throws
 
 				struct data_awaiter {
 					std::experimental::coroutine_handle<> myawaiting = nullptr;
@@ -1093,30 +1093,27 @@ namespace nodecpp {
 						{
 							if ( myawaiting != nullptr && nodecpp::isCoroException(myawaiting) )
 								throw nodecpp::getCoroException(myawaiting);
-//							return socket.dataForCommandProcessing.readBuffer.used_size() >= 1;
 						}
 					}
 				};
 				return data_awaiter(*this);
 			}
 
-			::nodecpp::awaitable<bool> a_readUntil( Buffer& b, uint8_t what ) { 
-				CircularByteBuffer::ReadUntilStatus rus = dataForCommandProcessing.readBuffer.read_ready_data_until( b, what ); //;
-				while ( rus == CircularByteBuffer::ReadUntilStatus::waiting )
+			::nodecpp::awaitable<CoroStandardOutcomes> a_readUntil( Buffer& b, uint8_t what ) { 
+				CoroStandardOutcomes rus = dataForCommandProcessing.readBuffer.read_ready_data_until( b, what );
+				if ( rus == CoroStandardOutcomes::ok )
+					CO_RETURN rus;
+				while ( rus == CoroStandardOutcomes::in_progress )
 				{ 
 					co_await a_someDataAvailable();
 					bool isData = dataForCommandProcessing.readBuffer.used_size() >= 1;
-					if ( isData )
-					{
-						rus = dataForCommandProcessing.readBuffer.read_ready_data_until( b, what );
-						if ( rus == CircularByteBuffer::ReadUntilStatus::done )
-							CO_RETURN true;
-						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rus != CircularByteBuffer::ReadUntilStatus::insufficient_buffer ); 
-					}
-					else
-						CO_RETURN false;
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, isData ); // if we're here
+					rus = dataForCommandProcessing.readBuffer.read_ready_data_until( b, what );
+					if ( rus == CoroStandardOutcomes::ok )
+						CO_RETURN rus;
 				}
-				CO_RETURN rus == CircularByteBuffer::ReadUntilStatus::done;
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, rus == CoroStandardOutcomes::insufficient_buffer, "indeed: {}", (int)rus ); 
+				CO_RETURN rus;
 			}
 #if 0
 			::nodecpp::awaitable<bool> a_readUntil( uint32_t period, Buffer& b, uint8_t what ) { 
