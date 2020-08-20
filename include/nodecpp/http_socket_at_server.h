@@ -161,12 +161,6 @@ namespace nodecpp {
 			{
 				for(;;)
 				{
-					// first test for continuation
-					co_await a_someDataAvailable();
-					bool proceed = dataForCommandProcessing.readBuffer.used_size() >= 1;
-					if ( !proceed ) // no more data - no more requests
-						CO_RETURN;
-
 					// now we can reasonably expect a new request
 					auto& rrPair = rrQueue.getHead();
 					bool ok = co_await getRequest( *(rrPair.request) );
@@ -715,7 +709,7 @@ namespace nodecpp {
 			}
 			while ( ok && message.parseHeaderEntry( line ) );
 
-			CO_RETURN ok;
+			CO_RETURN message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body || message.readStatus == IncomingHttpMessageAtServer::ReadStatus::completed;
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
