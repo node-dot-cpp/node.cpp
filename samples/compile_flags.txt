@@ -28,7 +28,3 @@
 
 -resource-dir
 /usr/lib/llvm-9/lib/clang/9.0.0
--isystem
-/usr/lib/llvm-9/bin/../include/c++/v1
--isystem
-/usr/lib/llvm-9/lib/clang/9.0.0/include
