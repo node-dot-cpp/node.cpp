@@ -32,16 +32,16 @@ namespace m {
 
 // GENERATED VALUES
 
-const FirstParam<int>::NameBase::argument firstParam;
-const SecondParam<int>::NameBase::argument secondParam;
-const ThirdParam<int>::NameBase::argument thirdParam;
+const FirstParam::TypeConverter firstParam;
+const SecondParam::TypeConverter secondParam;
+const ThirdParam::TypeConverter thirdParam;
 
-void test1CallImpl_A( FirstParam<int> const& fp, SecondParam<int> const& sp, ThirdParam<int> const& tp )
+void test1CallImpl_A( NamedParameterWithType<int, FirstParam::TypeConverter> const& fp, NamedParameterWithType<int, SecondParam::TypeConverter> const& sp, NamedParameterWithType<int, ThirdParam::TypeConverter> const& tp )
 {
     printf( "Test 1: %d - %d - %d\n", fp.get(), sp.get(), tp.get() );
 }
 
-void test1CallImpl_B( FirstParam<int> const& fp, SecondParam<std::string> const& sp, ThirdParam<int> const& tp )
+void test1CallImpl_B( NamedParameterWithType<int, FirstParam::TypeConverter> const& fp, NamedParameterWithType<std::string, SecondParam::TypeConverter> const& sp, NamedParameterWithType<int, ThirdParam::TypeConverter> const& tp )
 {
     printf( "Test 1: %d - %s - %d\n", fp.get(), sp.get().c_str(), tp.get() );
 }

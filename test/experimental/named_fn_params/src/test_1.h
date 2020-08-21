@@ -34,37 +34,34 @@ namespace m {
 
 // GENERATED VALUES
 
-template<class T>
-using FirstParam = NamedType<T, struct FirstParamTagStruct>;
+using FirstParam = NamedParameter<struct FirstParamTagStruct>;
 
-template<class T>
-using SecondParam = NamedType<T, struct SecondParamTagStruct>;
+using SecondParam = NamedParameter<struct SecondParamTagStruct>;
 
-template<class T>
-using ThirdParam = NamedType<T, struct ThirdParamTagStruct>;
+using ThirdParam = NamedParameter<struct ThirdParamTagStruct>;
 	
-extern const FirstParam<int>::argument firstParam;
-extern const SecondParam<int>::argument secondParam;
-extern const ThirdParam<int>::argument thirdParam;
+extern const FirstParam::TypeConverter firstParam;
+extern const SecondParam::TypeConverter secondParam;
+extern const ThirdParam::TypeConverter thirdParam;
 
-void test1CallImpl_A( FirstParam<int> const& fp, SecondParam<int> const& sp, ThirdParam<int> const& tp );
-void test1CallImpl_B( FirstParam<int> const& fp, SecondParam<std::string> const& sp, ThirdParam<int> const& tp );
+void test1CallImpl_A( NamedParameterWithType<int, FirstParam::TypeConverter> const& fp, NamedParameterWithType<int, SecondParam::TypeConverter> const& sp, NamedParameterWithType<int, ThirdParam::TypeConverter> const& tp );
+void test1CallImpl_B( NamedParameterWithType<int, FirstParam::TypeConverter> const& fp, NamedParameterWithType<std::string, SecondParam::TypeConverter> const& sp, NamedParameterWithType<int, ThirdParam::TypeConverter> const& tp );
 
 template<typename Arg0, typename Arg1, typename Arg2>
 void test1Call_A(Arg0&& arg0, Arg1&& arg1, Arg2&& arg2)
 {
-    auto fp = pick<FirstParam<int>>(arg0, arg1, arg2);
-    auto sp = pick<SecondParam<int>>(arg0, arg1, arg2);
-    auto tp = pick<ThirdParam<int>>(arg0, arg1, arg2);
+    auto fp = pick<NamedParameterWithType<int, FirstParam::TypeConverter>>(arg0, arg1, arg2);
+    auto sp = pick<NamedParameterWithType<int, SecondParam::TypeConverter>>(arg0, arg1, arg2);
+    auto tp = pick<NamedParameterWithType<int, ThirdParam::TypeConverter>>(arg0, arg1, arg2);
     test1CallImpl_A( fp, sp, tp );
 }
 
 template<typename Arg0, typename Arg1, typename Arg2>
 void test1Call_B(Arg0&& arg0, Arg1&& arg1, Arg2&& arg2)
 {
-    auto fp = pick<FirstParam<int>>(arg0, arg1, arg2);
-    auto sp = pick<SecondParam<std::string>>(arg0, arg1, arg2);
-    auto tp = pick<ThirdParam<int>>(arg0, arg1, arg2);
+    auto fp = pick<NamedParameterWithType<int, FirstParam::TypeConverter>>(arg0, arg1, arg2);
+    auto sp = pick<NamedParameterWithType<std::string, SecondParam::TypeConverter>>(arg0, arg1, arg2);
+    auto tp = pick<NamedParameterWithType<int, ThirdParam::TypeConverter>>(arg0, arg1, arg2);
     test1CallImpl_B( fp, sp, tp );
 }
 

@@ -33,46 +33,48 @@
 
 namespace m {
 
-template <typename T, typename Parameter>
-class NamedType;
+template <typename T, typename NameTag>
+class NamedParameterWithType;
 
-template <typename Parameter>
-class NamedTypeBase
+template <typename NameTag>
+class NamedParameter
 {
 public:
-	explicit NamedTypeBase() {}
+	explicit NamedParameter() {}
 
-	struct argument
+	using Name = NameTag;
+
+	struct TypeConverter
 	{
 		template<typename DataType>
-		NamedType<DataType, Parameter> operator=(DataType&& value) const
+		NamedParameterWithType<DataType, NameTag> operator=(DataType&& value) const
 		{
-			return NamedType<DataType, Parameter>(std::forward<DataType>(value));
+			return NamedParameterWithType<DataType, NameTag>(std::forward<DataType>(value));
 		}
-		argument() = default;
-		argument(argument const&) = delete;
-		argument(argument&&) = delete;
-		argument& operator=(argument const&) = delete;
-		argument& operator=(argument&&) = delete;
+		TypeConverter() = default;
+		TypeConverter(TypeConverter const&) = delete;
+		TypeConverter(TypeConverter&&) = delete;
+		TypeConverter& operator=(TypeConverter const&) = delete;
+		TypeConverter& operator=(TypeConverter&&) = delete;
 	};
 };
 
 
-template <typename T, typename Parameter>
-class NamedType : public NamedTypeBase<Parameter>
+template <typename T, typename NameTag>
+class NamedParameterWithType : public NamedParameter<NameTag>
 {
 private:
 	T value_;
 
 public:
-	explicit NamedType(T const& value) : value_(value) {}
-	explicit NamedType(T&& value) : value_(std::move(value)) {}
+	explicit NamedParameterWithType(T const& value) : value_(value) {}
+	explicit NamedParameterWithType(T&& value) : value_(std::move(value)) {}
 	T& get() { return value_; }
 	T const& get() const { return value_; }
 
-	using NameBase = NamedTypeBase<Parameter>;
-
-	using NamedTypeBase<Parameter>::argument;
+	using NameBase = NamedParameter<NameTag>;
+	using Name = typename NamedParameter<NameTag>::Name;
+	using NamedParameter<NameTag>::TypeConverter;
 };
 
 template<typename TypeToPick, typename... Types>

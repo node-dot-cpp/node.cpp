@@ -20,7 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\named_fn_params.cpp" />
-    <ClCompile Include="..\src\test_1.cpp" />
+    <ClCompile Include="..\src\test_1.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\src\test_2.cpp" />
   </ItemGroup>
   <ItemGroup>

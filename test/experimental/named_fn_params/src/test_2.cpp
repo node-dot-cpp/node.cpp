@@ -32,21 +32,21 @@ namespace m {
 
 // GENERATED VALUES
 
-static const FirstParam<int>::argument firstParam2;
-static const SecondParam<int>::argument secondParam2;
-static const ThirdParam<int>::argument thirdParam2;
+static const FirstParam::TypeConverter firstParam;
+static const SecondParam::TypeConverter secondParam;
+static const ThirdParam::TypeConverter thirdParam;
 
-void test2CallImpl_A( FirstParam<int> const& fp, SecondParam<int> const& sp, ThirdParam<int> const& tp )
+void test2CallImpl_A( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<int, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp )
 {
     printf( "Test 2: %d - %d - %d\n", fp.get(), sp.get(), tp.get() );
 }
 
-void test2CallImpl_B( FirstParam<int> const& fp, SecondParam<std::string> const& sp, ThirdParam<int> const& tp )
+void test2CallImpl_B( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp )
 {
     printf( "Test 2: %d - %s - %d\n", fp.get(), sp.get().c_str(), tp.get() );
 }
 
-void test2CallImpl_C( FirstParam<std::string> const& fp, SecondParam<std::string> const& sp, ThirdParam<std::string> const& tp )
+void test2CallImpl_C( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp )
 {
     printf( "Test 2: %s - %s - %s\n", fp.get().c_str(), sp.get().c_str(), tp.get().c_str() );
 }
