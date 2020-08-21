@@ -77,11 +77,60 @@ public:
 	using NamedParameter<NameTag>::TypeConverter;
 };
 
-template<typename TypeToPick, typename... Types>
-TypeToPick pick(Types&&... args)
+
+
+template<typename BaseT, typename Arg0, typename ... Args>
+void findMatch(Arg0&& arg0, Args&& ... args)
 {
-	return std::get<TypeToPick>(std::make_tuple(std::forward<Types>(args)...));
+    static_assert( std::is_same<BaseT, Arg0>::value == false, "same name used more than once" );
+    findMatch<BaseT>(args...);
 }
+
+template<typename BaseT, typename Arg0>
+void findMatch(Arg0&& arg0)
+{
+    static_assert( std::is_same<BaseT, Arg0>::value == false, "same name used more than once" );
+}
+
+template<typename Arg0, typename ... Args>
+void ensureUniqueness(Arg0&& arg0, Args&& ... args)
+{
+    findMatch<Arg0>(args...);
+    ensureUniqueness(args...);
+}
+
+template<typename Arg0>
+void ensureUniqueness(Arg0&& arg0)
+{
+    return;
+}
+
+
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
+TypeToPick pickParam(Arg0&& arg0, Args&& ... args)
+{
+    if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value )
+        return arg0;
+    else
+        return pickParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(args...);
+}
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
+TypeToPick pickParam(Arg0&& arg0)
+{
+    if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value )
+        return arg0;
+    else
+    {
+        static_assert( !required, "required parameter" );
+        if constexpr ( std::is_same<AssumedDefaultT, DefaultT>::value )
+            return TypeToPick(defaultValue);
+        else
+            return TypeToPick( AssumedDefaultT(defaultValue) );
+    }
+}
+
 
 } // namespace m
 

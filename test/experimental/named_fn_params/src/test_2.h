@@ -76,31 +76,6 @@ DefaultT requiredParam()
     return defaultValue;
 }*/
 
-template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
-TypeToPick test2Call_pick1(Arg0&& arg0, Args&& ... args)
-{
-    if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value )
-        return arg0;
-    else
-        return test2Call_pick1<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(args...);
-}
-
-template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
-TypeToPick test2Call_pick1(Arg0&& arg0)
-{
-    if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value )
-        return arg0;
-    else
-    {
-        static_assert( !required, "required parameter" );
-        if constexpr ( std::is_same<AssumedDefaultT, DefaultT>::value )
-            return TypeToPick(defaultValue);
-        else
-            return TypeToPick( AssumedDefaultT(defaultValue) );
-        /*    return TypeToPick(defaultValue);*/
-    }
-}
-
 /*template<typename TypeToPick, bool required, typename Arg0, typename ... Args>
 TypeToPick test2Call_pick2(Arg0&& arg0, Args&& ... args)
 {
@@ -125,9 +100,10 @@ TypeToPick test2Call_pick2(Arg0&& arg0)
 template<typename Arg0, typename ... Args>
 void test2Call_A(Arg0&& arg0, Args&& ... args)
 {
-    auto fp = test2Call_pick1<NamedParameterWithType<int, FirstParam::Name>, false, int, int, 10>(arg0, args...);
-    auto sp = test2Call_pick1<NamedParameterWithType<int, SecondParam::Name>, false, int, int, 20>(arg0, args...);
-    auto tp = test2Call_pick1<NamedParameterWithType<int, ThirdParam::Name>, false, int, int, 30>(arg0, args...);
+    ensureUniqueness(arg0, args...);
+    auto fp = pickParam<NamedParameterWithType<int, FirstParam::Name>, false, int, int, 10>(arg0, args...);
+    auto sp = pickParam<NamedParameterWithType<int, SecondParam::Name>, false, int, int, 20>(arg0, args...);
+    auto tp = pickParam<NamedParameterWithType<int, ThirdParam::Name>, false, int, int, 30>(arg0, args...);
     test2CallImpl_A( fp, sp, tp );
 }
 
@@ -140,9 +116,10 @@ static constexpr char default_2[] = "default_2";
 template<typename Arg0, typename ... Args>
 void test2Call_B(Arg0&& arg0, Args&& ... args)
 {
-    auto fp = test2Call_pick1<NamedParameterWithType<int, FirstParam::Name>, false, int, int, 10>(arg0, args...);
-    auto sp = test2Call_pick1<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [], test2Call_B_defaults::default_2>(arg0, args...);
-    auto tp = test2Call_pick1<NamedParameterWithType<int, ThirdParam::Name>, false, int, int, 30>(arg0, args...);
+    ensureUniqueness(arg0, args...);
+    auto fp = pickParam<NamedParameterWithType<int, FirstParam::Name>, false, int, int, 10>(arg0, args...);
+    auto sp = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [], test2Call_B_defaults::default_2>(arg0, args...);
+    auto tp = pickParam<NamedParameterWithType<int, ThirdParam::Name>, false, int, int, 30>(arg0, args...);
     test2CallImpl_B( fp, sp, tp );
 }
 
@@ -155,9 +132,10 @@ static constexpr char default_3[] = "default_3";
 template<typename Arg0, typename ... Args>
 void test2Call_C(Arg0&& arg0, Args&& ... args)
 {
-    auto fp = test2Call_pick1<NamedParameterWithType<std::string, FirstParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_1>(arg0, args...);
-    auto sp = test2Call_pick1<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_2>(arg0, args...);
-    auto tp = test2Call_pick1<NamedParameterWithType<std::string, ThirdParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_3>(arg0, args...);
+    ensureUniqueness(arg0, args...);
+    auto fp = pickParam<NamedParameterWithType<std::string, FirstParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_1>(arg0, args...);
+    auto sp = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_2>(arg0, args...);
+    auto tp = pickParam<NamedParameterWithType<std::string, ThirdParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_3>(arg0, args...);
     test2CallImpl_C( fp, sp, tp );
 }
 

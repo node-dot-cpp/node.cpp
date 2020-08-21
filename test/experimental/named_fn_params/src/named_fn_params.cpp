@@ -34,4 +34,6 @@ int main()
     m::test2Call_C( m::secondParam = std::string("def"), m::thirdParam = std::string("ghi") );
     m::test2Call_C( m::thirdParam = std::string("ghi"), m::firstParam = std::string("abc") );
     m::test2Call_C( m::secondParam = std::string("def"), m::firstParam = std::string("abc") );
+    printf( "=====================\n" );
+    m::test2Call_C( m::thirdParam = std::string("ghi"), m::secondParam = std::string("def"), m::thirdParam = std::string("abc") );
 }
