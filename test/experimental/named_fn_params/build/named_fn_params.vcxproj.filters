@@ -18,18 +18,12 @@
     <ClCompile Include="..\src\named_fn_params.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\test_1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\test_2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\named_params_core.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\test_1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\test_2.h">

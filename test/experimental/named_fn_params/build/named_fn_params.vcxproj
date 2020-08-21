@@ -20,15 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\named_fn_params.cpp" />
-    <ClCompile Include="..\src\test_1.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\src\test_2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\named_params_core.h" />
-    <ClInclude Include="..\src\test_1.h" />
     <ClInclude Include="..\src\test_2.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
