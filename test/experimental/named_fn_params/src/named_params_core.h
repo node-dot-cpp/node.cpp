@@ -79,7 +79,7 @@ public:
     template<class NameT, class DataT>
     struct FullType
     {
-        using NameType = NameT;
+        using NameTag = NameT;
         using DataType = DataT;
     };
 
@@ -89,30 +89,17 @@ public:
 
 
 
-template<typename Arg0, typename ... Args>
-constexpr size_t paramCount()
-{
-    return 1 + paramCount<Args...>();
-}
-
-template<typename Arg0>
-constexpr size_t paramCount()
-{
-    return 1;
-}
-
-
 template<typename BaseT, typename Arg0, typename ... Args>
 void findMatch(const Arg0 arg0, const Args ... args)
 {
-    static_assert( std::is_same<BaseT::NameType, Arg0::NameType>::value == false, "same name used more than once" );
+    static_assert( std::is_same<BaseT::NameTag, Arg0::NameTag>::value == false, "same name used more than once" );
     findMatch<BaseT>(args...);
 }
 
 template<typename BaseT, typename Arg0>
 void findMatch(const Arg0 arg0)
 {
-    static_assert( std::is_same<BaseT::NameType, Arg0::NameType>::value == false, "same name used more than once" );
+    static_assert( std::is_same<BaseT::NameTag, Arg0::NameTag>::value == false, "same name used more than once" );
 }
 
 template<typename Arg0, typename ... Args>
@@ -129,6 +116,21 @@ void ensureUniqueness(const Arg0 arg0)
 }
 
 
+
+template <class T>
+struct unwrap_refwrapper
+{
+    using type = T;
+};
+ 
+template <class T>
+struct unwrap_refwrapper<std::reference_wrapper<T>>
+{
+    using type = T&;
+};
+ 
+template <class T>
+using special_decay_t = typename unwrap_refwrapper<typename std::decay<T>::type>::type;
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
 TypeToPick pickParam(Arg0&& arg0, Args&& ... args)
@@ -158,7 +160,7 @@ TypeToPick pickParam(Arg0&& arg0)
 template<typename TypeToMatch, typename Arg0, typename ... Args>
 constexpr size_t isMatched_(const Arg0, const Args ... args)
 {
-    if constexpr ( std::is_same<Arg0::NameType, TypeToMatch::Name>::value )
+    if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
         return 1;
     else
         return isMatched_<TypeToMatch>(args...);
@@ -167,7 +169,7 @@ constexpr size_t isMatched_(const Arg0, const Args ... args)
 template<typename TypeToMatch, typename Arg0>
 constexpr size_t isMatched_(const Arg0)
 {
-    if constexpr ( std::is_same<Arg0::NameType, TypeToMatch::Name>::value )
+    if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
         return 1;
     else
         return 0;
@@ -177,7 +179,7 @@ constexpr size_t isMatched_(const Arg0)
 template<typename TypeToMatch, typename Arg0, typename ... Args>
 constexpr size_t isMatched(const Arg0, const Args ... args)
 {
-    if constexpr ( std::is_same<Arg0::NameType, TypeToMatch::Name>::value )
+    if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
         return 1;
     else
         return isMatched<TypeToMatch>(args...);
@@ -186,7 +188,7 @@ constexpr size_t isMatched(const Arg0, const Args ... args)
 template<typename TypeToMatch, typename Arg0>
 constexpr size_t isMatched(const Arg0)
 {
-    if constexpr ( std::is_same<Arg0::NameType, TypeToMatch::Name>::value )
+    if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
         return 1;
     else
         return 0;

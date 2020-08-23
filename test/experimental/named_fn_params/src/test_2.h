@@ -32,21 +32,6 @@
 
 namespace m {
 
-template <class T>
-struct unwrap_refwrapper
-{
-    using type = T;
-};
- 
-template <class T>
-struct unwrap_refwrapper<std::reference_wrapper<T>>
-{
-    using type = T&;
-};
- 
-template <class T>
-using special_decay_t = typename unwrap_refwrapper<typename std::decay<T>::type>::type;
-
 // GENERATED VALUES
 
 using FirstParam = NamedParameter<struct FirstParamTagStruct>;
@@ -62,41 +47,6 @@ extern const ThirdParam::TypeConverter thirdParam;
 void test2CallImpl_A( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<int, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp );
 void test2CallImpl_B( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp );
 void test2CallImpl_C( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp );
-void test2CallImpl_D( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp, size_t cnt );
-
-/*template<typename T1, typename T2>
-struct IsSameType
-{
-    bool value = false;
-};
-
-template<bool ok, class DefaultT, DefaultT defaultValue>
-DefaultT requiredParam()
-{
-    static_assert( ok, "required parameter" );
-    return defaultValue;
-}*/
-
-/*template<typename TypeToPick, bool required, typename Arg0, typename ... Args>
-TypeToPick test2Call_pick2(Arg0&& arg0, Args&& ... args)
-{
-    if constexpr ( std::is_same<special_decay_t<Arg0>, TypeToPick>::value )
-        return arg0;
-    else
-        return test2Call_pick2<TypeToPick, required>(args...);
-}
-
-template<typename TypeToPick, bool required, typename Arg0>
-TypeToPick test2Call_pick2(Arg0&& arg0)
-{
-    if constexpr ( std::is_same<special_decay_t<Arg0>, TypeToPick>::value )
-        return arg0;
-    else
-    {
-        static_assert( !required, "required parameter" );
-        return TypeToPick("default");
-    }
-}*/
 
 template<typename Arg0, typename ... Args>
 void test2Call_A(Arg0&& arg0, Args&& ... args)
@@ -138,19 +88,12 @@ void test2Call_C(Args&& ... args)
     using arg_3_type = NamedParameterWithType<std::string, ThirdParam::Name>;
     ensureUniqueness(args.nameAndTypeID...);
     constexpr size_t argCount = sizeof ... (Args);
-    //constexpr size_t matchCount = countMatches<arg_1_type, arg_2_type, arg_3_type>( args.nameAndTypeID... );
-    /*constexpr size_t arg_1_type_matched = isMatched_<arg_1_type>(args.nameAndTypeID...);
-    constexpr size_t arg_2_type_matched = isMatched<arg_2_type>( args.nameAndTypeID... );
-    constexpr size_t arg_3_type_matched = isMatched<arg_3_type>( args.nameAndTypeID... );*/
     constexpr size_t matchCount = isMatched_<arg_1_type>(args.nameAndTypeID...) + isMatched_<arg_2_type>(args.nameAndTypeID...) + isMatched_<arg_3_type>(args.nameAndTypeID...);
-   /*constexpr size_t argCount = paramCount<Args...>();*/
     static_assert( argCount == matchCount, "unexpected arguments found" );
-//    static_assert( argCount == 2 || argCount == 3, "unexpected arguments found" );
-    auto fp = pickParam<NamedParameterWithType<std::string, FirstParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_1>(args...);
-    auto sp = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_2>(args...);
-    auto tp = pickParam<NamedParameterWithType<std::string, ThirdParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_3>(args...);
-//    test2CallImpl_C( fp, sp, tp );
-    test2CallImpl_D( fp, sp, tp, argCount );
+    auto fp = pickParam<NamedParameterWithType<std::string, FirstParam::Name>, false, std::string, const char*, test2Call_C_defaults::default_1>(args...);
+    auto sp = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char*, test2Call_C_defaults::default_2>(args...);
+    auto tp = pickParam<NamedParameterWithType<std::string, ThirdParam::Name>, false, std::string, const char*, test2Call_C_defaults::default_3>(args...);
+    test2CallImpl_C( fp, sp, tp );
 }
 
 } // namespace m

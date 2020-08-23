@@ -51,9 +51,4 @@ void test2CallImpl_C( NamedParameterWithType<std::string, FirstParam::Name> cons
     printf( "Test 2: %s - %s - %s\n", fp.get().c_str(), sp.get().c_str(), tp.get().c_str() );
 }
 
-void test2CallImpl_D( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp, size_t cnt )
-{
-    printf( "Test 2: %s - %s - %s (%zd)\n", fp.get().c_str(), sp.get().c_str(), tp.get().c_str(), cnt );
-}
-
 } // namespace m
