@@ -158,25 +158,6 @@ TypeToPick pickParam(Arg0&& arg0)
 
 
 template<typename TypeToMatch, typename Arg0, typename ... Args>
-constexpr size_t isMatched_(const Arg0, const Args ... args)
-{
-    if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
-        return 1;
-    else
-        return isMatched_<TypeToMatch>(args...);
-}
-
-template<typename TypeToMatch, typename Arg0>
-constexpr size_t isMatched_(const Arg0)
-{
-    if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
-        return 1;
-    else
-        return 0;
-}
-
-
-template<typename TypeToMatch, typename Arg0, typename ... Args>
 constexpr size_t isMatched(const Arg0, const Args ... args)
 {
     if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
@@ -192,18 +173,6 @@ constexpr size_t isMatched(const Arg0)
         return 1;
     else
         return 0;
-}
-
-template<typename TypeToMatch0, typename ... TipesToMatch, typename ... Args>
-constexpr size_t countMatches(const Args ... args)
-{
-    return isMatched<TypeToMatch0>(args...) + countMatches<TipesToMatch...>(args...);
-}
-
-template<typename TypeToMatch0, typename ... Args>
-constexpr size_t countMatches(const Args ... args)
-{
-    return isMatched<TypeToMatch0>(args...);
 }
 
 
