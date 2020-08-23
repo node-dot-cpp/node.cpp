@@ -62,6 +62,7 @@ extern const ThirdParam::TypeConverter thirdParam;
 void test2CallImpl_A( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<int, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp );
 void test2CallImpl_B( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp );
 void test2CallImpl_C( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp );
+void test2CallImpl_D( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp, size_t cnt );
 
 /*template<typename T1, typename T2>
 struct IsSameType
@@ -129,14 +130,27 @@ static constexpr char default_2[] = "default_2";
 static constexpr char default_3[] = "default_3";
 }
 
-template<typename Arg0, typename ... Args>
-void test2Call_C(Arg0&& arg0, Args&& ... args)
+template<typename ... Args>
+void test2Call_C(Args&& ... args)
 {
-    ensureUniqueness(arg0, args...);
-    auto fp = pickParam<NamedParameterWithType<std::string, FirstParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_1>(arg0, args...);
-    auto sp = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_2>(arg0, args...);
-    auto tp = pickParam<NamedParameterWithType<std::string, ThirdParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_3>(arg0, args...);
-    test2CallImpl_C( fp, sp, tp );
+    using arg_1_type = NamedParameterWithType<std::string, FirstParam::Name>;
+    using arg_2_type = NamedParameterWithType<std::string, SecondParam::Name>;
+    using arg_3_type = NamedParameterWithType<std::string, ThirdParam::Name>;
+    ensureUniqueness(args...);
+    constexpr size_t argCount = sizeof ... (Args);
+    //constexpr size_t matchCount = countMatches<arg_1_type, arg_2_type, arg_3_type>( args.nameAndTypeID... );
+    /*constexpr size_t arg_1_type_matched = isMatched_<arg_1_type>(args.nameAndTypeID...);
+    constexpr size_t arg_2_type_matched = isMatched<arg_2_type>( args.nameAndTypeID... );
+    constexpr size_t arg_3_type_matched = isMatched<arg_3_type>( args.nameAndTypeID... );*/
+    constexpr size_t matchCount = isMatched_<arg_1_type>(args.nameAndTypeID...) + isMatched_<arg_2_type>(args.nameAndTypeID...) + isMatched_<arg_3_type>(args.nameAndTypeID...);
+   /*constexpr size_t argCount = paramCount<Args...>();*/
+    static_assert( argCount == matchCount, "unexpected arguments found" );
+//    static_assert( argCount == 2 || argCount == 3, "unexpected arguments found" );
+    auto fp = pickParam<NamedParameterWithType<std::string, FirstParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_1>(args...);
+    auto sp = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_2>(args...);
+    auto tp = pickParam<NamedParameterWithType<std::string, ThirdParam::Name>, false, std::string, const char [10], test2Call_C_defaults::default_3>(args...);
+//    test2CallImpl_C( fp, sp, tp );
+    test2CallImpl_D( fp, sp, tp, argCount );
 }
 
 } // namespace m

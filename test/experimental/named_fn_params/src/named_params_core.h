@@ -75,8 +75,31 @@ public:
 	using NameBase = NamedParameter<NameTag>;
 	using Name = typename NamedParameter<NameTag>::Name;
 	using NamedParameter<NameTag>::TypeConverter;
+
+    template<class NameT, class DataT>
+    struct FullType
+    {
+        using NameType = NameT;
+        using DataType = DataT;
+    };
+
+    using NameAndTypeID = FullType<NameTag, T>;
+    static constexpr NameAndTypeID nameAndTypeID = {};
 };
 
+
+
+template<typename Arg0, typename ... Args>
+constexpr size_t paramCount()
+{
+    return 1 + paramCount<Args...>();
+}
+
+template<typename Arg0>
+constexpr size_t paramCount()
+{
+    return 1;
+}
 
 
 template<typename BaseT, typename Arg0, typename ... Args>
@@ -129,6 +152,56 @@ TypeToPick pickParam(Arg0&& arg0)
         else
             return TypeToPick( AssumedDefaultT(defaultValue) );
     }
+}
+
+
+template<typename TypeToMatch, typename Arg0, typename ... Args>
+constexpr size_t isMatched_(const Arg0, const Args ... args)
+{
+    if constexpr ( std::is_same<Arg0::NameType, TypeToMatch::Name>::value )
+        return 1;
+    else
+        return isMatched_<TypeToMatch>(args...);
+}
+
+template<typename TypeToMatch, typename Arg0>
+constexpr size_t isMatched_(const Arg0)
+{
+    if constexpr ( std::is_same<Arg0::NameType, TypeToMatch::Name>::value )
+        return 1;
+    else
+        return 0;
+}
+
+
+template<typename TypeToMatch, typename Arg0, typename ... Args>
+constexpr size_t isMatched(const Arg0, const Args ... args)
+{
+    if constexpr ( std::is_same<Arg0::NameType, TypeToMatch::Name>::value )
+        return 1;
+    else
+        return isMatched<TypeToMatch>(args...);
+}
+
+template<typename TypeToMatch, typename Arg0>
+constexpr size_t isMatched(const Arg0)
+{
+    if constexpr ( std::is_same<Arg0::NameType, TypeToMatch::Name>::value )
+        return 1;
+    else
+        return 0;
+}
+
+template<typename TypeToMatch0, typename ... TipesToMatch, typename ... Args>
+constexpr size_t countMatches(const Args ... args)
+{
+    return isMatched<TypeToMatch0>(args...) + countMatches<TipesToMatch...>(args...);
+}
+
+template<typename TypeToMatch0, typename ... Args>
+constexpr size_t countMatches(const Args ... args)
+{
+    return isMatched<TypeToMatch0>(args...);
 }
 
 
