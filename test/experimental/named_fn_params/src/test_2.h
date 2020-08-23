@@ -101,7 +101,7 @@ TypeToPick test2Call_pick2(Arg0&& arg0)
 template<typename Arg0, typename ... Args>
 void test2Call_A(Arg0&& arg0, Args&& ... args)
 {
-    ensureUniqueness(arg0, args...);
+    ensureUniqueness(arg0.nameAndTypeID, args.nameAndTypeID...);
     auto fp = pickParam<NamedParameterWithType<int, FirstParam::Name>, false, int, int, 10>(arg0, args...);
     auto sp = pickParam<NamedParameterWithType<int, SecondParam::Name>, false, int, int, 20>(arg0, args...);
     auto tp = pickParam<NamedParameterWithType<int, ThirdParam::Name>, false, int, int, 30>(arg0, args...);
@@ -117,7 +117,7 @@ static constexpr char default_2[] = "default_2";
 template<typename Arg0, typename ... Args>
 void test2Call_B(Arg0&& arg0, Args&& ... args)
 {
-    ensureUniqueness(arg0, args...);
+    ensureUniqueness(arg0.nameAndTypeID, args.nameAndTypeID...);
     auto fp = pickParam<NamedParameterWithType<int, FirstParam::Name>, false, int, int, 10>(arg0, args...);
     auto sp = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [], test2Call_B_defaults::default_2>(arg0, args...);
     auto tp = pickParam<NamedParameterWithType<int, ThirdParam::Name>, false, int, int, 30>(arg0, args...);
@@ -136,7 +136,7 @@ void test2Call_C(Args&& ... args)
     using arg_1_type = NamedParameterWithType<std::string, FirstParam::Name>;
     using arg_2_type = NamedParameterWithType<std::string, SecondParam::Name>;
     using arg_3_type = NamedParameterWithType<std::string, ThirdParam::Name>;
-    ensureUniqueness(args...);
+    ensureUniqueness(args.nameAndTypeID...);
     constexpr size_t argCount = sizeof ... (Args);
     //constexpr size_t matchCount = countMatches<arg_1_type, arg_2_type, arg_3_type>( args.nameAndTypeID... );
     /*constexpr size_t arg_1_type_matched = isMatched_<arg_1_type>(args.nameAndTypeID...);

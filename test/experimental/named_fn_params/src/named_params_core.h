@@ -103,27 +103,27 @@ constexpr size_t paramCount()
 
 
 template<typename BaseT, typename Arg0, typename ... Args>
-void findMatch(Arg0&& arg0, Args&& ... args)
+void findMatch(const Arg0 arg0, const Args ... args)
 {
-    static_assert( std::is_same<BaseT, Arg0>::value == false, "same name used more than once" );
+    static_assert( std::is_same<BaseT::NameType, Arg0::NameType>::value == false, "same name used more than once" );
     findMatch<BaseT>(args...);
 }
 
 template<typename BaseT, typename Arg0>
-void findMatch(Arg0&& arg0)
+void findMatch(const Arg0 arg0)
 {
-    static_assert( std::is_same<BaseT, Arg0>::value == false, "same name used more than once" );
+    static_assert( std::is_same<BaseT::NameType, Arg0::NameType>::value == false, "same name used more than once" );
 }
 
 template<typename Arg0, typename ... Args>
-void ensureUniqueness(Arg0&& arg0, Args&& ... args)
+void ensureUniqueness(const Arg0 arg0, const Args ... args)
 {
     findMatch<Arg0>(args...);
     ensureUniqueness(args...);
 }
 
 template<typename Arg0>
-void ensureUniqueness(Arg0&& arg0)
+void ensureUniqueness(const Arg0 arg0)
 {
     return;
 }
