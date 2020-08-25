@@ -44,34 +44,16 @@ extern const FirstParam::TypeConverter firstParam;
 extern const SecondParam::TypeConverter secondParam;
 extern const ThirdParam::TypeConverter thirdParam;
 
-void test2CallImpl_A( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<int, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp );
+void test2Call_A_Impl( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp );
 
-template<typename Arg0, typename ... Args>
-void test2Call_A(Arg0&& arg0, Args&& ... args)
-{
-    using arg_1_type = NamedParameterWithType<int, FirstParam::Name>;
-    using arg_2_type = NamedParameterWithType<int, SecondParam::Name>;
-    using arg_3_type = NamedParameterWithType<int, ThirdParam::Name>;
-    ensureUniqueness(arg0.nameAndTypeID, args.nameAndTypeID...);
-    constexpr size_t argCount = sizeof ... (Args);
-    constexpr size_t matchCount = isMatched<arg_1_type>(args.nameAndTypeID...) + isMatched<arg_2_type>(args.nameAndTypeID...) + isMatched<arg_3_type>(args.nameAndTypeID...);
-    static_assert( argCount == matchCount, "unexpected arguments found" );
-    auto arg_1 = pickParam<NamedParameterWithType<int, FirstParam::Name>, false, int, int, 10>(arg0, args...);
-    auto arg_2 = pickParam<NamedParameterWithType<int, SecondParam::Name>, false, int, int, 20>(arg0, args...);
-    auto arg_3 = pickParam<NamedParameterWithType<int, ThirdParam::Name>, false, int, int, 30>(arg0, args...);
-    test2CallImpl_A( arg_1, arg_2, arg_3 );
-}
-
-void test2CallImpl_B( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp );
-
-namespace test2Call_B_defaults {
+namespace test2Call_A_defaults {
 //static constexpr char default_1[] = "default_1";
 static constexpr char default_2[] = "default_2";
 //static constexpr char default_3[] = "default_3";
 }
 
 template<typename Arg0, typename ... Args>
-void test2Call_B(Arg0&& arg0, Args&& ... args)
+void test2Call_A(Arg0&& arg0, Args&& ... args)
 {
     using arg_1_type = NamedParameterWithType<int, FirstParam::Name>;
     using arg_2_type = NamedParameterWithType<std::string, SecondParam::Name>;
@@ -81,21 +63,21 @@ void test2Call_B(Arg0&& arg0, Args&& ... args)
     constexpr size_t matchCount = isMatched<arg_1_type>(args.nameAndTypeID...) + isMatched<arg_2_type>(args.nameAndTypeID...) + isMatched<arg_3_type>(args.nameAndTypeID...);
     static_assert( argCount == matchCount, "unexpected arguments found" );
     auto arg_1 = pickParam<NamedParameterWithType<int, FirstParam::Name>, false, int, int, 10>(arg0, args...);
-    auto arg_2 = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [], test2Call_B_defaults::default_2>(arg0, args...);
+    auto arg_2 = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char [], test2Call_A_defaults::default_2>(arg0, args...);
     auto arg_3 = pickParam<NamedParameterWithType<int, ThirdParam::Name>, false, int, int, 30>(arg0, args...);
-    test2CallImpl_B( arg_1, arg_2, arg_3 );
+    test2Call_A_Impl( arg_1, arg_2, arg_3 );
 }
 
-void test2CallImpl_C( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp );
+void test2Call_B_Impl( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp );
 
-namespace test2Call_C_defaults {
+namespace test2Call_B_defaults {
 static constexpr char default_1[] = "default_1";
 static constexpr char default_2[] = "default_2";
 static constexpr char default_3[] = "default_3";
 }
 
 template<typename ... Args>
-void test2Call_C(Args&& ... args)
+void test2Call_B(Args&& ... args)
 {
     using arg_1_type = NamedParameterWithType<std::string, FirstParam::Name>;
     using arg_2_type = NamedParameterWithType<std::string, SecondParam::Name>;
@@ -104,10 +86,10 @@ void test2Call_C(Args&& ... args)
     constexpr size_t argCount = sizeof ... (Args);
     constexpr size_t matchCount = isMatched<arg_1_type>(args.nameAndTypeID...) + isMatched<arg_2_type>(args.nameAndTypeID...) + isMatched<arg_3_type>(args.nameAndTypeID...);
     static_assert( argCount == matchCount, "unexpected arguments found" );
-    auto arg_1 = pickParam<NamedParameterWithType<std::string, FirstParam::Name>, false, std::string, const char*, test2Call_C_defaults::default_1>(args...);
-    auto arg_2 = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char*, test2Call_C_defaults::default_2>(args...);
-    auto arg_3 = pickParam<NamedParameterWithType<std::string, ThirdParam::Name>, false, std::string, const char*, test2Call_C_defaults::default_3>(args...);
-    test2CallImpl_C( arg_1, arg_2, arg_3 );
+    auto arg_1 = pickParam<NamedParameterWithType<std::string, FirstParam::Name>, false, std::string, const char*, test2Call_B_defaults::default_1>(args...);
+    auto arg_2 = pickParam<NamedParameterWithType<std::string, SecondParam::Name>, false, std::string, const char*, test2Call_B_defaults::default_2>(args...);
+    auto arg_3 = pickParam<NamedParameterWithType<std::string, ThirdParam::Name>, false, std::string, const char*, test2Call_B_defaults::default_3>(args...);
+    test2Call_B_Impl( arg_1, arg_2, arg_3 );
 }
 
 } // namespace m
