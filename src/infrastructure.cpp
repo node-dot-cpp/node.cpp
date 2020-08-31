@@ -26,7 +26,10 @@
 * -------------------------------------------------------------------------------*/
 
 #include "infrastructure.h"
-#include <nodecpp/nls.h>
+
+//#include <nodecpp/nls.h>
+#include "../../include/nodecpp/nls.h"
+#include "../../include/nodecpp/net_common.h"
 
 #include <time.h>
 #include <climits>
@@ -173,15 +176,10 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	{
 		if ( h.cb != nullptr )
 			h.cb();
-//		else if ( h.h )
-//			h.h();
 		else if ( h.h != nullptr )
 		{
 			auto hr = h.h;
-			if ( h.setExceptionWhenDone )
-			{
-				nodecpp::setException(h.h, std::exception()); // TODO: switch to our exceptions ASAP!
-			}
+			nodecpp::setCoroStatus( hr, CoroStandardOutcomes::timeout );
 			h.h = nullptr;
 			hr();
 		}

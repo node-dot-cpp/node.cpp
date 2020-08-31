@@ -51,8 +51,12 @@ namespace nodecpp {
 			friend class IncomingHttpMessageAtServer;
 			friend class HttpServerResponse;
 
-			nodecpp::handler_ret_type getRequest( IncomingHttpMessageAtServer& message );
-			nodecpp::handler_ret_type getRequest2( IncomingHttpMessageAtServer& message );
+#ifndef NODECPP_NO_COROUTINES
+			static constexpr size_t maxHeaderSize = 0x4000;
+			Buffer lineBuffer;
+#endif // NODECPP_NO_COROUTINES
+
+			::nodecpp::awaitable<CoroStandardOutcomes> getRequest( IncomingHttpMessageAtServer& message );
 
 			struct RRPair
 			{
@@ -127,369 +131,31 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
+						nodecpp::initCoroData(awaiting);
 						socket.ahd_continueGetting = awaiting;
 						myawaiting = awaiting;
 					}
 
 					auto await_resume() {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
+						if ( nodecpp::isCoroException(myawaiting) )
+							throw nodecpp::getCoroException(myawaiting);
 					}
 				};
 				return continue_getting_awaiter(*this);
 			}
 
-			auto a_readByte() { 
-
-				struct read_byte {
-					std::experimental::coroutine_handle<> myawaiting = nullptr;
-					SocketBase& socket;
-
-					read_byte(SocketBase& socket_) : socket( socket_ ) {
-					}
-
-					read_byte(const read_byte &) = delete;
-					read_byte &operator = (const read_byte &) = delete;
-	
-					~read_byte() {
-					}
-
-					bool await_ready() {
-#ifdef NODECPP_RECORD_AND_REPLAY
-						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-						{
-							bool ret = !socket.dataForCommandProcessing.readBuffer.empty();
-							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
-							return ret;
-						}
-						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
-						{
-							auto frame = threadLocalData.binaryLog->readNextFrame();
-							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, "UNEXPECTED FRAME TYPE {}", frame.type ); 
-							return *(reinterpret_cast<bool*>(frame.ptr));
-						}
-						else
-#endif // NODECPP_RECORD_AND_REPLAY
-						return !socket.dataForCommandProcessing.readBuffer.empty();
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
-						socket.dataForCommandProcessing.ahd_read.h = awaiting;
-						myawaiting = awaiting;
-					}
-
-					auto await_resume() {
-#ifdef NODECPP_RECORD_AND_REPLAY
-						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-						{
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							{
-								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_byte_crh_except, nullptr, 0 );
-								throw nodecpp::getException(myawaiting);
-							}
-							uint8_t ret = socket.dataForCommandProcessing.readBuffer.read_byte();
-							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_byte_crh_ok, &ret, sizeof( ret ) );
-							return ret;
-						}
-						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
-						{
-							auto frame = threadLocalData.binaryLog->readNextFrame();
-							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_byte_crh_except )
-								throw nodecpp::getException(myawaiting);
-							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_byte_crh_ok )
-							{
-								NODECPP_ASSERT(nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size == 1, "indeed: {}", frame.size );
-								return *(uint8_t*)(frame.ptr);
-							}
-							else
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
-						}
-						else
-#endif // NODECPP_RECORD_AND_REPLAY
-						{
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-								throw nodecpp::getException(myawaiting);
-							return socket.dataForCommandProcessing.readBuffer.read_byte();
-						}
-					}
-				};
-				return read_byte(*this);
-			}
-
-			auto a_dataAvailable( CircularByteBuffer::AvailableDataDescriptor& d, size_t minBytes = 1 ) { 
-
-				struct data_awaiter {
-					std::experimental::coroutine_handle<> myawaiting = nullptr;
-					SocketBase& socket;
-					CircularByteBuffer::AvailableDataDescriptor& d;
-					size_t minBytes;
-
-					data_awaiter(SocketBase& socket_, CircularByteBuffer::AvailableDataDescriptor& d_, size_t minBytes_) : socket( socket_ ), d( d_ ), minBytes(minBytes_) {
-					}
-
-					data_awaiter(const data_awaiter &) = delete;
-					data_awaiter &operator = (const data_awaiter &) = delete;
-	
-					~data_awaiter() {
-					}
-
-					bool await_ready() {
-#ifdef NODECPP_RECORD_AND_REPLAY
-						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-						{
-							bool ret = socket.dataForCommandProcessing.readBuffer.used_size() && socket.dataForCommandProcessing.readBuffer.used_size() >= minBytes;
-							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
-							return ret;
-						}
-						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
-						{
-							auto frame = threadLocalData.binaryLog->readNextFrame();
-							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, "UNEXPECTED FRAME TYPE {}", frame.type ); 
-							return *(reinterpret_cast<bool*>(frame.ptr));
-						}
-						else
-#endif // NODECPP_RECORD_AND_REPLAY
-						return socket.dataForCommandProcessing.readBuffer.used_size() && socket.dataForCommandProcessing.readBuffer.used_size() >= minBytes;
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						socket.dataForCommandProcessing.ahd_read.min_bytes = minBytes;
-						nodecpp::setNoException(awaiting);
-						socket.dataForCommandProcessing.ahd_read.h = awaiting;
-						myawaiting = awaiting;
-					}
-
-					auto await_resume() {
-#ifdef NODECPP_RECORD_AND_REPLAY
-						static_assert( sizeof( d.sz1 ) == sizeof( size_t ) );
-						static_assert( sizeof( d.sz2 ) == sizeof( size_t ) );
-						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-						{
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							{
-								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except, nullptr, 0 );
-								throw nodecpp::getException(myawaiting);
-							}
-							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
-							::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok, &(d), sizeof( d ) );
-							if ( d.ptr1 != nullptr && d.sz1 != 0 )
-								::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr1, d.sz1 );
-							if ( d.ptr2 != nullptr && d.sz2 != 0 )
-								::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr2, d.sz2 );
-							::nodecpp::threadLocalData.binaryLog->addingFrameDone();
-						}
-						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
-						{
-							auto frame = threadLocalData.binaryLog->readNextFrame();
-							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except )
-								throw nodecpp::getException(myawaiting);
-							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok )
-							{
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ), "{} vs. {}", frame.size, sizeof( d ) ); 
-								uint8_t* buff = (uint8_t*)(frame.ptr);
-								memcpy( &d, buff, sizeof( d ) );
-								buff += sizeof( d );
-								if ( d.ptr1 != nullptr && d.sz1 != 0 )
-								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ) + d.sz1, "{} vs. {}", frame.size, sizeof( d ) + d.sz1 ); 
-									d.ptr1 = buff;
-									buff += d.sz1;
-								}
-								else
-								{
-									if ( d.ptr1 != nullptr )
-									{
-										d.ptr1 = buff;
-										NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, d.sz1 == 0, "indeed: {}", d.sz1 ); 
-									}
-								}
-								if ( d.ptr2 != nullptr && d.sz2 != 0 )
-								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ) + d.sz1 + d.sz2, "{} vs. {}", frame.size, sizeof( d ) + d.sz1 + d.sz2 ); 
-									d.ptr2 = buff;
-									buff += d.sz2;
-								}
-								else
-								{
-									if ( d.ptr2 != nullptr )
-									{
-										d.ptr2 = buff;
-										NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, d.sz2 == 0, "indeed: {}", d.sz2 ); 
-									}
-								}
-							}
-							else
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
-						}
-						else
-#endif // NODECPP_RECORD_AND_REPLAY
-						{
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-								throw nodecpp::getException(myawaiting);
-							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
-						}
-					}
-				};
-				return data_awaiter(*this, d, minBytes);
-			}
-
-			auto a_dataAvailable( uint32_t period, CircularByteBuffer::AvailableDataDescriptor& d ) { 
-
-				struct data_awaiter {
-					std::experimental::coroutine_handle<> myawaiting = nullptr;
-					SocketBase& socket;
-					CircularByteBuffer::AvailableDataDescriptor& d;
-					uint32_t period;
-					nodecpp::Timeout to;
-
-					data_awaiter(SocketBase& socket_, uint32_t period_, CircularByteBuffer::AvailableDataDescriptor& d_) : socket( socket_ ), d( d_ ), period( period_ ) {}
-
-					data_awaiter(const data_awaiter &) = delete;
-					data_awaiter &operator = (const data_awaiter &) = delete;
-	
-					~data_awaiter() {}
-
-					bool await_ready() {
-#ifdef NODECPP_RECORD_AND_REPLAY
-						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-						{
-							bool ret = socket.dataForCommandProcessing.readBuffer.used_size() > 0;
-							::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, &ret, 1 );
-							return ret;
-						}
-						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
-						{
-							auto frame = threadLocalData.binaryLog->readNextFrame();
-							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.type == record_and_replay_impl::BinaryLog::FrameType::coro_await_ready_res, "UNEXPECTED FRAME TYPE {}", frame.type ); 
-							return *(reinterpret_cast<bool*>(frame.ptr));
-						}
-						else
-#endif // NODECPP_RECORD_AND_REPLAY
-						return socket.dataForCommandProcessing.readBuffer.used_size() > 0;
-					}
-
-					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						socket.dataForCommandProcessing.ahd_read.min_bytes = 1;
-						nodecpp::setNoException(awaiting);
-						socket.dataForCommandProcessing.ahd_read.h = awaiting;
-						myawaiting = awaiting;
-						to = nodecpp::setTimeoutForAction( awaiting, period );
-					}
-
-					auto await_resume() {
-#ifdef NODECPP_RECORD_AND_REPLAY
-						static_assert( sizeof( d.sz1 ) == sizeof( size_t ) );
-						static_assert( sizeof( d.sz2 ) == sizeof( size_t ) );
-						if ( ::nodecpp::threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::recording )
-						{
-							nodecpp::clearTimeout( to );
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-							{
-								::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except, nullptr, 0 );
-								throw nodecpp::getException(myawaiting);
-							}
-							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
-							::nodecpp::threadLocalData.binaryLog->startAddingFrame( record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok, &(d), sizeof( d ) );
-							if ( d.ptr1 != nullptr && d.sz1 != 0 )
-								::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr1, d.sz1 );
-							if ( d.ptr2 != nullptr && d.sz2 != 0 )
-								::nodecpp::threadLocalData.binaryLog->continueAddingFrame( d.ptr2, d.sz2 );
-							::nodecpp::threadLocalData.binaryLog->addingFrameDone();
-						}
-						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
-						{
-							nodecpp::clearTimeout( to );
-							auto frame = threadLocalData.binaryLog->readNextFrame();
-							if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_except )
-								throw nodecpp::getException(myawaiting);
-							else if ( frame.type == record_and_replay_impl::BinaryLog::FrameType::http_sock_read_data_crh_ok )
-							{
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ), "{} vs. {}", frame.size, sizeof( d ) ); 
-								uint8_t* buff = (uint8_t*)(frame.ptr);
-								memcpy( &d, buff, sizeof( d ) );
-								buff += sizeof( d );
-								if ( d.ptr1 != nullptr && d.sz1 != 0 )
-								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ) + d.sz1, "{} vs. {}", frame.size, sizeof( d ) + d.sz1 ); 
-									d.ptr1 = buff;
-									buff += d.sz1;
-								}
-								else
-								{
-									if ( d.ptr1 != nullptr )
-									{
-										d.ptr1 = buff;
-										NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, d.sz1 == 0, "indeed: {}", d.sz1 ); 
-									}
-								}
-								if ( d.ptr2 != nullptr && d.sz2 != 0 )
-								{
-									NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, frame.size >= sizeof( d ) + d.sz1 + d.sz2, "{} vs. {}", frame.size, sizeof( d ) + d.sz1 + d.sz2 ); 
-									d.ptr2 = buff;
-									buff += d.sz2;
-								}
-								else
-								{
-									if ( d.ptr2 != nullptr )
-									{
-										d.ptr2 = buff;
-										NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, d.sz2 == 0, "indeed: {}", d.sz2 ); 
-									}
-								}
-							}
-							else
-								NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "UNEXPECTED FRAME TYPE {}", frame.type ); 
-						}
-						else
-#endif // NODECPP_RECORD_AND_REPLAY
-						{
-							nodecpp::clearTimeout( to );
-							if ( myawaiting != nullptr && nodecpp::isException(myawaiting) )
-								throw nodecpp::getException(myawaiting);
-							socket.dataForCommandProcessing.readBuffer.get_available_data( d );
-						}
-					}
-				};
-				return data_awaiter(*this, period, d);
-			}
-
-			nodecpp::handler_ret_type readLine(nodecpp::string& line)
+			::nodecpp::awaitable<CoroStandardOutcomes> readLine(nodecpp::string& line)
 			{
-				size_t pos = 0;
-				line.clear();
-				CircularByteBuffer::AvailableDataDescriptor d;
-				for(;;)
+				lineBuffer.clear();
+				CoroStandardOutcomes ret = co_await a_readUntil( lineBuffer, '\n' );
+				if ( ret == CoroStandardOutcomes::ok )
 				{
-					co_await a_dataAvailable( d );
-					for ( ; pos<d.sz1; ++pos )
-						if ( d.ptr1[pos] == '\n' )
-						{
-							line.append_unsafe( (const char*)(d.ptr1), pos + 1 );
-							dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
-							CO_RETURN;
-						}
-					line.append_unsafe( (const char*)(d.ptr1), pos );
-					dataForCommandProcessing.readBuffer.skip_data( pos );
-					pos = 0;
-					if ( d.ptr2 && d.sz2 )
-					{
-						for ( ; pos<d.sz2; ++pos )
-							if ( d.ptr2[pos] == '\n' )
-							{
-								line.append_unsafe( (const char*)(d.ptr2), pos + 1 );
-								dataForCommandProcessing.readBuffer.skip_data( pos + 1 );
-								CO_RETURN;
-							}
-						line.append_unsafe( (const char*)(d.ptr2), pos );
-						dataForCommandProcessing.readBuffer.skip_data( pos );
-						pos = 0;
-					}
+					line = nodecpp::string( (const char*)(lineBuffer.begin()), lineBuffer.size() );
+					CO_RETURN CoroStandardOutcomes::ok;
 				}
-
-				CO_RETURN;
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == CoroStandardOutcomes::insufficient_buffer ); 
+				CO_RETURN ret;
 			}
 
 #endif // NODECPP_NO_COROUTINES
@@ -503,21 +169,24 @@ namespace nodecpp {
 			{
 				for(;;)
 				{
-					// first test for continuation
-					CircularByteBuffer::AvailableDataDescriptor d;
-					co_await a_dataAvailable( d, 0 );
-					if ( d.sz1 == 0 ) // no more data - no more requests
-						CO_RETURN;
-
 					// now we can reasonably expect a new request
 					auto& rrPair = rrQueue.getHead();
-					co_await getRequest( *(rrPair.request) );
+					CoroStandardOutcomes status = co_await getRequest( *(rrPair.request) );
 
-					nodecpp::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
-					if ( rrQueue.canPush() )
-						continue;
-					auto cg = a_continueGetting();
-					co_await cg;
+					if ( status == CoroStandardOutcomes::ok ) // the most likely outcome
+					{
+						nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
+						if ( rrQueue.canPush() )
+							continue;
+						auto cg = a_continueGetting();
+						co_await cg;
+					}
+					else
+					{
+						// TODO: switch status, report the other side an error, if applicable ( "413 Entity Too Large" for insufficient_buffer, for instance)
+						end();
+						CO_RETURN;
+					}
 				}
 				CO_RETURN;
 			}
@@ -537,18 +206,11 @@ namespace nodecpp {
 				if ( ahd_continueGetting != nullptr )
 				{
 					auto hr = ahd_continueGetting;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					ahd_continueGetting = nullptr;
 					hr();
 				}
 			}
-			::nodecpp::awaitable<char> skipSpaces(char ch);
-			::nodecpp::awaitable<char> readToken( char firstCh, nodecpp::string& str );
-			::nodecpp::awaitable<char> readTokenWithExpectedSeparator( char firstCh, char separator, nodecpp::string& str );
-			::nodecpp::awaitable<char> readHeaderValueTokens( char firstCh, nodecpp::string& str );
-			::nodecpp::awaitable<void> readEOL( char firstCh );
-			nodecpp::handler_ret_type parseMethod( IncomingHttpMessageAtServer& message );
-			nodecpp::handler_ret_type parseHeaderEntry( IncomingHttpMessageAtServer& message );
 #else
 			void forceReleasingAllCoroHandles() {}
 #endif // NODECPP_NO_COROUTINES
@@ -1033,177 +695,39 @@ namespace nodecpp {
 		}
 
 		inline
-		nodecpp::handler_ret_type HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
+		::nodecpp::awaitable<CoroStandardOutcomes> HttpSocketBase::getRequest( IncomingHttpMessageAtServer& message )
 		{
 			nodecpp::string line;
-			co_await readLine(line);
-//			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
-			if ( !message.parseMethod( line ) )
+			CoroStandardOutcomes status = co_await readLine(line);
+			if ( status == CoroStandardOutcomes::ok )
 			{
-				// TODO: report error
-				end();
-				CO_RETURN;
+//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
+				if ( !message.parseMethod( line ) )
+				{
+					// TODO: report error
+					CO_RETURN CoroStandardOutcomes::failed;
+				}
 			}
+			else
+				CO_RETURN status;
 
 			do
 			{
-				co_await readLine(line);
+				status = co_await readLine(line);
 //				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "line [{} bytes]: {}", lb.size() - 1, reinterpret_cast<char*>(lb.begin()) );
 			}
-			while ( message.parseHeaderEntry( line ) );
+			while ( status == CoroStandardOutcomes::ok && message.parseHeaderEntry( line ) );
 
-			CO_RETURN;
+			CO_RETURN message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body || message.readStatus == IncomingHttpMessageAtServer::ReadStatus::completed ? CoroStandardOutcomes::ok : CoroStandardOutcomes::failed;
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		inline
-		::nodecpp::awaitable<char> HttpSocketBase::skipSpaces(char ch)
-		{
-			while ( ch == ' ' || ch == '\t' )
-				ch = co_await a_readByte();
-			CO_RETURN ch;
-		}
-
-		inline
-		::nodecpp::awaitable<char> HttpSocketBase::readToken( char firstCh, nodecpp::string& str )
-		{
-			while ( !(firstCh == ' ' || firstCh == '\t' || firstCh == '\r' || firstCh == '\n') )
-			{
-				str += firstCh;
-				firstCh = co_await a_readByte();
-			}
-			CO_RETURN firstCh;
-		}
-
-		inline
-		::nodecpp::awaitable<char> HttpSocketBase::readHeaderValueTokens( char firstCh, nodecpp::string& str )
-		{
-			firstCh = co_await skipSpaces( firstCh );
-			firstCh = co_await readToken( firstCh, str );
-			while ( firstCh != '\r' && firstCh != '\n' )
-			{
-				str += ' ';
-				firstCh = co_await skipSpaces( firstCh );
-				firstCh = co_await readToken( firstCh, str );
-			}
-			CO_RETURN firstCh;
-		}
-
-		inline
-		::nodecpp::awaitable<char> HttpSocketBase::readTokenWithExpectedSeparator( char firstCh, char separator, nodecpp::string& str )
-		{
-			while ( !(firstCh == separator || firstCh == ' ' || firstCh == '\t' || firstCh == '\r' || firstCh == '\n') )
-			{
-				str += firstCh;
-				firstCh = co_await a_readByte();
-			}
-			if ( firstCh == separator )
-				firstCh = co_await a_readByte();
-			else
-				throw Error();
-			CO_RETURN firstCh;
-		}
-
-		inline
-		::nodecpp::awaitable<void> HttpSocketBase::readEOL( char firstCh )
-		{
-			if ( firstCh == '\r' )
-				firstCh = co_await a_readByte();
-			if ( firstCh != '\n' )
-				throw Error();
-			CO_RETURN;
-		}
-
-		inline
-		nodecpp::handler_ret_type HttpSocketBase::parseMethod( IncomingHttpMessageAtServer& message )
-		{
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::noinit ); 
-			char ch = co_await a_readByte();
-
-			ch = co_await readToken( ch, message.method.name );
-			if ( ch == '\r' || ch == '\n' )
-				throw Error();
-			ch = co_await skipSpaces( ch );
-
-			ch = co_await readToken( ch, message.method.url );
-			if ( ch == '\r' || ch == '\n' )
-				throw Error();
-			ch = co_await skipSpaces( ch );
-
-			ch = co_await readToken( ch, message.method.version );
-			ch = co_await skipSpaces( ch );
-			if ( memcmp( message.method.version.c_str(), "HTTP/", 5 ) == 0 )
-				message.method.version = message.method.version.substr( 5 );
-
-			co_await readEOL( ch );
-			message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_hdr;
-			CO_RETURN;
-		}
-
-		inline
-		nodecpp::handler_ret_type HttpSocketBase::parseHeaderEntry( IncomingHttpMessageAtServer& message )
-		{
-			// for details see https://tools.ietf.org/html/rfc2616#page-17
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr ); 
-			nodecpp::string key;
-			nodecpp::string value;
-			char ch = co_await a_readByte();
-			if ( ch == '\r' || ch == '\n' )
-			{
-				co_await readEOL( ch );
-				message.readStatus = IncomingHttpMessageAtServer::ReadStatus::in_body;
-				CO_RETURN;
-			}
-			else if ( ch == ' ' || ch == '\t' )
-			{
-				// TODO: it's a continuation of a header - implement!
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "parsing header continuation is not implemented" );
-			}
-
-			ch = co_await readTokenWithExpectedSeparator( ch, ':', key );
-			if ( ch == '\r' || ch == '\n' )
-			{
-				co_await readEOL( ch );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, key.size() );
-				message.header.insert( std::make_pair( message.makeLower( key ), nodecpp::string() ));
-				CO_RETURN;
-			}
-			ch = co_await skipSpaces( ch );
-
-			ch = co_await readHeaderValueTokens( ch, value );
-			message.header.insert( std::make_pair( message.makeLower( key ), message.makeLower( value ) ));
-
-			co_await readEOL( ch );
-		}
-
-		inline
-		nodecpp::handler_ret_type HttpSocketBase::getRequest2( IncomingHttpMessageAtServer& message )
-		{
-			try
-			{
-				co_await parseMethod( message );
-				do
-				{
-					co_await parseHeaderEntry( message );
-				}
-				while ( message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_hdr );
-			}
-			catch (...)
-			{
-				// TODO: report/process error
-				end();
-			}
-			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, message.readStatus == IncomingHttpMessageAtServer::ReadStatus::in_body, "indeed {}", message.readStatus );
-			message.parseContentLength();
-			message.readStatus = message.contentLength ? IncomingHttpMessageAtServer::ReadStatus::in_body : IncomingHttpMessageAtServer::ReadStatus::completed;
-			message.parseConnStatus();
-
-			CO_RETURN;
-		}
-
-		inline
 		HttpSocketBase::HttpSocketBase() {
+#ifndef NODECPP_NO_COROUTINES
+			lineBuffer.reserve(maxHeaderSize);
+#endif // NODECPP_NO_COROUTINES
 			rrQueue.init( myThis.getSoftPtr<HttpSocketBase>(this) );
 			run(); // TODO: think about proper time for this call
 		}

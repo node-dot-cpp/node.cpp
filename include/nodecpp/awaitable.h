@@ -63,8 +63,9 @@ struct void_type_converter<void>
 
 struct CoroEData
 {
-	bool is_exception = false;
-	std::exception exception;
+	uint32_t status = 0;
+	bool isException = false;
+	std::exception e;
 };
 
 struct awaitable_base {
@@ -152,28 +153,41 @@ struct promise_type_struct<void> : public promise_type_struct_base {
 
 
 inline
-void setNoException(std::experimental::coroutine_handle<> awaiting) {
+void initCoroData(std::experimental::coroutine_handle<> awaiting) {
 	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
-	edata.is_exception = false;
+	edata.status = 0;
 }
 
 inline
-void setException(std::experimental::coroutine_handle<> awaiting, std::exception e) {
+void setCoroException(std::experimental::coroutine_handle<> awaiting, std::exception e) {
 	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
-	edata.is_exception = true;
-	edata.exception = e;
+	edata.isException = true;
+	edata.e = e;
 }
 
 inline
-bool isException(std::experimental::coroutine_handle<> awaiting) {
+bool isCoroException(std::experimental::coroutine_handle<> awaiting) {
 	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
-	return edata.is_exception;
+	return edata.isException;
 }
 
 inline
-std::exception& getException(std::experimental::coroutine_handle<> awaiting) {
+std::exception& getCoroException(std::experimental::coroutine_handle<> awaiting) {
 	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
-	return edata.exception;
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, edata.isException ); 
+	return edata.e;
+}
+
+inline
+void setCoroStatus(std::experimental::coroutine_handle<> awaiting, uint32_t status) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	edata.status = status;
+}
+
+inline
+uint32_t getCoroStatus(std::experimental::coroutine_handle<> awaiting) {
+	auto& edata = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address()).promise().edata;
+	return edata.status;
 }
 
 
@@ -302,10 +316,12 @@ auto wait_for_all( nodecpp::awaitable<T>& ... calls ) -> nodecpp::awaitable<std:
 
 namespace nodecpp {
 
-inline void setNoException(void (*)()) {}
-inline void setException(void (*)(), std::exception) {}
-inline bool isException(void (*)()) { return false; }
-inline std::exception getException(void (*)()) { return std::exception(); }
+inline void initCoroData(void (*)()) {}
+inline void setCoroException(void (*)(), std::exception) {}
+inline bool isCoroException(void (*)()) { return false; }
+inline std::exception getCoroException(void (*)()) { return std::exception(); }
+inline void setCoroStatus(void (*)(), int status) {}
+inline int getCoroStatus(void (*)()) { return 0; }
 
 template<class T>
 struct awaitable

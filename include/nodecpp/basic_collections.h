@@ -47,24 +47,24 @@
 
 namespace nodecpp
 {
-	template<class T>
-	using vector = ::safe_memory::vector<T>;
 	// template<class T>
-	// using vector = ::std::vector<T, ::nodecpp::safememory::iiballocator<T>>;
+	// using vector = ::safe_memory::vector<T>;
+	template<class T>
+	using vector = ::std::vector<T, ::nodecpp::safememory::iiballocator<T>>;
 
 	template<class T>
 	using stdvector = ::std::vector<T, nodecpp::stdallocator<T>>;
 
-	template<class Key, class T, class Hash = ::safe_memory::hash<Key>>
-	using map = ::safe_memory::unordered_map<Key, T, Hash>;
-	// template<class Key, class T>
-	// using map = ::std::map<Key, T, std::less<Key>, ::nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
+	// template<class Key, class T, class Hash = ::safe_memory::hash<Key>>
+	// using map = ::safe_memory::unordered_map<Key, T, Hash>;
+	template<class Key, class T>
+	using map = ::std::map<Key, T, std::less<Key>, ::nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
 
 	template<class Key, class T>
 	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::stdallocator<std::pair<const Key,T>>>;
 
-	using string = ::safe_memory::string;
-	// using string = ::std::basic_string<char, std::char_traits<char>, ::nodecpp::safememory::iiballocator<char>>;
+	// using string = ::safe_memory::string;
+	using string = ::std::basic_string<char, std::char_traits<char>, ::nodecpp::safememory::iiballocator<char>>;
 
 	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::stdallocator<char>>;
 
