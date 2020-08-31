@@ -88,6 +88,10 @@ namespace nodecpp {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ins.second );
 			}
 		}
+		void add( const nodecpp::string& key, const nodecpp::string_literal& val ) {
+			add(key, nodecpp::string(val));
+		}
+
 		const UrlQueryItem& operator [] ( const nodecpp::string& key ) {
 			auto f = parsed.find( key );
 			if ( f != parsed.end() )
@@ -95,19 +99,15 @@ namespace nodecpp {
 			return none;
 		}
 		const UrlQueryItem& operator [] ( const nodecpp::string_literal& key ) {
-			nodecpp::string s( key.c_str() );
-			auto f = parsed.find( s );
-			if ( f != parsed.end() )
-				return f->second;
-			return none;
+			return operator[](nodecpp::string(key));
 		}
-		const UrlQueryItem& operator [] ( const char* key ) {
-			nodecpp::string s( key );
-			auto f = parsed.find( s );
-			if ( f != parsed.end() )
-				return f->second;
-			return none;
-		}
+		// const UrlQueryItem& operator [] ( const char* key ) {
+		// 	nodecpp::string s( key );
+		// 	auto f = parsed.find( s );
+		// 	if ( f != parsed.end() )
+		// 		return f->second;
+		// 	return none;
+		// }
 	};
 
 	class Url {

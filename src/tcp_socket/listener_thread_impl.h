@@ -659,7 +659,9 @@ public:
 		while (running)
 		{
 			uint64_t now = infraGetCurrentTime();
+#ifdef USE_TEMP_PERF_CTRS
 			reportTimes( now );
+#endif
 			ioSockets.makeCompactIfNecessary();
 			bool refed = pollPhase2();
 			if(!refed)

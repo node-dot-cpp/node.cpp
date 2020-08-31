@@ -35,11 +35,13 @@ add_library(nodecpp_no_main STATIC
    	src/infrastructure.cpp
   	src/net.cpp
 #  	src/timers.cpp
-#    src/clustering_impl/clustering.cpp
+    src/clustering_impl/clustering.cpp
 #    src/logging_impl/logging.cpp
-#    src/tcp_socket/listener_thread.cpp
+    src/tcp_socket/listener_thread.cpp
     src/tcp_socket/tcp_socket.cpp
 )
+
+target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
 
 target_include_directories(nodecpp_no_main
   PUBLIC include
