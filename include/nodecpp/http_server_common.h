@@ -222,7 +222,7 @@ namespace nodecpp {
 				if ( ahd_request.h != nullptr )
 				{
 					auto hr = ahd_request.h;
-					nodecpp::setException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
+					nodecpp::setCoroException(hr, std::exception()); // TODO: switch to our exceptions ASAP!
 					ahd_request.h = nullptr;
 					hr();
 				}
@@ -251,15 +251,15 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
+						nodecpp::initCoroData(awaiting);
 						server.ahd_request.h = awaiting;
 						myawaiting = awaiting;
 					}
 
 					auto await_resume() {
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
+						if ( nodecpp::isCoroException(myawaiting) )
+							throw nodecpp::getCoroException(myawaiting);
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.request != nullptr ); 
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.response != nullptr ); 
 						request = server.ahd_request.request;
@@ -292,7 +292,7 @@ namespace nodecpp {
 					}
 
 					void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-						nodecpp::setNoException(awaiting);
+						nodecpp::initCoroData(awaiting);
 						server.ahd_request.h = awaiting;
 						myawaiting = awaiting;
 						to = nodecpp::setTimeoutForAction( server.ahd_request.h, period );
@@ -301,8 +301,8 @@ namespace nodecpp {
 					auto await_resume() {
 						nodecpp::clearTimeout( to );
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, myawaiting != nullptr ); 
-						if ( nodecpp::isException(myawaiting) )
-							throw nodecpp::getException(myawaiting);
+						if ( nodecpp::isCoroException(myawaiting) )
+							throw nodecpp::getCoroException(myawaiting);
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.request != nullptr ); 
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, server.ahd_request.response != nullptr ); 
 						request = server.ahd_request.request;
