@@ -30,15 +30,21 @@ class MySampleTNode : public NodeBase
 
 
 public:
-	void main()
+	nodecpp::handler_ret_type main()
 	{
 		log.level = nodecpp::log::LogLevel::info;
 		log.add( stdout );
 		nodecpp::logging_impl::currentLog = &log;
 
-		setHelloOrExit();
-
 		// TODO: place some code here, for instance...
+
+		for ( size_t i=0; i<3; ++i )
+		{
+			co_await a_sleep(300);
+			nodecpp::log::default_log::log( nodecpp::log::LogLevel::fatal, "sleeping..." );
+		}
+
+		setHelloOrExit();
 	}
 };
 

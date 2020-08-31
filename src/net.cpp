@@ -147,5 +147,10 @@ nodecpp::handler_ret_type nodecpp::a_timeout(uint32_t ms)
 	co_await ::a_timeout_impl( ms );
 	co_return;
 }
+nodecpp::handler_ret_type nodecpp::a_sleep(uint32_t ms)
+{
+	co_await ::a_timeout_impl( ms );
+	co_return;
+}
 #endif
 

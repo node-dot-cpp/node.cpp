@@ -101,6 +101,7 @@ namespace nodecpp
 
 #ifndef NODECPP_NO_COROUTINES
 	handler_ret_type a_timeout(uint32_t ms);
+	handler_ret_type a_sleep(uint32_t ms);
 #endif
 
 }
