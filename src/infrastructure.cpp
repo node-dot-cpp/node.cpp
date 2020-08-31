@@ -28,8 +28,8 @@
 #include "infrastructure.h"
 
 //#include <nodecpp/nls.h>
-#include "../../include/nodecpp/nls.h"
-#include "../../include/nodecpp/net_common.h"
+#include "../include/nodecpp/nls.h"
+#include "../include/nodecpp/net_common.h"
 
 #include <time.h>
 #include <climits>
