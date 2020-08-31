@@ -38,12 +38,12 @@
 #include <algorithm>
 
 #include <malloc_based_allocator.h>
-#include <safe_memory/safe_ptr.h>
+/*#include <safe_memory/safe_ptr.h>
 #include <safe_memory/vector.h>
 #include <safe_memory/unordered_map.h>
 #include <safe_memory/string.h>
 #include <safe_memory/string_literal.h>
-#include <safe_memory/string_format.h>
+#include <safe_memory/string_format.h>*/
 
 namespace nodecpp
 {
@@ -68,7 +68,27 @@ namespace nodecpp
 
 	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::stdallocator<char>>;
 
-	using string_literal = ::safe_memory::string_literal;
+//	using string_literal = ::safe_memory::string_literal;
+
+	class string_literal
+	{
+		const char* str;
+	public:
+		string_literal() : str( nullptr ) {}
+		string_literal( const char* str_) : str( str_ ) {}
+		string_literal( const string_literal& other ) : str( other.str ) {}
+		string_literal& operator = ( const string_literal& other ) {str = other.str; return *this;}
+		string_literal( string_literal&& other ) : str( other.str ) {}
+		string_literal& operator = ( string_literal&& other ) {str = other.str; return *this;}
+
+		bool operator == ( const string_literal& other ) const { return strcmp( str, other.str ) == 0; }
+		bool operator != ( const string_literal& other ) const { return strcmp( str, other.str ) != 0; }
+
+//		bool operator == ( const char* other ) const { return strcmp( str, other.str ) == 0; }
+//		bool operator != ( const char* other ) const { return strcmp( str, other.str ) != 0; }
+
+		const char* c_str() const { return str; }
+	};
 
 
 	template <typename... Args>
