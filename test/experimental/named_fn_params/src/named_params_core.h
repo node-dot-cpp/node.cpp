@@ -4,14 +4,14 @@
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * Neither the name of the OLogN Technologies AG nor the
-*       names of its contributors may be used to endorse or promote products
-*       derived from this software without specific prior written permission.
+*	 * Redistributions of source code must retain the above copyright
+*	   notice, this list of conditions and the following disclaimer.
+*	 * Redistributions in binary form must reproduce the above copyright
+*	   notice, this list of conditions and the following disclaimer in the
+*	   documentation and/or other materials provided with the distribution.
+*	 * Neither the name of the OLogN Technologies AG nor the
+*	   names of its contributors may be used to endorse or promote products
+*	   derived from this software without specific prior written permission.
 *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -30,6 +30,8 @@
 
 #include <tuple>
 #include <string>
+
+#include "compose_and_parse_impl.h"
 
 namespace m {
 
@@ -74,45 +76,81 @@ public:
 
 	using NameBase = NamedParameter<NameTag>;
 	using Name = typename NamedParameter<NameTag>::Name;
+	using Type = T;
 	using NamedParameter<NameTag>::TypeConverter;
 
-    template<class NameT, class DataT>
-    struct FullType
-    {
-        using NameTag = NameT;
-        using DataType = DataT;
-    };
+	template<class NameT, class DataT>
+	struct FullType
+	{
+		using NameTag = NameT;
+		using DataType = DataT;
+	};
 
-    using NameAndTypeID = FullType<NameTag, T>;
-    static constexpr NameAndTypeID nameAndTypeID = {};
+	using NameAndTypeID = FullType<NameTag, T>;
+	static constexpr NameAndTypeID nameAndTypeID = {};
 };
+
+template<typename NameT, typename DataT>
+struct ExpectedParameter
+{
+	using NameTag = NameT;
+	using DataType = DataT;
+};
+
 
 
 
 template<typename BaseT, typename Arg0, typename ... Args>
 void findMatch(const Arg0 arg0, const Args ... args)
 {
-    static_assert( std::is_same<BaseT::NameTag, Arg0::NameTag>::value == false, "same name used more than once" );
-    findMatch<BaseT>(args...);
+	static_assert( std::is_same<BaseT::NameTag, Arg0::NameTag>::value == false, "same name used more than once" );
+	findMatch<BaseT>(args...);
 }
 
 template<typename BaseT, typename Arg0>
 void findMatch(const Arg0 arg0)
 {
-    static_assert( std::is_same<BaseT::NameTag, Arg0::NameTag>::value == false, "same name used more than once" );
+	static_assert( std::is_same<BaseT::NameTag, Arg0::NameTag>::value == false, "same name used more than once" );
 }
 
 template<typename Arg0, typename ... Args>
 void ensureUniqueness(const Arg0 arg0, const Args ... args)
 {
-    findMatch<Arg0>(args...);
-    ensureUniqueness(args...);
+	findMatch<Arg0>(args...);
+	ensureUniqueness(args...);
 }
 
 template<typename Arg0>
 void ensureUniqueness(const Arg0 arg0)
 {
-    return;
+	return;
+}
+
+
+template<typename TypeToMatch, typename Arg0, typename ... Args>
+constexpr size_t isMatched(const Arg0, const Args ... args)
+{
+	if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
+		return 1;
+	else if constexpr ( std::is_same<TypeToMatch::Name, impl::SignedIntegralType>::value && std::is_integral<Arg0::NameTag>::value )
+		 return 1;
+	else if constexpr ( std::is_same<TypeToMatch::Name, impl::UnsignedIntegralType>::value && std::is_integral<Arg0::NameTag>::value )
+		 return 1;
+   else
+		return isMatched<TypeToMatch>(args...);
+}
+
+template<typename TypeToMatch, typename Arg0>
+constexpr size_t isMatched(const Arg0)
+{
+	if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
+		return 1;
+	else if constexpr ( std::is_same<TypeToMatch::Name, impl::SignedIntegralType>::value && std::is_integral<Arg0::NameTag>::value )
+		 return 1;
+	else if constexpr ( std::is_same<TypeToMatch::Name, impl::UnsignedIntegralType>::value && std::is_integral<Arg0::NameTag>::value )
+		 return 1;
+	else
+		return 0;
 }
 
 
@@ -120,13 +158,13 @@ void ensureUniqueness(const Arg0 arg0)
 template <class T>
 struct unwrap_refwrapper
 {
-    using type = T;
+	using type = T;
 };
  
 template <class T>
 struct unwrap_refwrapper<std::reference_wrapper<T>>
 {
-    using type = T&;
+	using type = T&;
 };
  
 template <class T>
@@ -135,46 +173,153 @@ using special_decay_t = typename unwrap_refwrapper<typename std::decay<T>::type>
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
 TypeToPick pickParam(Arg0&& arg0, Args&& ... args)
 {
-    if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value )
-        return arg0;
-    else
-        return pickParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(args...);
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			return SignedIntegralType( arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			 return UnsignedIntegralType( arg0.get() );
+		else
+			return arg0;
+	}
+	else
+		return pickParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(args...);
 }
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
 TypeToPick pickParam(Arg0&& arg0)
 {
-    if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value )
-        return arg0;
-    else
-    {
-        static_assert( !required, "required parameter" );
-        if constexpr ( std::is_same<AssumedDefaultT, DefaultT>::value )
-            return TypeToPick(defaultValue);
-        else
-            return TypeToPick( AssumedDefaultT(defaultValue) );
-    }
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			return SignedIntegralType( arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			 return UnsignedIntegralType( arg0.get() );
+		else
+			return arg0;
+	}
+	else
+	{
+		static_assert( !required, "required parameter" );
+		if constexpr ( std::is_same<AssumedDefaultT, DefaultT>::value )
+			return TypeToPick(defaultValue);
+		else
+			return TypeToPick( AssumedDefaultT(defaultValue) );
+	}
 }
 
+namespace impl {
 
-template<typename TypeToMatch, typename Arg0, typename ... Args>
-constexpr size_t isMatched(const Arg0, const Args ... args)
+// composing - general
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
+void composeParam(Buffer& b, Arg0&& arg0, Args&& ... args)
 {
-    if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
-        return 1;
-    else
-        return isMatched<TypeToMatch>(args...);
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			composeSignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			composeUnsignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, impl::StringType>::value )
+			composeString( b, arg0.get() );
+		else
+			static_assert( false, "unsupported type" );
+	}
+	else
+		return composeParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(b, args...);
 }
 
-template<typename TypeToMatch, typename Arg0>
-constexpr size_t isMatched(const Arg0)
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
+void composeParam(Buffer& b, Arg0&& arg0)
 {
-    if constexpr ( std::is_same<Arg0::NameTag, TypeToMatch::Name>::value )
-        return 1;
-    else
-        return 0;
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			composeSignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			composeUnsignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, impl::StringType>::value )
+			composeString( b, arg0.get() );
+		// TODO: add supported types here
+		else
+			static_assert( false, "unsupported type" );
+	}
+	else
+	{
+		static_assert( !required, "required parameter" );
+		if constexpr ( std::is_same<TypeToPick::Type, SignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeSignedInteger( b, defaultValue );
+		}
+		else if constexpr ( std::is_same<TypeToPick::Type, UnsignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeUnsignedInteger( b, defaultValue );
+		}
+		else if constexpr ( std::is_same<TypeToPick::Type, StringType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeString( b, defaultValue );
+		}
+		// TODO: add supported types here
+		else
+			static_assert( false, "unsupported type" );
+	}
 }
 
+
+
+// parsing - general
+
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
+void parseParam(Parser& p, Arg0* arg0, Args&& ... args)
+{
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<TypeToPick::Type, SignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			parseSignedInteger( p, arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, UnsignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			parseUnsignedInteger( p, arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, StringType>::value )
+			parseString( p, arg0.get() );
+		else
+			static_assert( false, "unsupported type" );
+	}
+	else
+		return parseParam<p, TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(p, args...);
+}
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
+void parseParam(Parser& p, Arg0&& arg0)
+{
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<TypeToPick::Type, SignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			parseSignedInteger( p, arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, UnsignedIntegralType>::value && std::is_integral<Agr0Type::Type>::value )
+			parseUnsignedInteger( p, arg0.get() );
+		else if constexpr ( std::is_same<TypeToPick::Type, StringType>::value )
+			parseString( p, arg0.get() );
+		// TODO: add supported types here
+		else
+			static_assert( false, "unsupported type" );
+	}
+	else
+	{
+		return;
+	}
+}
+
+} // namespace impl
 
 } // namespace m
 

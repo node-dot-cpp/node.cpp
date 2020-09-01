@@ -8,26 +8,32 @@
 
 int main()
 {
-    m::test2Call_A( m::firstParam = 1, m::secondParam = std::string("def"), m::thirdParam = 3 );
-    m::test2Call_A( m::thirdParam = 3, m::firstParam = 1, m::secondParam = std::string("def") );
-    m::test2Call_A( m::thirdParam = 3, m::secondParam = std::string("def"), m::firstParam = 1 );
-    printf( "=====================\n" );
-    m::test2Call_A( m::secondParam = std::string("def"), m::thirdParam = 3 );
-    m::test2Call_A( m::thirdParam = 3, m::firstParam = 1 );
-    m::test2Call_A( m::secondParam = std::string("def"), m::firstParam = 1 );
-    printf( "=====================\n" );
-    m::test2Call_B( m::firstParam = std::string("abc"), m::secondParam = std::string("def"), m::thirdParam = std::string("ghi") );
-    m::test2Call_B( m::thirdParam = std::string("ghi"), m::firstParam = std::string("abc"), m::secondParam = std::string("def") );
-    m::test2Call_B( m::thirdParam = std::string("ghi"), m::secondParam = std::string("def"), m::firstParam = std::string("abc") );
-    printf( "=====================\n" );
-    /*m::test2Call_B( m::secondParam = std::string("abc"), m::thirdParam = 3 );
-    m::test2Call_B( m::thirdParam = 3, m::firstParam = 1 );
-    m::test2Call_B( m::secondParam = std::string("abc"), m::firstParam = 1 );*/
-    m::test2Call_B( m::secondParam = std::string("def"), m::thirdParam = std::string("ghi") );
-    m::test2Call_B( m::thirdParam = std::string("ghi"), m::firstParam = std::string("abc") );
-    m::test2Call_B( m::secondParam = std::string("def"), m::firstParam = std::string("abc") );
-    printf( "=====================\n" );
-//    m::test2Call_B( m::thirdParam = std::string("ghi"), m::secondParam = std::string("def"), m::thirdParam = std::string("abc") );
-//    m::test2Call_B( m::thirdParam = std::string("ghi"), m::secondParam = std::string("def"), m::thirdParam = 3 );
-//    m::test2Call_B( m::thirdParam = 3, m::secondParam = std::string("def"), m::thirdParam = std::string("ghi") );
+	m::test2Call_A( m::firstParam = 1, m::secondParam = std::string("def"), m::thirdParam = 3 );
+	m::test2Call_A( m::thirdParam = 3, m::firstParam = 1, m::secondParam = std::string("def") );
+	m::test2Call_A( m::thirdParam = 3, m::secondParam = std::string("def"), m::firstParam = 1 );
+	printf( "=====================\n" );
+	m::test2Call_A( m::secondParam = std::string("def"), m::thirdParam = 3 );
+	m::test2Call_A( m::thirdParam = 3, m::firstParam = 1 );
+	m::test2Call_A( m::secondParam = std::string("def"), m::firstParam = 1 );
+	printf( "=====================\n" );
+	m::test2Call_B( m::firstParam = std::string("abc"), m::secondParam = std::string("def"), m::thirdParam = std::string("ghi") );
+	m::test2Call_B( m::thirdParam = std::string("ghi"), m::firstParam = std::string("abc"), m::secondParam = std::string("def") );
+	m::test2Call_B( m::thirdParam = std::string("ghi"), m::secondParam = std::string("def"), m::firstParam = std::string("abc") );
+	printf( "=====================\n" );
+	/*m::test2Call_B( m::secondParam = std::string("abc"), m::thirdParam = 3 );
+	m::test2Call_B( m::thirdParam = 3, m::firstParam = 1 );
+	m::test2Call_B( m::secondParam = std::string("abc"), m::firstParam = 1 );
+	printf( "=====================\n" );*/
+	m::test2Call_B( m::secondParam = std::string("def"), m::thirdParam = std::string("ghi") );
+	m::test2Call_B( m::thirdParam = std::string("ghi"), m::firstParam = std::string("abc") );
+	m::test2Call_B( m::secondParam = std::string("def"), m::firstParam = std::string("abc") );
+//	m::test2Call_B( m::thirdParam = std::string("ghi"), m::secondParam = std::string("def"), m::thirdParam = std::string("abc") );
+//	m::test2Call_B( m::thirdParam = std::string("ghi"), m::secondParam = std::string("def"), m::thirdParam = 3 );
+//	m::test2Call_B( m::thirdParam = 3, m::secondParam = std::string("def"), m::thirdParam = std::string("ghi") );
+	printf( "=====================\n" );
+	Buffer b;
+	m::test2Call_C_compose( b, m::firstParam = 1, m::secondParam = std::string("def"), m::thirdParam = 3 );
+	/*m::test2Call_C_compose( b, m::secondParam = std::string("def"), m::thirdParam = 3 );*/
+	m::test2Call_C_compose( b, m::thirdParam = (uint64_t)3, m::firstParam = (uint64_t)(uint64_t)(-1) );
+	m::test2Call_C_compose( b, m::secondParam = std::string("def"), m::firstParam = 1 );
 }

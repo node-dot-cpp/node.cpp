@@ -4,14 +4,14 @@
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * Neither the name of the OLogN Technologies AG nor the
-*       names of its contributors may be used to endorse or promote products
-*       derived from this software without specific prior written permission.
+*	 * Redistributions of source code must retain the above copyright
+*	   notice, this list of conditions and the following disclaimer.
+*	 * Redistributions in binary form must reproduce the above copyright
+*	   notice, this list of conditions and the following disclaimer in the
+*	   documentation and/or other materials provided with the distribution.
+*	 * Neither the name of the OLogN Technologies AG nor the
+*	   names of its contributors may be used to endorse or promote products
+*	   derived from this software without specific prior written permission.
 *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -38,12 +38,12 @@ static const ThirdParam::TypeConverter thirdParam;
 
 void test2Call_A_Impl( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp )
 {
-    printf( "Test 2: %d - %s - %d\n", fp.get(), sp.get().c_str(), tp.get() );
+	printf( "Test 2: %d - %s - %d\n", fp.get(), sp.get().c_str(), tp.get() );
 }
 
 void test2Call_B_Impl( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp )
 {
-    printf( "Test 2: %s - %s - %s\n", fp.get().c_str(), sp.get().c_str(), tp.get().c_str() );
+	printf( "Test 2: %s - %s - %s\n", fp.get().c_str(), sp.get().c_str(), tp.get().c_str() );
 }
 
 } // namespace m
