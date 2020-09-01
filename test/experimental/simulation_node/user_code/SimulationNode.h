@@ -53,6 +53,10 @@ public:
 		size_t sz = fs::FS::readSync( file, b, 0, 1024, std::optional<size_t>() );
 		b.appendUint8( 0 );
 		log::default_log::log( log::LogLevel::fatal, "{}", b.begin() );
+		log::default_log::log( log::LogLevel::fatal, "=========" );
+		b = fs::FS::readFileSync( path );
+		log::default_log::log( log::LogLevel::fatal, "{}", b.begin() );
+		log::default_log::log( log::LogLevel::fatal, "=========" );
 	}
 };
 

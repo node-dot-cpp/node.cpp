@@ -72,6 +72,17 @@ namespace nodecpp::fs
 				return ret;
 			}
 		}
+		static Buffer readFileSync( nodecpp::string path ) { 
+			auto fd = openSync( path, std::optional<string>(), std::optional<string>() );
+			fseek( fd.fd, 0, SEEK_END ); // restore
+			size_t sz = ftell( fd.fd );
+			fseek( fd.fd, 0, SEEK_SET );
+			Buffer b( sz );
+			size_t actualSz = fread( b.begin(), 1, sz, fd.fd );
+			b.set_size( sz );
+			closeSync( fd );
+			return b;
+		}
 		static void closeSync( FD fd ) { if ( fd.fd ) fclose( fd.fd ); }
 	};
 
