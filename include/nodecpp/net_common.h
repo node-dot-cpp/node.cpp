@@ -32,6 +32,7 @@
 #include "ip_and_port.h"
 #include "timers.h"
 #include "common_structs.h"
+
 namespace nodecpp {
 
 	class CircularByteBuffer
