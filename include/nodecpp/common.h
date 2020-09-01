@@ -87,6 +87,8 @@ using GlobalObjectAllocator = Mallocator<T>;
 
 namespace nodecpp
 {
+	enum CoroStandardOutcomes { ok, timeout, insufficient_buffer, in_progress, failed };
+
 #ifndef NODECPP_NO_COROUTINES
 	using handler_ret_type = ::nodecpp::awaitable<void>;
 #else
@@ -104,12 +106,25 @@ namespace nodecpp
 	handler_ret_type a_sleep(uint32_t ms);
 #endif
 
-}
+} // namespace nodecpp
 
 namespace nodecpp::net {
 	template< class ... args > class ServerTEmitter;
 	template< class ... args > class SocketTEmitter;
 } // namespace nodecpp::net
+
+namespace nodecpp
+{
+	template<class DataParentT>
+	class DataParent
+	{
+		DataParentT* parent = nullptr;
+	public:
+		DataParent() {}
+		DataParent(DataParentT* parent_) { parent = parent_; }
+		DataParentT* getDataParent() { return parent; }
+	};
+} // namespace nodecpp
 
 class NodeBase
 {

@@ -556,6 +556,8 @@
     <ClInclude Include="../../../../src\infrastructure.h" />
     <ClInclude Include="../../../../src\tcp_socket\tcp_socket.h" />
     <ClInclude Include="../../../../src\tcp_socket\tcp_socket_base.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\common_structs.h" />
+    <ClInclude Include="..\..\..\..\include\nodecpp\fs.h" />
     <ClInclude Include="..\user_code\SimulationNode.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
