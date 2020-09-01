@@ -15,7 +15,7 @@ class MySampleTNode : public NodeBase
 
 	int ctr = 5;
 
-	void setHelloOrExit()
+	void setHelloOrExit() // sample code with timeouts
 	{
 		if ( ctr )
 		{
@@ -48,13 +48,14 @@ public:
 		setHelloOrExit();
 
 		string_literal path( "../user_code/SimulationNode.cpp" );
-		auto file = fs::FS::openSync( path, std::optional<string>(), std::optional<string>() );
+		auto file = fs::openSync( path, std::optional<string>(), std::optional<string>() );
 		Buffer b;
-		size_t sz = fs::FS::readSync( file, b, 0, 1024, std::optional<size_t>() );
+		size_t sz = fs::readSync( file, b, 0, 50, std::optional<size_t>(3) );
 		b.appendUint8( 0 );
 		log::default_log::log( log::LogLevel::fatal, "{}", b.begin() );
 		log::default_log::log( log::LogLevel::fatal, "=========" );
-		b = fs::FS::readFileSync( path );
+
+		b = fs::readFileSync( path );
 		log::default_log::log( log::LogLevel::fatal, "{}", b.begin() );
 		log::default_log::log( log::LogLevel::fatal, "=========" );
 	}

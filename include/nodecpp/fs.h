@@ -34,57 +34,58 @@
 
 namespace nodecpp::fs
 {
-	class FS;
 	class FD
 	{
-		friend class FS;
+		friend FD openSync( nodecpp::string path, std::optional<nodecpp::string> flags, std::optional<nodecpp::string> mode );
+		friend size_t readSync( FD fd, Buffer& b, size_t offset, size_t length, std::optional<size_t> position );
+		friend void closeSync( FD fd );
+		friend Buffer readFileSync( nodecpp::string path );
 		FILE* fd = nullptr;
 	};
 
-	class FS
-	{
-	public:
-		static FD openSync( nodecpp::string path, std::optional<nodecpp::string> flags, std::optional<nodecpp::string> mode ) { 
-			FD fd; 
-			fd.fd = fopen( path.c_str(), flags.has_value() ? flags.value().c_str() : "r" ); 
-			return fd;
+	FD openSync( nodecpp::string path, std::optional<nodecpp::string> flags, std::optional<nodecpp::string> mode ) { 
+		FD fd; 
+		fd.fd = fopen( path.c_str(), flags.has_value() ? flags.value().c_str() : "r" ); 
+		return fd;
+	}
+
+	size_t readSync( FD fd, Buffer& b, size_t offset, size_t length, std::optional<size_t> position ) { 
+		if ( position.has_value() )
+		{
+			size_t currPos = ftell( fd.fd );
+			fseek( fd.fd, position.value(), SEEK_SET );
+			if ( b.capacity() < offset + length )
+				b.reserve( offset + length );
+			size_t ret = fread( b.begin() + offset, 1, length, fd.fd );
+			fseek( fd.fd, currPos, SEEK_SET ); // restore
+			if ( b.size() < offset + length )
+				b.set_size( offset + length );
+			return ret;
 		}
-		static size_t readSync( FD fd, Buffer& b, size_t offset, size_t length, std::optional<size_t> position ) { 
-			if ( position.has_value() )
-			{
-				size_t currPos = ftell( fd.fd );
-				fseek( fd.fd, position.value(), SEEK_SET );
-				if ( b.capacity() < offset + length )
-					b.reserve( offset + length );
-				size_t ret = fread( b.begin() + offset, 1, length, fd.fd );
-				fseek( fd.fd, currPos, SEEK_SET ); // restore
-				if ( b.size() < offset + length )
-					b.set_size( offset + length );
-				return ret;
-			}
-			else
-			{
-				if ( b.capacity() < offset + length )
-					b.reserve( offset + length );
-				size_t ret = fread( b.begin() + offset, 1, length, fd.fd );
-				if ( b.size() < offset + length )
-					b.set_size( offset + length );
-				return ret;
-			}
+		else
+		{
+			if ( b.capacity() < offset + length )
+				b.reserve( offset + length );
+			size_t ret = fread( b.begin() + offset, 1, length, fd.fd );
+			if ( b.size() < offset + length )
+				b.set_size( offset + length );
+			return ret;
 		}
-		static Buffer readFileSync( nodecpp::string path ) { 
-			auto fd = openSync( path, std::optional<string>(), std::optional<string>() );
-			fseek( fd.fd, 0, SEEK_END ); // restore
-			size_t sz = ftell( fd.fd );
-			fseek( fd.fd, 0, SEEK_SET );
-			Buffer b( sz );
-			size_t actualSz = fread( b.begin(), 1, sz, fd.fd );
-			b.set_size( sz );
-			closeSync( fd );
-			return b;
-		}
-		static void closeSync( FD fd ) { if ( fd.fd ) fclose( fd.fd ); }
-	};
+	}
+
+	Buffer readFileSync( nodecpp::string path ) { 
+		auto fd = openSync( path, std::optional<string>(), std::optional<string>() );
+		fseek( fd.fd, 0, SEEK_END ); // restore
+		size_t sz = ftell( fd.fd );
+		fseek( fd.fd, 0, SEEK_SET );
+		Buffer b( sz );
+		size_t actualSz = fread( b.begin(), 1, sz, fd.fd );
+		b.set_size( sz );
+		closeSync( fd );
+		return b;
+	}
+
+	void closeSync( FD fd ) { if ( fd.fd ) fclose( fd.fd ); }
 
 } // namespace nodecpp
 
