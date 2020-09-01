@@ -529,6 +529,8 @@
     <ClCompile Include="../../../../src\net.cpp" />
     <ClCompile Include="../../../../src\tcp_socket\listener_thread.cpp" />
     <ClCompile Include="../../../../src\tcp_socket\tcp_socket.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\hashtable.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\string.cpp" />
     <ClCompile Include="..\user_code\SimulationNode.cpp" />
   </ItemGroup>
   <ItemGroup>

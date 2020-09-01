@@ -513,6 +513,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\safe_memory\library\src\EASTL\hashtable.cpp" />
+    <ClCompile Include="..\..\..\safe_memory\library\src\EASTL\string.cpp" />
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc" />
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\cpu_exceptions_translator.cpp" />
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\log.cpp" />
