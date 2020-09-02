@@ -5,46 +5,59 @@
 
 #include <nodecpp/common.h>
 #include <log.h>
+#include <nodecpp/fs.h>
 
 using namespace nodecpp;
 
 class MySampleTNode : public NodeBase
 {
-	nodecpp::log::Log log;
+	log::Log log;
 
 	int ctr = 5;
 
-	void setHelloOrExit()
+	void setHelloOrExit() // sample code with timeouts
 	{
 		if ( ctr )
 		{
-			nodecpp::log::default_log::log( nodecpp::log::LogLevel::fatal, "{}. Hello Node.Cpp!", ctr );
+			log::default_log::log( log::LogLevel::info, "{}. Hello Node.Cpp!", ctr );
 			setTimeout( [this]() { 
 				setHelloOrExit();
 			}, 500 );
 		}
 		else
-			nodecpp::log::default_log::log( nodecpp::log::LogLevel::fatal, "{}................", ctr );
+			log::default_log::log( log::LogLevel::fatal, "{}................", ctr );
 		--ctr;
 	}
 
 
 public:
-	nodecpp::handler_ret_type main()
+	handler_ret_type main()
 	{
-		log.level = nodecpp::log::LogLevel::info;
+		log.level = log::LogLevel::info;
 		log.add( stdout );
-		nodecpp::logging_impl::currentLog = &log;
+		logging_impl::currentLog = &log;
 
 		// TODO: place some code here, for instance...
 
 		for ( size_t i=0; i<3; ++i )
 		{
 			co_await a_sleep(300);
-			nodecpp::log::default_log::log( nodecpp::log::LogLevel::fatal, "sleeping..." );
+			log::default_log::log( log::LogLevel::fatal, "sleeping..." );
 		}
 
 		setHelloOrExit();
+
+		string_literal path( "../user_code/SimulationNode.cpp" );
+		auto file = fs::openSync( path, std::optional<string>(), std::optional<string>() );
+		Buffer b;
+		size_t sz = fs::readSync( file, b, 0, 50, std::optional<size_t>(3) );
+		b.appendUint8( 0 );
+		log::default_log::log( log::LogLevel::fatal, "{}", b.begin() );
+		log::default_log::log( log::LogLevel::fatal, "=========" );
+
+		b = fs::readFileSync( path );
+		log::default_log::log( log::LogLevel::fatal, "{}", b.begin() );
+		log::default_log::log( log::LogLevel::fatal, "=========" );
 	}
 };
 

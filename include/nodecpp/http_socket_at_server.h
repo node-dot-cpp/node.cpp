@@ -146,10 +146,10 @@ namespace nodecpp {
 			}
 
 			//quick overload fix because safe_memory::string doesn't support assign from ptr
-			template<class T, class U>
+			/*template<class T, class U>
 			void assignLineBuffer(std::basic_string<char, T, U>& line) {
 				line = nodecpp::string( (const char*)(lineBuffer.begin()), lineBuffer.size() );
-			}
+			}*/
 
 			void assignLineBuffer(safe_memory::string& line) {
 				line.assign_unsafe( (const char*)(lineBuffer.begin()), lineBuffer.size() );
