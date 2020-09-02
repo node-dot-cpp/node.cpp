@@ -772,7 +772,7 @@ namespace nodecpp {
 						nodecpp::initCoroData(awaiting);
 						myawaiting = awaiting;
 						server.dataForCommandProcessing.ahd_close = awaiting;
-						to = nodecpp::setTimeoutForAction( &(server.dataForCommandProcessing.ahd_close), period );
+						to = nodecpp::setTimeoutForAction( server.dataForCommandProcessing.ahd_close, period );
 					}
 
 					::nodecpp::awaitable<::nodecpp::CoroStandardOutcomes> await_resume() {
