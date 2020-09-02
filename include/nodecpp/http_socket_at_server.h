@@ -145,23 +145,18 @@ namespace nodecpp {
 				return continue_getting_awaiter(*this);
 			}
 
-			//quick overload fix because safe_memory::string doesn't support assign from ptr
-			/*template<class T, class U>
-			void assignLineBuffer(std::basic_string<char, T, U>& line) {
-				line = nodecpp::string( (const char*)(lineBuffer.begin()), lineBuffer.size() );
-			}*/
-
-			void assignLineBuffer(safe_memory::string& line) {
-				line.assign_unsafe( (const char*)(lineBuffer.begin()), lineBuffer.size() );
-			}
-
 			::nodecpp::awaitable<CoroStandardOutcomes> readLine(nodecpp::string& line)
 			{
 				lineBuffer.clear();
 				CoroStandardOutcomes ret = co_await a_readUntil( lineBuffer, '\n' );
 				if ( ret == CoroStandardOutcomes::ok )
 				{
-					assignLineBuffer(line);
+#ifdef NODECPP_USE_SAFE_MEMORY_CONTAINERS					
+					line.assign_unsafe( (const char*)(lineBuffer.begin()), lineBuffer.size() );
+#else
+					line.assign( (const char*)(lineBuffer.begin()), lineBuffer.size() );
+#endif // NODECPP_USE_SAFE_MEMORY_CONTAINERS					
+
 					CO_RETURN CoroStandardOutcomes::ok;
 				}
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == CoroStandardOutcomes::insufficient_buffer ); 

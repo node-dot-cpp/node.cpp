@@ -38,58 +38,71 @@
 #include <algorithm>
 
 #include <malloc_based_allocator.h>
+
+//#define NODECPP_USE_SAFE_MEMORY_CONTAINERS
+
+#ifdef NODECPP_USE_SAFE_MEMORY_CONTAINERS
 #include <safe_memory/safe_ptr.h>
 #include <safe_memory/vector.h>
 #include <safe_memory/unordered_map.h>
 #include <safe_memory/string.h>
 #include <safe_memory/string_literal.h>
 #include <safe_memory/string_format.h>
+#endif // NODECPP_USE_SAFE_MEMORY_CONTAINERS
 
 namespace nodecpp
 {
 	template<class T>
-	using vector = ::safe_memory::vector<T>;
-	// template<class T>
-	// using vector = ::std::vector<T, ::nodecpp::safememory::iiballocator<T>>;
-
-	template<class T>
 	using stdvector = ::std::vector<T, nodecpp::stdallocator<T>>;
-
-	template<class Key, class T, class Hash = ::safe_memory::hash<Key>>
-	using map = ::safe_memory::unordered_map<Key, T, Hash>;
-	// template<class Key, class T>
-	// using map = ::std::map<Key, T, std::less<Key>, ::nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
 
 	template<class Key, class T>
 	using stdmap = ::std::map<Key, T, std::less<Key>, nodecpp::stdallocator<std::pair<const Key,T>>>;
 
-	using string = ::safe_memory::string;
-	// using string = ::std::basic_string<char, std::char_traits<char>, ::nodecpp::safememory::iiballocator<char>>;
-
 	using stdstring = ::std::basic_string<char, std::char_traits<char>, nodecpp::stdallocator<char>>;
+
+#ifdef NODECPP_USE_SAFE_MEMORY_CONTAINERS
+
+	template<class T>
+	using vector = ::safe_memory::vector<T>;
+
+	template<class Key, class T, class Hash = ::safe_memory::hash<Key>>
+	using map = ::safe_memory::unordered_map<Key, T, Hash>;
+
+	using string = ::safe_memory::string;
 
 	using string_literal = ::safe_memory::string_literal;
 
-// 	class string_literal
-// 	{
-// 		const char* str;
-// 	public:
-// 		string_literal() : str( nullptr ) {}
-// 		string_literal( const char* str_) : str( str_ ) {}
-// 		string_literal( const string_literal& other ) : str( other.str ) {}
-// 		string_literal& operator = ( const string_literal& other ) {str = other.str; return *this;}
-// 		string_literal( string_literal&& other ) : str( other.str ) {}
-// 		string_literal& operator = ( string_literal&& other ) {str = other.str; return *this;}
+#else
 
-// 		bool operator == ( const string_literal& other ) const { return strcmp( str, other.str ) == 0; }
-// 		bool operator != ( const string_literal& other ) const { return strcmp( str, other.str ) != 0; }
+	template<class T>
+	using vector = ::std::vector<T, ::nodecpp::safememory::iiballocator<T>>;
 
-// //		bool operator == ( const char* other ) const { return strcmp( str, other.str ) == 0; }
-// //		bool operator != ( const char* other ) const { return strcmp( str, other.str ) != 0; }
+	template<class Key, class T>
+	using map = ::std::map<Key, T, std::less<Key>, ::nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
 
-// 		const char* c_str() const { return str; }
-// 	};
+	using string = ::std::basic_string<char, std::char_traits<char>, ::nodecpp::safememory::iiballocator<char>>;
 
+	class string_literal
+	{
+		const char* str;
+	public:
+		string_literal() : str( nullptr ) {}
+		string_literal( const char* str_) : str( str_ ) {}
+		string_literal( const string_literal& other ) : str( other.str ) {}
+		string_literal& operator = ( const string_literal& other ) {str = other.str; return *this;}
+		string_literal( string_literal&& other ) : str( other.str ) {}
+		string_literal& operator = ( string_literal&& other ) {str = other.str; return *this;}
+
+		bool operator == ( const string_literal& other ) const { return strcmp( str, other.str ) == 0; }
+		bool operator != ( const string_literal& other ) const { return strcmp( str, other.str ) != 0; }
+
+//		bool operator == ( const char* other ) const { return strcmp( str, other.str ) == 0; }
+//		bool operator != ( const char* other ) const { return strcmp( str, other.str ) != 0; }
+
+		const char* c_str() const { return str; }
+	};
+
+#endif // NODECPP_USE_SAFE_MEMORY_CONTAINERS
 
 	template <typename... Args>
 	inline nodecpp::string format(
