@@ -531,6 +531,7 @@
     <ClCompile Include="../../../../src\tcp_socket\tcp_socket.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\hashtable.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\string.cpp" />
+    <ClCompile Include="..\..\..\..\src\fs.cpp" />
     <ClCompile Include="..\user_code\SimulationNode.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -540,8 +541,6 @@
     <ClInclude Include="../../../../include\nodecpp\error.h" />
     <ClInclude Include="../../../../include\nodecpp\event.h" />
     <ClInclude Include="../../../../include\nodecpp\http_socket_at_server.h" />
-    <ClInclude Include="../../../../include\nodecpp\simulation_node.h" />
-    <ClInclude Include="../../../../include\nodecpp\simulation_node_common.h" />
     <ClInclude Include="../../../../include\nodecpp\ip_and_port.h" />
     <ClInclude Include="../../../../include\nodecpp\logging.h" />
     <ClInclude Include="../../../../include\nodecpp\mallocator.h" />

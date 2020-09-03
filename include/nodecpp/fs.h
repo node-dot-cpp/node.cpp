@@ -25,6 +25,9 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+// NOTE: currently it's just a sketch supporting a few interface calls
+// TODO: actual implementation
+
 #ifndef FILE_SYSTEM_H
 #define FILE_SYSTEM_H
 
@@ -34,21 +37,34 @@
 
 namespace nodecpp::fs
 {
+	class FD;
+
+	namespace impl
+	{
+		FD openSync( const char* path, std::optional<nodecpp::string> flags, std::optional<nodecpp::string> mode );
+		Buffer readFileSync( const char* path );
+	} // namespace impl
+
 	class FD
 	{
-		friend FD openSync( nodecpp::string path, std::optional<nodecpp::string> flags, std::optional<nodecpp::string> mode );
+		friend FD impl::openSync( const char* path, std::optional<nodecpp::string> flags, std::optional<nodecpp::string> mode );
 		friend size_t readSync( FD fd, Buffer& b, size_t offset, size_t length, std::optional<size_t> position );
 		friend void closeSync( FD fd );
-		friend Buffer readFileSync( nodecpp::string path );
+		friend Buffer impl::readFileSync( const char* path );
 		FILE* fd = nullptr;
 	};
 
+	inline
 	FD openSync( nodecpp::string path, std::optional<nodecpp::string> flags, std::optional<nodecpp::string> mode ) { 
-		FD fd; 
-		fd.fd = fopen( path.c_str(), flags.has_value() ? flags.value().c_str() : "r" ); 
-		return fd;
+		return impl::openSync( path.c_str(), flags, mode );
 	}
 
+	inline
+	FD openSync( nodecpp::string_literal path, std::optional<nodecpp::string> flags, std::optional<nodecpp::string> mode ) { 
+		return impl::openSync( path.c_str(), flags, mode );
+	}
+
+	inline
 	size_t readSync( FD fd, Buffer& b, size_t offset, size_t length, std::optional<size_t> position ) { 
 		if ( position.has_value() )
 		{
@@ -73,18 +89,17 @@ namespace nodecpp::fs
 		}
 	}
 
+	inline
 	Buffer readFileSync( nodecpp::string path ) { 
-		auto fd = openSync( path, std::optional<string>(), std::optional<string>() );
-		fseek( fd.fd, 0, SEEK_END ); // restore
-		size_t sz = ftell( fd.fd );
-		fseek( fd.fd, 0, SEEK_SET );
-		Buffer b( sz );
-		size_t actualSz = fread( b.begin(), 1, sz, fd.fd );
-		b.set_size( sz );
-		closeSync( fd );
-		return b;
+		return impl::readFileSync( path.c_str() );
 	}
 
+	inline
+	Buffer readFileSync( nodecpp::string_literal path ) { 
+		return impl::readFileSync( path.c_str() );
+	}
+
+	inline
 	void closeSync( FD fd ) { if ( fd.fd ) fclose( fd.fd ); }
 
 } // namespace nodecpp
