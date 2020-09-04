@@ -29,7 +29,7 @@
 #define COMPOSE_AND_PARSE_IMPL_H
 
 #include <type_traits>
-#include "../../../../include/nodecpp/net_common.h" // for Buffer
+#include "../../../../include/nodecpp/common_structs.h" // for Buffer
 #include <assert.h> // TODO: replace by nodecpp assertion system
 
 using Buffer = nodecpp::Buffer;
@@ -50,8 +50,8 @@ struct StringType {};
 template <typename T>
 void composeSignedInteger( Buffer& b, T num )
 {
-	static_assert( std::is_integral<T>::val );
-	if constexpr ( std::is_unsigned && sizeof( T ) >= integer_max_size )
+	static_assert( std::is_integral<T>::value );
+	if constexpr ( std::is_unsigned<T>::value && sizeof( T ) >= integer_max_size )
 	{
 		assert( num <= INT64_MAX );
 	}
@@ -61,7 +61,7 @@ void composeSignedInteger( Buffer& b, T num )
 template <typename T>
 void composeUnsignedInteger( Buffer& b, T num )
 {
-	if constexpr ( std::is_signed< T>::value )
+	if constexpr ( std::is_signed<T>::value )
 	{
 		assert( num >= 0 );
 	}
@@ -69,7 +69,7 @@ void composeUnsignedInteger( Buffer& b, T num )
 }
 
 inline
-void composeString( Buffer& b, const String& str )
+void composeString( Buffer& b, const nodecpp::string& str )
 {
 	b.appendString( str );
 	b.appendUint8( 0 );
@@ -104,8 +104,9 @@ public:
 	template <typename T>
 	void parseSignedInteger( T* num )
 	{
-		static_assert( std::is_integral<T>::val );
-		/*temporary solution TODO: actauls implementation*/ int64_t val = *reinterpret_cast<int64_t*>(begin); begin + sizeof( val );
+		static_assert( sizeof( T ) <= integer_max_size );
+		static_assert( std::is_integral<T>::value );
+		/*temporary solution TODO: actauls implementation*/ int64_t val = *reinterpret_cast<int64_t*>(begin); begin += sizeof( val );
 		static_assert( integer_max_size == 8, "revise implementation otherwise" );
 		if constexpr ( std::is_signed< T >::value )
 		{
@@ -127,7 +128,7 @@ public:
 				*num = val;
 			}
 			else
-				static_assert( false );
+				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 		else
 		{
@@ -152,15 +153,16 @@ public:
 				*num = val;
 			}
 			else
-				static_assert( false );
+				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 	}
 
 	template <typename T>
 	void parseUnsignedInteger( T* num )
 	{
-		static_assert( std::is_integral<T>::val );
-		/*temporary solution TODO: actauls implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin + sizeof( val );
+		static_assert( sizeof( T ) <= integer_max_size );
+		static_assert( std::is_integral<T>::value );
+		/*temporary solution TODO: actauls implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += sizeof( val );
 		static_assert( integer_max_size == 8, "revise implementation otherwise" );
 		if constexpr ( std::is_unsigned< T >::value )
 		{
@@ -182,7 +184,7 @@ public:
 				*num = val;
 			}
 			else
-				static_assert( false );
+				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 		else
 		{
@@ -207,7 +209,7 @@ public:
 				*num = val;
 			}
 			else
-				static_assert( false );
+				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 	}
 
