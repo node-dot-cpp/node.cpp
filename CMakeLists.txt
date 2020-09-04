@@ -42,6 +42,7 @@ add_library(nodecpp_no_main STATIC
 )
 
 target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
+#target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
 
 target_include_directories(nodecpp_no_main
   PUBLIC include
