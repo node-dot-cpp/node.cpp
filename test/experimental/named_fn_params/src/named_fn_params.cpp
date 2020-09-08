@@ -8,6 +8,7 @@
 
 int main()
 {
+#if 0
 	m::test2Call_A( m::firstParam = 1, m::secondParam = std::string("def"), m::thirdParam = 3 );
 	m::test2Call_A( m::thirdParam = 3, m::firstParam = 1, m::secondParam = std::string("def") );
 	m::test2Call_A( m::thirdParam = 3, m::secondParam = std::string("def"), m::firstParam = 1 );
@@ -31,9 +32,10 @@ int main()
 //	m::test2Call_B( m::thirdParam = std::string("ghi"), m::secondParam = std::string("def"), m::thirdParam = 3 );
 //	m::test2Call_B( m::thirdParam = 3, m::secondParam = std::string("def"), m::thirdParam = std::string("ghi") );
 	printf( "=====================\n" );
-	Buffer b;
+#endif // 0
+	nodecpp::Buffer b;
 	m::test2Call_C_compose( b, m::firstParam = 1, m::secondParam = std::string("def"), m::thirdParam = 3 );
-	/*m::test2Call_C_compose( b, m::secondParam = std::string("def"), m::thirdParam = 3 );*/
+	m::test2Call_C_compose( b, m::secondParam = std::string("def"), m::thirdParam = 3 );
 	m::test2Call_C_compose( b, m::thirdParam = (uint64_t)3, m::firstParam = (uint64_t)(uint64_t)(-1) );
 	m::test2Call_C_compose( b, m::secondParam = std::string("def"), m::firstParam = 1 );
 }

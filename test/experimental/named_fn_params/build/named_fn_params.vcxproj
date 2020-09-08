@@ -29,6 +29,7 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp" />
     <ClCompile Include="..\src\named_fn_params.cpp" />
     <ClCompile Include="..\src\test_2.cpp" />
   </ItemGroup>

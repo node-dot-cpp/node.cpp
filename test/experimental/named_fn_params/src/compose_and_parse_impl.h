@@ -40,9 +40,17 @@ namespace m::impl {
 static constexpr size_t integer_max_size = 8;
 
 // supported types
-struct SignedIntegralType {};
-struct UnsignedIntegralType {};
-struct StringType {};
+struct SignedIntegralType {static constexpr bool dummy = false;};
+struct UnsignedIntegralType {int d = 0;};
+struct StringType {static constexpr bool dummy = false;};
+
+// helper types
+
+struct StringLiteralForComposing
+{
+	const char* str;
+	size_t size;
+};
 
 
 // composing
@@ -55,7 +63,11 @@ void composeSignedInteger( Buffer& b, T num )
 	{
 		assert( num <= INT64_MAX );
 	}
-	/*temporary solution TODO: actauls implementation*/ { int64_t val = num; b.append( &val, sizeof( val ) ); }
+	/*temporary solution TODO: actauls implementation*/ { 
+		int64_t val = num; 
+		b.append( &val, sizeof( val ) );
+		printf( "composeSignedInteger(%zd\n", val );
+	}
 }
 
 template <typename T>
@@ -65,7 +77,11 @@ void composeUnsignedInteger( Buffer& b, T num )
 	{
 		assert( num >= 0 );
 	}
-	/*temporary solution TODO: actauls implementation*/ { uint64_t val = num; b.append( &val, sizeof( val ) ); }
+	/*temporary solution TODO: actauls implementation*/ { 
+		uint64_t val = num; 
+		b.append( &val, sizeof( val ) );
+		printf( "composeSignedInteger(%zd\n", val );
+	}
 }
 
 inline
@@ -73,6 +89,15 @@ void composeString( Buffer& b, const nodecpp::string& str )
 {
 	b.appendString( str );
 	b.appendUint8( 0 );
+	printf( "composeString(nodecpp::string \"%s\"\n", str.c_str() );
+}
+
+inline
+void composeString( Buffer& b, const StringLiteralForComposing str )
+{
+	b.append( str.str, str.size );
+	b.appendUint8( 0 );
+	printf( "composeString(StringLiteralForComposing \"%s\"\n", str.str );
 }
 
 inline
@@ -80,14 +105,17 @@ void composeString( Buffer& b, std::string str )
 {
 	b.append( str.c_str(), str.size() );
 	b.appendUint8( 0 );
+	printf( "composeString(std::string \"%s\"\n", str.c_str() );
 }
 
 inline
-void composeString( Buffer& b, const char* str, size_t sz )
+void composeString( Buffer& b, const char* str )
 {
+	size_t sz = strlen( str );
 	b.append( str, sz );
 	b.appendUint8( 0 );
 	b.appendUint8( 0 );
+	printf( "composeString(const char* \"%s\"\n", str );
 }
 
 // parsing

@@ -77,7 +77,7 @@ public:
 	using NameBase = NamedParameter<NameTag_>;
 	using Name = typename NamedParameter<NameTag_>::Name;
 	using Type = T;
-	using NamedParameter<NameTag_>::TypeConverter;
+	using typename NamedParameter<NameTag_>::TypeConverter;
 
 	template<class NameT, class DataT>
 	struct FullType
@@ -130,29 +130,22 @@ void ensureUniqueness(const Arg0 arg0)
 
 
 template<typename TypeToMatch, typename Arg0, typename ... Args>
-constexpr size_t isMatched(const Arg0, const Args ... args)
+constexpr size_t isMatched(const TypeToMatch matcher, const Arg0, const Args ... args)
 {
-	if constexpr ( std::is_same<typename Arg0::NameTag, typename TypeToMatch::Name>::value )
+	if constexpr ( std::is_same<typename Arg0::NameTag, typename TypeToMatch::NameTag>::value )
 		return 1;
-	else if constexpr ( std::is_same<typename TypeToMatch::Name, impl::SignedIntegralType>::value && std::is_integral<typename Arg0::NameTag>::value )
+	else if constexpr ( std::is_same<typename TypeToMatch::NameTag, impl::SignedIntegralType>::value && std::is_integral<typename Arg0::NameTag>::value )
 		 return 1;
-	else if constexpr ( std::is_same<typename TypeToMatch::Name, impl::UnsignedIntegralType>::value && std::is_integral<typename Arg0::NameTag>::value )
+	else if constexpr ( std::is_same<typename TypeToMatch::NameTag, impl::UnsignedIntegralType>::value && std::is_integral<typename Arg0::NameTag>::value )
 		 return 1;
    else
-		return isMatched<TypeToMatch>(args...);
+		return isMatched<TypeToMatch>(matcher, args...);
 }
 
-template<typename TypeToMatch, typename Arg0>
-constexpr size_t isMatched(const Arg0)
+template<typename TypeToMatch>
+constexpr size_t isMatched(const TypeToMatch matcher)
 {
-	if constexpr ( std::is_same<typename Arg0::NameTag, typename TypeToMatch::Name>::value )
-		return 1;
-	else if constexpr ( std::is_same<typename TypeToMatch::Name, impl::SignedIntegralType>::value && std::is_integral<typename Arg0::NameTag>::value )
-		 return 1;
-	else if constexpr ( std::is_same<typename TypeToMatch::Name, impl::UnsignedIntegralType>::value && std::is_integral<typename Arg0::NameTag>::value )
-		 return 1;
-	else
-		return 0;
+	return 0;
 }
 
 
@@ -173,7 +166,7 @@ template <class T>
 using special_decay_t = typename unwrap_refwrapper<typename std::decay<T>::type>::type;
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
-TypeToPick pickParam(Arg0&& arg0, Args&& ... args)
+TypeToPick pickParam(::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)
 {
 	using Agr0Type = special_decay_t<Arg0>;
 	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
@@ -186,11 +179,11 @@ TypeToPick pickParam(Arg0&& arg0, Args&& ... args)
 			return arg0;
 	}
 	else
-		return pickParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(args...);
+		return pickParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(b, args...);
 }
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
-TypeToPick pickParam(Arg0&& arg0)
+TypeToPick pickParam(::nodecpp::Buffer& b, Arg0&& arg0)
 {
 	using Agr0Type = special_decay_t<Arg0>;
 	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
@@ -217,10 +210,10 @@ namespace impl {
 // composing - general
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
-void composeParam(Buffer& b, Arg0&& arg0, Args&& ... args)
+void composeParam(::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)
 {
-	/*using Agr0Type = special_decay_t<Arg0>;
-	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, TypeToPick::Name>::value ) // same parameter name
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
 	{
 		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
 			composeSignedInteger( b, arg0.get() );
@@ -231,18 +224,40 @@ void composeParam(Buffer& b, Arg0&& arg0, Args&& ... args)
 		else
 			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
 	}
-	else*/
-		return composeParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(b, args...);
+	else
+		composeParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(b, args...);
+//		return composeParam(b, args...);
 }
 
-template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
-void composeParam(Buffer& b, Arg0&& arg0)
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue>
+//template<typename Arg0>
+void composeParam(::nodecpp::Buffer& b)
 {
+		static_assert( !required, "required parameter" );
+		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeSignedInteger( b, defaultValue );
+		}
+		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeUnsignedInteger( b, defaultValue );
+		}
+		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeString( b, defaultValue );
+		}
+		// TODO: add supported types here
+		else
+			static_assert( std::is_same<typename TypeToPick::Type, AllowedDataType>::value, "unsupported type" );
+
 #if 0
 	using Agr0Type = special_decay_t<Arg0>;
-	if constexpr ( std::is_same<special_decay_t<Arg0>::Name, TypeToPick::Name>::value ) // same parameter name
+	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
 	{
-		/*if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+		/**/if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
 			composeSignedInteger( b, arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
 			composeUnsignedInteger( b, arg0.get() );
@@ -251,7 +266,7 @@ void composeParam(Buffer& b, Arg0&& arg0)
 		// TODO: add supported types here
 		else
 			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
-			*/
+			
 	}
 	else
 	{
@@ -300,7 +315,7 @@ void parseParam(Parser& p, Arg0* arg0, Args&& ... args)
 			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
 	}
 	else
-		return parseParam<p, TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(p, args...);
+		parseParam<p, TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(p, args...);
 }
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
@@ -324,6 +339,120 @@ void parseParam(Parser& p, Arg0&& arg0)
 		return;
 	}
 }
+
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
+void composeParam2(::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)
+{
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+			composeSignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+			composeUnsignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
+			composeString( b, arg0.get() );
+		else
+			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
+	}
+	else
+		composeParam2<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(b, args...);
+}
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
+void composeParam2(::nodecpp::Buffer& b, Arg0&& arg0)
+{
+#if 1
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
+	{
+		/**/if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+			composeSignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+			composeUnsignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
+			composeString( b, arg0.get() );
+		// TODO: add supported types here
+		else
+			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
+			
+	}
+	else
+	{
+		static_assert( !required, "required parameter" );
+		/**/if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeSignedInteger( b, defaultValue );
+		}
+		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeUnsignedInteger( b, defaultValue );
+		}
+		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeString( b, defaultValue );
+		}
+		// TODO: add supported types here
+		else
+			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
+			
+	}
+#endif // 0
+}
+
+///////////////////////////////////////////
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
+void pickParam3(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)
+{
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+			composeSignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+			composeUnsignedInteger( b, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
+			composeString( b, arg0.get() );
+		else
+			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
+	}
+	else
+		pickParam3<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(expected, b, args...);
+}
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue>
+void pickParam3(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b)
+{
+		static_assert( !required, "required parameter" );
+		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeSignedInteger( b, defaultValue );
+		}
+		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeUnsignedInteger( b, defaultValue );
+		}
+		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
+		{
+			/*if constexpr ( std::is_same<DefaultT, StringLiteralForComposing>::value )
+			{
+				composeString( b, nodecpp::string( defaultValue ) );
+			}
+			else
+				composeString( b, nodecpp::string( defaultValue ) );*/
+				composeString( b, defaultValue );
+		}
+		// TODO: add supported types here
+		else
+			static_assert( std::is_same<typename TypeToPick::Type, AllowedDataType>::value, "unsupported type" );
+}
+
 
 } // namespace impl
 
