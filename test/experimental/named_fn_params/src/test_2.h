@@ -110,7 +110,8 @@ void test2Call_C_compose(Buffer& b, Args&& ... args)
 	ensureUniqueness(args.nameAndTypeID...);
 	constexpr size_t argCount = sizeof ... (Args);
 //	constexpr size_t matchCount = isMatched<arg_1_type>(args.nameAndTypeID...) + isMatched<arg_2_type>(args.nameAndTypeID...) + isMatched<arg_3_type>(args.nameAndTypeID...);
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, args.nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, args.nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, args.nameAndTypeID...);
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
+//	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, (&(args.nameAndTypeID))...) + isMatched(arg_2_type::nameAndTypeID, (&(args.nameAndTypeID))...) + isMatched(arg_3_type::nameAndTypeID, (&(args.nameAndTypeID))...);
 //	size_t matchCount = isMatched(arg_1_type::nameAndTypeID, args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 /*	impl::composeParam<arg_1_type, false, int, int, 10>(b, args...);

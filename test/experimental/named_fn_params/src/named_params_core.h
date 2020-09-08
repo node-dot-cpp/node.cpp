@@ -130,7 +130,7 @@ void ensureUniqueness(const Arg0 arg0)
 
 
 template<typename TypeToMatch, typename Arg0, typename ... Args>
-constexpr size_t isMatched(const TypeToMatch matcher, const Arg0, const Args ... args)
+constexpr size_t isMatched(const TypeToMatch matcher, const Arg0 arg0, const Args ... args)
 {
 	if constexpr ( std::is_same<typename Arg0::NameTag, typename TypeToMatch::NameTag>::value )
 		return 1;
