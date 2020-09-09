@@ -7,6 +7,8 @@
 #include "./styles.h"
 #include "./setMap.h"
 #include "../js-compat-tests/misc_tests.h"
+#include "JsCompatMain.h"
+#include "Colorize.h"
 
 
 
@@ -39,13 +41,25 @@ int main( int argc, char *argv_[] )
 		printf( "%s", setMap("MAPPED TEST\n", "zebra").toString().c_str() );
 		printf( "%s", setMap("DROP THE BASS\n", "trap").toString().c_str() );
 
-
+	
 	
 
 		//auto& colors = import<Colors>();
 		//printf( "\n~~~~~~~~~~~~~~~\n%s\n~~~~~~~~~~~~~~~\n\n", colors.toString().c_str() );
 
 		auto& miscTests = import<MiscTests>();
+		//miscTests.AllTests();
+		auto& colorize = import<Colorize>();
+		console.log(colorize.stylize("Colorized test", "cyan"));
+		console.log(colorize.trap("Map Trap test"));
+		console.log(colorize.zebra("Map Zebra test"));
+		console.log(colorize.random("Map Random test"));
+		console.log(colorize.america("Map America test"));
+
+		console.log(colorize.applyTheme("Error theme test", "error"));
+		console.log(colorize.applyTheme("Warning theme test", "warn"));
+
+
 	//	printf( "\n~~~~~~~~~~~~~~~%s\n~~~~~~~~~~~~~~~\n\n", miscTests.toString().c_str() );
 
 		//JS TEST
@@ -56,12 +70,15 @@ int main( int argc, char *argv_[] )
 	{
 		e.log(log, nodecpp::log::LogLevel::fatal);
 	}
+	
 	catch (...)
 	{
 		nodecpp::log::default_log::fatal("Unknown error happened. About to exit...");
 		return 0;
 	}
+
 	nodecpp::log::default_log::fatal( "About to exit..." );
 	return 0;
+	
 }
 
