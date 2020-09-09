@@ -36,14 +36,4 @@ static const FirstParam::TypeConverter firstParam;
 static const SecondParam::TypeConverter secondParam;
 static const ThirdParam::TypeConverter thirdParam;
 
-void test2Call_A_Impl( NamedParameterWithType<int, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<int, ThirdParam::Name> const& tp )
-{
-	printf( "Test 2: %d - %s - %d\n", fp.get(), sp.get().c_str(), tp.get() );
-}
-
-void test2Call_B_Impl( NamedParameterWithType<std::string, FirstParam::Name> const& fp, NamedParameterWithType<std::string, SecondParam::Name> const& sp, NamedParameterWithType<std::string, ThirdParam::Name> const& tp )
-{
-	printf( "Test 2: %s - %s - %s\n", fp.get().c_str(), sp.get().c_str(), tp.get().c_str() );
-}
-
 } // namespace m
