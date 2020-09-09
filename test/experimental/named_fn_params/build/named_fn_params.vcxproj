@@ -34,7 +34,6 @@
     <ClCompile Include="..\src\test_2.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info_impl.h" />
     <ClInclude Include="..\src\compose_and_parse_impl.h" />
     <ClInclude Include="..\src\named_params_core.h" />
     <ClInclude Include="..\src\test_2.h" />
@@ -113,6 +112,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -142,6 +142,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,7 +157,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

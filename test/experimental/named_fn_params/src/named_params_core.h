@@ -174,45 +174,31 @@ namespace impl {
 // parsing - general
 
 
-template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
-void parseParam(Parser& p, Arg0* arg0, Args&& ... args)
+template<typename TypeToPick, bool required, typename Arg0, typename ... Args>
+void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Arg0&& arg0, Args&& ... args)
 {
+//	using Agr0Type = std::remove_pointer<Arg0>;
 	using Agr0Type = special_decay_t<Arg0>;
-	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
+	using Agr0DataType = typename std::remove_pointer<typename Agr0Type::Type>::type;
+	if constexpr ( std::is_same<typename Agr0Type::Name, typename TypeToPick::Name>::value ) // same parameter name
 	{
-		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
-			parseSignedInteger( p, arg0->get() );
-		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
-			parseUnsignedInteger( p, arg0->get() );
+		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value && std::is_integral<Agr0DataType>::value )
+			p.parseSignedInteger( arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value && std::is_integral<Agr0DataType>::value )
+			p.parseUnsignedInteger( arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
-			parseString( p, arg0->get() );
+			p.parseString( arg0.get() );
 		else
-			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
+			static_assert( std::is_same<Agr0DataType, AllowedDataType>::value, "unsupported type" );
 	}
 	else
-		parseParam<p, TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(p, args...);
+		parseParam<TypeToPick, required>(expected, p, args...);
 }
 
-template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0>
-void parseParam(Parser& p, Arg0&& arg0)
+template<typename TypeToPick, bool required>
+void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
 {
-	using Agr0Type = special_decay_t<Arg0>;
-	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
-	{
-		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
-			parseSignedInteger( p, arg0->get() );
-		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
-			parseUnsignedInteger( p, arg0->get() );
-		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
-			parseString( p, arg0->get() );
-		// TODO: add supported types here
-		else
-			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
-	}
-	else
-	{
-		return;
-	}
+	return;
 }
 
 

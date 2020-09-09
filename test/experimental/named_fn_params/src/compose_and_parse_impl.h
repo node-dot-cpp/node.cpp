@@ -139,21 +139,21 @@ public:
 		if constexpr ( std::is_signed< T >::value )
 		{
 			if constexpr ( sizeof( T ) == 8 )
-				*num = val;
+				*num = (T)(val);
 			else if constexpr ( sizeof( T ) == 4 )
 			{
 				assert( val >= INT32_MIN && val <= INT32_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 2 )
 			{
 				assert( val >= INT16_MIN && val <= INT16_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 1 )
 			{
 				assert( val >= INT8_MIN && val <= INT8_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else
 				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
@@ -163,22 +163,22 @@ public:
 			if constexpr ( sizeof( T ) == 8 )
 			{
 				assert( val >= 0 );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 4 )
 			{
 				assert( val >= 0 && val <= UINT32_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 2 )
 			{
 				assert( val >= 0 && val <= UINT16_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 1 )
 			{
 				assert( val >= 0 && val <= UINT8_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else
 				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
@@ -195,21 +195,21 @@ public:
 		if constexpr ( std::is_unsigned< T >::value )
 		{
 			if constexpr ( sizeof( T ) == 8 )
-				*num = val;
+				*num = (T)(val);
 			else if constexpr ( sizeof( T ) == 4 )
 			{
 				assert( val <= UINT32_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 2 )
 			{
 				assert( val <= UINT16_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 1 )
 			{
 				assert( val <= UINT8_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else
 				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
@@ -219,22 +219,22 @@ public:
 			if constexpr ( sizeof( T ) == 8 )
 			{
 				assert( val <= INT64_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 4 )
 			{
 				assert( val <= INT32_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 2 )
 			{
 				assert( val <= INT16_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else if constexpr ( sizeof( T ) == 1 )
 			{
 				assert( val <= INT8_MAX );
-				*num = val;
+				*num = (T)(val);
 			}
 			else
 				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
@@ -245,8 +245,12 @@ public:
 	{
 		*str = reinterpret_cast<char*>(begin);
 		while( *begin++ != 0 );
-		assert( *begin == 0 );
-		++begin;
+	}
+
+	void parseString( nodecpp::string* str )
+	{
+		*str = reinterpret_cast<char*>(begin);
+		while( *begin++ != 0 );
 	}
 };
 

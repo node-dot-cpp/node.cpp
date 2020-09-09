@@ -65,8 +65,5 @@
     <ClInclude Include="..\src\compose_and_parse_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info_impl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
