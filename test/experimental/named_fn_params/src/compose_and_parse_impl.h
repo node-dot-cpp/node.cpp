@@ -48,8 +48,9 @@ struct StringType {static constexpr bool dummy = false;};
 
 struct StringLiteralForComposing
 {
-	const char* str;
-	size_t size;
+	const char* const str;
+	const size_t size;
+	constexpr StringLiteralForComposing( const char* const str_, const size_t size_ ) : str( str_ ), size( size_ ) {}
 };
 
 
@@ -93,11 +94,11 @@ void composeString( Buffer& b, const nodecpp::string& str )
 }
 
 inline
-void composeString( Buffer& b, const StringLiteralForComposing str )
+void composeString( Buffer& b, const StringLiteralForComposing* str )
 {
-	b.append( str.str, str.size );
+	b.append( str->str, str->size );
 	b.appendUint8( 0 );
-	printf( "composeString(StringLiteralForComposing \"%s\"\n", str.str );
+	printf( "composeString(StringLiteralForComposing \"%s\"\n", str->str );
 }
 
 inline

@@ -45,10 +45,7 @@ extern const SecondParam::TypeConverter secondParam;
 extern const ThirdParam::TypeConverter thirdParam;
 
 namespace test2Call_C_defaults {
-//static constexpr char default_1[] = "default_1";
-static constexpr char predefault_2[] = "default_2";
-static constexpr impl::StringLiteralForComposing default_2 = { predefault_2, 9};
-//static constexpr char default_3[] = "default_3";
+static constexpr impl::StringLiteralForComposing default_2 = { "default_2", sizeof( "default_2" ) - 1};
 }
 
 template<typename ... Args>
@@ -63,8 +60,8 @@ void test2Call_C_compose(Buffer& b, Args&& ... args)
 	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 	impl::composeParam<arg_1_type, false, int, int, 10>(arg_1_type::nameAndTypeID, b, args...);
-//	impl::pickParam3<arg_2_type, false, std::string, impl::StringLiteralForComposing, test2Call_C_defaults::default_2>(arg_2_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_2_type, false, std::string, const char*, test2Call_C_defaults::predefault_2>(arg_2_type::nameAndTypeID, b, args...);
+	impl::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>(arg_2_type::nameAndTypeID, b, args...);
+//	impl::composeParam<arg_2_type, false, nodecpp::string, const char*, test2Call_C_defaults::predefault_2>(arg_2_type::nameAndTypeID, b, args...);
 	impl::composeParam<arg_3_type, false, int, int, 30>(arg_3_type::nameAndTypeID, b, args...);
 }
 
@@ -80,7 +77,6 @@ void test2Call_C_parse(impl::Parser& p, Args&& ... args)
 	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 	impl::parseParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
-//	impl::pickParam3<arg_2_type, false, std::string, impl::StringLiteralForComposing, test2Call_C_defaults::default_2>(arg_2_type::nameAndTypeID, b, args...);
 	impl::parseParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
 	impl::parseParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
 }
