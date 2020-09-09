@@ -57,8 +57,9 @@ void test2Call_C_compose(Buffer& b, Args&& ... args)
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	ensureUniqueness(args.nameAndTypeID...);
 	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
 	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 	impl::composeParam<arg_1_type, false, int, int, 10>(arg_1_type::nameAndTypeID, b, args...);

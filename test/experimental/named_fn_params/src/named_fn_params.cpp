@@ -13,4 +13,6 @@ int main()
 	m::test2Call_C_compose( b, m::secondParam = std::string("def"), m::thirdParam = 3 );
 	m::test2Call_C_compose( b, m::thirdParam = (uint64_t)3, m::firstParam = (uint64_t)(uint64_t)(-1) );
 	m::test2Call_C_compose( b, m::secondParam = std::string("def"), m::firstParam = 1 );
+	m::test2Call_C_compose( b, m::secondParam = std::string("def") );
+	m::test2Call_C_compose( b );
 }
