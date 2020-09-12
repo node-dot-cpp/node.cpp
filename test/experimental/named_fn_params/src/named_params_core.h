@@ -203,6 +203,7 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
 
 
 ///////////////////////////////////////////
+
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
 void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)
 {
@@ -244,6 +245,52 @@ void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::
 		else
 			static_assert( std::is_same<typename TypeToPick::Type, AllowedDataType>::value, "unsupported type" );
 }
+
+namespace json {
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
+void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)
+{
+	using Agr0Type = special_decay_t<Arg0>;
+	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+			composeSignedInteger( b, name, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+			composeUnsignedInteger( b, name, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
+			composeString( b, name, arg0.get() );
+		else
+			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
+	}
+	else
+		composeParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(name, expected, b, args...);
+}
+
+template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue>
+void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b)
+{
+		static_assert( !required, "required parameter" );
+		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeSignedInteger( b, name, defaultValue );
+		}
+		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value )
+		{
+			static_assert ( std::is_integral<AssumedDefaultT>::value );
+			composeUnsignedInteger( b, name, defaultValue );
+		}
+		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
+		{
+			composeString( b, name, defaultValue );
+		}
+		// TODO: add supported types here
+		else
+			static_assert( std::is_same<typename TypeToPick::Type, AllowedDataType>::value, "unsupported type" );
+}
+
+} // namespace json
 
 
 } // namespace impl

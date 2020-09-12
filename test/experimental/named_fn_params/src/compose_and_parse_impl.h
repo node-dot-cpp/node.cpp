@@ -43,6 +43,9 @@ static constexpr size_t integer_max_size = 8;
 struct SignedIntegralType {static constexpr bool dummy = false;};
 struct UnsignedIntegralType {int d = 0;};
 struct StringType {static constexpr bool dummy = false;};
+struct BlobType {static constexpr bool dummy = false;};
+struct ByteArrayType {static constexpr bool dummy = false;};
+struct EnumType {static constexpr bool dummy = false;};
 
 // helper types
 
@@ -115,9 +118,87 @@ void composeString( Buffer& b, const char* str )
 	size_t sz = strlen( str );
 	b.append( str, sz );
 	b.appendUint8( 0 );
-	b.appendUint8( 0 );
 	printf( "composeString(const char* \"%s\"\n", str );
 }
+
+namespace json
+{
+
+inline
+void addNamePart( Buffer& b, nodecpp::string name )
+{
+	b.appendUint8( '\"' );
+	b.appendString( name );
+	b.appendUint8( '\"' );
+	b.appendUint8( ':' );
+	b.appendUint8( ' ' );
+}
+
+template <typename T>
+void composeSignedInteger( Buffer& b, nodecpp::string name, T num )
+{
+	static_assert( std::is_integral<T>::value );
+	if constexpr ( std::is_unsigned<T>::value && sizeof( T ) >= integer_max_size )
+	{
+		assert( num <= INT64_MAX );
+	}
+	addNamePart( b, name );
+	b.appendString( nodecpp::format( "{}", (int64_t)num ) );
+}
+
+template <typename T>
+void composeUnsignedInteger( Buffer& b, nodecpp::string name, T num )
+{
+	if constexpr ( std::is_signed<T>::value )
+	{
+		assert( num >= 0 );
+	}
+	addNamePart( b, name );
+	b.appendString( nodecpp::format( "{}", (int64_t)num ) );
+}
+
+inline
+void composeString( Buffer& b, nodecpp::string name, const nodecpp::string& str )
+{
+	addNamePart( b, name );
+	b.appendUint8( '\"' );
+	b.appendString( str );
+	b.appendUint8( '\"' );
+//	printf( "composeString(nodecpp::string \"%s\"\n", str.c_str() );
+}
+
+inline
+void composeString( Buffer& b, nodecpp::string name, const StringLiteralForComposing* str )
+{
+	addNamePart( b, name );
+	b.appendUint8( '\"' );
+	b.append( str->str, str->size );
+	b.appendUint8( '\"' );
+//	printf( "composeString(StringLiteralForComposing \"%s\"\n", str->str );
+}
+
+inline
+void composeString( Buffer& b, nodecpp::string name, std::string str )
+{
+	addNamePart( b, name );
+	b.appendUint8( '\"' );
+	b.append( str.c_str(), str.size() );
+	b.appendUint8( '\"' );
+//	printf( "composeString(std::string \"%s\"\n", str.c_str() );
+}
+
+inline
+void composeString( Buffer& b, nodecpp::string name, const char* str )
+{
+	addNamePart( b, name );
+	size_t sz = strlen( str );
+	b.appendUint8( '\"' );
+	b.append( str, sz );
+	b.appendUint8( '\"' );
+//	printf( "composeString(const char* \"%s\"\n", str );
+}
+
+} // namespace json
 
 // parsing
 
