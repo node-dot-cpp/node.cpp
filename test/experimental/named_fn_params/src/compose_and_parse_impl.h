@@ -211,6 +211,65 @@ public:
 	Parser() {}
 	Parser( uint8_t* buff, size_t size ) { begin = buff; end = buff + size; }
 
+	void skipSpacesEtc()
+	{
+		while ( begin < end && ( *begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n' ) ) ++begin;
+	}
+
+	bool isComma()
+	{
+		skipSpacesEtc();
+		return *begin == ',';
+	}
+
+	bool isData() { return begin != end;  }
+
+	void readStringFromJson(nodecpp::string* s)
+	{
+		skipSpacesEtc();
+		if ( *begin++ != '\"' )
+			throw std::exception(); // TODO
+		const char* start = reinterpret_cast<const char*>( begin );
+		while ( begin < end && *begin != '\"' ) ++begin;
+		if ( begin++ == end )
+			throw std::exception(); // TODO
+		*s = nodecpp::string( start, reinterpret_cast<const char*>( begin ) - start );
+		++begin;
+	}
+
+	template <typename T>
+	void readUnsignedIntegerFromJson( T* num )
+	{
+		skipSpacesEtc();
+		if ( *begin == '-' )
+			throw std::exception(); // TODO: (negative is unexpected)
+		auto start = begin;
+		uint64_t ret = strtoull( reinterpret_cast<const char*>( begin ), reinterpret_cast<char**>( &begin ), 10 );
+		if ( start == begin )
+			throw std::exception(); // TODO: (NaN)
+		*num = ret;
+	}
+
+	template <typename T>
+	void readSignedIntegerFromJson( T* num )
+	{
+		skipSpacesEtc();
+		auto start = begin;
+		int64_t ret = strtoll( reinterpret_cast<const char*>( begin ), reinterpret_cast<char**>( &begin ), 10 );
+		if ( start == begin )
+			throw std::exception(); // TODO: (NaN)
+		*num = ret;
+	}
+
+	void readKey(nodecpp::string* s)
+	{
+		readStringFromJson(s);
+		skipSpacesEtc();
+		if ( *begin++ != ':' )
+			throw std::exception(); // TODO (expected ':')
+	}
+
+
 	template <typename T>
 	void parseSignedInteger( T* num )
 	{

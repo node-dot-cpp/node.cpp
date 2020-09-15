@@ -198,6 +198,7 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 template<typename TypeToPick, bool required>
 void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
 {
+	static_assert( !required, "required parameter" );
 	return;
 }
 
@@ -247,6 +248,34 @@ void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::
 }
 
 namespace json {
+
+template<typename TypeToPick, bool required, typename Arg0, typename ... Args>
+void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Arg0&& arg0, Args&& ... args)
+{
+//	using Agr0Type = std::remove_pointer<Arg0>;
+	using Agr0Type = special_decay_t<Arg0>;
+	using Agr0DataType = typename std::remove_pointer<typename Agr0Type::Type>::type;
+	if constexpr ( std::is_same<typename Agr0Type::Name, typename TypeToPick::Name>::value ) // same parameter name
+	{
+		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value && std::is_integral<Agr0DataType>::value )
+			p.readSignedIntegerFromJson( arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value && std::is_integral<Agr0DataType>::value )
+			p.readUnsignedIntegerFromJson( arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
+			p.readStringFromJson( arg0.get() );
+		else
+			static_assert( std::is_same<Agr0DataType, AllowedDataType>::value, "unsupported type" );
+	}
+	else
+		parseParam<TypeToPick, required>(expected, p, args...);
+}
+
+template<typename TypeToPick, bool required>
+void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
+{
+	static_assert( !required, "required parameter" );
+	return;
+}
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
 void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)

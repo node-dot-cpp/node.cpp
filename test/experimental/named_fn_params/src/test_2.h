@@ -97,11 +97,42 @@ void test2Call_C_compose_to_json(Buffer& b, Args&& ... args)
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>("arg_2", arg_2_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
-//	impl::json::composeParam<arg_2_type, false, nodecpp::string, const char*, test2Call_C_defaults::predefault_2>(arg_2_type::nameAndTypeID, b, args...);
 	impl::json::composeParam<arg_3_type, false, int, int, 30>("arg_3", arg_3_type::nameAndTypeID, b, args...);
 	b.append( ",\n}\n", 4 );
 	b.appendUint8( 0 );
 }
+
+template<typename ... Args>
+void test2Call_C_parse_from_json(impl::Parser& p, Args&& ... args)
+{
+	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
+	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
+	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
+	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
+	static_assert( argCount == matchCount, "unexpected arguments found" );
+	for ( ;; )
+	{
+		nodecpp::string key;
+		p.readKey( key );
+		if ( key == "arg_1" )
+		{
+		    auto arg_1 = impl::json::parseParam<NamedParameterWithType<arg_1_type, FirstParam::Name>, false>(p, args...);
+		}
+		p.skipSpacesEtc();
+		if ( p.isComma() )
+			continue;
+		if ( !p.isData() )
+			break;
+		throw std::exception(); // bad format
+	}
+	impl::parseParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
+	impl::parseParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
+	impl::parseParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
+}
+
 } // namespace m
 
 #endif // TEST_2_H
