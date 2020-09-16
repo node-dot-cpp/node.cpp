@@ -236,6 +236,17 @@ public:
 		*s = nodecpp::string( start, reinterpret_cast<const char*>( begin ) - start );
 		++begin;
 	}
+	void skipStringFromJson()
+	{
+		skipSpacesEtc();
+		if ( *begin++ != '\"' )
+			throw std::exception(); // TODO
+		const char* start = reinterpret_cast<const char*>( begin );
+		while ( begin < end && *begin != '\"' ) ++begin;
+		if ( begin++ == end )
+			throw std::exception(); // TODO
+		++begin;
+	}
 
 	template <typename T>
 	void readUnsignedIntegerFromJson( T* num )
@@ -249,6 +260,16 @@ public:
 			throw std::exception(); // TODO: (NaN)
 		*num = ret;
 	}
+	void skipUnsignedIntegerFromJson()
+	{
+		skipSpacesEtc();
+		if ( *begin == '-' )
+			throw std::exception(); // TODO: (negative is unexpected)
+		auto start = begin;
+		uint64_t ret = strtoull( reinterpret_cast<const char*>( begin ), reinterpret_cast<char**>( &begin ), 10 );
+		if ( start == begin )
+			throw std::exception(); // TODO: (NaN)
+	}
 
 	template <typename T>
 	void readSignedIntegerFromJson( T* num )
@@ -259,6 +280,14 @@ public:
 		if ( start == begin )
 			throw std::exception(); // TODO: (NaN)
 		*num = ret;
+	}
+	void skipSignedIntegerFromJson()
+	{
+		skipSpacesEtc();
+		auto start = begin;
+		int64_t ret = strtoll( reinterpret_cast<const char*>( begin ), reinterpret_cast<char**>( &begin ), 10 );
+		if ( start == begin )
+			throw std::exception(); // TODO: (NaN)
 	}
 
 	void readKey(nodecpp::string* s)
@@ -325,6 +354,11 @@ public:
 				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 	}
+	void skipSignedInteger()
+	{
+		/*temporary solution TODO: actauls implementation*/ begin += integer_max_size;
+		static_assert( integer_max_size == 8, "revise implementation otherwise" );
+	}
 
 	template <typename T>
 	void parseUnsignedInteger( T* num )
@@ -381,6 +415,11 @@ public:
 				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 	}
+	void skipUnsignedInteger()
+	{
+		/*temporary solution TODO: actauls implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += integer_max_size;
+		static_assert( integer_max_size == 8, "revise implementation otherwise" );
+	}
 
 	void parseString( const char** str )
 	{
@@ -391,6 +430,11 @@ public:
 	void parseString( nodecpp::string* str )
 	{
 		*str = reinterpret_cast<char*>(begin);
+		while( *begin++ != 0 );
+	}
+
+	void skipString()
+	{
 		while( *begin++ != 0 );
 	}
 };
