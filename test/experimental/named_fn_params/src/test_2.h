@@ -92,13 +92,14 @@ void test2Call_C_compose_to_json(Buffer& b, Args&& ... args)
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
-	b.append( "\"test2Call_C\": {\n  ", sizeof("\"test2Call_C\": {\n  ") - 1 );
+//	b.append( "\"test2Call_C\": {\n  ", sizeof("\"test2Call_C\": {\n  ") - 1 );
 	impl::json::composeParam<arg_1_type, false, int, int, 10>("arg_1", arg_1_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>("arg_2", arg_2_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_3_type, false, int, int, 30>("arg_3", arg_3_type::nameAndTypeID, b, args...);
-	b.append( ",\n}\n", 4 );
+//	b.append( ",\n}\n", 4 );
+	b.appendUint8( '\n' );
 	b.appendUint8( 0 );
 }
 
@@ -116,21 +117,26 @@ void test2Call_C_parse_from_json(impl::Parser& p, Args&& ... args)
 	for ( ;; )
 	{
 		nodecpp::string key;
-		p.readKey( key );
+		p.readKey( &key );
 		if ( key == "arg_1" )
-		{
-		    auto arg_1 = impl::json::parseParam<NamedParameterWithType<arg_1_type, FirstParam::Name>, false>(p, args...);
-		}
+//		    impl::json::parseParam<NamedParameterWithType<arg_1_type, FirstParam::Name>, false>(arg_1_type::nameAndTypeID, p, args...);
+			impl::json::parseJsonParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
+		else if ( key == "arg_2" )
+//		    impl::json::parseParam<NamedParameterWithType<arg_2_type, FirstParam::Name>, false>(arg_2_type::nameAndTypeID, p, args...);
+			impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
+		else if ( key == "arg_3" )
+//		    impl::json::parseParam<NamedParameterWithType<arg_3_type, FirstParam::Name>, false>(arg_3_type::nameAndTypeID, p, args...);
+			impl::json::parseJsonParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
 		p.skipSpacesEtc();
 		if ( p.isComma() )
+		{
+			p.skipComma();
 			continue;
+		}
 		if ( !p.isData() )
 			break;
 		throw std::exception(); // bad format
 	}
-	impl::parseParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
 }
 
 } // namespace m

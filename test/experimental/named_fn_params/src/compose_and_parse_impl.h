@@ -222,7 +222,13 @@ public:
 		return *begin == ',';
 	}
 
-	bool isData() { return begin != end;  }
+	bool skipComma()
+	{
+		if ( *begin++ != ',' )
+			throw std::exception(); // TODO
+	}
+
+	bool isData() { return begin != end && *begin != 0;  }
 
 	void readStringFromJson(nodecpp::string* s)
 	{
@@ -231,9 +237,9 @@ public:
 			throw std::exception(); // TODO
 		const char* start = reinterpret_cast<const char*>( begin );
 		while ( begin < end && *begin != '\"' ) ++begin;
-		if ( begin++ == end )
-			throw std::exception(); // TODO
 		*s = nodecpp::string( start, reinterpret_cast<const char*>( begin ) - start );
+		if ( begin == end )
+			throw std::exception(); // TODO
 		++begin;
 	}
 	void skipStringFromJson()
@@ -292,6 +298,7 @@ public:
 
 	void readKey(nodecpp::string* s)
 	{
+		skipSpacesEtc();
 		readStringFromJson(s);
 		skipSpacesEtc();
 		if ( *begin++ != ':' )

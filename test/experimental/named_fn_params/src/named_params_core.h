@@ -198,8 +198,14 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 template<typename TypeToPick, bool required>
 void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
 {
-	static_assert( !required, "required parameter" );
-	return;
+	if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value )
+		p.skipSignedInteger();
+	else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value )
+		p.skipUnsignedInteger();
+	else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
+		p.skipString();
+	else
+		static_assert( std::is_same<typename TypeToPick::Type, AllowedDataType>::value, "unsupported type" );
 }
 
 
@@ -250,7 +256,7 @@ void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::
 namespace json {
 
 template<typename TypeToPick, bool required, typename Arg0, typename ... Args>
-void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Arg0&& arg0, Args&& ... args)
+void parseJsonParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Arg0&& arg0, Args&& ... args)
 {
 //	using Agr0Type = std::remove_pointer<Arg0>;
 	using Agr0Type = special_decay_t<Arg0>;
@@ -267,14 +273,20 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 			static_assert( std::is_same<Agr0DataType, AllowedDataType>::value, "unsupported type" );
 	}
 	else
-		parseParam<TypeToPick, required>(expected, p, args...);
+		parseJsonParam<TypeToPick, required>(expected, p, args...);
 }
 
 template<typename TypeToPick, bool required>
-void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
+void parseJsonParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
 {
-	static_assert( !required, "required parameter" );
-	return;
+	if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value )
+		p.skipSignedIntegerFromJson();
+	else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value )
+		p.skipUnsignedIntegerFromJson();
+	else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
+		p.skipStringFromJson();
+	else
+		static_assert( std::is_same<typename TypeToPick::Type, AllowedDataType>::value, "unsupported type" );
 }
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
