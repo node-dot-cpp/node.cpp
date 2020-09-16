@@ -247,9 +247,8 @@ public:
 		skipSpacesEtc();
 		if ( *begin++ != '\"' )
 			throw std::exception(); // TODO
-		const char* start = reinterpret_cast<const char*>( begin );
 		while ( begin < end && *begin != '\"' ) ++begin;
-		if ( begin++ == end )
+		if ( begin == end )
 			throw std::exception(); // TODO
 		++begin;
 	}
