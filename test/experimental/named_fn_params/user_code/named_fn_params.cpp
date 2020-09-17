@@ -3,8 +3,7 @@
 
 #include <stdio.h>
 #include "named_params_core.h"
-#include "test_2.h"
-
+#include "../generated/test_2.h"
 
 int main()
 {
