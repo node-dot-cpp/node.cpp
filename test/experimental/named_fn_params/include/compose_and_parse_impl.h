@@ -222,7 +222,7 @@ public:
 		return *begin == ',';
 	}
 
-	bool skipComma()
+	void skipComma()
 	{
 		if ( *begin++ != ',' )
 			throw std::exception(); // TODO
@@ -263,7 +263,7 @@ public:
 		uint64_t ret = strtoull( reinterpret_cast<const char*>( begin ), reinterpret_cast<char**>( &begin ), 10 );
 		if ( start == begin )
 			throw std::exception(); // TODO: (NaN)
-		*num = ret;
+		*num = (T)ret; // TODO: add boundary checking
 	}
 	void skipUnsignedIntegerFromJson()
 	{
@@ -284,7 +284,7 @@ public:
 		int64_t ret = strtoll( reinterpret_cast<const char*>( begin ), reinterpret_cast<char**>( &begin ), 10 );
 		if ( start == begin )
 			throw std::exception(); // TODO: (NaN)
-		*num = ret;
+		*num = (T)ret; // TODO: add boundary checking
 	}
 	void skipSignedIntegerFromJson()
 	{

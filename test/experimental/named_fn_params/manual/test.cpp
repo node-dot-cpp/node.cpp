@@ -25,7 +25,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include "test.h"
+/*#include "test.h"
 
 namespace man {
 
@@ -35,4 +35,4 @@ static const FirstParam::TypeConverter firstParam;
 static const SecondParam::TypeConverter secondParam;
 static const ThirdParam::TypeConverter thirdParam;
 
-} // namespace man
+} // namespace man*/

@@ -9,9 +9,9 @@ using firstParam_Type = NamedParameter<struct firstParam_StructStruct>;
 using secondParam_Type = NamedParameter<struct secondParam_StructStruct>;
 using thirdParam_Type = NamedParameter<struct thirdParam_StructStruct>;
 
-extern const firstParam_Type::TypeConverter firstParam;
-extern const secondParam_Type::TypeConverter secondParam;
-extern const thirdParam_Type::TypeConverter thirdParam;
+constexpr firstParam_Type::TypeConverter firstParam;
+constexpr secondParam_Type::TypeConverter secondParam;
+constexpr thirdParam_Type::TypeConverter thirdParam;
 
 //**********************************************************************
 // Message "message_one" (3 parameters)

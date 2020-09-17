@@ -41,9 +41,9 @@ using SecondParam = NamedParameter<struct SecondParamTagStruct>;
 
 using ThirdParam = NamedParameter<struct ThirdParamTagStruct>;
 	
-extern const FirstParam::TypeConverter firstParam;
-extern const SecondParam::TypeConverter secondParam;
-extern const ThirdParam::TypeConverter thirdParam;
+constexpr FirstParam::TypeConverter firstParam;
+constexpr SecondParam::TypeConverter secondParam;
+constexpr ThirdParam::TypeConverter thirdParam;
 
 namespace test2Call_C_defaults {
 static constexpr impl::StringLiteralForComposing default_2 = { "default_2", sizeof( "default_2" ) - 1};

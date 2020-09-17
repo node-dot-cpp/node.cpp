@@ -25,7 +25,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include "marshalling.h"
+/*#include "marshalling.h"
 
 namespace m {
 
@@ -33,4 +33,4 @@ static const firstParam_Type::TypeConverter firstParam;
 static const secondParam_Type::TypeConverter secondParam;
 static const thirdParam_Type::TypeConverter thirdParam;
 
-} // namespace m
+} // namespace m*/
