@@ -30,13 +30,15 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp" />
-    <ClCompile Include="..\generated\test_2.cpp" />
+    <ClCompile Include="..\generated\marshalling.cpp" />
+    <ClCompile Include="..\manual\test.cpp" />
     <ClCompile Include="..\user_code\named_fn_params.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\generated\test_2.h" />
+    <ClInclude Include="..\generated\marshalling.h" />
     <ClInclude Include="..\include\compose_and_parse_impl.h" />
     <ClInclude Include="..\include\named_params_core.h" />
+    <ClInclude Include="..\manual\test.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

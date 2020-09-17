@@ -3,19 +3,22 @@
 
 #include <stdio.h>
 #include "named_params_core.h"
-#include "../generated/test_2.h"
+#include "../generated/marshalling.h"
+//#include "../manual/test.h"
+
+using m::impl::Parser;
 
 int main()
 {
 	{
 		nodecpp::Buffer b;
-		m::test2Call_C_compose( b, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3 );
+		m::message_one_compose( b, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3 );
 
-		m::impl::Parser parser( b.begin(), b.size() );
+		Parser parser( b.begin(), b.size() );
 		int firstParam = -1;
 		nodecpp::string secondParam = "";
 		int thirdParam = -1;
-		m::test2Call_C_parse( parser, m::firstParam = &firstParam, m::secondParam = &secondParam, m::thirdParam = &thirdParam );
+		m::message_one_parse( parser, m::firstParam = &firstParam, m::secondParam = &secondParam, m::thirdParam = &thirdParam );
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstParam == 1, "Indeed: {}", firstParam );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, secondParam == "def", "Indeed: {}", secondParam );
@@ -24,14 +27,14 @@ int main()
 
 	{
 		nodecpp::Buffer b;
-		m::test2Call_C_compose_to_json( b, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3 );
+		m::message_one_composeJson( b, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3 );
 		printf( "%s\n", b.begin() );
 
-		m::impl::Parser parser( b.begin(), b.size() );
+		Parser parser( b.begin(), b.size() );
 		int firstParam = -1;
 		nodecpp::string secondParam = "";
 		int thirdParam = -1;
-		m::test2Call_C_parse_from_json( parser, m::firstParam = &firstParam, m::secondParam = &secondParam, m::thirdParam = &thirdParam );
+		m::message_one_parseJson( parser, m::firstParam = &firstParam, m::secondParam = &secondParam, m::thirdParam = &thirdParam );
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstParam == 1, "Indeed: {}", firstParam );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, secondParam == "def", "Indeed: {}", secondParam );

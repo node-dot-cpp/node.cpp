@@ -25,9 +25,9 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#include "test_2.h"
+#include "test.h"
 
-namespace m {
+namespace man {
 
 // GENERATED VALUES
 
@@ -35,4 +35,4 @@ static const FirstParam::TypeConverter firstParam;
 static const SecondParam::TypeConverter secondParam;
 static const ThirdParam::TypeConverter thirdParam;
 
-} // namespace m
+} // namespace man

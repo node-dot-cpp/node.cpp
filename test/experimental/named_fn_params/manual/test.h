@@ -25,13 +25,14 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
-#ifndef TEST_2_H
-#define TEST_2_H
+#ifndef TEST_H
+#define TEST_H
 
-#include "named_params_core.h"
+#include <named_params_core.h>
 
-namespace m {
+namespace man {
 
+using namespace m;
 // GENERATED VALUES
 
 using FirstParam = NamedParameter<struct FirstParamTagStruct>;
@@ -49,7 +50,7 @@ static constexpr impl::StringLiteralForComposing default_2 = { "default_2", size
 }
 
 template<typename ... Args>
-void test2Call_C_compose(Buffer& b, Args&& ... args)
+void message_one_compose(Buffer& b, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
@@ -66,7 +67,7 @@ void test2Call_C_compose(Buffer& b, Args&& ... args)
 }
 
 template<typename ... Args>
-void test2Call_C_parse(impl::Parser& p, Args&& ... args)
+void message_one_parse(impl::Parser& p, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
@@ -82,7 +83,7 @@ void test2Call_C_parse(impl::Parser& p, Args&& ... args)
 }
 
 template<typename ... Args>
-void test2Call_C_compose_to_json(Buffer& b, Args&& ... args)
+void message_one_composeJson(Buffer& b, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
@@ -104,7 +105,7 @@ void test2Call_C_compose_to_json(Buffer& b, Args&& ... args)
 }
 
 template<typename ... Args>
-void test2Call_C_parse_from_json(impl::Parser& p, Args&& ... args)
+void message_one_parseJson(impl::Parser& p, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
@@ -139,6 +140,6 @@ void test2Call_C_parse_from_json(impl::Parser& p, Args&& ... args)
 	}
 }
 
-} // namespace m
+} // namespace man
 
-#endif // TEST_2_H
+#endif // TEST_H

@@ -51,18 +51,24 @@
     <ClCompile Include="..\user_code\named_fn_params.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\generated\test_2.cpp">
+    <ClCompile Include="..\manual\test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\generated\marshalling.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\generated\test_2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\compose_and_parse_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\named_params_core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\manual\test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\generated\marshalling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
