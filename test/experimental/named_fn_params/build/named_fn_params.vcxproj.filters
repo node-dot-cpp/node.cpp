@@ -51,12 +51,6 @@
     <ClCompile Include="..\user_code\named_fn_params.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\manual\test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\generated\marshalling.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\compose_and_parse_impl.h">
