@@ -100,6 +100,53 @@ struct ExpectedParameter
 struct AllowedDataType {};
 
 
+template<class T>
+class CollectionWrapper
+{
+	T& coll;
+	typename T::const_iterator it;
+
+public:
+	using value_type = typename T::value_type;
+	static_assert( std::is_same<T, nodecpp::vector<value_type>>::value, "vector type is expected only" ); // TODO: add list
+	static_assert( std::is_integral<value_type>::value || std::is_same<value_type, nodecpp::string>::value || std::is_enum<value_type>::value, "intended for simple idl types only" );
+
+	CollectionWrapper( T& coll_ ) : coll( coll_ ), it( coll.begin() ) {};
+	size_t size() const { return coll.size(); }
+	template<class ExpectedType>
+	bool compose_next( Buffer& b ) const
+	{ 
+		if ( it != coll.end() )
+		{
+			if constexpr ( std::is_same<ExpectedType, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
+				composeSignedInteger( b, *it );
+			else if constexpr ( std::is_same<ExpectedType, impl::UnsignedIntegralType>::value && std::is_integral<value_type>::value )
+				composeUnsignedInteger( b, *it );
+			else if constexpr ( std::is_same<ExpectedType, impl::StringType>::value && std::is_same<value_type, nodecpp::string>::value )
+				composeString( b, *it );
+			else
+				static_assert( std::is_same<value_type, AllowedDataType>::value, "unsupported type" );
+			++it;
+			return true;
+		}
+		else
+			return false;
+	}
+	template<class ExpectedType>
+	void parse_next( impl::Parser& p )
+	{
+		value_type val;
+		if constexpr ( std::is_same<ExpectedType, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
+			p.parseSignedInteger( &val );
+		else if constexpr ( std::is_same<ExpectedType, impl::UnsignedIntegralType>::value && std::is_integral<value_type>::value )
+			p.parseUnsignedInteger( val );
+		else if constexpr ( std::is_same<ExpectedType, impl::StringType>::value && std::is_same<value_type, nodecpp::string>::value )
+			p.parseString( val );
+		else
+			static_assert( std::is_same<value_type, AllowedDataType>::value, "unsupported type" );
+		coll.push_back( val );
+	}
+};
 
 
 template<typename BaseT, typename Arg0, typename ... Args>
