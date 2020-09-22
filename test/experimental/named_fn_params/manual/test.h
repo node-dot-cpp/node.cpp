@@ -33,6 +33,8 @@
 namespace man {
 
 using namespace m;
+
+constexpr impl::NoDefaultValueType noDefaultValue;
 // GENERATED VALUES
 
 using FirstParam = NamedParameter<struct FirstParamTagStruct>;
@@ -40,10 +42,19 @@ using FirstParam = NamedParameter<struct FirstParamTagStruct>;
 using SecondParam = NamedParameter<struct SecondParamTagStruct>;
 
 using ThirdParam = NamedParameter<struct ThirdParamTagStruct>;
+
+using ForthParam = NamedParameter<struct ForthParamTagStruct>;
 	
+using x_Type = NamedParameter<struct x_StructStruct>;
+using y_Type = NamedParameter<struct y_StructStruct>;
+
+
 constexpr FirstParam::TypeConverter firstParam;
 constexpr SecondParam::TypeConverter secondParam;
 constexpr ThirdParam::TypeConverter thirdParam;
+constexpr ForthParam::TypeConverter forthParam;
+constexpr x_Type::TypeConverter x;
+constexpr y_Type::TypeConverter y;
 
 namespace test2Call_C_defaults {
 static constexpr impl::StringLiteralForComposing default_2 = { "default_2", sizeof( "default_2" ) - 1};
@@ -55,7 +66,8 @@ void message_one_compose(Buffer& b, Args&& ... args)
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
+	using arg_4_type = NamedParameterWithType<impl::VectorType, ForthParam::Name>;
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...);
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
@@ -64,6 +76,8 @@ void message_one_compose(Buffer& b, Args&& ... args)
 	impl::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>(arg_2_type::nameAndTypeID, b, args...);
 //	impl::composeParam<arg_2_type, false, nodecpp::string, const char*, test2Call_C_defaults::predefault_2>(arg_2_type::nameAndTypeID, b, args...);
 	impl::composeParam<arg_3_type, false, int, int, 30>(arg_3_type::nameAndTypeID, b, args...);
+//	impl::composeParam<arg_4_type, true, impl::NoDefaultValueType, impl::NoDefaultValueType, noDefaultValue>(arg_4_type::nameAndTypeID, b, args...);
+	impl::composeParam<arg_4_type, true, int, int, 10>(arg_4_type::nameAndTypeID, b, args...);
 }
 
 template<typename ... Args>
@@ -72,14 +86,16 @@ void message_one_parse(impl::Parser& p, Args&& ... args)
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
+	using arg_4_type = NamedParameterWithType<impl::VectorType, ForthParam::Name>;
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 	impl::parseParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
 	impl::parseParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
 	impl::parseParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
+	impl::parseParam<arg_4_type, false>(arg_4_type::nameAndTypeID, p, args...);
 }
 
 template<typename ... Args>
@@ -139,6 +155,100 @@ void message_one_parseJson(impl::Parser& p, Args&& ... args)
 		throw std::exception(); // bad format
 	}
 }
+//**********************************************************************
+// Message "point" (2 parameters)
+// 1. INTEGER x (REQUIRED)
+// 2. INTEGER y (REQUIRED)
+
+//**********************************************************************
+
+template<typename ... Args>
+void point_compose(Buffer& b, Args&& ... args)
+{
+	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
+	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
+
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
+	static_assert( argCount == matchCount, "unexpected arguments found" );
+
+	impl::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, b, args...);
+	impl::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, b, args...);
+}
+
+template<typename ... Args>
+void point_parse(impl::Parser& p, Args&& ... args)
+{
+	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
+	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
+
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
+	static_assert( argCount == matchCount, "unexpected arguments found" );
+
+	impl::parseParam<arg_1_type, true>(arg_1_type::nameAndTypeID, p, args...);
+	impl::parseParam<arg_2_type, true>(arg_2_type::nameAndTypeID, p, args...);
+}
+
+template<typename ... Args>
+void point_composeJson(Buffer& b, Args&& ... args)
+{
+	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
+	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
+
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
+	static_assert( argCount == matchCount, "unexpected arguments found" );
+
+	impl::json::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, b, args...);
+	b.append( ",\n  ", 4 );
+	impl::json::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, b, args...);
+	b.appendUint8( '\n' );
+	b.appendUint8( 0 );
+}
+
+template<typename ... Args>
+void point_parseJson(impl::Parser& p, Args&& ... args)
+{
+	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
+	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
+
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
+	static_assert( argCount == matchCount, "unexpected arguments found" );
+
+	for ( ;; )
+	{
+		nodecpp::string key;
+		p.readKey( &key );
+		if ( key == "x" )
+			impl::json::parseJsonParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
+		else if ( key == "y" )
+			impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
+		p.skipSpacesEtc();
+		if ( p.isComma() )
+		{
+			p.skipComma();
+			continue;
+		}
+		if ( !p.isData() )
+			break;
+		throw std::exception(); // bad format
+	}
+}
+
 
 } // namespace man
 

@@ -70,7 +70,7 @@ private:
 
 public:
 	explicit NamedParameterWithType(T const& value) : value_(value) {}
-	explicit NamedParameterWithType(T&& value) : value_(std::move(value)) {}
+//	explicit NamedParameterWithType(T&& value) : value_(std::move(value)) {}
 	T& get() { return value_; }
 	T const& get() const { return value_; }
 
@@ -188,6 +188,9 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 			p.parseUnsignedInteger( arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
 			p.parseString( arg0.get() );
+//		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value && std::is_function<typename Agr0Type::Type>::value )
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value )
+			;
 		else
 			static_assert( std::is_same<Agr0DataType, AllowedDataType>::value, "unsupported type" );
 	}
@@ -204,6 +207,9 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
 		p.skipUnsignedInteger();
 	else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
 		p.skipString();
+//		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value && std::is_function<typename Agr0Type::Type>::value )
+	else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value )
+		;
 	else
 		static_assert( std::is_same<typename TypeToPick::Type, AllowedDataType>::value, "unsupported type" );
 }
@@ -217,12 +223,14 @@ void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::
 	using Agr0Type = special_decay_t<Arg0>;
 	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
 	{
-		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && (std::is_integral<typename Agr0Type::Type>::value || std::is_integral<typename std::remove_reference<typename Agr0Type::Type>::type>::value) )
 			composeSignedInteger( b, arg0.get() );
-		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && (std::is_integral<typename Agr0Type::Type>::value || std::is_integral<typename std::remove_reference<typename Agr0Type::Type>::type>::value) )
 			composeUnsignedInteger( b, arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
 			composeString( b, arg0.get() );
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value && std::is_invocable<typename Agr0Type::Type, ::nodecpp::Buffer&, size_t>::value )
+			composeVector( b, arg0.get() );
 		else
 			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
 	}
@@ -295,9 +303,9 @@ void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID
 	using Agr0Type = special_decay_t<Arg0>;
 	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
 	{
-		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && (std::is_integral<typename Agr0Type::Type>::value || std::is_integral<typename std::remove_reference<typename Agr0Type::Type>::type>::value) )
 			composeSignedInteger( b, name, arg0.get() );
-		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && std::is_integral<typename Agr0Type::Type>::value )
+		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && (std::is_integral<typename Agr0Type::Type>::value || std::is_integral<typename std::remove_reference<typename Agr0Type::Type>::type>::value) )
 			composeUnsignedInteger( b, name, arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
 			composeString( b, name, arg0.get() );

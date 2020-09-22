@@ -46,7 +46,9 @@ struct StringType {static constexpr bool dummy = false;};
 struct BlobType {static constexpr bool dummy = false;};
 struct ByteArrayType {static constexpr bool dummy = false;};
 struct EnumType {static constexpr bool dummy = false;};
+struct VectorType {static constexpr bool dummy = false;};
 
+struct NoDefaultValueType {static constexpr bool dummy = false;};
 // helper types
 
 struct StringLiteralForComposing
@@ -119,6 +121,29 @@ void composeString( Buffer& b, const char* str )
 	b.append( str, sz );
 	b.appendUint8( 0 );
 	printf( "composeString(const char* \"%s\"\n", str );
+}
+
+template<typename Fn>
+void composeVector( Buffer& b, Fn& fn )
+{
+	size_t startOffset = b.size();
+	size_t currOffset = b.size();
+	size_t count = 0;
+	size_t ret = fn( b, count );
+	while ( ret )
+	{
+		uint64_t sz = b.size() - currOffset;
+		b.set_size( b.size() + integer_max_size );
+		memmove( b.begin() + currOffset, b.begin() + currOffset + integer_max_size, sz );
+		memcpy( b.begin() + currOffset, &sz, sizeof( integer_max_size ) );
+		currOffset = b.size();
+		++count;
+		ret = fn( b, count );
+	}
+	uint64_t fullSz = currOffset - startOffset;
+	b.set_size( b.size() + integer_max_size );
+	memmove( b.begin() + startOffset, b.begin() + startOffset + integer_max_size, fullSz );
+	memcpy( b.begin() + startOffset, &fullSz, sizeof( integer_max_size ) );
 }
 
 namespace json
