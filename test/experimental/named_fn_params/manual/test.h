@@ -66,7 +66,7 @@ void message_one_compose(Buffer& b, Args&& ... args)
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	using arg_4_type = NamedParameterWithType<impl::VectorType, ForthParam::Name>;
+	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
 	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...);
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
@@ -86,7 +86,7 @@ void message_one_parse(impl::Parser& p, Args&& ... args)
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	using arg_4_type = NamedParameterWithType<impl::VectorType, ForthParam::Name>;
+	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);

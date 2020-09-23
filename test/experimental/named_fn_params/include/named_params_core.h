@@ -100,11 +100,13 @@ struct ExpectedParameter
 struct AllowedDataType {};
 
 
+struct CollectionWrapperBase {};
+
 template<class T>
-class CollectionWrapper
+class CollectionWrapper : public CollectionWrapperBase
 {
 	T& coll;
-	typename T::const_iterator it;
+	typename T::iterator it;
 
 public:
 	using value_type = typename T::value_type;
@@ -114,19 +116,19 @@ public:
 	CollectionWrapper( T& coll_ ) : coll( coll_ ), it( coll.begin() ) {};
 	size_t size() const { return coll.size(); }
 	template<class ExpectedType>
-	bool compose_next( Buffer& b ) const
+	bool compose_next( Buffer& b )
 	{ 
 		if ( it != coll.end() )
 		{
-			if constexpr ( std::is_same<ExpectedType, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
-				composeSignedInteger( b, *it );
-			else if constexpr ( std::is_same<ExpectedType, impl::UnsignedIntegralType>::value && std::is_integral<value_type>::value )
-				composeUnsignedInteger( b, *it );
-			else if constexpr ( std::is_same<ExpectedType, impl::StringType>::value && std::is_same<value_type, nodecpp::string>::value )
-				composeString( b, *it );
+			if constexpr ( std::is_same<typename ExpectedType::value_type, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
+				impl::composeSignedInteger( b, *it );
+			else if constexpr ( std::is_same<typename ExpectedType::value_type, impl::UnsignedIntegralType>::value && std::is_integral<value_type>::value )
+				impl::composeUnsignedInteger( b, *it );
+			else if constexpr ( std::is_same<typename ExpectedType::value_type, impl::StringType>::value && std::is_same<value_type, nodecpp::string>::value )
+				impl::composeString( b, *it );
 			else
 				static_assert( std::is_same<value_type, AllowedDataType>::value, "unsupported type" );
-			++it;
+			it++;
 			return true;
 		}
 		else
@@ -136,11 +138,11 @@ public:
 	void parse_next( impl::Parser& p )
 	{
 		value_type val;
-		if constexpr ( std::is_same<ExpectedType, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
+		if constexpr ( std::is_same<typename ExpectedType::value_type, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
 			p.parseSignedInteger( &val );
-		else if constexpr ( std::is_same<ExpectedType, impl::UnsignedIntegralType>::value && std::is_integral<value_type>::value )
+		else if constexpr ( std::is_same<typename ExpectedType::value_type, impl::UnsignedIntegralType>::value && std::is_integral<value_type>::value )
 			p.parseUnsignedInteger( val );
-		else if constexpr ( std::is_same<ExpectedType, impl::StringType>::value && std::is_same<value_type, nodecpp::string>::value )
+		else if constexpr ( std::is_same<typename ExpectedType::value_type, impl::StringType>::value && std::is_same<value_type, nodecpp::string>::value )
 			p.parseString( val );
 		else
 			static_assert( std::is_same<value_type, AllowedDataType>::value, "unsupported type" );
@@ -236,8 +238,19 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
 			p.parseString( arg0.get() );
 //		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value && std::is_function<typename Agr0Type::Type>::value )
-		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value )
-			;
+		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
+		{
+			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			{
+				size_t sz = 0;
+				p.parseUnsignedInteger( &sz );
+				auto& coll = arg0.get();
+				for ( size_t i=0; i<sz; ++i )
+					coll.parse_next<typename TypeToPick::Type>( p );
+			}
+			else
+				static_assert( std::is_same<Agr0DataType, AllowedDataType>::value, "unsupported type" );
+		}
 		else
 			static_assert( std::is_same<Agr0DataType, AllowedDataType>::value, "unsupported type" );
 	}
@@ -276,8 +289,18 @@ void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::
 			composeUnsignedInteger( b, arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
 			composeString( b, arg0.get() );
-		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value && std::is_invocable<typename Agr0Type::Type, ::nodecpp::Buffer&, size_t>::value )
-			composeVector( b, arg0.get() );
+		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
+		{
+			if constexpr ( std::is_invocable<typename Agr0Type::Type, ::nodecpp::Buffer&, size_t>::value )
+				composeVector( b, arg0.get() );
+			else if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			{
+				auto& coll = arg0.get();
+				size_t sz = coll.size();
+				composeUnsignedInteger( b, sz );
+				while ( coll.compose_next<typename TypeToPick::Type>( b ) );
+			}
+		}
 		else
 			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
 	}

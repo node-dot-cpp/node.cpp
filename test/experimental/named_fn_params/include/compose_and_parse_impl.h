@@ -47,6 +47,9 @@ struct BlobType {static constexpr bool dummy = false;};
 struct ByteArrayType {static constexpr bool dummy = false;};
 struct EnumType {static constexpr bool dummy = false;};
 struct VectorType {static constexpr bool dummy = false;};
+struct VectorOfSympleTypesBase : public VectorType {static constexpr bool dummy = false;};
+template<class value_type_>
+struct VectorOfSympleTypes : public VectorOfSympleTypesBase {static constexpr bool dummy = false; using value_type = value_type_;};
 
 struct NoDefaultValueType {static constexpr bool dummy = false;};
 // helper types
