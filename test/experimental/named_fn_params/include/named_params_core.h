@@ -130,7 +130,7 @@ public:
 			else
 				static_assert( std::is_same<value_type, AllowedDataType>::value, "unsupported type" );
 			it++;
-			return true;
+			return it != coll.end();
 		}
 		else
 			return false;
@@ -238,7 +238,6 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 			p.parseUnsignedInteger( arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
 			p.parseString( arg0.get() );
-//		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value && std::is_function<typename Agr0Type::Type>::value )
 		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
 		{
 			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<SimpleTypeCollectionWrapperBase, typename Agr0Type::Type>::value )
@@ -256,6 +255,20 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 				auto& coll = arg0.get();
 				for ( size_t i=0; i<sz; ++i )
 					coll.parse_next( p );
+			}
+			else if constexpr ( std::is_base_of<VectorOfMessageType, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			{
+				size_t collSz = 0;
+				p.parseUnsignedInteger( &collSz );
+				auto& coll = arg0.get();
+				for ( size_t i=0; i<collSz; ++i )
+				{
+					size_t itemSz = 0;
+					p.parseUnsignedInteger( &itemSz );
+					Parser itemParser( p, itemSz );
+					coll.parse_next( itemParser );
+					p.adjustParsingPos( itemSz );
+				}
 			}
 			else
 				static_assert( std::is_same<Agr0DataType, AllowedDataType>::value, "unsupported type" );
@@ -315,6 +328,27 @@ void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::
 				size_t sz = coll.size();
 				composeUnsignedInteger( b, sz );
 				while ( coll.compose_next( b ) );
+			}
+			else if constexpr ( std::is_base_of<VectorOfMessageType, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			{
+				auto& coll = arg0.get();
+				size_t collSz = coll.size();
+				composeUnsignedInteger( b, collSz );
+				if ( collSz )
+				{
+					size_t pos = b.size();
+					b.set_size( b.size() + integer_max_size ); // TODO: revise toward lowest estimation of 1 with move is longer
+					for ( size_t i=0; i<collSz; ++i )
+					{
+						bool ok = coll.compose_next( b );
+						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
+						int64_t written = b.size() - pos - integer_max_size;
+						memcpy( b.begin() + pos, &written, integer_max_size );
+						pos = b.size();
+						b.set_size( b.size() + integer_max_size ); // TODO: revise toward lowest estimation of 1 with move is longer
+					}
+				}
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, coll.compose_next( b ), "wrapper declared {} items and more is ready for processing", collSz );
 			}
 		}
 		else

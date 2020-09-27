@@ -238,11 +238,17 @@ void composeString( Buffer& b, nodecpp::string name, const char* str )
 class Parser
 {
 	uint8_t* begin = nullptr;
-	uint8_t* end;
+	uint8_t* end = nullptr;
 
 public:
 	Parser() {}
 	Parser( uint8_t* buff, size_t size ) { begin = buff; end = buff + size; }
+	Parser( const Parser& other, size_t size ) { begin = other.begin; end = other.begin + size; }
+
+	void adjustParsingPos( size_t toSkip )
+	{
+		begin += toSkip;
+	}
 
 	void skipSpacesEtc()
 	{

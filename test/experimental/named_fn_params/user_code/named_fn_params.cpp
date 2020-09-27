@@ -32,7 +32,7 @@ public:
 			return true;
 		}
 		else
-			return false;
+			return false; // no more items
 	}
 	void parse_next( man::impl::Parser& p )
 	{
