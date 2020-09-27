@@ -53,7 +53,8 @@ struct VectorOfSympleTypes : public VectorOfSympleTypesBase {static constexpr bo
 struct VectorOfMessageType : public VectorType {static constexpr bool dummy = false;};
 struct VectorOfNonextMessageTypesBase : public VectorType {static constexpr bool dummy = false;};
 //template<class value_type_>
-struct VectorOfNonextMessageTypes : public VectorOfNonextMessageTypesBase {static constexpr bool dummy = false; /*using value_type = value_type_;*/};
+//struct VectorOfNonextMessageTypes : public VectorOfNonextMessageTypesBase {static constexpr bool dummy = false; using value_type = value_type_;};
+struct VectorOfNonextMessageTypes : public VectorOfNonextMessageTypesBase {static constexpr bool dummy = false;};
 
 struct NoDefaultValueType {static constexpr bool dummy = false;};
 // helper types

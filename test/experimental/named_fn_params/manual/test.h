@@ -72,7 +72,7 @@ void message_one_compose(Buffer& b, Args&& ... args)
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
 	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
 	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...);
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
@@ -97,7 +97,7 @@ void message_one_parse(impl::Parser& p, Args&& ... args)
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 	impl::parseParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
 	impl::parseParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
@@ -200,8 +200,8 @@ void point_parse(impl::Parser& p, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
-	impl::parseParam<arg_1_type, true>(arg_1_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_2_type, true>(arg_2_type::nameAndTypeID, p, args...);
+//	impl::parseParam<arg_1_type, true>(arg_1_type::nameAndTypeID, p, args...);
+//	impl::parseParam<arg_2_type, true>(arg_2_type::nameAndTypeID, p, args...);
 }
 
 template<typename ... Args>

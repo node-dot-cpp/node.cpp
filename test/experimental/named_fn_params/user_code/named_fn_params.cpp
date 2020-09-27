@@ -50,13 +50,13 @@ int main()
 		nodecpp::vector<int> vectorOfNumbersBack;
 		nodecpp::vector<Point> vectorOfPointsBack;
 		nodecpp::Buffer b;
-		man::message_one_compose( b, man::firstParam = 1, man::secondParam = nodecpp::string("def"), man::thirdParam = 3, man::forthParam = m::CollectionWrapper( vectorOfNumbers ), man::fifthParam = VectorOfPointsWrapper( vectorOfPoints ) );
+		man::message_one_compose( b, man::firstParam = 1, man::secondParam = nodecpp::string("def"), man::thirdParam = 3, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), man::fifthParam = VectorOfPointsWrapper( vectorOfPoints ) );
 
 		Parser parser( b.begin(), b.size() );
 		int firstParam = -1;
 		nodecpp::string secondParam = "";
 		int thirdParam = -1;
-		man::message_one_parse( parser, man::firstParam = &firstParam, man::secondParam = &secondParam, man::thirdParam = &thirdParam, man::forthParam = m::CollectionWrapper( vectorOfNumbersBack ), man::fifthParam = VectorOfPointsWrapper( vectorOfPoints ) );
+		man::message_one_parse( parser, man::firstParam = &firstParam, man::secondParam = &secondParam, man::thirdParam = &thirdParam, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), man::fifthParam = VectorOfPointsWrapper( vectorOfPoints ) );
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstParam == 1, "Indeed: {}", firstParam );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, secondParam == "def", "Indeed: {}", secondParam );

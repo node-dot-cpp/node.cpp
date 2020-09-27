@@ -101,9 +101,10 @@ struct AllowedDataType {};
 
 
 struct CollectionWrapperBase {};
+struct SimpleTypeCollectionWrapperBase {};
 
 template<class T>
-class CollectionWrapper : public CollectionWrapperBase
+class SimpleTypeCollectionWrapper : public SimpleTypeCollectionWrapperBase
 {
 	T& coll;
 	typename T::iterator it;
@@ -113,7 +114,7 @@ public:
 	static_assert( std::is_same<T, nodecpp::vector<value_type>>::value, "vector type is expected only" ); // TODO: add list
 	static_assert( std::is_integral<value_type>::value || std::is_same<value_type, nodecpp::string>::value || std::is_enum<value_type>::value, "intended for simple idl types only" );
 
-	CollectionWrapper( T& coll_ ) : coll( coll_ ), it( coll.begin() ) {};
+	SimpleTypeCollectionWrapper( T& coll_ ) : coll( coll_ ), it( coll.begin() ) {};
 	size_t size() const { return coll.size(); }
 	template<class ExpectedType>
 	bool compose_next( Buffer& b )
@@ -240,13 +241,21 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 //		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value && std::is_function<typename Agr0Type::Type>::value )
 		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
 		{
-			if constexpr ( (std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value || std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value) && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<SimpleTypeCollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
 				size_t sz = 0;
 				p.parseUnsignedInteger( &sz );
 				auto& coll = arg0.get();
 				for ( size_t i=0; i<sz; ++i )
 					coll.parse_next<typename TypeToPick::Type>( p );
+			}
+			else if constexpr ( std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			{
+				size_t sz = 0;
+				p.parseUnsignedInteger( &sz );
+				auto& coll = arg0.get();
+				for ( size_t i=0; i<sz; ++i )
+					coll.parse_next( p );
 			}
 			else
 				static_assert( std::is_same<Agr0DataType, AllowedDataType>::value, "unsupported type" );
@@ -291,14 +300,21 @@ void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::
 			composeString( b, arg0.get() );
 		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
 		{
-			if constexpr ( std::is_invocable<typename Agr0Type::Type, ::nodecpp::Buffer&, size_t>::value )
-				composeVector( b, arg0.get() );
-			else if constexpr ( (std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value || std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value) && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+//			if constexpr ( std::is_invocable<typename Agr0Type::Type, ::nodecpp::Buffer&, size_t>::value )
+//				composeVector( b, arg0.get() );
+			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<SimpleTypeCollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
 				auto& coll = arg0.get();
 				size_t sz = coll.size();
 				composeUnsignedInteger( b, sz );
 				while ( coll.compose_next<typename TypeToPick::Type>( b ) );
+			}
+			else if constexpr ( std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			{
+				auto& coll = arg0.get();
+				size_t sz = coll.size();
+				composeUnsignedInteger( b, sz );
+				while ( coll.compose_next( b ) );
 			}
 		}
 		else
