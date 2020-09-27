@@ -240,7 +240,7 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 //		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::VectorType>::value && std::is_function<typename Agr0Type::Type>::value )
 		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
 		{
-			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			if constexpr ( (std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value || std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value) && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
 				size_t sz = 0;
 				p.parseUnsignedInteger( &sz );
@@ -293,7 +293,7 @@ void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::
 		{
 			if constexpr ( std::is_invocable<typename Agr0Type::Type, ::nodecpp::Buffer&, size_t>::value )
 				composeVector( b, arg0.get() );
-			else if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
+			else if constexpr ( (std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value || std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value) && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
 				auto& coll = arg0.get();
 				size_t sz = coll.size();

@@ -45,7 +45,10 @@ using ThirdParam = NamedParameter<struct ThirdParamTagStruct>;
 
 using ForthParam = NamedParameter<struct ForthParamTagStruct>;
 	
+using FifthParam = NamedParameter<struct FifthParamTagStruct>;
+
 using x_Type = NamedParameter<struct x_StructStruct>;
+
 using y_Type = NamedParameter<struct y_StructStruct>;
 
 
@@ -53,6 +56,7 @@ constexpr FirstParam::TypeConverter firstParam;
 constexpr SecondParam::TypeConverter secondParam;
 constexpr ThirdParam::TypeConverter thirdParam;
 constexpr ForthParam::TypeConverter forthParam;
+constexpr FifthParam::TypeConverter fifthParam;
 constexpr x_Type::TypeConverter x;
 constexpr y_Type::TypeConverter y;
 
@@ -67,6 +71,7 @@ void message_one_compose(Buffer& b, Args&& ... args)
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
 	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
+	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
 	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...);
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
@@ -78,6 +83,7 @@ void message_one_compose(Buffer& b, Args&& ... args)
 	impl::composeParam<arg_3_type, false, int, int, 30>(arg_3_type::nameAndTypeID, b, args...);
 //	impl::composeParam<arg_4_type, true, impl::NoDefaultValueType, impl::NoDefaultValueType, noDefaultValue>(arg_4_type::nameAndTypeID, b, args...);
 	impl::composeParam<arg_4_type, true, int, int, 10>(arg_4_type::nameAndTypeID, b, args...);
+	impl::composeParam<arg_5_type, true, int, int, 10>(arg_5_type::nameAndTypeID, b, args...);
 }
 
 template<typename ... Args>
@@ -87,6 +93,7 @@ void message_one_parse(impl::Parser& p, Args&& ... args)
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
 	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
+	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
@@ -96,6 +103,7 @@ void message_one_parse(impl::Parser& p, Args&& ... args)
 	impl::parseParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
 	impl::parseParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
 	impl::parseParam<arg_4_type, false>(arg_4_type::nameAndTypeID, p, args...);
+	impl::parseParam<arg_5_type, false>(arg_5_type::nameAndTypeID, p, args...);
 }
 
 template<typename ... Args>

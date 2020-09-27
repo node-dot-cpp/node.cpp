@@ -50,6 +50,10 @@ struct VectorType {static constexpr bool dummy = false;};
 struct VectorOfSympleTypesBase : public VectorType {static constexpr bool dummy = false;};
 template<class value_type_>
 struct VectorOfSympleTypes : public VectorOfSympleTypesBase {static constexpr bool dummy = false; using value_type = value_type_;};
+struct VectorOfMessageType : public VectorType {static constexpr bool dummy = false;};
+struct VectorOfNonextMessageTypesBase : public VectorType {static constexpr bool dummy = false;};
+//template<class value_type_>
+struct VectorOfNonextMessageTypes : public VectorOfNonextMessageTypesBase {static constexpr bool dummy = false; /*using value_type = value_type_;*/};
 
 struct NoDefaultValueType {static constexpr bool dummy = false;};
 // helper types
@@ -72,7 +76,7 @@ void composeSignedInteger( Buffer& b, T num )
 	{
 		assert( num <= INT64_MAX );
 	}
-	/*temporary solution TODO: actauls implementation*/ { 
+	/*temporary solution TODO: actual implementation*/ { 
 		int64_t val = num; 
 		b.append( &val, sizeof( val ) );
 		printf( "composeSignedInteger(%zd\n", val );
@@ -86,7 +90,7 @@ void composeUnsignedInteger( Buffer& b, T num )
 	{
 		assert( num >= 0 );
 	}
-	/*temporary solution TODO: actauls implementation*/ { 
+	/*temporary solution TODO: actual implementation*/ { 
 		uint64_t val = num; 
 		b.append( &val, sizeof( val ) );
 		printf( "composeSignedInteger(%zd\n", val );
@@ -338,7 +342,7 @@ public:
 	{
 		static_assert( sizeof( T ) <= integer_max_size );
 		static_assert( std::is_integral<T>::value );
-		/*temporary solution TODO: actauls implementation*/ int64_t val = *reinterpret_cast<int64_t*>(begin); begin += sizeof( val );
+		/*temporary solution TODO: actual implementation*/ int64_t val = *reinterpret_cast<int64_t*>(begin); begin += sizeof( val );
 		static_assert( integer_max_size == 8, "revise implementation otherwise" );
 		if constexpr ( std::is_signed< T >::value )
 		{
@@ -390,7 +394,7 @@ public:
 	}
 	void skipSignedInteger()
 	{
-		/*temporary solution TODO: actauls implementation*/ begin += integer_max_size;
+		/*temporary solution TODO: actual implementation*/ begin += integer_max_size;
 		static_assert( integer_max_size == 8, "revise implementation otherwise" );
 	}
 
@@ -399,7 +403,7 @@ public:
 	{
 		static_assert( sizeof( T ) <= integer_max_size );
 		static_assert( std::is_integral<T>::value );
-		/*temporary solution TODO: actauls implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += sizeof( val );
+		/*temporary solution TODO: actual implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += sizeof( val );
 		static_assert( integer_max_size == 8, "revise implementation otherwise" );
 		if constexpr ( std::is_unsigned< T >::value )
 		{
@@ -451,7 +455,7 @@ public:
 	}
 	void skipUnsignedInteger()
 	{
-		/*temporary solution TODO: actauls implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += integer_max_size;
+		/*temporary solution TODO: actual implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += integer_max_size;
 		static_assert( integer_max_size == 8, "revise implementation otherwise" );
 	}
 
