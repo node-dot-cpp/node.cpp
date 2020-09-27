@@ -37,7 +37,7 @@ public:
 	void parse_next( man::impl::Parser& p )
 	{
 		Point pt;
-		man::point_parse( p, man::x = it->x, man::y = it->y );
+		man::point_parse( p, man::x = &(pt.x), man::y = &(pt.y)  );
 		coll.push_back( pt );
 	}
 };
@@ -56,7 +56,7 @@ int main()
 		int firstParam = -1;
 		nodecpp::string secondParam = "";
 		int thirdParam = -1;
-		man::message_one_parse( parser, man::firstParam = &firstParam, man::secondParam = &secondParam, man::thirdParam = &thirdParam, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), man::fifthParam = VectorOfPointsWrapper( vectorOfPoints ) );
+		man::message_one_parse( parser, man::firstParam = &firstParam, man::secondParam = &secondParam, man::thirdParam = &thirdParam, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), man::fifthParam = VectorOfPointsWrapper( vectorOfPointsBack ) );
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstParam == 1, "Indeed: {}", firstParam );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, secondParam == "def", "Indeed: {}", secondParam );

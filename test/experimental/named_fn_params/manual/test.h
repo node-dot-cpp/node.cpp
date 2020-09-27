@@ -200,8 +200,8 @@ void point_parse(impl::Parser& p, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
-//	impl::parseParam<arg_1_type, true>(arg_1_type::nameAndTypeID, p, args...);
-//	impl::parseParam<arg_2_type, true>(arg_2_type::nameAndTypeID, p, args...);
+	impl::parseParam<arg_1_type, true>(arg_1_type::nameAndTypeID, p, args...);
+	impl::parseParam<arg_2_type, true>(arg_2_type::nameAndTypeID, p, args...);
 }
 
 template<typename ... Args>
