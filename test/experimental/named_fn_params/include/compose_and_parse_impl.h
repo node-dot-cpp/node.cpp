@@ -157,6 +157,64 @@ void composeVector( Buffer& b, Fn& fn )
 namespace json
 {
 
+template <typename T>
+void composeSignedInteger( Buffer& b, T num )
+{
+	static_assert( std::is_integral<T>::value );
+	if constexpr ( std::is_unsigned<T>::value && sizeof( T ) >= integer_max_size )
+	{
+		assert( num <= INT64_MAX );
+	}
+	b.appendString( nodecpp::format( "{}", (int64_t)num ) );
+}
+
+template <typename T>
+void composeUnsignedInteger( Buffer& b, T num )
+{
+	if constexpr ( std::is_signed<T>::value )
+	{
+		assert( num >= 0 );
+	}
+	b.appendString( nodecpp::format( "{}", (int64_t)num ) );
+}
+
+inline
+void composeString( Buffer& b, const nodecpp::string& str )
+{
+	b.appendUint8( '\"' );
+	b.appendString( str );
+	b.appendUint8( '\"' );
+//	printf( "composeString(nodecpp::string \"%s\"\n", str.c_str() );
+}
+
+inline
+void composeString( Buffer& b, const StringLiteralForComposing* str )
+{
+	b.appendUint8( '\"' );
+	b.append( str->str, str->size );
+	b.appendUint8( '\"' );
+//	printf( "composeString(StringLiteralForComposing \"%s\"\n", str->str );
+}
+
+inline
+void composeString( Buffer& b, std::string str )
+{
+	b.appendUint8( '\"' );
+	b.append( str.c_str(), str.size() );
+	b.appendUint8( '\"' );
+//	printf( "composeString(std::string \"%s\"\n", str.c_str() );
+}
+
+inline
+void composeString( Buffer& b, const char* str )
+{
+	size_t sz = strlen( str );
+	b.appendUint8( '\"' );
+	b.append( str, sz );
+	b.appendUint8( '\"' );
+//	printf( "composeString(const char* \"%s\"\n", str );
+}
+
 inline
 void addNamePart( Buffer& b, nodecpp::string name )
 {
@@ -168,7 +226,7 @@ void addNamePart( Buffer& b, nodecpp::string name )
 }
 
 template <typename T>
-void composeSignedInteger( Buffer& b, nodecpp::string name, T num )
+void composeNamedSignedInteger( Buffer& b, nodecpp::string name, T num )
 {
 	static_assert( std::is_integral<T>::value );
 	if constexpr ( std::is_unsigned<T>::value && sizeof( T ) >= integer_max_size )
@@ -180,7 +238,7 @@ void composeSignedInteger( Buffer& b, nodecpp::string name, T num )
 }
 
 template <typename T>
-void composeUnsignedInteger( Buffer& b, nodecpp::string name, T num )
+void composeNamedUnsignedInteger( Buffer& b, nodecpp::string name, T num )
 {
 	if constexpr ( std::is_signed<T>::value )
 	{
@@ -191,7 +249,7 @@ void composeUnsignedInteger( Buffer& b, nodecpp::string name, T num )
 }
 
 inline
-void composeString( Buffer& b, nodecpp::string name, const nodecpp::string& str )
+void composeNamedString( Buffer& b, nodecpp::string name, const nodecpp::string& str )
 {
 	addNamePart( b, name );
 	b.appendUint8( '\"' );
@@ -201,7 +259,7 @@ void composeString( Buffer& b, nodecpp::string name, const nodecpp::string& str 
 }
 
 inline
-void composeString( Buffer& b, nodecpp::string name, const StringLiteralForComposing* str )
+void composeNamedString( Buffer& b, nodecpp::string name, const StringLiteralForComposing* str )
 {
 	addNamePart( b, name );
 	b.appendUint8( '\"' );
@@ -211,7 +269,7 @@ void composeString( Buffer& b, nodecpp::string name, const StringLiteralForCompo
 }
 
 inline
-void composeString( Buffer& b, nodecpp::string name, std::string str )
+void composeNamedString( Buffer& b, nodecpp::string name, std::string str )
 {
 	addNamePart( b, name );
 	b.appendUint8( '\"' );
@@ -221,7 +279,7 @@ void composeString( Buffer& b, nodecpp::string name, std::string str )
 }
 
 inline
-void composeString( Buffer& b, nodecpp::string name, const char* str )
+void composeNamedString( Buffer& b, nodecpp::string name, const char* str )
 {
 	addNamePart( b, name );
 	size_t sz = strlen( str );
@@ -250,6 +308,8 @@ public:
 		begin += toSkip;
 	}
 
+	// JSON  ///////////////////////////////////////////////////////////////////
+
 	void skipSpacesEtc()
 	{
 		while ( begin < end && ( *begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n' ) ) ++begin;
@@ -264,6 +324,19 @@ public:
 	void skipComma()
 	{
 		if ( *begin++ != ',' )
+			throw std::exception(); // TODO
+	}
+
+	bool isDelimiter( char delim )
+	{
+		skipSpacesEtc();
+		return *begin == delim;
+	}
+
+	void skipDelimiter( char delim )
+	{
+		skipSpacesEtc();
+		if ( *begin++ != delim )
 			throw std::exception(); // TODO
 	}
 
@@ -343,6 +416,7 @@ public:
 			throw std::exception(); // TODO (expected ':')
 	}
 
+	// GMQ  ///////////////////////////////////////////////////////////////////
 
 	template <typename T>
 	void parseSignedInteger( T* num )

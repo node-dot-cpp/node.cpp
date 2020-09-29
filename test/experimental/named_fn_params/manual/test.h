@@ -122,18 +122,28 @@ void message_one_composeJson(Buffer& b, Args&& ... args)
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
+	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
+	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
+	using arg_6_type = NamedParameterWithType<impl::VectorOfMessageType, SixthParam::Name>;
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_6_type::nameAndTypeID, Args::nameAndTypeID...);
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 //	b.append( "\"test2Call_C\": {\n  ", sizeof("\"test2Call_C\": {\n  ") - 1 );
+	b.append( "{\n  ", sizeof("{\n  ") - 1 );
 	impl::json::composeParam<arg_1_type, false, int, int, 10>("arg_1", arg_1_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>("arg_2", arg_2_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_3_type, false, int, int, 30>("arg_3", arg_3_type::nameAndTypeID, b, args...);
-//	b.append( ",\n}\n", 4 );
+	b.append( ",\n  ", 4 );
+	impl::json::composeParam<arg_4_type, true, int, int, 10>("arg_4", arg_4_type::nameAndTypeID, b, args...);
+	b.append( ",\n  ", 4 );
+	impl::json::composeParam<arg_5_type, true, int, int, 10>("arg_5", arg_5_type::nameAndTypeID, b, args...);
+	b.append( ",\n  ", 4 );
+	impl::json::composeParam<arg_6_type, true, int, int, 10>("arg_6", arg_6_type::nameAndTypeID, b, args...);
+	b.append( "\n}\n", 3 );
 	b.appendUint8( '\n' );
 	b.appendUint8( 0 );
 }
@@ -144,11 +154,16 @@ void message_one_parseJson(impl::Parser& p, Args&& ... args)
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
 	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
+	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
+	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
+	using arg_6_type = NamedParameterWithType<impl::VectorOfMessageType, SixthParam::Name>;
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_6_type::nameAndTypeID, Args::nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
+
+	p.skipDelimiter( '{' );
 	for ( ;; )
 	{
 		nodecpp::string key;
@@ -162,14 +177,26 @@ void message_one_parseJson(impl::Parser& p, Args&& ... args)
 		else if ( key == "arg_3" )
 //		    impl::json::parseParam<NamedParameterWithType<arg_3_type, FirstParam::Name>, false>(arg_3_type::nameAndTypeID, p, args...);
 			impl::json::parseJsonParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
+		else if ( key == "arg_4" )
+//		    impl::json::parseParam<NamedParameterWithType<arg_4_type, FirstParam::Name>, false>(arg_4_type::nameAndTypeID, p, args...);
+			impl::json::parseJsonParam<arg_4_type, false>(arg_4_type::nameAndTypeID, p, args...);
+		else if ( key == "arg_5" )
+//		    impl::json::parseParam<NamedParameterWithType<arg_5_type, FirstParam::Name>, false>(arg_5_type::nameAndTypeID, p, args...);
+			impl::json::parseJsonParam<arg_5_type, false>(arg_5_type::nameAndTypeID, p, args...);
+		else if ( key == "arg_6" )
+//		    impl::json::parseParam<NamedParameterWithType<arg_6_type, FirstParam::Name>, false>(arg_6_type::nameAndTypeID, p, args...);
+			impl::json::parseJsonParam<arg_6_type, false>(arg_6_type::nameAndTypeID, p, args...);
 		p.skipSpacesEtc();
-		if ( p.isComma() )
+		if ( p.isDelimiter( ',' ) )
 		{
-			p.skipComma();
+			p.skipDelimiter( ',' );
 			continue;
 		}
-		if ( !p.isData() )
+		if ( p.isDelimiter( '}' ) )
+		{
+			p.skipDelimiter( '}' );
 			break;
+		}
 		throw std::exception(); // bad format
 	}
 }
