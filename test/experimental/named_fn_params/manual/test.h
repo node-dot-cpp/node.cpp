@@ -143,9 +143,9 @@ void message_one_composeJson(Buffer& b, Args&& ... args)
 	impl::json::composeParam<arg_5_type, true, int, int, 10>("arg_5", arg_5_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_6_type, true, int, int, 10>("arg_6", arg_6_type::nameAndTypeID, b, args...);
-	b.append( "\n}\n", 3 );
-	b.appendUint8( '\n' );
-	b.appendUint8( 0 );
+	b.append( "\n}", 2 );
+	//b.appendUint8( '\n' );
+	//b.appendUint8( 0 );
 }
 
 template<typename ... Args>
@@ -255,11 +255,13 @@ void point_composeJson(Buffer& b, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
+	b.append( "{\n  ", sizeof("{\n  ") - 1 );
 	impl::json::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, b, args...);
-	b.appendUint8( '\n' );
-	b.appendUint8( 0 );
+	b.append( "\n}", 2 );
+	//b.appendUint8( '\n' );
+	//b.appendUint8( 0 );
 }
 
 template<typename ... Args>
@@ -275,6 +277,7 @@ void point_parseJson(impl::Parser& p, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
+	p.skipDelimiter( '{' );
 	for ( ;; )
 	{
 		nodecpp::string key;
@@ -284,13 +287,16 @@ void point_parseJson(impl::Parser& p, Args&& ... args)
 		else if ( key == "y" )
 			impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
 		p.skipSpacesEtc();
-		if ( p.isComma() )
+		if ( p.isDelimiter( ',' ) )
 		{
-			p.skipComma();
+			p.skipDelimiter( ',' );
 			continue;
 		}
-		if ( !p.isData() )
+		if ( p.isDelimiter( '}' ) )
+		{
+			p.skipDelimiter( '}' );
 			break;
+		}
 		throw std::exception(); // bad format
 	}
 }
@@ -358,13 +364,15 @@ void point3D_composeJson(Buffer& b, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
+	b.append( "{\n  ", sizeof("{\n  ") - 1 );
 	impl::json::composeParam<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, b, args...);
 	b.append( ",\n  ", 4 );
 	impl::json::composeParam<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>("z", arg_3_type::nameAndTypeID, b, args...);
-	b.appendUint8( '\n' );
-	b.appendUint8( 0 );
+	b.append( "\n}", 2 );
+	//b.appendUint8( '\n' );
+	//b.appendUint8( 0 );
 }
 
 template<typename ... Args>
@@ -382,6 +390,7 @@ void point3D_parseJson(impl::Parser& p, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
+	p.skipDelimiter( '{' );
 	for ( ;; )
 	{
 		nodecpp::string key;
@@ -393,13 +402,16 @@ void point3D_parseJson(impl::Parser& p, Args&& ... args)
 		else if ( key == "z" )
 			impl::json::parseJsonParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
 		p.skipSpacesEtc();
-		if ( p.isComma() )
+		if ( p.isDelimiter( ',' ) )
 		{
-			p.skipComma();
+			p.skipDelimiter( ',' );
 			continue;
 		}
-		if ( !p.isData() )
+		if ( p.isDelimiter( '}' ) )
+		{
+			p.skipDelimiter( '}' );
 			break;
+		}
 		throw std::exception(); // bad format
 	}
 }

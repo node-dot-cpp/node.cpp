@@ -541,6 +541,7 @@ void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID
 		{
 			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<SimpleTypeCollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
+				json::addNamePart( b, name );
 				b.appendUint8( '[' );
 				auto& coll = arg0.get();
 				size_t collSz = coll.size();
@@ -549,13 +550,14 @@ void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID
 					if ( i )
 						b.append( ", ", 2 );
 					bool ok = coll.compose_next_to_json<typename TypeToPick::Type>( b );
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
+//					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
 				}
 				b.appendUint8( ']' );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json<typename TypeToPick::Type>( b ), "wrapper declared {} items and more is ready for processing", collSz );
+//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json<typename TypeToPick::Type>( b ), "wrapper declared {} items and more is ready for processing", collSz );
 			}
 			else if constexpr ( std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
+				json::addNamePart( b, name );
 				b.appendUint8( '[' );
 				auto& coll = arg0.get();
 				size_t collSz = coll.size();
@@ -564,13 +566,14 @@ void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID
 					if ( i )
 						b.append( ", ", 2 );
 					bool ok = coll.compose_next_to_json( b );
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
+//					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
 				}
 				b.appendUint8( ']' );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json( b ), "wrapper declared {} items and more is ready for processing", collSz );
+//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json( b ), "wrapper declared {} items and more is ready for processing", collSz );
 			}
 			else if constexpr ( std::is_base_of<VectorOfMessageType, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
+				json::addNamePart( b, name );
 				b.appendUint8( '[' );
 				auto& coll = arg0.get();
 				size_t collSz = coll.size();
@@ -579,10 +582,10 @@ void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID
 					if ( i )
 						b.append( ", ", 2 );
 					bool ok = coll.compose_next_to_json( b );
-					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
+//					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
 				}
 				b.appendUint8( ']' );
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json( b ), "wrapper declared {} items and more is ready for processing", collSz );
+//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json( b ), "wrapper declared {} items and more is ready for processing", collSz );
 			}
 		}
 		else

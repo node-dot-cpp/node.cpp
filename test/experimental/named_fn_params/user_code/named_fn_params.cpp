@@ -159,7 +159,8 @@ int main()
 		nodecpp::vector<Point3D> vectorOfPoints3DBack;
 		nodecpp::Buffer b;
 
-		man::message_one_composeJson( b, man::firstParam = 1, man::secondParam = nodecpp::string("def"), man::thirdParam = 3, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), man::fifthParam = VectorOfPointsWrapper( vectorOfPointsBack ), man::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3DBack ) );
+		man::message_one_composeJson( b, man::firstParam = 1, man::secondParam = nodecpp::string("def"), man::thirdParam = 3, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), man::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), man::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
+		b.appendUint8( 0 );
 		printf( "%s\n", b.begin() );
 
 		Parser parser( b.begin(), b.size() );
