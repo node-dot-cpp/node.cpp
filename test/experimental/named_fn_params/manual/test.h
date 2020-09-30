@@ -71,7 +71,7 @@ static constexpr impl::StringLiteralForComposing default_2 = { "default_2", size
 }
 
 template<typename ... Args>
-void message_one_compose(Buffer& b, Args&& ... args)
+void message_one_compose(Composer& composer, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
@@ -84,14 +84,14 @@ void message_one_compose(Buffer& b, Args&& ... args)
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
-	impl::composeParam<arg_1_type, false, int, int, 10>(arg_1_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>(arg_2_type::nameAndTypeID, b, args...);
-//	impl::composeParam<arg_2_type, false, nodecpp::string, const char*, test2Call_C_defaults::predefault_2>(arg_2_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_3_type, false, int, int, 30>(arg_3_type::nameAndTypeID, b, args...);
-//	impl::composeParam<arg_4_type, true, impl::NoDefaultValueType, impl::NoDefaultValueType, noDefaultValue>(arg_4_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_4_type, true, int, int, 10>(arg_4_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_5_type, true, int, int, 10>(arg_5_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_6_type, true, int, int, 10>(arg_6_type::nameAndTypeID, b, args...);
+	impl::composeParam<arg_1_type, false, int, int, 10>(arg_1_type::nameAndTypeID, composer, args...);
+	impl::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>(arg_2_type::nameAndTypeID, composer, args...);
+//	impl::composeParam<arg_2_type, false, nodecpp::string, const char*, test2Call_C_defaults::predefault_2>(arg_2_type::nameAndTypeID, composer, args...);
+	impl::composeParam<arg_3_type, false, int, int, 30>(arg_3_type::nameAndTypeID, composer, args...);
+//	impl::composeParam<arg_4_type, true, impl::NoDefaultValueType, impl::NoDefaultValueType, noDefaultValue>(arg_4_type::nameAndTypeID, composer, args...);
+	impl::composeParam<arg_4_type, true, int, int, 10>(arg_4_type::nameAndTypeID, composer, args...);
+	impl::composeParam<arg_5_type, true, int, int, 10>(arg_5_type::nameAndTypeID, composer, args...);
+	impl::composeParam<arg_6_type, true, int, int, 10>(arg_6_type::nameAndTypeID, composer, args...);
 }
 
 template<typename ... Args>
@@ -117,7 +117,7 @@ void message_one_parse(impl::Parser& p, Args&& ... args)
 }
 
 template<typename ... Args>
-void message_one_composeJson(Buffer& b, Args&& ... args)
+void message_one_composeJson(Composer& composer, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
 	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
@@ -132,17 +132,17 @@ void message_one_composeJson(Buffer& b, Args&& ... args)
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 //	b.append( "\"test2Call_C\": {\n  ", sizeof("\"test2Call_C\": {\n  ") - 1 );
 	b.append( "{\n  ", sizeof("{\n  ") - 1 );
-	impl::json::composeParam<arg_1_type, false, int, int, 10>("arg_1", arg_1_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_1_type, false, int, int, 10>("arg_1", arg_1_type::nameAndTypeID, composer, args...);
 	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>("arg_2", arg_2_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>("arg_2", arg_2_type::nameAndTypeID, composer, args...);
 	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_3_type, false, int, int, 30>("arg_3", arg_3_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_3_type, false, int, int, 30>("arg_3", arg_3_type::nameAndTypeID, composer, args...);
 	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_4_type, true, int, int, 10>("arg_4", arg_4_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_4_type, true, int, int, 10>("arg_4", arg_4_type::nameAndTypeID, composer, args...);
 	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_5_type, true, int, int, 10>("arg_5", arg_5_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_5_type, true, int, int, 10>("arg_5", arg_5_type::nameAndTypeID, composer, args...);
 	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_6_type, true, int, int, 10>("arg_6", arg_6_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_6_type, true, int, int, 10>("arg_6", arg_6_type::nameAndTypeID, composer, args...);
 	b.append( "\n}", 2 );
 	//b.appendUint8( '\n' );
 	//b.appendUint8( 0 );
@@ -209,7 +209,7 @@ void message_one_parseJson(impl::Parser& p, Args&& ... args)
 //**********************************************************************
 
 template<typename ... Args>
-void point_compose(Buffer& b, Args&& ... args)
+void point_compose(Composer& composer, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
 	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
@@ -221,8 +221,8 @@ void point_compose(Buffer& b, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
-	impl::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, b, args...);
+	impl::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, composer, args...);
+	impl::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, composer, args...);
 }
 
 template<typename ... Args>
@@ -243,7 +243,7 @@ void point_parse(impl::Parser& p, Args&& ... args)
 }
 
 template<typename ... Args>
-void point_composeJson(Buffer& b, Args&& ... args)
+void point_composeJson(Composer& composer, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
 	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
@@ -256,9 +256,9 @@ void point_composeJson(Buffer& b, Args&& ... args)
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
 	b.append( "{\n  ", sizeof("{\n  ") - 1 );
-	impl::json::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, composer, args...);
 	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, composer, args...);
 	b.append( "\n}", 2 );
 	//b.appendUint8( '\n' );
 	//b.appendUint8( 0 );
@@ -310,7 +310,7 @@ void point_parseJson(impl::Parser& p, Args&& ... args)
 //**********************************************************************
 
 template<typename ... Args>
-void point3D_compose(Buffer& b, Args&& ... args)
+void point3D_compose(Composer& composer, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
 	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
@@ -324,9 +324,9 @@ void point3D_compose(Buffer& b, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
-	impl::composeParam<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, b, args...);
-	impl::composeParam<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>(arg_3_type::nameAndTypeID, b, args...);
+	impl::composeParam<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, composer, args...);
+	impl::composeParam<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, composer, args...);
+	impl::composeParam<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>(arg_3_type::nameAndTypeID, composer, args...);
 }
 
 template<typename ... Args>
@@ -350,7 +350,7 @@ void point3D_parse(impl::Parser& p, Args&& ... args)
 }
 
 template<typename ... Args>
-void point3D_composeJson(Buffer& b, Args&& ... args)
+void point3D_composeJson(Composer& composer, Args&& ... args)
 {
 	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
 	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
@@ -365,11 +365,11 @@ void point3D_composeJson(Buffer& b, Args&& ... args)
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
 	b.append( "{\n  ", sizeof("{\n  ") - 1 );
-	impl::json::composeParam<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, composer, args...);
 	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, composer, args...);
 	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>("z", arg_3_type::nameAndTypeID, b, args...);
+	impl::json::composeParam<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>("z", arg_3_type::nameAndTypeID, composer, args...);
 	b.append( "\n}", 2 );
 	//b.appendUint8( '\n' );
 	//b.appendUint8( 0 );

@@ -99,7 +99,6 @@ struct ExpectedParameter
 
 struct AllowedDataType {};
 
-
 struct CollectionWrapperBase {};
 struct SimpleTypeCollectionWrapperBase {};
 
@@ -117,16 +116,16 @@ public:
 	SimpleTypeCollectionWrapper( T& coll_ ) : coll( coll_ ), it( coll.begin() ) {};
 	size_t size() const { return coll.size(); }
 	template<class ExpectedType>
-	bool compose_next_to_gmq( Buffer& b )
+	bool compose_next_to_gmq( Composer& composer )
 	{ 
 		if ( it != coll.end() )
 		{
 			if constexpr ( std::is_same<typename ExpectedType::value_type, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
-				impl::composeSignedInteger( b, *it );
+				impl::composeSignedInteger( composer, *it );
 			else if constexpr ( std::is_same<typename ExpectedType::value_type, impl::UnsignedIntegralType>::value && std::is_integral<value_type>::value )
-				impl::composeUnsignedInteger( b, *it );
+				impl::composeUnsignedInteger( composer, *it );
 			else if constexpr ( std::is_same<typename ExpectedType::value_type, impl::StringType>::value && std::is_same<value_type, nodecpp::string>::value )
-				impl::composeString( b, *it );
+				impl::composeString( composer, *it );
 			else
 				static_assert( std::is_same<value_type, AllowedDataType>::value, "unsupported type" );
 			it++;
@@ -136,16 +135,16 @@ public:
 			return false;
 	}
 	template<class ExpectedType>
-	bool compose_next_to_json( Buffer& b )
+	bool compose_next_to_json( Composer& composer )
 	{ 
 		if ( it != coll.end() )
 		{
 			if constexpr ( std::is_same<typename ExpectedType::value_type, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
-				impl::json::composeSignedInteger( b, *it );
+				impl::json::composeSignedInteger( composer, *it );
 			else if constexpr ( std::is_same<typename ExpectedType::value_type, impl::UnsignedIntegralType>::value && std::is_integral<value_type>::value )
-				impl::json::composeUnsignedInteger( b, *it );
+				impl::json::composeUnsignedInteger( composer, *it );
 			else if constexpr ( std::is_same<typename ExpectedType::value_type, impl::StringType>::value && std::is_same<value_type, nodecpp::string>::value )
-				impl::json::composeString( b, *it );
+				impl::json::composeString( composer, *it );
 			else
 				static_assert( std::is_same<value_type, AllowedDataType>::value, "unsupported type" );
 			it++;
@@ -333,79 +332,79 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p)
 ///////////////////////////////////////////
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
-void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)
+void composeParam(const typename TypeToPick::NameAndTypeID expected, Composer& composer, Arg0&& arg0, Args&& ... args)
 {
 	using Agr0Type = special_decay_t<Arg0>;
 	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
 	{
 		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && (std::is_integral<typename Agr0Type::Type>::value || std::is_integral<typename std::remove_reference<typename Agr0Type::Type>::type>::value) )
-			composeSignedInteger( b, arg0.get() );
+			composeSignedInteger( composer, arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && (std::is_integral<typename Agr0Type::Type>::value || std::is_integral<typename std::remove_reference<typename Agr0Type::Type>::type>::value) )
-			composeUnsignedInteger( b, arg0.get() );
+			composeUnsignedInteger( composer, arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
-			composeString( b, arg0.get() );
+			composeString( composer, arg0.get() );
 		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
 		{
 			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<SimpleTypeCollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
 				auto& coll = arg0.get();
 				size_t sz = coll.size();
-				composeUnsignedInteger( b, sz );
-				while ( coll.compose_next_to_gmq<typename TypeToPick::Type>( b ) );
+				composeUnsignedInteger( composer, sz );
+				while ( coll.compose_next_to_gmq<typename TypeToPick::Type>(composer) );
 			}
 			else if constexpr ( std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
 				auto& coll = arg0.get();
 				size_t sz = coll.size();
-				composeUnsignedInteger( b, sz );
-				while ( coll.compose_next_to_gmq( b ) );
+				composeUnsignedInteger( composer, sz );
+				while ( coll.compose_next_to_gmq(composer) );
 			}
 			else if constexpr ( std::is_base_of<VectorOfMessageType, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
 				auto& coll = arg0.get();
 				size_t collSz = coll.size();
-				composeUnsignedInteger( b, collSz );
+				composeUnsignedInteger( composer, collSz );
 				if ( collSz )
 				{
-					size_t pos = b.size();
-					b.set_size( b.size() + integer_max_size ); // TODO: revise toward lowest estimation of 1 with move is longer
+					size_t pos = composer.buff.size();
+					composer.buff.set_size( composer.buff.size() + integer_max_size ); // TODO: revise toward lowest estimation of 1 with move is longer
 					for ( size_t i=0; i<collSz; ++i )
 					{
-						bool ok = coll.compose_next_to_gmq( b );
+						bool ok = coll.compose_next_to_gmq(composer);
 						NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
-						int64_t written = b.size() - pos - integer_max_size;
-						memcpy( b.begin() + pos, &written, integer_max_size );
-						pos = b.size();
-						b.set_size( b.size() + integer_max_size ); // TODO: revise toward lowest estimation of 1 with move is longer
+						int64_t written = composer.buff.size() - pos - integer_max_size;
+						memcpy( composer.buff.begin() + pos, &written, integer_max_size );
+						pos = composer.buff.size();
+						composer.buff.set_size( composer.buff.size() + integer_max_size ); // TODO: revise toward lowest estimation of 1 with move is longer
 					}
 				}
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_gmq( b ), "wrapper declared {} items and more is ready for processing", collSz );
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_gmq(composer), "wrapper declared {} items and more is ready for processing", collSz );
 			}
 		}
 		else
 			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
 	}
 	else
-		composeParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(expected, b, args...);
+		composeParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(expected, composer, args...);
 }
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue>
-void composeParam(const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b)
+void composeParam(const typename TypeToPick::NameAndTypeID expected, Composer& composer)
 {
 		static_assert( !required, "required parameter" );
 		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value )
 		{
 			static_assert ( std::is_integral<AssumedDefaultT>::value );
-			composeSignedInteger( b, defaultValue );
+			composeSignedInteger( composer, defaultValue );
 		}
 		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value )
 		{
 			static_assert ( std::is_integral<AssumedDefaultT>::value );
-			composeUnsignedInteger( b, defaultValue );
+			composeUnsignedInteger( composer, defaultValue );
 		}
 		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
 		{
-			composeString( b, defaultValue );
+			composeString( composer, defaultValue );
 		}
 		// TODO: add supported types here
 		else
@@ -526,92 +525,92 @@ void parseJsonParam(const typename TypeToPick::NameAndTypeID expected, Parser& p
 }
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue, typename Arg0, typename ... Args>
-void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b, Arg0&& arg0, Args&& ... args)
+void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID expected, Composer& composer, Arg0&& arg0, Args&& ... args)
 {
 	using Agr0Type = special_decay_t<Arg0>;
 	if constexpr ( std::is_same<typename special_decay_t<Arg0>::Name, typename TypeToPick::Name>::value ) // same parameter name
 	{
 		if constexpr ( std::is_same<typename TypeToPick::Type, impl::SignedIntegralType>::value && (std::is_integral<typename Agr0Type::Type>::value || std::is_integral<typename std::remove_reference<typename Agr0Type::Type>::type>::value) )
-			composeNamedSignedInteger( b, name, arg0.get() );
+			composeNamedSignedInteger( composer, name, arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::UnsignedIntegralType>::value && (std::is_integral<typename Agr0Type::Type>::value || std::is_integral<typename std::remove_reference<typename Agr0Type::Type>::type>::value) )
-			composeNamedUnsignedInteger( b, name, arg0.get() );
+			composeNamedUnsignedInteger( composer, name, arg0.get() );
 		else if constexpr ( std::is_same<typename TypeToPick::Type, impl::StringType>::value )
-			composeNamedString( b, name, arg0.get() );
+			composeNamedString( composer, name, arg0.get() );
 		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
 		{
 			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<SimpleTypeCollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
-				json::addNamePart( b, name );
-				b.appendUint8( '[' );
+				json::addNamePart( composer, name );
+				composer.buff.appendUint8( '[' );
 				auto& coll = arg0.get();
 				size_t collSz = coll.size();
 				for ( size_t i=0; i<collSz; ++i )
 				{
 					if ( i )
-						b.append( ", ", 2 );
-					bool ok = coll.compose_next_to_json<typename TypeToPick::Type>( b );
+						composer.buff.append( ", ", 2 );
+					bool ok = coll.compose_next_to_json<typename TypeToPick::Type>(composer);
 //					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
 				}
-				b.appendUint8( ']' );
-//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json<typename TypeToPick::Type>( b ), "wrapper declared {} items and more is ready for processing", collSz );
+				composer.buff.appendUint8( ']' );
+//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json<typename TypeToPick::Type>(composer), "wrapper declared {} items and more is ready for processing", collSz );
 			}
 			else if constexpr ( std::is_base_of<VectorOfNonextMessageTypesBase, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
-				json::addNamePart( b, name );
-				b.appendUint8( '[' );
+				json::addNamePart( composer, name );
+				composer.buff.appendUint8( '[' );
 				auto& coll = arg0.get();
 				size_t collSz = coll.size();
 				for ( size_t i=0; i<collSz; ++i )
 				{
 					if ( i )
-						b.append( ", ", 2 );
-					bool ok = coll.compose_next_to_json( b );
+						composer.buff.append( ", ", 2 );
+					bool ok = coll.compose_next_to_json(composer);
 //					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
 				}
-				b.appendUint8( ']' );
-//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json( b ), "wrapper declared {} items and more is ready for processing", collSz );
+				composer.buff.appendUint8( ']' );
+//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json(composer), "wrapper declared {} items and more is ready for processing", collSz );
 			}
 			else if constexpr ( std::is_base_of<VectorOfMessageType, typename TypeToPick::Type>::value && std::is_base_of<CollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
-				json::addNamePart( b, name );
-				b.appendUint8( '[' );
+				json::addNamePart( composer, name );
+				composer.buff.appendUint8( '[' );
 				auto& coll = arg0.get();
 				size_t collSz = coll.size();
 				for ( size_t i=0; i<collSz; ++i )
 				{
 					if ( i )
-						b.append( ", ", 2 );
-					bool ok = coll.compose_next_to_json( b );
+						composer.buff.append( ", ", 2 );
+					bool ok = coll.compose_next_to_json(composer);
 //					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ok, "wrapper declared {} items, provided only {}", collSz, i + 1 );
 				}
-				b.appendUint8( ']' );
-//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json( b ), "wrapper declared {} items and more is ready for processing", collSz );
+				composer.buff.appendUint8( ']' );
+//				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !coll.compose_next_to_json(composer), "wrapper declared {} items and more is ready for processing", collSz );
 			}
 		}
 		else
 			static_assert( std::is_same<typename Agr0Type::Type, AllowedDataType>::value, "unsupported type" );
 	}
 	else
-		composeParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(name, expected, b, args...);
+		composeParam<TypeToPick, required, AssumedDefaultT, DefaultT, defaultValue>(name, expected, composer, args...);
 }
 
 template<typename TypeToPick, bool required, class AssumedDefaultT, class DefaultT, DefaultT defaultValue>
-void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID expected, ::nodecpp::Buffer& b)
+void composeParam(nodecpp::string name, const typename TypeToPick::NameAndTypeID expected, Composer& composer)
 {
 		static_assert( !required, "required parameter" );
 		if constexpr ( std::is_same<typename TypeToPick::Type, SignedIntegralType>::value )
 		{
 			static_assert ( std::is_integral<AssumedDefaultT>::value );
-			composeNamedSignedInteger( b, name, defaultValue );
+			composeNamedSignedInteger( composer, name, defaultValue );
 		}
 		else if constexpr ( std::is_same<typename TypeToPick::Type, UnsignedIntegralType>::value )
 		{
 			static_assert ( std::is_integral<AssumedDefaultT>::value );
-			composeNamedUnsignedInteger( b, name, defaultValue );
+			composeNamedUnsignedInteger( composer, name, defaultValue );
 		}
 		else if constexpr ( std::is_same<typename TypeToPick::Type, StringType>::value )
 		{
-			composeNamedString( b, name, defaultValue );
+			composeNamedString( composer, name, defaultValue );
 		}
 		// TODO: add supported types here
 		else

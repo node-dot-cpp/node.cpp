@@ -30,22 +30,22 @@ public:
 	VectorOfPointsWrapper( nodecpp::vector<Point>& coll_ ) : coll( coll_ ), it( coll.begin() ) {};
 
 	size_t size() const { return coll.size(); }
-	bool compose_next_to_gmq( Buffer& b )
+	bool compose_next_to_gmq( m::Composer& composer )
 	{ 
 		if ( it != coll.end() )
 		{
-			m::point_compose( b, m::x = it->x, m::y = it->y );
+			m::point_compose( composer, m::x = it->x, m::y = it->y );
 			it++;
 			return true;
 		}
 		else
 			return false; // no more items
 	}
-	bool compose_next_to_json( Buffer& b )
+	bool compose_next_to_json( m::Composer& composer )
 	{ 
 		if ( it != coll.end() )
 		{
-			m::point_composeJson( b, m::x = it->x, m::y = it->y );
+			m::point_composeJson( composer, m::x = it->x, m::y = it->y );
 			it++;
 			return true;
 		}
@@ -75,22 +75,22 @@ public:
 	VectorOfPoints3DWrapper( nodecpp::vector<Point3D>& coll_ ) : coll( coll_ ), it( coll.begin() ) {};
 
 	size_t size() const { return coll.size(); }
-	bool compose_next_to_gmq( Buffer& b )
+	bool compose_next_to_gmq( m::Composer& composer )
 	{ 
 		if ( it != coll.end() )
 		{
-			m::point3D_compose( b, m::x = it->x, m::y = it->y, m::z = it->z );
+			m::point3D_compose( composer, m::x = it->x, m::y = it->y, m::z = it->z );
 			it++;
 			return true;
 		}
 		else
 			return false; // no more items
 	}
-	bool compose_next_to_json( Buffer& b )
+	bool compose_next_to_json( m::Composer& composer )
 	{ 
 		if ( it != coll.end() )
 		{
-			m::point3D_composeJson( b, m::x = it->x, m::y = it->y, m::z = it->z );
+			m::point3D_composeJson( composer, m::x = it->x, m::y = it->y, m::z = it->z );
 			it++;
 			return true;
 		}
@@ -121,7 +121,8 @@ int main()
 		nodecpp::vector<Point> vectorOfPointsBack;
 		nodecpp::vector<Point3D> vectorOfPoints3DBack;
 		nodecpp::Buffer b;
-		m::message_one_compose( b, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), m::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
+		m::Composer composer( b );
+		m::message_one_compose( composer, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), m::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
 
 		Parser parser( b.begin(), b.size() );
 		int firstParam = -1;
@@ -158,8 +159,9 @@ int main()
 		nodecpp::vector<Point> vectorOfPointsBack;
 		nodecpp::vector<Point3D> vectorOfPoints3DBack;
 		nodecpp::Buffer b;
+		m::Composer composer( b );
 
-		m::message_one_composeJson( b, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), m::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
+		m::message_one_composeJson( composer, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), m::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
 		b.appendUint8( 0 );
 		printf( "%s\n", b.begin() );
 
