@@ -291,7 +291,11 @@ void composeNamedString( Buffer& b, nodecpp::string name, const char* str )
 
 } // namespace json
 
+} // namespace m::impl
+
 // parsing
+
+namespace m {
 
 class Parser
 {
@@ -421,10 +425,10 @@ public:
 	template <typename T>
 	void parseSignedInteger( T* num )
 	{
-		static_assert( sizeof( T ) <= integer_max_size );
+		static_assert( sizeof( T ) <= impl::integer_max_size );
 		static_assert( std::is_integral<T>::value );
 		/*temporary solution TODO: actual implementation*/ int64_t val = *reinterpret_cast<int64_t*>(begin); begin += sizeof( val );
-		static_assert( integer_max_size == 8, "revise implementation otherwise" );
+		static_assert( impl::integer_max_size == 8, "revise implementation otherwise" );
 		if constexpr ( std::is_signed< T >::value )
 		{
 			if constexpr ( sizeof( T ) == 8 )
@@ -445,7 +449,7 @@ public:
 				*num = (T)(val);
 			}
 			else
-				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
+				static_assert( sizeof( T ) > impl::integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 		else
 		{
@@ -470,22 +474,22 @@ public:
 				*num = (T)(val);
 			}
 			else
-				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
+				static_assert( sizeof( T ) > impl::integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 	}
 	void skipSignedInteger()
 	{
-		/*temporary solution TODO: actual implementation*/ begin += integer_max_size;
-		static_assert( integer_max_size == 8, "revise implementation otherwise" );
+		/*temporary solution TODO: actual implementation*/ begin += impl::integer_max_size;
+		static_assert( impl::integer_max_size == 8, "revise implementation otherwise" );
 	}
 
 	template <typename T>
 	void parseUnsignedInteger( T* num )
 	{
-		static_assert( sizeof( T ) <= integer_max_size );
+		static_assert( sizeof( T ) <= impl::integer_max_size );
 		static_assert( std::is_integral<T>::value );
 		/*temporary solution TODO: actual implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += sizeof( val );
-		static_assert( integer_max_size == 8, "revise implementation otherwise" );
+		static_assert( impl::integer_max_size == 8, "revise implementation otherwise" );
 		if constexpr ( std::is_unsigned< T >::value )
 		{
 			if constexpr ( sizeof( T ) == 8 )
@@ -506,7 +510,7 @@ public:
 				*num = (T)(val);
 			}
 			else
-				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
+				static_assert( sizeof( T ) > impl::integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 		else
 		{
@@ -531,13 +535,13 @@ public:
 				*num = (T)(val);
 			}
 			else
-				static_assert( sizeof( T ) > integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
+				static_assert( sizeof( T ) > impl::integer_max_size ); // kinda chitting with a compiler, which treats static_assert( false ) here as an unconditional error
 		}
 	}
 	void skipUnsignedInteger()
 	{
-		/*temporary solution TODO: actual implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += integer_max_size;
-		static_assert( integer_max_size == 8, "revise implementation otherwise" );
+		/*temporary solution TODO: actual implementation*/ uint64_t val = *reinterpret_cast<uint64_t*>(begin); begin += impl::integer_max_size;
+		static_assert( impl::integer_max_size == 8, "revise implementation otherwise" );
 	}
 
 	void parseString( const char** str )
@@ -558,6 +562,6 @@ public:
 	}
 };
 
-} // namespace m::impl
+} // namespace m
 
 #endif // COMPOSE_AND_PARSE_IMPL_H

@@ -155,7 +155,7 @@ public:
 			return false;
 	}
 	template<class ExpectedType>
-	void parse_next_from_gmq( impl::Parser& p )
+	void parse_next_from_gmq( Parser& p )
 	{
 		value_type val;
 		if constexpr ( std::is_same<typename ExpectedType::value_type, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )
@@ -169,7 +169,7 @@ public:
 		coll.push_back( val );
 	}
 	template<class ExpectedType>
-	void parse_next_from_json( impl::Parser& p )
+	void parse_next_from_json( Parser& p )
 	{
 		value_type val;
 		if constexpr ( std::is_same<typename ExpectedType::value_type, impl::SignedIntegralType>::value && std::is_integral<value_type>::value )

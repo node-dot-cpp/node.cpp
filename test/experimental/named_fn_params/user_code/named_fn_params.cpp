@@ -3,10 +3,10 @@
 
 #include <stdio.h>
 #include "named_params_core.h"
-//#include "../generated/marshalling.h"
-#include "../manual/test.h"
+#include "../generated/marshalling.h"
+//#include "../manual/test.h"
 
-using m::impl::Parser;
+using m::Parser;
 
 struct Point
 {
@@ -34,7 +34,7 @@ public:
 	{ 
 		if ( it != coll.end() )
 		{
-			man::point_compose( b, man::x = it->x, man::y = it->y );
+			m::point_compose( b, m::x = it->x, m::y = it->y );
 			it++;
 			return true;
 		}
@@ -45,23 +45,23 @@ public:
 	{ 
 		if ( it != coll.end() )
 		{
-			man::point_composeJson( b, man::x = it->x, man::y = it->y );
+			m::point_composeJson( b, m::x = it->x, m::y = it->y );
 			it++;
 			return true;
 		}
 		else
 			return false; // no more items
 	}
-	void parse_next_from_gmq( man::impl::Parser& p )
+	void parse_next_from_gmq( m::Parser& p )
 	{
 		Point pt;
-		man::point_parse( p, man::x = &(pt.x), man::y = &(pt.y)  );
+		m::point_parse( p, m::x = &(pt.x), m::y = &(pt.y)  );
 		coll.push_back( pt );
 	}
-	void parse_next_from_json( man::impl::Parser& p )
+	void parse_next_from_json( m::Parser& p )
 	{
 		Point pt;
-		man::point_parseJson( p, man::x = &(pt.x), man::y = &(pt.y)  );
+		m::point_parseJson( p, m::x = &(pt.x), m::y = &(pt.y)  );
 		coll.push_back( pt );
 	}
 };
@@ -79,7 +79,7 @@ public:
 	{ 
 		if ( it != coll.end() )
 		{
-			man::point3D_compose( b, man::x = it->x, man::y = it->y, man::z = it->z );
+			m::point3D_compose( b, m::x = it->x, m::y = it->y, m::z = it->z );
 			it++;
 			return true;
 		}
@@ -90,23 +90,23 @@ public:
 	{ 
 		if ( it != coll.end() )
 		{
-			man::point3D_composeJson( b, man::x = it->x, man::y = it->y, man::z = it->z );
+			m::point3D_composeJson( b, m::x = it->x, m::y = it->y, m::z = it->z );
 			it++;
 			return true;
 		}
 		else
 			return false; // no more items
 	}
-	void parse_next_from_gmq( man::impl::Parser& p )
+	void parse_next_from_gmq( m::Parser& p )
 	{
 		Point3D pt;
-		man::point3D_parse( p, man::x = &(pt.x), man::y = &(pt.y), man::z = &(pt.z) );
+		m::point3D_parse( p, m::x = &(pt.x), m::y = &(pt.y), m::z = &(pt.z) );
 		coll.push_back( pt );
 	}
-	void parse_next_from_json( man::impl::Parser& p )
+	void parse_next_from_json( m::Parser& p )
 	{
 		Point3D pt;
-		man::point3D_parseJson( p, man::x = &(pt.x), man::y = &(pt.y), man::z = &(pt.z) );
+		m::point3D_parseJson( p, m::x = &(pt.x), m::y = &(pt.y), m::z = &(pt.z) );
 		coll.push_back( pt );
 	}
 };
@@ -121,13 +121,13 @@ int main()
 		nodecpp::vector<Point> vectorOfPointsBack;
 		nodecpp::vector<Point3D> vectorOfPoints3DBack;
 		nodecpp::Buffer b;
-		man::message_one_compose( b, man::firstParam = 1, man::secondParam = nodecpp::string("def"), man::thirdParam = 3, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), man::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), man::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
+		m::message_one_compose( b, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), m::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
 
 		Parser parser( b.begin(), b.size() );
 		int firstParam = -1;
 		nodecpp::string secondParam = "";
 		int thirdParam = -1;
-		man::message_one_parse( parser, man::firstParam = &firstParam, man::secondParam = &secondParam, man::thirdParam = &thirdParam, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), man::fifthParam = VectorOfPointsWrapper( vectorOfPointsBack ), man::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3DBack ) );
+		m::message_one_parse( parser, m::firstParam = &firstParam, m::secondParam = &secondParam, m::thirdParam = &thirdParam, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), m::fifthParam = VectorOfPointsWrapper( vectorOfPointsBack ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3DBack ) );
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstParam == 1, "Indeed: {}", firstParam );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, secondParam == "def", "Indeed: {}", secondParam );
@@ -159,7 +159,7 @@ int main()
 		nodecpp::vector<Point3D> vectorOfPoints3DBack;
 		nodecpp::Buffer b;
 
-		man::message_one_composeJson( b, man::firstParam = 1, man::secondParam = nodecpp::string("def"), man::thirdParam = 3, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), man::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), man::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
+		m::message_one_composeJson( b, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), m::fifthParam = VectorOfPointsWrapper( vectorOfPoints ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
 		b.appendUint8( 0 );
 		printf( "%s\n", b.begin() );
 
@@ -167,7 +167,7 @@ int main()
 		int firstParam = -1;
 		nodecpp::string secondParam = "";
 		int thirdParam = -1;
-		man::message_one_parseJson( parser, man::firstParam = &firstParam, man::secondParam = &secondParam, man::thirdParam = &thirdParam, man::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), man::fifthParam = VectorOfPointsWrapper( vectorOfPointsBack ), man::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3DBack ) );
+		m::message_one_parseJson( parser, m::firstParam = &firstParam, m::secondParam = &secondParam, m::thirdParam = &thirdParam, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), m::fifthParam = VectorOfPointsWrapper( vectorOfPointsBack ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3DBack ) );
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstParam == 1, "Indeed: {}", firstParam );
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, secondParam == "def", "Indeed: {}", secondParam );
@@ -192,26 +192,26 @@ int main()
 /*
 	{
 		nodecpp::Buffer b;
-		man::test2Call_C_compose( b, man::secondParam = nodecpp::string("def"), man::thirdParam = 3 );
+		m::test2Call_C_compose( b, m::secondParam = nodecpp::string("def"), m::thirdParam = 3 );
 	}
 
 	{
 		nodecpp::Buffer b;
-		man::test2Call_C_compose( b, man::thirdParam = (uint64_t)3, man::firstParam = (uint64_t)(uint64_t)(-1) );
+		m::test2Call_C_compose( b, m::thirdParam = (uint64_t)3, m::firstParam = (uint64_t)(uint64_t)(-1) );
 	}
 
 	{
 		nodecpp::Buffer b;
-		man::test2Call_C_compose( b, man::secondParam = nodecpp::string("def"), man::firstParam = 1 );
+		m::test2Call_C_compose( b, m::secondParam = nodecpp::string("def"), m::firstParam = 1 );
 	}
 
 	{
 		nodecpp::Buffer b;
-		man::test2Call_C_compose( b, man::secondParam = nodecpp::string("def") );
+		m::test2Call_C_compose( b, m::secondParam = nodecpp::string("def") );
 	}
 
 	{
 		nodecpp::Buffer b;
-		man::test2Call_C_compose( b );
+		m::test2Call_C_compose( b );
 	}*/
 }
