@@ -99,8 +99,11 @@ struct ExpectedParameter
 
 struct AllowedDataType {};
 
-struct CollectionWrapperBase {};
-struct SimpleTypeCollectionWrapperBase {};
+struct CollectionWrapperBase {
+	static constexpr size_t unknown_size = (size_t)(-1);
+};
+
+struct SimpleTypeCollectionWrapperBase : public CollectionWrapperBase {};
 
 template<class T>
 class SimpleTypeCollectionWrapper : public SimpleTypeCollectionWrapperBase
@@ -152,6 +155,16 @@ public:
 		}
 		else
 			return false;
+	}
+
+	void size_hint( size_t count )
+	{
+		// Note: here we can do some preliminary steps based on a number of collection elements declared in the message (if such a number exists for a particular protocol) 
+		if constexpr ( std::is_same<T, nodecpp::vector<value_type>>::value )
+		{
+			if ( count != unknown_size )
+				coll.reserve( count );
+		}
 	}
 	template<class ExpectedType>
 	void parse_next_from_gmq( Parser& p )
@@ -277,6 +290,7 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 				size_t sz = 0;
 				p.parseUnsignedInteger( &sz );
 				auto& coll = arg0.get();
+				coll.size_hint( sz );
 				for ( size_t i=0; i<sz; ++i )
 					coll.parse_next_from_gmq<typename TypeToPick::Type>( p );
 			}
@@ -285,6 +299,7 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 				size_t sz = 0;
 				p.parseUnsignedInteger( &sz );
 				auto& coll = arg0.get();
+				coll.size_hint( sz );
 				for ( size_t i=0; i<sz; ++i )
 					coll.parse_next_from_gmq( p );
 			}
@@ -293,6 +308,7 @@ void parseParam(const typename TypeToPick::NameAndTypeID expected, Parser& p, Ar
 				size_t collSz = 0;
 				p.parseUnsignedInteger( &collSz );
 				auto& coll = arg0.get();
+				coll.size_hint( collSz );
 				for ( size_t i=0; i<collSz; ++i )
 				{
 					size_t itemSz = 0;
@@ -429,12 +445,13 @@ void parseJsonParam(const typename TypeToPick::NameAndTypeID expected, Parser& p
 			p.readStringFromJson( arg0.get() );
 		else if constexpr ( std::is_base_of<impl::VectorType, typename TypeToPick::Type>::value )
 		{
+			auto& coll = arg0.get();
+			coll.size_hint( CollectionWrapperBase::unknown_size );
 			if constexpr ( std::is_base_of<VectorOfSympleTypesBase, typename TypeToPick::Type>::value && std::is_base_of<SimpleTypeCollectionWrapperBase, typename Agr0Type::Type>::value )
 			{
 				p.skipDelimiter( '[' );
 				if ( !p.isDelimiter( ']' ) ) // there are some items there
 				{
-					auto& coll = arg0.get();
 					for ( ;; )
 					{
 						coll.parse_next_from_json<typename TypeToPick::Type>( p );
@@ -458,7 +475,6 @@ void parseJsonParam(const typename TypeToPick::NameAndTypeID expected, Parser& p
 				p.skipDelimiter( '[' );
 				if ( !p.isDelimiter( ']' ) ) // there are some items there
 				{
-					auto& coll = arg0.get();
 					for ( ;; )
 					{
 						coll.parse_next_from_json( p );
@@ -482,7 +498,6 @@ void parseJsonParam(const typename TypeToPick::NameAndTypeID expected, Parser& p
 				p.skipDelimiter( '[' );
 				if ( !p.isDelimiter( ']' ) ) // there are some items there
 				{
-					auto& coll = arg0.get();
 					for ( ;; )
 					{
 						coll.parse_next_from_json( p );

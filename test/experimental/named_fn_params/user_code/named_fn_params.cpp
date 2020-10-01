@@ -52,6 +52,13 @@ public:
 		else
 			return false; // no more items
 	}
+
+	void size_hint( size_t count )
+	{
+		// Note: here we can do some preliminary steps based on a number of collection elements declared in the message (if such a number exists for a particular protocol) 
+		if ( count != unknown_size )
+			coll.reserve( count );
+	}
 	void parse_next_from_gmq( m::Parser& p )
 	{
 		Point pt;
@@ -90,12 +97,19 @@ public:
 	{ 
 		if ( it != coll.end() )
 		{
-			m::point3D_composeJson( composer, m::x = it->x, m::y = it->y, m::z = it->z );
+			m::point3D_composeJson( composer, m::z = it->z, m::x = it->x, m::y = it->y );
 			it++;
 			return true;
 		}
 		else
 			return false; // no more items
+	}
+
+	void size_hint( size_t count )
+	{
+		// Note: here we can do some preliminary steps based on a number of collection elements declared in the message (if such a number exists for a particular protocol) 
+		if ( count != unknown_size )
+			coll.reserve( count );
 	}
 	void parse_next_from_gmq( m::Parser& p )
 	{
