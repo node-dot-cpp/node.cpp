@@ -37,13 +37,16 @@ using String = nodecpp::string;
 
 namespace m {
 
+enum Proto { GMQ, JSON };
+
 class Composer
 {
 public: // just temporary TODO: rework!
+	Proto proto;
 	Buffer& buff;
 
 public:
-	Composer( Buffer& buff_ ) : buff( buff_ ) {}
+	Composer( Proto proto_, Buffer& buff_ ) : proto( proto_ ), buff( buff_ ) {}
 };
 
 } // namespace m
@@ -317,10 +320,12 @@ class Parser
 	uint8_t* begin = nullptr;
 	uint8_t* end = nullptr;
 
+public: // TODO: Revise!
+	Proto proto;
+
 public:
-	Parser() {}
-	Parser( uint8_t* buff, size_t size ) { begin = buff; end = buff + size; }
-	Parser( const Parser& other, size_t size ) { begin = other.begin; end = other.begin + size; }
+	Parser( Proto proto_, uint8_t* buff, size_t size ) : proto( proto_ ) { begin = buff; end = buff + size; }
+	Parser( const Parser& other, size_t size ) : proto( other.proto ) { begin = other.begin; end = other.begin + size; }
 
 	void adjustParsingPos( size_t toSkip )
 	{
