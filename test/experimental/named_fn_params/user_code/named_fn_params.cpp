@@ -172,3 +172,71 @@ int main()
 		}
 	}
 
+	{
+		nodecpp::vector<int> vectorOfNumbers = { 0, 1, 2, 3, 4, 5 };
+		nodecpp::vector<Point> vectorOfPoints;
+		nodecpp::vector<Point3D> vectorOfPoints3D = { {0, 1, 2}, {3, 4, 5} };
+		nodecpp::vector<int> vectorOfNumbersBack;
+		nodecpp::vector<Point> vectorOfPointsBack;
+		nodecpp::vector<Point3D> vectorOfPoints3DBack;
+		nodecpp::Buffer b;
+		m::Composer composer( m::Proto::GMQ, b );
+		m::message_one_compose( composer, m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ), m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ) );
+
+		Parser parser( m::Proto::GMQ, b.begin(), b.size() );
+		int firstParam = -1;
+		nodecpp::string secondParam = "";
+		int thirdParam = -1;
+		m::message_one_parse( parser, m::firstParam = &firstParam, m::thirdParam = &thirdParam, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), m::secondParam = &secondParam, m::fifthParam = VectorOfPointsWrapper( vectorOfPointsBack ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3DBack ) );
+
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstParam == 1, "Indeed: {}", firstParam );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, secondParam == "def", "Indeed: {}", secondParam );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, thirdParam == 3, "Indeed: {}", thirdParam );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfNumbers.size() == vectorOfNumbersBack.size(), "{} vs {}", vectorOfNumbers.size(), vectorOfNumbersBack.size() );
+		for ( size_t i=0; i<vectorOfNumbers.size(); ++i )
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfNumbers[i] == vectorOfNumbersBack[i], "{} vs {}", vectorOfNumbers[i], vectorOfNumbersBack[i] );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPointsBack.size() == 0, "indeed: {}", vectorOfPointsBack.size() );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPoints3DBack.size() == vectorOfPoints3D.size(), "{} vs {}", vectorOfPoints3DBack.size(), vectorOfPoints3D.size() );
+		for ( size_t i=0; i<vectorOfPoints3D.size(); ++i )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPoints3D[i].x == vectorOfPoints3DBack[i].x, "{} vs {}", vectorOfPoints3D[i].x, vectorOfPoints3DBack[i].x );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPoints3D[i].y == vectorOfPoints3DBack[i].y, "{} vs {}", vectorOfPoints3D[i].y, vectorOfPoints3DBack[i].y );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPoints3D[i].z == vectorOfPoints3DBack[i].z, "{} vs {}", vectorOfPoints3D[i].z, vectorOfPoints3DBack[i].z );
+		}
+	}
+
+	{
+		nodecpp::vector<int> vectorOfNumbers = { 0, 1, 2, 3, 4, 5 };
+		nodecpp::vector<Point3D> vectorOfPoints3D = { {0, 1, 2}, {3, 4, 5} };
+		nodecpp::vector<int> vectorOfNumbersBack;
+		nodecpp::vector<Point> vectorOfPointsBack;
+		nodecpp::vector<Point3D> vectorOfPoints3DBack;
+		nodecpp::Buffer b;
+		m::Composer composer( m::Proto::JSON, b );
+
+		m::message_one_compose( composer, m::firstParam = 1, m::secondParam = nodecpp::string("def"), m::thirdParam = 3, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbers ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3D ) );
+		b.appendUint8( 0 );
+		printf( "%s\n", b.begin() );
+
+		Parser parser( m::Proto::JSON, b.begin(), b.size() );
+		int firstParam = -1;
+		nodecpp::string secondParam = "";
+		int thirdParam = -1;
+		m::message_one_parse( parser, m::firstParam = &firstParam, m::secondParam = &secondParam, m::thirdParam = &thirdParam, m::forthParam = m::SimpleTypeCollectionWrapper( vectorOfNumbersBack ), m::fifthParam = VectorOfPointsWrapper( vectorOfPointsBack ), m::sixthParam = VectorOfPoints3DWrapper( vectorOfPoints3DBack ) );
+
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, firstParam == 1, "Indeed: {}", firstParam );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, secondParam == "def", "Indeed: {}", secondParam );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, thirdParam == 3, "Indeed: {}", thirdParam );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfNumbers.size() == vectorOfNumbersBack.size(), "{} vs {}", vectorOfNumbers.size(), vectorOfNumbersBack.size() );
+		for ( size_t i=0; i<vectorOfNumbers.size(); ++i )
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfNumbers[i] == vectorOfNumbersBack[i], "{} vs {}", vectorOfNumbers[i], vectorOfNumbersBack[i] );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPointsBack.size() == 0, "indeed: {}", vectorOfPointsBack.size() );
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPoints3DBack.size() == vectorOfPoints3D.size(), "{} vs {}", vectorOfPoints3DBack.size(), vectorOfPoints3D.size() );
+		for ( size_t i=0; i<vectorOfPoints3D.size(); ++i )
+		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPoints3D[i].x == vectorOfPoints3DBack[i].x, "{} vs {}", vectorOfPoints3D[i].x, vectorOfPoints3DBack[i].x );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPoints3D[i].y == vectorOfPoints3DBack[i].y, "{} vs {}", vectorOfPoints3D[i].y, vectorOfPoints3DBack[i].y );
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, vectorOfPoints3D[i].z == vectorOfPoints3DBack[i].z, "{} vs {}", vectorOfPoints3D[i].z, vectorOfPoints3DBack[i].z );
+		}
+	}
+}

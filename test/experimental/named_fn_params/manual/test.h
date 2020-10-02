@@ -1,208 +1,173 @@
-/* -------------------------------------------------------------------------------
-* Copyright (c) 2018, OLogN Technologies AG
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*	 * Redistributions of source code must retain the above copyright
-*	   notice, this list of conditions and the following disclaimer.
-*	 * Redistributions in binary form must reproduce the above copyright
-*	   notice, this list of conditions and the following disclaimer in the
-*	   documentation and/or other materials provided with the distribution.
-*	 * Neither the name of the OLogN Technologies AG nor the
-*	   names of its contributors may be used to endorse or promote products
-*	   derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL OLogN Technologies AG BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* -------------------------------------------------------------------------------*/
-
-#ifndef TEST_H
-#define TEST_H
+#ifndef marshaling_H
+#define marshaling_H
 
 #include <named_params_core.h>
 
-namespace man {
+namespace m {
 
-using namespace m;
+using fifthParam_Type = NamedParameter<struct fifthParam_Struct>;
+using firstParam_Type = NamedParameter<struct firstParam_Struct>;
+using forthParam_Type = NamedParameter<struct forthParam_Struct>;
+using secondParam_Type = NamedParameter<struct secondParam_Struct>;
+using sixthParam_Type = NamedParameter<struct sixthParam_Struct>;
+using thirdParam_Type = NamedParameter<struct thirdParam_Struct>;
+using x_Type = NamedParameter<struct x_Struct>;
+using y_Type = NamedParameter<struct y_Struct>;
+using z_Type = NamedParameter<struct z_Struct>;
 
-constexpr impl::NoDefaultValueType noDefaultValue;
-// GENERATED VALUES
-
-using FirstParam = NamedParameter<struct FirstParamTagStruct>;
-
-using SecondParam = NamedParameter<struct SecondParamTagStruct>;
-
-using ThirdParam = NamedParameter<struct ThirdParamTagStruct>;
-
-using ForthParam = NamedParameter<struct ForthParamTagStruct>;
-	
-using FifthParam = NamedParameter<struct FifthParamTagStruct>;
-	
-using SixthParam = NamedParameter<struct SixthParamTagStruct>;
-
-using x_Type = NamedParameter<struct x_StructStruct>;
-
-using y_Type = NamedParameter<struct y_StructStruct>;
-
-using z_Type = NamedParameter<struct z_StructStruct>;
-
-
-constexpr FirstParam::TypeConverter firstParam;
-constexpr SecondParam::TypeConverter secondParam;
-constexpr ThirdParam::TypeConverter thirdParam;
-constexpr ForthParam::TypeConverter forthParam;
-constexpr FifthParam::TypeConverter fifthParam;
-constexpr SixthParam::TypeConverter sixthParam;
+constexpr fifthParam_Type::TypeConverter fifthParam;
+constexpr firstParam_Type::TypeConverter firstParam;
+constexpr forthParam_Type::TypeConverter forthParam;
+constexpr secondParam_Type::TypeConverter secondParam;
+constexpr sixthParam_Type::TypeConverter sixthParam;
+constexpr thirdParam_Type::TypeConverter thirdParam;
 constexpr x_Type::TypeConverter x;
 constexpr y_Type::TypeConverter y;
 constexpr z_Type::TypeConverter z;
 
-namespace test2Call_C_defaults {
-static constexpr impl::StringLiteralForComposing default_2 = { "default_2", sizeof( "default_2" ) - 1};
-}
+//**********************************************************************
+// Message "message_one" Targets: JSON GMQ (6 parameters)
+// 1. INTEGER firstParam (DEFAULT: 10)
+// 2. CHARACTER_STRING secondParam (DEFAULT: "default_v")
+// 3. UINTEGER thirdParam (DEFAULT: 30)
+// 4. VECTOR<INTEGER> forthParam (REQUIRED)
+// 5. VECTOR<NONEXTENDABLE MESSAGE point> fifthParam
+// 6. VECTOR< MESSAGE point3D> sixthParam (REQUIRED)
+
+//**********************************************************************
+
+namespace Message_message_one_defaults {
+static constexpr impl::StringLiteralForComposing default_2 = { "default_v", sizeof( "default_v" ) - 1};
+} // namespace Message_message_one_defaults
 
 template<typename ... Args>
 void message_one_compose(Composer& composer, Args&& ... args)
 {
-	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
-	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
-	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
-	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
-	using arg_6_type = NamedParameterWithType<impl::VectorOfMessageType, SixthParam::Name>;
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_6_type::nameAndTypeID, Args::nameAndTypeID...);
+	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, firstParam_Type::Name>;
+	using arg_2_type = NamedParameterWithType<impl::StringType, secondParam_Type::Name>;
+	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, thirdParam_Type::Name>;
+	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, forthParam_Type::Name>;
+	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, fifthParam_Type::Name>;
+	using arg_6_type = NamedParameterWithType<impl::VectorOfMessageType, sixthParam_Type::Name>;
+
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_6_type::nameAndTypeID, Args::nameAndTypeID...);
 	constexpr size_t argCount = sizeof ... (Args);
 	if constexpr ( argCount != 0 )
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
-	impl::composeParam<arg_1_type, false, int, int, 10>(arg_1_type::nameAndTypeID, composer, args...);
-	impl::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>(arg_2_type::nameAndTypeID, composer, args...);
-//	impl::composeParam<arg_2_type, false, nodecpp::string, const char*, test2Call_C_defaults::predefault_2>(arg_2_type::nameAndTypeID, composer, args...);
-	impl::composeParam<arg_3_type, false, int, int, 30>(arg_3_type::nameAndTypeID, composer, args...);
-//	impl::composeParam<arg_4_type, true, impl::NoDefaultValueType, impl::NoDefaultValueType, noDefaultValue>(arg_4_type::nameAndTypeID, composer, args...);
-	impl::composeParam<arg_4_type, true, int, int, 10>(arg_4_type::nameAndTypeID, composer, args...);
-	impl::composeParam<arg_5_type, true, int, int, 10>(arg_5_type::nameAndTypeID, composer, args...);
-	impl::composeParam<arg_6_type, true, int, int, 10>(arg_6_type::nameAndTypeID, composer, args...);
-}
 
-template<typename ... Args>
-void message_one_parse(impl::Parser& p, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
-	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
-	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
-	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
-	using arg_6_type = NamedParameterWithType<impl::VectorOfMessageType, SixthParam::Name>;
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_6_type::nameAndTypeID, Args::nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-	impl::parseParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_4_type, false>(arg_4_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_5_type, false>(arg_5_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_6_type, false>(arg_6_type::nameAndTypeID, p, args...);
-}
-
-template<typename ... Args>
-void message_one_composeJson(Composer& composer, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
-	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
-	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
-	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
-	using arg_6_type = NamedParameterWithType<impl::VectorOfMessageType, SixthParam::Name>;
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_6_type::nameAndTypeID, Args::nameAndTypeID...);
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-//	b.append( "\"test2Call_C\": {\n  ", sizeof("\"test2Call_C\": {\n  ") - 1 );
-	b.append( "{\n  ", sizeof("{\n  ") - 1 );
-	impl::json::composeParam<arg_1_type, false, int, int, 10>("arg_1", arg_1_type::nameAndTypeID, composer, args...);
-	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &test2Call_C_defaults::default_2>("arg_2", arg_2_type::nameAndTypeID, composer, args...);
-	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_3_type, false, int, int, 30>("arg_3", arg_3_type::nameAndTypeID, composer, args...);
-	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_4_type, true, int, int, 10>("arg_4", arg_4_type::nameAndTypeID, composer, args...);
-	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_5_type, true, int, int, 10>("arg_5", arg_5_type::nameAndTypeID, composer, args...);
-	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_6_type, true, int, int, 10>("arg_6", arg_6_type::nameAndTypeID, composer, args...);
-	b.append( "\n}", 2 );
-	//b.appendUint8( '\n' );
-	//b.appendUint8( 0 );
-}
-
-template<typename ... Args>
-void message_one_parseJson(impl::Parser& p, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::UnsignedIntegralType, FirstParam::Name>;
-	using arg_2_type = NamedParameterWithType<impl::StringType, SecondParam::Name>;
-	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, ThirdParam::Name>;
-	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, ForthParam::Name>;
-	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, FifthParam::Name>;
-	using arg_6_type = NamedParameterWithType<impl::VectorOfMessageType, SixthParam::Name>;
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...) + isMatched(arg_6_type::nameAndTypeID, Args::nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-
-	p.skipDelimiter( '{' );
-	for ( ;; )
+	switch ( composer.proto )
 	{
-		nodecpp::string key;
-		p.readKey( &key );
-		if ( key == "arg_1" )
-//		    impl::json::parseParam<NamedParameterWithType<arg_1_type, FirstParam::Name>, false>(arg_1_type::nameAndTypeID, p, args...);
-			impl::json::parseJsonParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
-		else if ( key == "arg_2" )
-//		    impl::json::parseParam<NamedParameterWithType<arg_2_type, FirstParam::Name>, false>(arg_2_type::nameAndTypeID, p, args...);
-			impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
-		else if ( key == "arg_3" )
-//		    impl::json::parseParam<NamedParameterWithType<arg_3_type, FirstParam::Name>, false>(arg_3_type::nameAndTypeID, p, args...);
-			impl::json::parseJsonParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
-		else if ( key == "arg_4" )
-//		    impl::json::parseParam<NamedParameterWithType<arg_4_type, FirstParam::Name>, false>(arg_4_type::nameAndTypeID, p, args...);
-			impl::json::parseJsonParam<arg_4_type, false>(arg_4_type::nameAndTypeID, p, args...);
-		else if ( key == "arg_5" )
-//		    impl::json::parseParam<NamedParameterWithType<arg_5_type, FirstParam::Name>, false>(arg_5_type::nameAndTypeID, p, args...);
-			impl::json::parseJsonParam<arg_5_type, false>(arg_5_type::nameAndTypeID, p, args...);
-		else if ( key == "arg_6" )
-//		    impl::json::parseParam<NamedParameterWithType<arg_6_type, FirstParam::Name>, false>(arg_6_type::nameAndTypeID, p, args...);
-			impl::json::parseJsonParam<arg_6_type, false>(arg_6_type::nameAndTypeID, p, args...);
-		p.skipSpacesEtc();
-		if ( p.isDelimiter( ',' ) )
+		case Proto::GMQ:
 		{
-			p.skipDelimiter( ',' );
-			continue;
-		}
-		if ( p.isDelimiter( '}' ) )
-		{
-			p.skipDelimiter( '}' );
+			impl::gmq::composeParamToGmq<arg_1_type, false, int64_t, int64_t, (int64_t)(10)>(arg_1_type::nameAndTypeID, composer, args...);
+			impl::gmq::composeParamToGmq<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &Message_message_one_defaults::default_2>(arg_2_type::nameAndTypeID, composer, args...);
+			impl::gmq::composeParamToGmq<arg_3_type, false, uint64_t, uint64_t, (uint64_t)(30)>(arg_3_type::nameAndTypeID, composer, args...);
+			impl::gmq::composeParamToGmq<arg_4_type, true, uint64_t, uint64_t, (uint64_t)(0)>(arg_4_type::nameAndTypeID, composer, args...);
+			impl::gmq::composeParamToGmq<arg_5_type, false, uint64_t, uint64_t, (uint64_t)(0)>(arg_5_type::nameAndTypeID, composer, args...);
+			impl::gmq::composeParamToGmq<arg_6_type, true, uint64_t, uint64_t, (uint64_t)(0)>(arg_6_type::nameAndTypeID, composer, args...);
+
 			break;
 		}
-		throw std::exception(); // bad format
+		case Proto::JSON:
+		{
+			composer.buff.append( "{\n  ", sizeof("{\n  ") - 1 );
+			impl::json::composeParamToJson<arg_1_type, false, int64_t, int64_t, (int64_t)(10)>("firstParam", arg_1_type::nameAndTypeID, composer, args...);
+			composer.buff.append( ",\n  ", 4 );
+			impl::json::composeParamToJson<arg_2_type, false, nodecpp::string, const impl::StringLiteralForComposing*, &Message_message_one_defaults::default_2>("secondParam", arg_2_type::nameAndTypeID, composer, args...);
+			composer.buff.append( ",\n  ", 4 );
+			impl::json::composeParamToJson<arg_3_type, false, uint64_t, uint64_t, (uint64_t)(30)>("thirdParam", arg_3_type::nameAndTypeID, composer, args...);
+			composer.buff.append( ",\n  ", 4 );
+			impl::json::composeParamToJson<arg_4_type, true, int64_t, int64_t, (int64_t)(0)>("forthParam", arg_4_type::nameAndTypeID, composer, args...);
+			composer.buff.append( ",\n  ", 4 );
+			impl::json::composeParamToJson<arg_5_type, false, int64_t, int64_t, (int64_t)(0)>("fifthParam", arg_5_type::nameAndTypeID, composer, args...);
+			composer.buff.append( ",\n  ", 4 );
+			impl::json::composeParamToJson<arg_6_type, true, int64_t, int64_t, (int64_t)(0)>("sixthParam", arg_6_type::nameAndTypeID, composer, args...);
+			composer.buff.append( "\n}", 2 );
+			break;
+		}
+	}
+}
+
+template<typename ... Args>
+void message_one_parse(Parser& p, Args&& ... args)
+{
+	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, firstParam_Type::Name>;
+	using arg_2_type = NamedParameterWithType<impl::StringType, secondParam_Type::Name>;
+	using arg_3_type = NamedParameterWithType<impl::UnsignedIntegralType, thirdParam_Type::Name>;
+	using arg_4_type = NamedParameterWithType<impl::VectorOfSympleTypes<impl::SignedIntegralType>, forthParam_Type::Name>;
+	using arg_5_type = NamedParameterWithType<impl::VectorOfNonextMessageTypes, fifthParam_Type::Name>;
+	using arg_6_type = NamedParameterWithType<impl::VectorOfMessageType, sixthParam_Type::Name>;
+
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_4_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_5_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_6_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
+	static_assert( argCount == matchCount, "unexpected arguments found" );
+
+	switch ( p.proto )
+	{
+		case Proto::GMQ:
+		{
+			impl::gmq::parseGmqParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
+			impl::gmq::parseGmqParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
+			impl::gmq::parseGmqParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
+			impl::gmq::parseGmqParam<arg_4_type, true>(arg_4_type::nameAndTypeID, p, args...);
+			impl::gmq::parseGmqParam<arg_5_type, false>(arg_5_type::nameAndTypeID, p, args...);
+			impl::gmq::parseGmqParam<arg_6_type, true>(arg_6_type::nameAndTypeID, p, args...);
+
+			break;
+		}
+		case Proto::JSON:
+		{
+			p.skipDelimiter( '{' );
+			for ( ;; )
+			{
+				nodecpp::string key;
+				p.readKey( &key );
+				if ( key == "firstParam" )
+					impl::json::parseJsonParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
+				else if ( key == "secondParam" )
+					impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
+				else if ( key == "thirdParam" )
+					impl::json::parseJsonParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
+				else if ( key == "forthParam" )
+					impl::json::parseJsonParam<arg_4_type, false>(arg_4_type::nameAndTypeID, p, args...);
+				else if ( key == "fifthParam" )
+					impl::json::parseJsonParam<arg_5_type, false>(arg_5_type::nameAndTypeID, p, args...);
+				else if ( key == "sixthParam" )
+					impl::json::parseJsonParam<arg_6_type, false>(arg_6_type::nameAndTypeID, p, args...);
+				p.skipSpacesEtc();
+				if ( p.isDelimiter( ',' ) )
+				{
+					p.skipDelimiter( ',' );
+					continue;
+				}
+				if ( p.isDelimiter( '}' ) )
+				{
+					p.skipDelimiter( '}' );
+					break;
+				}
+				throw std::exception(); // bad format
+			}
+
+			break;
+		}
 	}
 }
 
 //**********************************************************************
-// Message "point" (2 parameters)
+// Message "point" NONEXTENDABLE Targets: JSON GMQ (2 parameters)
 // 1. INTEGER x (REQUIRED)
 // 2. INTEGER y (REQUIRED)
 
@@ -221,83 +186,76 @@ void point_compose(Composer& composer, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
-	impl::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, composer, args...);
-	impl::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, composer, args...);
-}
-
-template<typename ... Args>
-void point_parse(impl::Parser& p, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
-	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
-
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-
-	impl::parseParam<arg_1_type, true>(arg_1_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_2_type, true>(arg_2_type::nameAndTypeID, p, args...);
-}
-
-template<typename ... Args>
-void point_composeJson(Composer& composer, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
-	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
-
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-
-	b.append( "{\n  ", sizeof("{\n  ") - 1 );
-	impl::json::composeParam<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, composer, args...);
-	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, composer, args...);
-	b.append( "\n}", 2 );
-	//b.appendUint8( '\n' );
-	//b.appendUint8( 0 );
-}
-
-template<typename ... Args>
-void point_parseJson(impl::Parser& p, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
-	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
-
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-
-	p.skipDelimiter( '{' );
-	for ( ;; )
+	switch ( composer.proto )
 	{
-		nodecpp::string key;
-		p.readKey( &key );
-		if ( key == "x" )
-			impl::json::parseJsonParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
-		else if ( key == "y" )
-			impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
-		p.skipSpacesEtc();
-		if ( p.isDelimiter( ',' ) )
+		case Proto::GMQ:
 		{
-			p.skipDelimiter( ',' );
-			continue;
-		}
-		if ( p.isDelimiter( '}' ) )
-		{
-			p.skipDelimiter( '}' );
+			impl::gmq::composeParamToGmq<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, composer, args...);
+			impl::gmq::composeParamToGmq<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, composer, args...);
+
 			break;
 		}
-		throw std::exception(); // bad format
+		case Proto::JSON:
+		{
+			composer.buff.append( "{\n  ", sizeof("{\n  ") - 1 );
+			impl::json::composeParamToJson<arg_1_type, true, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, composer, args...);
+			composer.buff.append( ",\n  ", 4 );
+			impl::json::composeParamToJson<arg_2_type, true, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, composer, args...);
+			composer.buff.append( "\n}", 2 );
+			break;
+		}
+	}
+}
+
+template<typename ... Args>
+void point_parse(Parser& p, Args&& ... args)
+{
+	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
+	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
+
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
+	static_assert( argCount == matchCount, "unexpected arguments found" );
+
+	switch ( p.proto )
+	{
+		case Proto::GMQ:
+		{
+			impl::gmq::parseGmqParam<arg_1_type, true>(arg_1_type::nameAndTypeID, p, args...);
+			impl::gmq::parseGmqParam<arg_2_type, true>(arg_2_type::nameAndTypeID, p, args...);
+
+			break;
+		}
+		case Proto::JSON:
+		{
+			p.skipDelimiter( '{' );
+			for ( ;; )
+			{
+				nodecpp::string key;
+				p.readKey( &key );
+				if ( key == "x" )
+					impl::json::parseJsonParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
+				else if ( key == "y" )
+					impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
+				p.skipSpacesEtc();
+				if ( p.isDelimiter( ',' ) )
+				{
+					p.skipDelimiter( ',' );
+					continue;
+				}
+				if ( p.isDelimiter( '}' ) )
+				{
+					p.skipDelimiter( '}' );
+					break;
+				}
+				throw std::exception(); // bad format
+			}
+
+			break;
+		}
 	}
 }
 
@@ -324,98 +282,88 @@ void point3D_compose(Composer& composer, Args&& ... args)
 		ensureUniqueness(args.nameAndTypeID...);
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
-	impl::composeParam<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, composer, args...);
-	impl::composeParam<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, composer, args...);
-	impl::composeParam<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>(arg_3_type::nameAndTypeID, composer, args...);
-}
-
-template<typename ... Args>
-void point3D_parse(impl::Parser& p, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
-	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
-	using arg_3_type = NamedParameterWithType<impl::SignedIntegralType, z_Type::Name>;
-
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-
-	impl::parseParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
-	impl::parseParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
-}
-
-template<typename ... Args>
-void point3D_composeJson(Composer& composer, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
-	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
-	using arg_3_type = NamedParameterWithType<impl::SignedIntegralType, z_Type::Name>;
-
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-
-	b.append( "{\n  ", sizeof("{\n  ") - 1 );
-	impl::json::composeParam<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, composer, args...);
-	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, composer, args...);
-	b.append( ",\n  ", 4 );
-	impl::json::composeParam<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>("z", arg_3_type::nameAndTypeID, composer, args...);
-	b.append( "\n}", 2 );
-	//b.appendUint8( '\n' );
-	//b.appendUint8( 0 );
-}
-
-template<typename ... Args>
-void point3D_parseJson(impl::Parser& p, Args&& ... args)
-{
-	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
-	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
-	using arg_3_type = NamedParameterWithType<impl::SignedIntegralType, z_Type::Name>;
-
-	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + 
-		isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
-	constexpr size_t argCount = sizeof ... (Args);
-	if constexpr ( argCount != 0 )
-		ensureUniqueness(args.nameAndTypeID...);
-	static_assert( argCount == matchCount, "unexpected arguments found" );
-
-	p.skipDelimiter( '{' );
-	for ( ;; )
+	switch ( composer.proto )
 	{
-		nodecpp::string key;
-		p.readKey( &key );
-		if ( key == "x" )
-			impl::json::parseJsonParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
-		else if ( key == "y" )
-			impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
-		else if ( key == "z" )
-			impl::json::parseJsonParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
-		p.skipSpacesEtc();
-		if ( p.isDelimiter( ',' ) )
+		case Proto::GMQ:
 		{
-			p.skipDelimiter( ',' );
-			continue;
-		}
-		if ( p.isDelimiter( '}' ) )
-		{
-			p.skipDelimiter( '}' );
+			impl::gmq::composeParamToGmq<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>(arg_1_type::nameAndTypeID, composer, args...);
+			impl::gmq::composeParamToGmq<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>(arg_2_type::nameAndTypeID, composer, args...);
+			impl::gmq::composeParamToGmq<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>(arg_3_type::nameAndTypeID, composer, args...);
+
 			break;
 		}
-		throw std::exception(); // bad format
+		case Proto::JSON:
+		{
+			composer.buff.append( "{\n  ", sizeof("{\n  ") - 1 );
+			impl::json::composeParamToJson<arg_1_type, false, int64_t, int64_t, (int64_t)(0)>("x", arg_1_type::nameAndTypeID, composer, args...);
+			composer.buff.append( ",\n  ", 4 );
+			impl::json::composeParamToJson<arg_2_type, false, int64_t, int64_t, (int64_t)(0)>("y", arg_2_type::nameAndTypeID, composer, args...);
+			composer.buff.append( ",\n  ", 4 );
+			impl::json::composeParamToJson<arg_3_type, false, int64_t, int64_t, (int64_t)(0)>("z", arg_3_type::nameAndTypeID, composer, args...);
+			composer.buff.append( "\n}", 2 );
+			break;
+		}
 	}
 }
 
-} // namespace man
+template<typename ... Args>
+void point3D_parse(Parser& p, Args&& ... args)
+{
+	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
+	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
+	using arg_3_type = NamedParameterWithType<impl::SignedIntegralType, z_Type::Name>;
 
-#endif // TEST_H
+	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...) + 
+		isMatched(arg_3_type::nameAndTypeID, Args::nameAndTypeID...);
+	constexpr size_t argCount = sizeof ... (Args);
+	if constexpr ( argCount != 0 )
+		ensureUniqueness(args.nameAndTypeID...);
+	static_assert( argCount == matchCount, "unexpected arguments found" );
+
+	switch ( p.proto )
+	{
+		case Proto::GMQ:
+		{
+			impl::gmq::parseGmqParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
+			impl::gmq::parseGmqParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
+			impl::gmq::parseGmqParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
+
+			break;
+		}
+		case Proto::JSON:
+		{
+			p.skipDelimiter( '{' );
+			for ( ;; )
+			{
+				nodecpp::string key;
+				p.readKey( &key );
+				if ( key == "x" )
+					impl::json::parseJsonParam<arg_1_type, false>(arg_1_type::nameAndTypeID, p, args...);
+				else if ( key == "y" )
+					impl::json::parseJsonParam<arg_2_type, false>(arg_2_type::nameAndTypeID, p, args...);
+				else if ( key == "z" )
+					impl::json::parseJsonParam<arg_3_type, false>(arg_3_type::nameAndTypeID, p, args...);
+				p.skipSpacesEtc();
+				if ( p.isDelimiter( ',' ) )
+				{
+					p.skipDelimiter( ',' );
+					continue;
+				}
+				if ( p.isDelimiter( '}' ) )
+				{
+					p.skipDelimiter( '}' );
+					break;
+				}
+				throw std::exception(); // bad format
+			}
+
+			break;
+		}
+	}
+}
+
+
+} // namespace m
+
+#endif // marshaling_H
