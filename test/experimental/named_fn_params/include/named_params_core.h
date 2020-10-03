@@ -107,6 +107,58 @@ struct CollectionWrapperBase : public AnyCollectionWrapperBase {};
 
 struct SimpleTypeCollectionWrapperBase : public AnyCollectionWrapperBase {};
 
+template<class Collection/*, class LambdaSize*/, class LambdaNext>
+class CollectionWrapperForComposing : public CollectionWrapperBase {
+	Collection& coll;
+	typename Collection::iterator it;
+//	LambdaSize lsize_;
+	LambdaNext lnext_;
+public:
+	CollectionWrapperForComposing(Collection& coll_/*, LambdaSize &&lsize*/, LambdaNext &&lnext) : coll( coll_ ), it( coll.begin() )/*, lsize_(std::forward<LambdaSize>(lsize))*/, lnext_(std::forward<LambdaNext>(lnext)) {}
+//	size_t size() { return lsize_(); }
+	size_t size() { 
+		return coll.size();
+	}
+	bool compose_next( m::Composer& composer ) { 
+		/*if ( it != coll.end() )
+		{
+			lnext_( composer, *it ); 
+			it++;
+		}
+		else
+			return false; // no more items*/
+		return lnext_( composer ); 
+	}
+};
+template<class Collection/*, class LambdaSize*/, class LambdaNext>
+CollectionWrapperForComposing<Collection/*, LambdaSize*/, LambdaNext> makeReadyForComposing(Collection& coll/*, LambdaSize &&lsize*/, LambdaNext &&lnext) { 
+//	static_assert( std::is_invocable<LambdaSize>::value, "lambda-expression is expected" );
+	static_assert( std::is_invocable<LambdaNext>::value, "lambda-expression is expected" );
+	return { coll/*, std::forward<LambdaSize>(lsize)*/, std::forward<LambdaNext>(lnext) };
+}
+
+template<class LambdaSize, class LambdaNext>
+class CollactionWrapperForParsing : public CollectionWrapperBase {
+    LambdaSize lsize_;
+	LambdaNext lnext_;
+public:
+	CollactionWrapperForParsing(LambdaSize &&lsizeHint, LambdaNext &&lnext) : lsize_(std::forward<LambdaSize>(lsizeHint)), lnext_(std::forward<LambdaNext>(lnext)) {
+	}
+	void size_hint( size_t sz ) { 
+		if constexpr ( std::is_invocable<LambdaSize>::value )
+			lsize_( sz );
+	}
+	void parse_next( m::Parser& p ) { 
+		lnext_( p ); 
+	}
+};
+template<class LambdaSize, class LambdaNext>
+CollactionWrapperForParsing<LambdaSize, LambdaNext> makeReadyForParsing(LambdaSize &&lsizeHint, LambdaNext &&lnext) { 
+	static_assert( std::is_same<nullptr_t, LambdaSize>::value || std::is_invocable<LambdaSize>::value, "lambda-expression is expected" );
+	static_assert( std::is_invocable<LambdaNext>::value, "lambda-expression is expected" );
+	return { std::forward<LambdaSize>(lsizeHint), std::forward<LambdaNext>(lnext) };
+}
+
 template<class T>
 class SimpleTypeCollectionWrapper : public SimpleTypeCollectionWrapperBase
 {
