@@ -287,6 +287,7 @@ public: // TODO: Revise!
 	Proto proto;
 
 public:
+	Parser( Proto proto_, Buffer& b ) : proto( proto_ ) { begin = b.begin(); end = b.begin() + b.size(); }
 	Parser( Proto proto_, uint8_t* buff, size_t size ) : proto( proto_ ) { begin = buff; end = buff + size; }
 	Parser( const Parser& other, size_t size ) : proto( other.proto ) { begin = other.begin; end = other.begin + size; }
 

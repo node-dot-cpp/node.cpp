@@ -37,7 +37,7 @@ int main()
 			m::sixthParam = m::CollectionWrapperForComposing( [&]() { return vectorOfPoints.size(); }, [&](m::Composer& c, size_t ordinal){ m::point_compose( c, m::x = vectorOfPoints[ordinal].x, m::y = vectorOfPoints[ordinal].y );} )
 		);
 
-		m::Parser parser( m::Proto::GMQ, b.begin(), b.size() );
+		m::Parser parser( m::Proto::GMQ, b );
 		int firstParam = -1;
 		int forthParam = -1;
 		nodecpp::string fifthParam;
@@ -86,7 +86,7 @@ int main()
 			m::sixthParam = m::CollectionWrapperForComposing( [&]() { return vectorOfPoints.size(); }, [&](m::Composer& c, size_t ordinal){ m::point_compose( c, m::x = vectorOfPoints[ordinal].x, m::y = vectorOfPoints[ordinal].y );} )
 		);
 
-		m::Parser parser( m::Proto::JSON, b.begin(), b.size() );
+		m::Parser parser( m::Proto::JSON, b );
 		int firstParam = -1;
 		int forthParam = -1;
 		nodecpp::string fifthParam;
