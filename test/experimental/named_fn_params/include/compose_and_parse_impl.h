@@ -98,7 +98,6 @@ void composeSignedInteger(Composer& composer, T num )
 	/*temporary solution TODO: actual implementation*/ { 
 		int64_t val = num; 
 		composer.buff.append( &val, sizeof( val ) );
-		printf( "composeSignedInteger(%zd\n", val );
 	}
 }
 
@@ -112,7 +111,6 @@ void composeUnsignedInteger(Composer& composer, T num )
 	/*temporary solution TODO: actual implementation*/ { 
 		uint64_t val = num; 
 		composer.buff.append( &val, sizeof( val ) );
-		printf( "composeSignedInteger(%zd\n", val );
 	}
 }
 
@@ -121,7 +119,6 @@ void composeString(Composer& composer, const nodecpp::string& str )
 {
 	composer.buff.appendString( str );
 	composer.buff.appendUint8( 0 );
-	printf( "composeString(nodecpp::string \"%s\"\n", str.c_str() );
 }
 
 inline
@@ -129,7 +126,6 @@ void composeString(Composer& composer, const StringLiteralForComposing* str )
 {
 	composer.buff.append( str->str, str->size );
 	composer.buff.appendUint8( 0 );
-	printf( "composeString(StringLiteralForComposing \"%s\"\n", str->str );
 }
 
 inline
@@ -137,7 +133,6 @@ void composeString(Composer& composer, std::string str )
 {
 	composer.buff.append( str.c_str(), str.size() );
 	composer.buff.appendUint8( 0 );
-	printf( "composeString(std::string \"%s\"\n", str.c_str() );
 }
 
 inline
@@ -146,31 +141,7 @@ void composeString(Composer& composer, const char* str )
 	size_t sz = strlen( str );
 	composer.buff.append( str, sz );
 	composer.buff.appendUint8( 0 );
-	printf( "composeString(const char* \"%s\"\n", str );
 }
-
-/*template<typename Fn>
-void composeVector(Composer& composer, Fn& fn )
-{
-	size_t startOffset = composer.buff.size();
-	size_t currOffset = composer.buff.size();
-	size_t count = 0;
-	size_t ret = fn( composer, count );
-	while ( ret )
-	{
-		uint64_t sz = composer.buff.size() - currOffset;
-		composer.buff.set_size( composer.buff.size() + integer_max_size );
-		memmove( composer.buff.begin() + currOffset, composer.buff.begin() + currOffset + integer_max_size, sz );
-		memcpy( composer.buff.begin() + currOffset, &sz, sizeof( integer_max_size ) );
-		currOffset = composer.buff.size();
-		++count;
-		ret = fn( composer, count );
-	}
-	uint64_t fullSz = currOffset - startOffset;
-	composer.buff.set_size( composer.buff.size() + integer_max_size );
-	memmove( composer.buff.begin() + startOffset, composer.buff.begin() + startOffset + integer_max_size, fullSz );
-	memcpy( composer.buff.begin() + startOffset, &fullSz, sizeof( integer_max_size ) );
-}*/
 
 namespace json
 {
@@ -202,7 +173,6 @@ void composeString(Composer& composer, const nodecpp::string& str )
 	composer.buff.appendUint8( '\"' );
 	composer.buff.appendString( str );
 	composer.buff.appendUint8( '\"' );
-//	printf( "composeString(nodecpp::string \"%s\"\n", str.c_str() );
 }
 
 inline
@@ -211,7 +181,6 @@ void composeString(Composer& composer, const StringLiteralForComposing* str )
 	composer.buff.appendUint8( '\"' );
 	composer.buff.append( str->str, str->size );
 	composer.buff.appendUint8( '\"' );
-//	printf( "composeString(StringLiteralForComposing \"%s\"\n", str->str );
 }
 
 inline
@@ -220,7 +189,6 @@ void composeString(Composer& composer, std::string str )
 	composer.buff.appendUint8( '\"' );
 	composer.buff.append( str.c_str(), str.size() );
 	composer.buff.appendUint8( '\"' );
-//	printf( "composeString(std::string \"%s\"\n", str.c_str() );
 }
 
 inline
@@ -230,7 +198,6 @@ void composeString(Composer& composer, const char* str )
 	composer.buff.appendUint8( '\"' );
 	composer.buff.append( str, sz );
 	composer.buff.appendUint8( '\"' );
-//	printf( "composeString(const char* \"%s\"\n", str );
 }
 
 inline
@@ -273,7 +240,6 @@ void composeNamedString(Composer& composer, nodecpp::string name, const nodecpp:
 	composer.buff.appendUint8( '\"' );
 	composer.buff.appendString( str );
 	composer.buff.appendUint8( '\"' );
-//	printf( "composeString(nodecpp::string \"%s\"\n", str.c_str() );
 }
 
 inline
@@ -283,7 +249,6 @@ void composeNamedString(Composer& composer, nodecpp::string name, const StringLi
 	composer.buff.appendUint8( '\"' );
 	composer.buff.append( str->str, str->size );
 	composer.buff.appendUint8( '\"' );
-//	printf( "composeString(StringLiteralForComposing \"%s\"\n", str->str );
 }
 
 inline
@@ -293,7 +258,6 @@ void composeNamedString(Composer& composer, nodecpp::string name, std::string st
 	composer.buff.appendUint8( '\"' );
 	composer.buff.append( str.c_str(), str.size() );
 	composer.buff.appendUint8( '\"' );
-//	printf( "composeString(std::string \"%s\"\n", str.c_str() );
 }
 
 inline
@@ -304,7 +268,6 @@ void composeNamedString(Composer& composer, nodecpp::string name, const char* st
 	composer.buff.appendUint8( '\"' );
 	composer.buff.append( str, sz );
 	composer.buff.appendUint8( '\"' );
-//	printf( "composeString(const char* \"%s\"\n", str );
 }
 
 } // namespace json
