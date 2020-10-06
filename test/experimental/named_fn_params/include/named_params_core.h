@@ -465,7 +465,8 @@ void composeParamToGmq(const typename TypeToPick::NameAndTypeID expected, Compos
 						int64_t written = composer.buff.size() - pos - integer_max_size;
 						memcpy( composer.buff.begin() + pos, &written, integer_max_size );
 						pos = composer.buff.size();
-						composer.buff.set_size( composer.buff.size() + integer_max_size ); // TODO: revise toward lowest estimation of 1 with move is longer
+						if ( i != collSz - 1 )
+							composer.buff.set_size( composer.buff.size() + integer_max_size ); // TODO: revise toward lowest estimation of 1 with move is longer
 					}
 				}
 			}
