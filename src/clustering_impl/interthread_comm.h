@@ -42,7 +42,7 @@ struct ThreadID
 	uint64_t reincarnation = InvalidReincarnation;
 };
 
-enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Undefined };
+enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Infrastructural, Undefined };
 
 extern thread_local size_t workerIdxInLoadCollector;
 

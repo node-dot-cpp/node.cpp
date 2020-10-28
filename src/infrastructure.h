@@ -188,7 +188,8 @@ public:
 //		return timeout.infraNextTimeout();
 	}
 
-	bool pollPhase2(bool refed, uint64_t nextTimeoutAt, uint64_t now)
+	template<class NodeT>
+	bool pollPhase2( NodeT& node, bool refed, uint64_t nextTimeoutAt, uint64_t now )
 	{
 /*		size_t fds_sz;
 		pollfd* fds_begin;
@@ -286,7 +287,13 @@ if ( pollRetMax < retval )
 							size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock );
 							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
 							for ( size_t i=0; i<actualFromQueue; ++i )
-								getCluster().onInterthreadMessage( thq[i] );
+								if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
+								{
+									nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
+									node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
+								}
+								else
+									getCluster().onInterthreadMessage( thq[i] );
 						}
 						else
 						{
@@ -310,7 +317,13 @@ if ( pollRetMax < retval )
 							size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock );
 							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
 							for ( size_t i=0; i<actualFromQueue; ++i )
-								getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
+								if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
+								{
+									nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
+									node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
+								}
+								else
+									getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
 						}
 						else
 						{
@@ -380,7 +393,8 @@ eventProcTime += infraGetCurrentTime() - now2;
 		ioSockets.reworkIfNecessary();
 	}
 
-	void runStandardLoop()
+	template<class NodeT>
+	void runStandardLoop( NodeT& node )
 	{
 extern thread_local uint64_t eventProcTime;
 #ifdef USE_TEMP_PERF_CTRS
@@ -406,7 +420,7 @@ size_t now2 = infraGetCurrentTime();
 eventProcTime += infraGetCurrentTime() - now2;
 #endif
 			now = infraGetCurrentTime();
-			bool refed = pollPhase2(refedTimeout(), nextTimeout(), now/*, queue*/);
+			bool refed = pollPhase2( node, refedTimeout(), nextTimeout(), now );
 			if(!refed)
 				return;
 
@@ -624,7 +638,7 @@ class Runnable : public RunnableBase
 				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
 #endif // NODECPP_RECORD_AND_REPLAY
 			node->main();
-			infra.runStandardLoop();
+			infra.runStandardLoop(*node);
 			node = nullptr;
 
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702

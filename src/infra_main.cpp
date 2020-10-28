@@ -150,10 +150,68 @@ void workerThreadMain( void* pdata )
 		f.second->create()->run(false, &startupData);
 }
 
+//template<class ThreadStartupDataT, class NodeT>
+template<class ThreadStartupDataT>
+void nodeThreadMain( void* pdata )
+{
+	ThreadStartupDataT* sd = reinterpret_cast<ThreadStartupDataT*>(pdata);
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->threadCommID.slotId != 0 ); 
+	ThreadStartupDataT startupData = *sd;
+	nodecpp::stddealloc( sd, 1 );
+	setThisThreadDescriptor( startupData );
+#ifdef NODECPP_USE_IIBMALLOC
+	g_AllocManager.initialize();
+#endif
+	nodecpp::logging_impl::currentLog = startupData.defaultLog;
+	nodecpp::logging_impl::instanceId = startupData.threadCommID.slotId;
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", startupData.threadCommID.slotId );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, NodeFactoryMap::getInstance().getFacoryMap()->size() == 1, "Indeed: {}. Current implementation supports exactly 1 node per thread. More nodes is a pending dev", NodeFactoryMap::getInstance().getFacoryMap()->size() );
+	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
+		f.second->create()->run(false, &startupData);
+}
+
+template<class ThreadStartupDataT>
+void createNodeThread()
+{
+	// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
+	ThreadStartupDataT* startupData = nodecpp::stdalloc<ThreadStartupDataT>(1);
+	preinitThreadStartupData( *startupData );
+//	startupData->IdWithinGroup = listeners.add( startupData->threadCommID );
+	size_t threadIdx = startupData->threadCommID.slotId;
+//	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {} and listenerID = {}...", threadIdx, startupData->IdWithinGroup );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
+//	std::thread t1( listenerThreadMain, (void*)(startupData) );
+	std::thread t1( nodeThreadMain<ThreadStartupDataT>, (void*)(startupData) );
+	// startupData is no longer valid
+	startupData = nullptr;
+	t1.detach();
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
+}
+
+template<class ThreadStartupDataT>
+void createNodeThread2()
+{
+	// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
+	ThreadStartupDataT* startupData = nodecpp::stdalloc<ThreadStartupDataT>(1);
+	preinitThreadStartupData( *startupData );
+//	startupData->IdWithinGroup = listeners.add( startupData->threadCommID );
+	size_t threadIdx = startupData->threadCommID.slotId;
+//	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {} and listenerID = {}...", threadIdx, startupData->IdWithinGroup );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
+	nodeThreadMain<ThreadStartupDataT>( (void*)(startupData) );
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
+}
+
 int main( int argc, char *argv_[] )
 {
 	for ( int i=0; i<argc; ++i )
 		argv.push_back( argv_[i] );
+
+	nodecpp::preinitMasterThreadClusterObject();
+	initInterThreadCommSystemAndGetReadHandleForMainThread();
+	createNodeThread2<ThreadStartupData>();
+	return 0;
 
 #ifdef NODECPP_USE_IIBMALLOC
 	g_AllocManager.initialize();
