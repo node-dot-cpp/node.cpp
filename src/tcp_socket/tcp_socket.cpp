@@ -397,7 +397,7 @@ namespace nodecpp
 			if (INVALID_SOCKET == outSock)
 			{
 				int error = getSockError();
-//!!//				nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"accept() on sock {} failed; error {}", sock, error);
+				nodecpp::log::default_log::fatal( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"accept() on sock {} failed; error {}", sock, error);
 
 				return INVALID_SOCKET;
 			}
