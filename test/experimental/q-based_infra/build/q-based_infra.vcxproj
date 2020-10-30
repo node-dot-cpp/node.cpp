@@ -592,12 +592,18 @@
     <ClCompile Include="../../../../safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
     <ClCompile Include="../../../../safe_memory\library\src\iibmalloc\src\iibmalloc.cpp" />
     <ClCompile Include="../../../../src\clustering_impl\clustering.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="../../../../src\infrastructure.cpp" />
-    <ClCompile Include="../../../../src\infra_main.cpp" />
-    <ClCompile Include="../../../../src\net.cpp" />
-    <ClCompile Include="../../../../src\tcp_socket\listener_thread.cpp" />
+    <ClCompile Include="../../../../src\infra_main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="../../../../src\net.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="../../../../src\tcp_socket\listener_thread.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="../../../../src\tcp_socket\tcp_socket.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -605,7 +611,10 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\string.cpp" />
     <ClCompile Include="..\..\..\..\src\fs.cpp" />
     <ClCompile Include="..\..\..\..\src\q_based_infrastructure.cpp" />
-    <ClCompile Include="..\user_code\SimulationNode.cpp" />
+    <ClCompile Include="..\user_code\main.cpp" />
+    <ClCompile Include="..\user_code\SimulationNode.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../../../include\nodecpp\awaitable.h" />

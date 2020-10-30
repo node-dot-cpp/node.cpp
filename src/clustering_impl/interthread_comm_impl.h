@@ -169,6 +169,25 @@ public:
 		return sz2move;
 	}
 
+	size_t pop_front( T* messages, size_t count, uint64_t timeout ) {
+		std::unique_lock<std::mutex> lock(mx);
+		bool expired = false;
+		while (coll.size() == 0 && !expired && !killflag) {
+			expired = waitrd.wait_for(lock, std::chrono::milliseconds(timeout)) == std::cv_status::timeout;
+		}
+		if (killflag)
+			return 0;
+
+//		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, coll.size() > 0);
+		size_t sz2move = count <= coll.size() ? count : coll.size();
+		for ( size_t i=0; i<sz2move; ++i )
+			messages[i] = std::move(coll.pop_front());
+		lock.unlock();
+		waitwr.notify_one();
+
+		return sz2move;
+	}
+
 	void kill() {
 		{//creating scope for lock
 			std::unique_lock<std::mutex> lock(mx);
