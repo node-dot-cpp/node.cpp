@@ -47,11 +47,6 @@ nodecpp::stdvector<nodecpp::stdstring> argv;
 #include "../src/clustering_impl/clustering_impl.h"
 #include "SimulationNode.h"
 
-namespace nodecpp {
-//extern void preinitMasterThreadClusterObject();
-//extern void preinitSlaveThreadClusterObject(ThreadStartupData& startupData);
-}
-
 template<class NodeT>
 class SimplePollLoop
 {
@@ -121,28 +116,6 @@ public:
 		return std::make_pair(i, i.data.threadCommID);
 	}
 	
-	void runInAnotherThread()
-	{
-		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
-		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
-		if ( !initialized )
-		{
-			preinitThreadStartupData( loopStartupData );
-			initialized = true;
-		}
-		*startupData = loopStartupData;
-	//	startupData->IdWithinGroup = listeners.add( startupData->threadCommID );
-		size_t threadIdx = startupData->threadCommID.slotId;
-	//	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {} and listenerID = {}...", threadIdx, startupData->IdWithinGroup );
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
-	//	std::thread t1( listenerThreadMain, (void*)(startupData) );
-		std::thread t1( nodeThreadMain<NodeT, ThreadStartupData>, (void*)(startupData) );
-		// startupData is no longer valid
-		startupData = nullptr;
-		t1.detach();
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
-	}
-
 	void run()
 	{
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
@@ -210,23 +183,16 @@ int main( int argc, char *argv_[] )
 	for ( int i=0; i<argc; ++i )
 		argv.push_back( argv_[i] );
 
-//	nodecpp::preinitMasterThreadClusterObject();
-//	initInterThreadCommSystemAndGetReadHandleForMainThread();
-
-	//createNodeThread2<ThreadStartupData>();
-//	SimplePollLoop<SampleSimulationNode> loop;
-//	loop.runInAnotherThread();
 	auto addr = runNodeInAnotherThread<SampleSimulationNode>();
 		
-		nodecpp::platform::internal_msg::InternalMsg imsg;
-		imsg.append( "Second message", sizeof("Second message") );
+	nodecpp::platform::internal_msg::InternalMsg imsg;
+	imsg.append( "Second message", sizeof("Second message") );
 //		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
-		ThreadID target;
-		target.slotId = 1;
-		target.reincarnation = 1;
+	ThreadID target;
+	target.slotId = 1;
+	target.reincarnation = 1;
 //		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, loop.getAddress() );
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
-
+	sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 
 	SimplePollLoop<SampleSimulationNode> loop2;
 	loop2.run();
