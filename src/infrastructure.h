@@ -42,7 +42,9 @@
 #include "tcp_socket/tcp_socket_replaying_loop.h"
 #endif // NODECPP_RECORD_AND_REPLAY
 
+#include "timeout_manager.h"
 
+#if 0
 /*
 	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
 	If the user doesn't store it, timeout will fire normally, and after that all
@@ -141,6 +143,7 @@ public:
 		return !nextTimeouts.empty();
 	}
 };
+#endif // 0
 
 
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
@@ -555,7 +558,7 @@ auto a_timeout_impl(uint32_t ms) {
         void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 			nodecpp::initCoroData(awaiting);
             who_is_awaiting = awaiting;
-			to = timeoutManager->appSetTimeout(awaiting, duration);
+			to = timeoutManager->appSetTimeout(awaiting, duration, infraGetCurrentTime());
         }
 
 		auto await_resume() {

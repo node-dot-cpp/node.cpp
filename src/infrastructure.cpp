@@ -74,6 +74,7 @@ uint64_t infraGetCurrentTime()
 #endif
 }
 
+#if 0
 void TimeoutManager::appSetTimeout(TimeoutEntry& entry)
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
@@ -185,7 +186,7 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 		}
 	}
 }
-
+#endif // 0
 
 
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
@@ -203,19 +204,19 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 namespace nodecpp {
 	nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
 	{
-		return timeoutManager->appSetTimeout(cb, ms);
+		return timeoutManager->appSetTimeout(cb, ms, infraGetCurrentTime());
 	}
 
 #ifndef NODECPP_NO_COROUTINES
 	nodecpp::Timeout setTimeoutForAction(awaitable_handle_t h, int32_t ms)
 	{
-		return timeoutManager->appSetTimeoutForAction(h, ms);
+		return timeoutManager->appSetTimeoutForAction(h, ms, infraGetCurrentTime());
 	}
 #endif // NODECPP_NO_COROUTINES
 
 	void refreshTimeout(Timeout& to)
 	{
-		return timeoutManager->appRefresh(to.getId());
+		return timeoutManager->appRefresh(to.getId(), infraGetCurrentTime());
 	}
 
 	void clearTimeout(const Timeout& to)

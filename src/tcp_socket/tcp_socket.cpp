@@ -594,7 +594,7 @@ thread_local NetSocketManagerBase* netSocketManagerBase;
 //thread_local int typeIndexOfSocketL = -1;
 #ifndef NET_CLIENT_ONLY
 thread_local NetServerManagerBase* netServerManagerBase;
-thread_local TimeoutManager* timeoutManager;
+//thread_local TimeoutManager* timeoutManager;
 thread_local EvQueue* inmediateQueue;
 #endif
 

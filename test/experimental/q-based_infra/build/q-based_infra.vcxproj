@@ -610,8 +610,15 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\hashtable.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\string.cpp" />
     <ClCompile Include="..\..\..\..\src\fs.cpp" />
-    <ClCompile Include="..\..\..\..\src\q_based_infrastructure.cpp" />
-    <ClCompile Include="..\user_code\main.cpp" />
+    <ClCompile Include="..\..\..\..\src\q_based_infrastructure.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\timeout_manager.cpp" />
+    <ClCompile Include="..\user_code\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\user_code\SimulationNode.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -640,6 +647,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\common_structs.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\fs.h" />
     <ClInclude Include="..\..\..\..\src\q_based_infrastructure.h" />
+    <ClInclude Include="..\..\..\..\src\timeout_manager.h" />
     <ClInclude Include="..\user_code\SimulationNode.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

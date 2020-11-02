@@ -240,6 +240,12 @@ nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_
 			// TODO: ...
 			break;
 		}
+		case InterThreadMsgType::Infrastructural:
+		{
+			// TODO: ...
+			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "InterThreadMsgType::Infrastructural request ({}) is unexpected at MasterSocket", (size_t)(msgType) );
+			break;
+		}
 		default:
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "unexpected type {}", (size_t)(msgType) ); 
 			break;
