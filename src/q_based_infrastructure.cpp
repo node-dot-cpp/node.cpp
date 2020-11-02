@@ -80,121 +80,6 @@ uint64_t infraGetCurrentTime()
 #endif
 }
 
-void TimeoutManager::appSetTimeout(TimeoutEntry& entry)
-{
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
-
-	entry.lastSchedule = infraGetCurrentTime();
-
-	entry.nextTimeout = entry.lastSchedule + entry.delay;
-
-	entry.active = true;
-	nextTimeouts.insert(std::make_pair(entry.nextTimeout, entry.id));
-
-}
-
-void TimeoutManager::appClearTimeout(TimeoutEntry& entry)
-{
-	if (entry.active)
-	{
-		auto it2 = nextTimeouts.equal_range(entry.nextTimeout);
-		bool found = false;
-		while (it2.first != it2.second)
-		{
-			if (it2.first->second == entry.id)
-			{
-				nextTimeouts.erase(it2.first);
-				entry.active = false;
-				break;
-			}
-			++(it2.first);
-		}
-	}
-
-	//if it was active, we must have deactivated it
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,entry.active == false);
-}
-
-
-void TimeoutManager::appClearTimeout(const nodecpp::Timeout& to)
-{
-	uint64_t id = to.getId();
-
-	auto it = timers.find(id);
-	if (it != timers.end())
-	{
-		appClearTimeout(it->second);
-	}
-}
-
-void TimeoutManager::appRefresh(uint64_t id)
-{
-	auto it = timers.find(id);
-	if (it != timers.end())
-	{
-		appClearTimeout(it->second);
-		appSetTimeout(it->second);
-	}
-}
-
-
-void TimeoutManager::appTimeoutDestructor(uint64_t id)
-{
-	auto it = timers.find(id);
-	if (it != timers.end())
-	{
-		it->second.handleDestroyed = true;
-
-		if(it->second.active == false)
-			timers.erase(it);
-	}
-	else
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"timer {} not found", id);
-}
-
-void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
-{
-	auto itBegin = nextTimeouts.begin();
-	auto itEnd = nextTimeouts.upper_bound(now);
-	auto it = itBegin;
-	nodecpp::vector<TimeoutEntryHandlerData> handlers; // TODO: this approach could potentially be generalized
-	while (it != itEnd)
-	{
-		auto it2 = timers.find(it->second);
-
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,it2 != timers.end());
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,it2->second.active);
-		
-		it2->second.active = false;
-			
-//		evs.add(it2->second.cb);
-		handlers.push_back( it2->second );
-
-		if (it2->second.handleDestroyed)
-			timers.erase(it2);
-
-		++it;
-	}
-
-	nextTimeouts.erase(itBegin, itEnd);
-
-	for ( auto h : handlers )
-	{
-		if ( h.cb != nullptr )
-			h.cb();
-		else if ( h.h != nullptr )
-		{
-			auto hr = h.h;
-			nodecpp::setCoroStatus( hr, nodecpp::CoroStandardOutcomes::timeout );
-			h.h = nullptr;
-			hr();
-		}
-	}
-}
-
-
-
-thread_local TimeoutManager* timeoutManager;
 thread_local EvQueue* inmediateQueue;
 
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
@@ -212,19 +97,19 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 namespace nodecpp {
 	nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
 	{
-		return timeoutManager->appSetTimeout(cb, ms);
+		return timeoutManager->appSetTimeout(cb, ms, infraGetCurrentTime());
 	}
 
 #ifndef NODECPP_NO_COROUTINES
 	nodecpp::Timeout setTimeoutForAction(awaitable_handle_t h, int32_t ms)
 	{
-		return timeoutManager->appSetTimeoutForAction(h, ms);
+		return timeoutManager->appSetTimeoutForAction(h, ms, infraGetCurrentTime());
 	}
 #endif // NODECPP_NO_COROUTINES
 
 	void refreshTimeout(Timeout& to)
 	{
-		return timeoutManager->appRefresh(to.getId());
+		return timeoutManager->appRefresh(to.getId(), infraGetCurrentTime());
 	}
 
 	void clearTimeout(const Timeout& to)

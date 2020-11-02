@@ -45,133 +45,7 @@
 #include "tcp_socket/tcp_socket_replaying_loop.h"
 #endif // NODECPP_RECORD_AND_REPLAY
 
-
-/*
-	'appSetTimeout()' will return a 'Timeout' object, that user may or may not store.
-	If the user doesn't store it, timeout will fire normally, and after that all
-	resources will be discarded.
-	But if user keeps a living reference, then she may call 'refresh' to reschedule,
-	so resources may not be discarded until user discards her reference.
-
-
-*/
-
-struct QBI_ThreadStartupData
-{
-	ThreadID threadCommID;
-	uintptr_t readHandle;
-	nodecpp::log::Log* defaultLog = nullptr;
-	size_t IdWithinGroup;
-};
-
-void QBI_PreinitThreadStartupData( QBI_ThreadStartupData& startupData );
-
-
-
-
-class NetSockets
-{
-public:
-	std::pair<bool, int> wait( int timeoutToUse ) {
-/*#ifdef _MSC_VER
-		int retval = WSAPoll(&awaiker, 1, timeoutToUse);
-#else
-		int retval = poll(&awaiker, 1, timeoutToUse);
-#endif
-		return std::make_pair(true, retval);*/
-		return std::make_pair(true, 13);
-	}
-};
-
-static constexpr uint64_t TimeOutNever = std::numeric_limits<uint64_t>::max();
-
-struct TimeoutEntryHandlerData
-{
-	std::function<void()> cb = nullptr; // is assumed to be self-contained in terms of required action
-//	nodecpp::awaitable_handle_data::handler_fn_type h = nullptr;
-	nodecpp::awaitable_handle_t h = nullptr;
-};
-
-struct TimeoutEntry : public TimeoutEntryHandlerData
-{
-	uint64_t id;
-	uint64_t lastSchedule;
-	uint64_t delay;
-	uint64_t nextTimeout;
-	bool handleDestroyed = false;
-	bool active = false;
-};
-
-class TimeoutManager
-{
-	uint64_t lastId = 0;
-	std::unordered_map<uint64_t, TimeoutEntry> timers;
-	std::multimap<uint64_t, uint64_t> nextTimeouts;
-	template<class H>
-	nodecpp::Timeout appSetTimeoutImpl(H h, int32_t ms)
-	{
-		if (ms == 0) ms = 1;
-		else if (ms < 0) ms = std::numeric_limits<int32_t>::max();
-
-		uint64_t id = ++lastId;
-
-		TimeoutEntry entry;
-		entry.id = id;
-		static_assert( !std::is_same<std::function<void()>, nodecpp::awaitable_handle_t>::value ); // we're in trouble anyway and not only here :)
-		static_assert( std::is_same<H, std::function<void()>>::value || std::is_same<H, nodecpp::awaitable_handle_t>::value );
-		if constexpr ( std::is_same<H, std::function<void()>>::value )
-		{
-			entry.cb = h;
-			entry.h = nullptr;
-		}
-		else
-		{
-			static_assert( std::is_same<H, nodecpp::awaitable_handle_t>::value );
-			entry.cb = nullptr;
-			entry.h = h;
-		}
-		entry.delay = ms * 1000;
-
-		auto res = timers.insert(std::make_pair(id, std::move(entry)));
-		if (res.second)
-		{
-			appSetTimeout(res.first->second);
-
-			return nodecpp::Timeout(id);
-		}
-		else
-		{
-			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"Failed to insert Timeout {}", id);
-			return nodecpp::Timeout(0);
-		}
-	}
-
-public:
-	void appSetTimeout(TimeoutEntry& entry);
-	void appClearTimeout(TimeoutEntry& entry);
-
-	nodecpp::Timeout appSetTimeout(std::function<void()> cb, int32_t ms) { return appSetTimeoutImpl( cb, ms ); }
-	void appClearTimeout(const nodecpp::Timeout& to);
-	void appRefresh(uint64_t id);
-#ifndef NODECPP_NO_COROUTINES
-	nodecpp::Timeout appSetTimeout(nodecpp::awaitable_handle_t ahd, int32_t ms) { return appSetTimeoutImpl( ahd, ms ); }
-	nodecpp::Timeout appSetTimeoutForAction(nodecpp::awaitable_handle_t ahd, int32_t ms) { return appSetTimeoutImpl( ahd, ms ); }
-#endif
-	void appTimeoutDestructor(uint64_t id);
-
-	void infraTimeoutEvents(uint64_t now, EvQueue& evs);
-	uint64_t infraNextTimeout() const noexcept
-	{
-		auto it = nextTimeouts.begin();
-		return it != nextTimeouts.end() ? it->first : TimeOutNever;
-	}
-
-	bool infraRefedTimeout() const noexcept
-	{
-		return !nextTimeouts.empty();
-	}
-};
-
+#include "timeout_manager.h"
 
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
@@ -333,7 +207,7 @@ auto a_timeout_impl(uint32_t ms) {
         void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 			nodecpp::initCoroData(awaiting);
             who_is_awaiting = awaiting;
-			to = timeoutManager->appSetTimeout(awaiting, duration);
+			to = timeoutManager->appSetTimeout(awaiting, duration, infraGetCurrentTime());
         }
 
 		auto await_resume() {
