@@ -82,28 +82,6 @@ public:
 	}
 
 	template<class NodeT>
-	bool pollPhase2( NodeT& node, bool refed, uint64_t nextTimeoutAt, uint64_t now )
-	{
-		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
-		static constexpr size_t maxMsgCnt = 8;
-		InterThreadMsg thq[maxMsgCnt];
-		size_t actaulFromSock = 8;
-		size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock, timeoutToUse );
-		for ( size_t i=0; i<actualFromQueue; ++i )
-			if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
-			{
-				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
-				node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
-			}
-			else
-			{
-				// TODO: ...
-				;
-			}
-		return true;
-	}
-
-	template<class NodeT>
 	void runStandardLoop( NodeT& node )
 	{
 		while (running)
@@ -113,8 +91,29 @@ public:
 			timeout.infraTimeoutEvents(now, queue);
 			queue.emit();
 
+			bool refed = refedTimeout();
+			uint64_t nextTimeoutAt = nextTimeout();
 			now = infraGetCurrentTime();
-			bool refed = pollPhase2( node, refedTimeout(), nextTimeout(), now );
+
+			int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
+			static constexpr size_t maxMsgCnt = 8;
+			InterThreadMsg thq[maxMsgCnt];
+			size_t actaulFromSock = 8;
+			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock, timeoutToUse );
+			for ( size_t i=0; i<actualFromQueue; ++i )
+				if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
+				{
+					nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
+					node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
+				}
+				else
+				{
+					// TODO: ...
+					;
+				}
+			refed = true; // TODO: revise meaning
+
+
 			if(!refed)
 				return;
 

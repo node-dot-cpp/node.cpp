@@ -67,6 +67,8 @@ thread_local NLS threadLocalData;
 
 thread_local MsgQueue interThreadMessageQueues[1000]; // TODO:  way to customize
 
+thread_local TimeoutManager* timeoutManager;
+
 
 uint64_t infraGetCurrentTime()
 {

@@ -86,6 +86,8 @@ int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now)
 	         return INT_MAX;
 }
 
+thread_local TimeoutManager* timeoutManager;
+
 namespace nodecpp {
 	nodecpp::Timeout setTimeout(std::function<void()> cb, int32_t ms)
 	{

@@ -169,5 +169,3 @@ void TimeoutManager::infraTimeoutEvents(uint64_t now, EvQueue& evs)
 	}
 }
 
-thread_local TimeoutManager* timeoutManager;
-
