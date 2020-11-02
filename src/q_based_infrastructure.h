@@ -58,7 +58,6 @@ class Infrastructure
 	template<class Node> 
 	friend class Runnable;
 
-	NetSockets ioSockets;
 	TimeoutManager timeout;
 	EvQueue inmediateQueue;
 
@@ -86,49 +85,22 @@ public:
 	bool pollPhase2( NodeT& node, bool refed, uint64_t nextTimeoutAt, uint64_t now )
 	{
 		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
-		auto ret = ioSockets.wait( timeoutToUse );
-
-		if ( !ret.first )
-		{
-			return refed;
-		}
-
-		int retval = ret.second;
-
-		if (retval < 0)
-		{
-			return false;
-		}
-		else if (retval == 0)
-		{
-			//timeout, just return with empty queue
-			return true; 
-		}
-		else //if(retval)
-		{
-			static constexpr size_t maxMsgCnt = 8;
-			InterThreadMsg thq[maxMsgCnt];
-			size_t actaulFromSock = 8;
-			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock, timeoutToUse );
-//			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
-			for ( size_t i=0; i<actualFromQueue; ++i )
-				if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
-				{
-					nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
-					node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
-				}
-				else
-				{
-					// TODO: ...
-					;
-				}
-			return true;
-		}
-	}
-
-	void doBasicInitialization()
-	{
-//		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical,isNetInitialized());
+		static constexpr size_t maxMsgCnt = 8;
+		InterThreadMsg thq[maxMsgCnt];
+		size_t actaulFromSock = 8;
+		size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock, timeoutToUse );
+		for ( size_t i=0; i<actualFromQueue; ++i )
+			if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
+			{
+				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
+				node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
+			}
+			else
+			{
+				// TODO: ...
+				;
+			}
+		return true;
 	}
 
 	template<class NodeT>
@@ -136,11 +108,7 @@ public:
 	{
 		while (running)
 		{
-
 			EvQueue queue;
-
-			queue.emit();
-
 			uint64_t now = infraGetCurrentTime();
 			timeout.infraTimeoutEvents(now, queue);
 			queue.emit();
@@ -158,24 +126,6 @@ public:
 	}
 };
 
-
-/*#ifdef NODECPP_ENABLE_CLUSTERING
-inline
-void registerAgentServer(soft_ptr<Cluster::AgentServer> t)
-{
-	return netServerManagerBase->appAddAgentServer(t);
-}
-inline
-SOCKET acquireSocketAndLetInterThreadCommServerListening(nodecpp::Ip4 ip, uint16_t& port, int backlog)
-{
-	return netServerManagerBase->acquireSocketAndLetInterThreadCommServerListening( ip, port, backlog );
-}
-inline
-std::pair<std::pair<SOCKET, uint16_t>, std::pair<SOCKET, uint16_t>> acquireAndConnectSocketForInterThreadComm( SOCKET interThreadCommServerSock, const char* ip, uint16_t destinationPort )
-{
-	return netServerManagerBase->acquireAndConnectSocketForInterThreadComm( interThreadCommServerSock, ip, destinationPort );
-}
-#endif // NODECPP_ENABLE_CLUSTERING*/
 
 extern thread_local TimeoutManager* timeoutManager;
 extern thread_local EvQueue* inmediateQueue;
@@ -232,36 +182,6 @@ class Runnable : public RunnableBase
 			Infrastructure infra;
 			timeoutManager = &infra.getTimeout();
 			inmediateQueue = &infra.getInmediateQueue();
-			infra.doBasicInitialization();
-#ifdef NODECPP_ENABLE_CLUSTERING
-			/*if ( isMaster )
-			{
-				uintptr_t readHandle = initInterThreadCommSystemAndGetReadHandleForMainThread();
-				infra.ioSockets.setAwakerSocket( readHandle );
-			}
-			else
-			{
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData != nullptr );
-				infra.ioSockets.setAwakerSocket( startupData->readHandle );
-			}
-#endif
-			// from now on all internal structures are ready to use; let's run their "users"
-#ifdef NODECPP_ENABLE_CLUSTERING
-			nodecpp::postinitThreadClusterObject();*/
-			// TODO_XXX: initializing (see above)
-			/*if ( isMaster )
-			{
-				size_t listenerCnt = 1;
-				auto argv = getArgv();
-				for ( size_t i=1; i<argv.size(); ++i )
-				{
-					if ( argv[i].size() > 13 && argv[i].substr(0,13) == "numlisteners=" )
-						listenerCnt = atol(argv[i].c_str() + 13);
-				}
-				for ( size_t i=0; i<listenerCnt; ++i )
-					createListenerThread();
-			}*/
-#endif // NODECPP_ENABLE_CLUSTERING
 
 			node = nodecpp::safememory::make_owning<Node>();
 			thisThreadNode = &(*node); 
