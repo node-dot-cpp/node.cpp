@@ -2,7 +2,7 @@
 ///////////////////////////
 
 #include <common.h>
-#include "q_based_infrastructure.h"
+#include <infrastructure/q_based_infrastructure.h>
 #include "SimulationNode.h"
 
 
@@ -43,11 +43,6 @@ int main( int argc, char *argv_[] )
 		
 	nodecpp::platform::internal_msg::InternalMsg imsg;
 	imsg.append( "Second message", sizeof("Second message") );
-//		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
-	ThreadID target;
-	target.slotId = 1;
-	target.reincarnation = 1;
-//		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, loop.getAddress() );
 	sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 
 	SimplePollLoop<SampleSimulationNode> loop2;

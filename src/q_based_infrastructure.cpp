@@ -27,7 +27,7 @@
 
 #ifdef NODECPP_USE_Q_BASED_INFRA
 
-#include "q_based_infrastructure.h"
+#include "../include/infrastructure/q_based_infrastructure.h"
 
 //#include <nodecpp/nls.h>
 #include "../include/nodecpp/nls.h"

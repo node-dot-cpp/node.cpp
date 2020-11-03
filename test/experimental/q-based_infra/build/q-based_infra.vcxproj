@@ -645,9 +645,9 @@
     <ClInclude Include="../../../../src\infrastructure.h" />
     <ClInclude Include="../../../../src\tcp_socket\tcp_socket.h" />
     <ClInclude Include="../../../../src\tcp_socket\tcp_socket_base.h" />
+    <ClInclude Include="..\..\..\..\include\infrastructure\q_based_infrastructure.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\common_structs.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\fs.h" />
-    <ClInclude Include="..\..\..\..\src\q_based_infrastructure.h" />
     <ClInclude Include="..\..\..\..\src\timeout_manager.h" />
     <ClInclude Include="..\user_code\SimulationNode.h" />
   </ItemGroup>
