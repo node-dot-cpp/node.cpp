@@ -211,6 +211,7 @@ namespace nodecpp {
 #endif
 
 
+extern nodecpp::stdvector<nodecpp::stdstring> argv;
 
 
 #endif //COMMON_H

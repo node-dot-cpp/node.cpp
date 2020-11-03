@@ -6,9 +6,6 @@
 #include "SimulationNode.h"
 
 
-nodecpp::stdvector<nodecpp::stdstring> argv;
-
-
 template<class NodeT, class ThreadStartupDataT>
 void nodeThreadMain( void* pdata )
 {

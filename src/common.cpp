@@ -42,3 +42,4 @@ thread_local bool nodecpp::safememory::doZombieEarlyDetection_ = true;
 #endif // NODECPP_DISABLE_ZOMBIE_ACCESS_EARLY_DETECTION
 #endif // NODECPP_USE_xxx_ALLOC
 
+nodecpp::stdvector<nodecpp::stdstring> argv;
