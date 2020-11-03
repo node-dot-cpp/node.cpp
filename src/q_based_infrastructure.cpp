@@ -158,7 +158,7 @@ struct ThreadDescriptor
 static thread_local ThreadDescriptor thisThreadDescriptor;
 void setThisThreadDescriptor(ThreadStartupData& startupData) { thisThreadDescriptor.threadID = startupData.threadCommID; }
 
-thread_local NodeBase* thisThreadNode = nullptr;
+//thread_local NodeBase* thisThreadNode = nullptr;
 
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
 {

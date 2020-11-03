@@ -13,15 +13,15 @@ void nodeThreadMain( void* pdata )
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
 	ThreadStartupDataT startupData = *sd;
 	nodecpp::stddealloc( sd, 1 );
-	SimplePollLoop<NodeT> r( startupData );
+	QueueBasedNodeLoop<NodeT> r( startupData );
 	r.run();
 }
 
 template<class NodeT>
 ThreadID runNodeInAnotherThread()
 {
-	auto startupDataAndAddr = SimplePollLoop<NodeT>::getInitializer();
-	using InitializerT = typename SimplePollLoop<NodeT>::Initializer;
+	auto startupDataAndAddr = QueueBasedNodeLoop<NodeT>::getInitializer();
+	using InitializerT = typename QueueBasedNodeLoop<NodeT>::Initializer;
 	InitializerT* startupData = nodecpp::stdalloc<InitializerT>(1);
 	*startupData = startupDataAndAddr.first;
 	size_t threadIdx = startupDataAndAddr.second.slotId;
@@ -45,7 +45,7 @@ int main( int argc, char *argv_[] )
 	imsg.append( "Second message", sizeof("Second message") );
 	sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 
-	SimplePollLoop<SampleSimulationNode> loop2;
+	QueueBasedNodeLoop<SampleSimulationNode> loop2;
 	loop2.run();
 
 	return 0;

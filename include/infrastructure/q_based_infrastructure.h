@@ -53,16 +53,16 @@ uint64_t infraGetCurrentTime();
 
 #include "clustering_impl/interthread_comm.h"
 
-class Infrastructure
+class NoLoopInfrastructure
 {
-	template<class Node> 
+	template<class InfraT, class Node> 
 	friend class Runnable;
 
 	TimeoutManager timeout;
 	EvQueue inmediateQueue;
 
 public:
-	Infrastructure() {}
+	NoLoopInfrastructure() {}
 
 public:
 	bool running = true;
@@ -110,6 +110,18 @@ public:
 
 		return timeoutToUse;
 	}
+};
+
+class QueueBasedInfrastructure : public NoLoopInfrastructure
+{
+	template<class InfraT, class Node> 
+	friend class Runnable;
+
+	TimeoutManager timeout;
+	EvQueue inmediateQueue;
+
+public:
+	QueueBasedInfrastructure() {}
 
 	template<class NodeT>
 	void runStandardLoop( NodeT& node )
@@ -121,7 +133,7 @@ public:
 			InterThreadMsg thq[maxMsgCnt];
 			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, maxMsgCnt, timeoutToUse );
 
-			timeoutToUse = processMessagesAndOrTimeout( node, thq, actualFromQueue );
+			timeoutToUse = NoLoopInfrastructure::processMessagesAndOrTimeout( node, thq, actualFromQueue );
 		}
 	}
 };
@@ -169,22 +181,25 @@ auto a_timeout_impl(uint32_t ms) {
 }
 #endif // NODECPP_NO_COROUTINES
 
-extern thread_local NodeBase* thisThreadNode;
-template<class Node>
-class Runnable : public RunnableBase
-{
-	nodecpp::safememory::owning_ptr<Node> node;
+//extern thread_local NodeBase* thisThreadNode;
 
-	void internalRun( bool isMaster, ThreadStartupData* startupData )
+template<class InfraT, class NodeT>
+class Runnable
+{
+	nodecpp::safememory::owning_ptr<NodeT> node;
+public:
+	using NodeType = NodeT;
+	Runnable() {}
+	void run( bool isMaster, ThreadStartupData* startupData )
 	{
 		nodecpp::safememory::interceptNewDeleteOperators(true);
 		{
-			Infrastructure infra;
+			InfraT infra;
 			timeoutManager = &infra.getTimeout();
 			inmediateQueue = &infra.getInmediateQueue();
 
-			node = nodecpp::safememory::make_owning<Node>();
-			thisThreadNode = &(*node); 
+			node = nodecpp::safememory::make_owning<NodeT>();
+//			thisThreadNode = &(*node); 
 #ifdef NODECPP_RECORD_AND_REPLAY
 			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
 				node->binLog.initForRecording( 26 );
@@ -210,26 +225,20 @@ class Runnable : public RunnableBase
 		}
 		nodecpp::safememory::killAllZombies();
 		nodecpp::safememory::interceptNewDeleteOperators(false);
-	}
 
-public:
-	using NodeType = Node;
-	Runnable() {}
-	void run(bool isMaster, ThreadStartupData* startupData) override
-	{
-		return internalRun(isMaster, startupData);
+//		return infra;
 	}
 };
 
 
 template<class NodeT>
-class SimplePollLoop
+class NodeLoopBase
 {
 public:
 	class Initializer
 	{
 		ThreadStartupData data;
-		friend class SimplePollLoop;
+		friend class NodeLoopBase;
 		void acquire() {
 			preinitThreadStartupData( data );
 		}
@@ -246,9 +255,11 @@ private:
 	bool initialized = false;
 	bool entered = false;
 
+	nodecpp::safememory::owning_ptr<NodeT> node;
+
 public:
-	SimplePollLoop() {}
-	SimplePollLoop( Initializer i ) { 
+	NodeLoopBase() {}
+	NodeLoopBase( Initializer i ) { 
 		loopStartupData = i.data;
 		setThisThreadDescriptor( i.data ); 
 #ifdef NODECPP_USE_IIBMALLOC
@@ -266,7 +277,10 @@ public:
 		i.acquire();
 		return std::make_pair(i, i.data.threadCommID);
 	}
-	
+
+protected:
+	template<class InfraT>
+//	InfraT& run()
 	void run()
 	{
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
@@ -286,14 +300,51 @@ public:
 		nodecpp::logging_impl::currentLog = loopStartupData.defaultLog;
 		nodecpp::logging_impl::instanceId = loopStartupData.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", loopStartupData.threadCommID.slotId );
-		Runnable<NodeT> r;
-		r.run( false, &loopStartupData );
 
+		Runnable<InfraT, NodeT> r;
+//		return 
+			r.run( false, &loopStartupData );
+	}
+};
 
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
+template<class NodeT>
+class QueueBasedNodeLoop : public NodeLoopBase<NodeT>
+{
+public:
+	QueueBasedNodeLoop() {}
+	QueueBasedNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
+	
+	void run()
+	{
+		NodeLoopBase<NodeT>::template run<QueueBasedInfrastructure>();
 	}
 
-	ThreadID getAddress() { return loopStartupData.threadCommID; }
+	ThreadID getAddress() { return NodeLoopBase<NodeT>::loopStartupData.threadCommID; }
+};
+
+
+template<class NodeT>
+class NoNodeLoop : public NodeLoopBase<NodeT>
+{
+//	InfraT* infra;
+public:
+	NoNodeLoop() {}
+	NoNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
+	
+	void run()
+	{
+//		infra = &(NodeLoopBase::run<NoLoopInfrastructure>());
+		NodeLoopBase<NodeT>::template run<NoLoopInfrastructure>();
+	}
+
+	/*int onInfrastructureMessage()
+	{
+	template<class NodeT>
+	int 
+		infra->processMessagesAndOrTimeout( NodeT& node, InterThreadMsg* thq, size_t msgCnt )
+	}*/
+
+//	ThreadID getAddress() { return ThreadID(); }
 };
 
 #endif // Q_BASED_INFRASTRUCTURE_H
