@@ -82,45 +82,46 @@ public:
 	}
 
 	template<class NodeT>
+	int processMessagesAndOrTimeout( NodeT& node, InterThreadMsg* thq, size_t msgCnt )
+	{
+		EvQueue queue;
+		uint64_t now = infraGetCurrentTime();
+		timeout.infraTimeoutEvents(now, queue);
+		queue.emit();
+
+		for ( size_t i=0; i<msgCnt; ++i )
+			if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
+			{
+				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
+				node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
+			}
+			else
+			{
+				// TODO: ...
+				;
+			}
+
+		emitInmediates();
+
+		bool refed = refedTimeout();
+		uint64_t nextTimeoutAt = nextTimeout();
+		now = infraGetCurrentTime();
+		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
+
+		return timeoutToUse;
+	}
+
+	template<class NodeT>
 	void runStandardLoop( NodeT& node )
 	{
+		int timeoutToUse = 0;
 		while (running)
 		{
-			EvQueue queue;
-			uint64_t now = infraGetCurrentTime();
-			timeout.infraTimeoutEvents(now, queue);
-			queue.emit();
-
-			bool refed = refedTimeout();
-			uint64_t nextTimeoutAt = nextTimeout();
-			now = infraGetCurrentTime();
-
-			int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
 			static constexpr size_t maxMsgCnt = 8;
 			InterThreadMsg thq[maxMsgCnt];
-			size_t actaulFromSock = 8;
-			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock, timeoutToUse );
-			for ( size_t i=0; i<actualFromQueue; ++i )
-				if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
-				{
-					nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
-					node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
-				}
-				else
-				{
-					// TODO: ...
-					;
-				}
-			refed = true; // TODO: revise meaning
+			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, maxMsgCnt, timeoutToUse );
 
-
-			if(!refed)
-				return;
-
-			queue.emit();
-			emitInmediates();
-
-			queue.emit();
+			timeoutToUse = processMessagesAndOrTimeout( node, thq, actualFromQueue );
 		}
 	}
 };
