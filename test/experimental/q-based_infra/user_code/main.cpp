@@ -67,33 +67,9 @@ public:
 	};
 
 private:
-//	ThreadID commAddress;
 	ThreadStartupData loopStartupData;
 	bool initialized = false;
 	bool entered = false;
-
-	//template<class ThreadStartupDataT, class NodeT>
-	template<class NODET, class ThreadStartupDataT>
-	static void nodeThreadMain( void* pdata )
-	{
-		ThreadStartupDataT* sd = reinterpret_cast<ThreadStartupDataT*>(pdata);
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->threadCommID.slotId != 0 ); 
-		ThreadStartupDataT startupData = *sd;
-		nodecpp::stddealloc( sd, 1 );
-		setThisThreadDescriptor( startupData );
-	#ifdef NODECPP_USE_IIBMALLOC
-		g_AllocManager.initialize();
-	#endif
-		nodecpp::logging_impl::currentLog = startupData.defaultLog;
-		nodecpp::logging_impl::instanceId = startupData.threadCommID.slotId;
-		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", startupData.threadCommID.slotId );
-		/*NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, NodeFactoryMap::getInstance().getFacoryMap()->size() == 1, "Indeed: {}. Current implementation supports exactly 1 node per thread. More nodes is a pending dev", NodeFactoryMap::getInstance().getFacoryMap()->size() );
-		for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-			f.second->create()->run(false, &startupData);*/
-		Runnable<NODET> r;
-		r.run( false, &startupData );
-	}
 
 public:
 	SimplePollLoop() {}
@@ -119,18 +95,26 @@ public:
 	void run()
 	{
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
-		ThreadStartupData* startupData = nodecpp::stdalloc<ThreadStartupData>(1);
 		if ( !initialized )
 		{
 			preinitThreadStartupData( loopStartupData );
 			initialized = true;
 		}
-		*startupData = loopStartupData;
-	//	startupData->IdWithinGroup = listeners.add( startupData->threadCommID );
-		size_t threadIdx = startupData->threadCommID.slotId;
-	//	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {} and listenerID = {}...", threadIdx, startupData->IdWithinGroup );
+		size_t threadIdx = loopStartupData.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
-		nodeThreadMain<NodeT, ThreadStartupData>( (void*)(startupData) );
+
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, loopStartupData.threadCommID.slotId != 0 ); 
+		setThisThreadDescriptor( loopStartupData );
+#ifdef NODECPP_USE_IIBMALLOC
+		g_AllocManager.initialize();
+#endif
+		nodecpp::logging_impl::currentLog = loopStartupData.defaultLog;
+		nodecpp::logging_impl::instanceId = loopStartupData.threadCommID.slotId;
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", loopStartupData.threadCommID.slotId );
+		Runnable<NodeT> r;
+		r.run( false, &loopStartupData );
+
+
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
 	}
 
@@ -142,22 +126,9 @@ void nodeThreadMain( void* pdata )
 {
 	ThreadStartupDataT* sd = reinterpret_cast<ThreadStartupDataT*>(pdata);
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
-//	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sd->threadCommID.slotId != 0 ); 
 	ThreadStartupDataT startupData = *sd;
 	nodecpp::stddealloc( sd, 1 );
-	/* TODO: move to SimplePollLoop<>
-//	setThisThreadDescriptor( startupData ); 
-#ifdef NODECPP_USE_IIBMALLOC
-	g_AllocManager.initialize();
-#endif
-	nodecpp::logging_impl::currentLog = startupData.defaultLog;
-	nodecpp::logging_impl::instanceId = startupData.threadCommID.slotId;
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", startupData.threadCommID.slotId );*/
-	/*NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, NodeFactoryMap::getInstance().getFacoryMap()->size() == 1, "Indeed: {}. Current implementation supports exactly 1 node per thread. More nodes is a pending dev", NodeFactoryMap::getInstance().getFacoryMap()->size() );
-	for ( auto f : *(NodeFactoryMap::getInstance().getFacoryMap()) )
-		f.second->create()->run(false, &startupData);*/
 	SimplePollLoop<NodeT> r( startupData );
-//	r.run( false, &startupData );
 	r.run();
 }
 
