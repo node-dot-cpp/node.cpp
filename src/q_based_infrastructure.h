@@ -221,4 +221,79 @@ public:
 	}
 };
 
+
+template<class NodeT>
+class SimplePollLoop
+{
+public:
+	class Initializer
+	{
+		ThreadStartupData data;
+		friend class SimplePollLoop;
+		void acquire() {
+			preinitThreadStartupData( data );
+		}
+	public:
+		Initializer() {}
+		Initializer( const Initializer& ) = default;
+		Initializer& operator = ( const Initializer& ) = default;
+		Initializer( Initializer&& ) = default;
+		Initializer& operator = ( Initializer&& ) = default;
+	};
+
+private:
+	ThreadStartupData loopStartupData;
+	bool initialized = false;
+	bool entered = false;
+
+public:
+	SimplePollLoop() {}
+	SimplePollLoop( Initializer i ) { 
+		loopStartupData = i.data;
+		setThisThreadDescriptor( i.data ); 
+#ifdef NODECPP_USE_IIBMALLOC
+		g_AllocManager.initialize();
+#endif
+		nodecpp::logging_impl::currentLog = i.data.defaultLog;
+		nodecpp::logging_impl::instanceId = i.data.threadCommID.slotId;
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", i.data.threadCommID.slotId );
+		initialized = true;
+	}
+
+	static std::pair<Initializer, ThreadID> getInitializer()
+	{
+		Initializer i;
+		i.acquire();
+		return std::make_pair(i, i.data.threadCommID);
+	}
+	
+	void run()
+	{
+		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
+		if ( !initialized )
+		{
+			preinitThreadStartupData( loopStartupData );
+			initialized = true;
+		}
+		size_t threadIdx = loopStartupData.threadCommID.slotId;
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
+
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, loopStartupData.threadCommID.slotId != 0 ); 
+		setThisThreadDescriptor( loopStartupData );
+#ifdef NODECPP_USE_IIBMALLOC
+		g_AllocManager.initialize();
+#endif
+		nodecpp::logging_impl::currentLog = loopStartupData.defaultLog;
+		nodecpp::logging_impl::instanceId = loopStartupData.threadCommID.slotId;
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", loopStartupData.threadCommID.slotId );
+		Runnable<NodeT> r;
+		r.run( false, &loopStartupData );
+
+
+		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
+	}
+
+	ThreadID getAddress() { return loopStartupData.threadCommID; }
+};
+
 #endif // Q_BASED_INFRASTRUCTURE_H
