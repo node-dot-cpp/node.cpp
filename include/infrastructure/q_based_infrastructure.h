@@ -53,37 +53,81 @@ uint64_t infraGetCurrentTime();
 
 #include "clustering_impl/interthread_comm.h"
 
+extern thread_local TimeoutManager* timeoutManager;
+extern thread_local EvQueue* inmediateQueue;
+
+template<class NodeT>
 class NoLoopInfrastructure
 {
 	template<class InfraT, class Node> 
 	friend class Runnable;
 
 	TimeoutManager timeout;
-	EvQueue inmediateQueue;
+	EvQueue immediateEvQueue;
 
+#ifdef NODECPP_USE_IIBMALLOC
+		ThreadLocalAllocatorT allocManager;
+#endif
+	nodecpp::safememory::owning_ptr<NodeT> node;
 public:
-	NoLoopInfrastructure() {}
+	NoLoopInfrastructure() { init(); }
+
+	void init() {
+#ifdef NODECPP_USE_IIBMALLOC
+		allocManager.initialize();
+#endif
+		node = nodecpp::safememory::make_owning<NodeT>();
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
+			node->binLog.initForRecording( 26 );
+		::nodecpp::threadLocalData.binaryLog = &(node->binLog);
+#endif // NODECPP_RECORD_AND_REPLAY
+		// NOTE!!! 
+		// By coincidence it so happened that both void Node::main() and nodecpp::handler_ret_type Node::main() are currently treated in the same way.
+		// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
+		// http://www.gotw.ca/gotw/071.htm and 
+		// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
+#ifdef NODECPP_RECORD_AND_REPLAY
+		if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
+			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
+#endif // NODECPP_RECORD_AND_REPLAY
+		node->main();
+	}
+
+	void deinit()
+	{
+		node = nullptr;
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+		nodecpp::safememory::killAllZombies();
+		nodecpp::safememory::interceptNewDeleteOperators(false);
+	}
 
 public:
 	bool running = true;
 	uint64_t nextTimeoutAt = 0;
 	TimeoutManager& getTimeout() { return timeout; }
-	EvQueue& getInmediateQueue() { return inmediateQueue; }
-	void emitInmediates() { inmediateQueue.emit(); }
+	EvQueue& getInmediateQueue() { return immediateEvQueue; }
+	void emitInmediates() { immediateEvQueue.emit(); }
 
 	bool refedTimeout() const noexcept
 	{
-		return !inmediateQueue.empty() || timeout.infraRefedTimeout();
+		return !immediateEvQueue.empty() || timeout.infraRefedTimeout();
 	}
 
 	uint64_t nextTimeout() const noexcept
 	{
-		return inmediateQueue.empty() ? timeout.infraNextTimeout() : 0;
+		return immediateEvQueue.empty() ? timeout.infraNextTimeout() : 0;
 	}
 
-	template<class NodeT>
-	int processMessagesAndOrTimeout( NodeT& node, InterThreadMsg&& thq )
+	int processMessagesAndOrTimeout( InterThreadMsg&& thq )
 	{
+		nodecpp::safememory::interceptNewDeleteOperators(true);
+		timeoutManager = &(getTimeout());
+		inmediateQueue = &(getInmediateQueue());
+
 		EvQueue queue;
 		uint64_t now = infraGetCurrentTime();
 		timeout.infraTimeoutEvents(now, queue);
@@ -92,7 +136,7 @@ public:
 			if ( thq.msgType == InterThreadMsgType::Infrastructural )
 			{
 				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq.msg.getReadIter();
-				node.onInfrastructureMessage( thq.sourceThreadID, riter );
+				node->onInfrastructureMessage( thq.sourceThreadID, riter );
 			}
 			else
 			{
@@ -107,37 +151,39 @@ public:
 		now = infraGetCurrentTime();
 		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
 
+		timeoutManager = nullptr;
+		inmediateQueue = nullptr;
+		nodecpp::safememory::killAllZombies();
+		nodecpp::safememory::interceptNewDeleteOperators(false);
+
 		return timeoutToUse;
 	}
 
-	template<class NodeT>
-	void runStandardLoop( NodeT& node ) {}
+	void run() {}
 };
 
-class QueueBasedInfrastructure : public NoLoopInfrastructure
+template<class NodeT>
+class QueueBasedInfrastructure : public NoLoopInfrastructure<NodeT>
 {
+	bool running = true;
 public:
-	QueueBasedInfrastructure() {}
+	QueueBasedInfrastructure() :NoLoopInfrastructure<NodeT>() {}
 
-	template<class NodeT>
-	void runStandardLoop( NodeT& node )
+	void run()
 	{
 		int timeoutToUse = 0;
-		while (running)
+		while (running) // TODO: exit condition
 		{
 			static constexpr size_t maxMsgCnt = 8;
 			InterThreadMsg thq[maxMsgCnt];
 			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, maxMsgCnt, timeoutToUse );
 
 			for ( size_t i=0; i<actualFromQueue; ++i )
-				timeoutToUse = NoLoopInfrastructure::processMessagesAndOrTimeout( node, std::move(thq[i]) );
+				timeoutToUse = NoLoopInfrastructure<NodeT>::processMessagesAndOrTimeout( std::move(thq[i]) );
 		}
 	}
 };
 
-
-extern thread_local TimeoutManager* timeoutManager;
-extern thread_local EvQueue* inmediateQueue;
 
 #ifndef NODECPP_NO_COROUTINES
 inline
@@ -178,57 +224,6 @@ auto a_timeout_impl(uint32_t ms) {
 }
 #endif // NODECPP_NO_COROUTINES
 
-//extern thread_local NodeBase* thisThreadNode;
-
-#if 0
-template<class InfraT, class NodeT>
-class Runnable
-{
-	nodecpp::safememory::owning_ptr<NodeT> node;
-public:
-	using NodeType = NodeT;
-	Runnable() {}
-	void run( ThreadStartupData* startupData )
-	{
-		nodecpp::safememory::interceptNewDeleteOperators(true);
-		{
-			InfraT infra;
-			timeoutManager = &infra.getTimeout();
-			inmediateQueue = &infra.getInmediateQueue();
-
-			node = nodecpp::safememory::make_owning<NodeT>();
-//			thisThreadNode = &(*node); 
-#ifdef NODECPP_RECORD_AND_REPLAY
-			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
-				node->binLog.initForRecording( 26 );
-			::nodecpp::threadLocalData.binaryLog = &(node->binLog);
-#endif // NODECPP_RECORD_AND_REPLAY
-			// NOTE!!! 
-			// By coincidence it so happened that both void Node::main() and nodecpp::handler_ret_type Node::main() are currently treated in the same way.
-			// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
-			// http://www.gotw.ca/gotw/071.htm and 
-			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
-#ifdef NODECPP_RECORD_AND_REPLAY
-			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
-				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
-#endif // NODECPP_RECORD_AND_REPLAY
-			node->main();
-			infra.runStandardLoop(*node);
-			node = nullptr;
-
-#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
-			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
-#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		}
-		nodecpp::safememory::killAllZombies();
-		nodecpp::safememory::interceptNewDeleteOperators(false);
-
-//		return infra;
-	}
-};
-#endif // 0
-
 template<class NodeT>
 class NodeLoopBase
 {
@@ -254,16 +249,16 @@ private:
 	bool entered = false;
 
 protected:
-	nodecpp::safememory::owning_ptr<NodeT> node;
+//	nodecpp::safememory::owning_ptr<NodeT> node;
 
 public:
 	NodeLoopBase() {}
 	NodeLoopBase( Initializer i ) { 
 		loopStartupData = i.data;
 		setThisThreadDescriptor( i.data ); 
-#ifdef NODECPP_USE_IIBMALLOC
+/*#ifdef NODECPP_USE_IIBMALLOC
 		g_AllocManager.initialize();
-#endif
+#endif*/
 		nodecpp::logging_impl::currentLog = i.data.defaultLog;
 		nodecpp::logging_impl::instanceId = i.data.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", i.data.threadCommID.slotId );
@@ -279,7 +274,6 @@ public:
 
 protected:
 	template<class InfraT>
-//	InfraT& run()
 	void run( InfraT& infra)
 	{
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
@@ -293,9 +287,9 @@ protected:
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, loopStartupData.threadCommID.slotId != 0 ); 
 		setThisThreadDescriptor( loopStartupData );
-#ifdef NODECPP_USE_IIBMALLOC
+/*#ifdef NODECPP_USE_IIBMALLOC
 		g_AllocManager.initialize();
-#endif
+#endif*/
 		nodecpp::logging_impl::currentLog = loopStartupData.defaultLog;
 		nodecpp::logging_impl::instanceId = loopStartupData.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", loopStartupData.threadCommID.slotId );
@@ -303,9 +297,10 @@ protected:
 //		Runnable<InfraT, NodeT> r;
 //		return 
 //			r.run( &loopStartupData );
-		nodecpp::safememory::interceptNewDeleteOperators(true);
+
+//		nodecpp::safememory::interceptNewDeleteOperators(true);
 		{
-			timeoutManager = &infra.getTimeout();
+/*			timeoutManager = &infra.getTimeout();
 			inmediateQueue = &infra.getInmediateQueue();
 
 			node = nodecpp::safememory::make_owning<NodeT>();
@@ -324,12 +319,13 @@ protected:
 				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
 #endif // NODECPP_RECORD_AND_REPLAY
 			node->main();
-			infra.runStandardLoop(*node);
+			infra.runStandardLoop(*node);*/
+			infra.run();
 			////////////////////////////////////////////////////
 		}
 	}
 
-	void exit()
+/*	void exit()
 	{
 		node = nullptr;
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
@@ -338,20 +334,20 @@ protected:
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		nodecpp::safememory::killAllZombies();
 		nodecpp::safememory::interceptNewDeleteOperators(false);
-	}
+	}*/
 };
 
 template<class NodeT>
 class QueueBasedNodeLoop : public NodeLoopBase<NodeT>
 {
-	QueueBasedInfrastructure infra;
+	QueueBasedInfrastructure<NodeT> infra;
 public:
 	QueueBasedNodeLoop() {}
 	QueueBasedNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
 	void run()
 	{
-		NodeLoopBase<NodeT>::template run<QueueBasedInfrastructure>(infra);
+		NodeLoopBase<NodeT>::template run<QueueBasedInfrastructure<NodeT>>(infra);
 	}
 
 	ThreadID getAddress() { return NodeLoopBase<NodeT>::loopStartupData.threadCommID; }
@@ -361,19 +357,19 @@ public:
 template<class NodeT>
 class NoNodeLoop : public NodeLoopBase<NodeT>
 {
-	NoLoopInfrastructure infra;
+	NoLoopInfrastructure<NodeT> infra;
 public:
 	NoNodeLoop() {}
 	NoNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
 	void run()
 	{
-		NodeLoopBase<NodeT>::template run<NoLoopInfrastructure>(infra);
+		NodeLoopBase<NodeT>::template run<NoLoopInfrastructure<NodeT>>(infra);
 	}
 
 	int onInfrastructureMessage( InterThreadMsg&& thq )
 	{
-		return infra.processMessagesAndOrTimeout( *(NodeLoopBase<NodeT>::node), std::move(thq) );
+		return infra.processMessagesAndOrTimeout( std::move(thq) );
 	}
 
 //	ThreadID getAddress() { return ThreadID(); }
