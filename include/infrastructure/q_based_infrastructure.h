@@ -82,18 +82,17 @@ public:
 	}
 
 	template<class NodeT>
-	int processMessagesAndOrTimeout( NodeT& node, InterThreadMsg* thq, size_t msgCnt )
+	int processMessagesAndOrTimeout( NodeT& node, InterThreadMsg&& thq )
 	{
 		EvQueue queue;
 		uint64_t now = infraGetCurrentTime();
 		timeout.infraTimeoutEvents(now, queue);
 		queue.emit();
 
-		for ( size_t i=0; i<msgCnt; ++i )
-			if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
+			if ( thq.msgType == InterThreadMsgType::Infrastructural )
 			{
-				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
-				node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
+				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq.msg.getReadIter();
+				node.onInfrastructureMessage( thq.sourceThreadID, riter );
 			}
 			else
 			{
@@ -130,7 +129,8 @@ public:
 			InterThreadMsg thq[maxMsgCnt];
 			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, maxMsgCnt, timeoutToUse );
 
-			timeoutToUse = NoLoopInfrastructure::processMessagesAndOrTimeout( node, thq, actualFromQueue );
+			for ( size_t i=0; i<actualFromQueue; ++i )
+				timeoutToUse = NoLoopInfrastructure::processMessagesAndOrTimeout( node, std::move(thq[i]) );
 		}
 	}
 };
@@ -253,6 +253,7 @@ private:
 	bool initialized = false;
 	bool entered = false;
 
+protected:
 	nodecpp::safememory::owning_ptr<NodeT> node;
 
 public:
@@ -370,9 +371,9 @@ public:
 		NodeLoopBase<NodeT>::template run<NoLoopInfrastructure>(infra);
 	}
 
-	int onInfrastructureMessage( InterThreadMsg* thq, size_t msgCnt )
+	int onInfrastructureMessage( InterThreadMsg&& thq )
 	{
-		return infra->processMessagesAndOrTimeout( *(NodeLoopBase<NodeT>::node), thq, msgCnt );
+		return infra.processMessagesAndOrTimeout( *(NodeLoopBase<NodeT>::node), std::move(thq) );
 	}
 
 //	ThreadID getAddress() { return ThreadID(); }
