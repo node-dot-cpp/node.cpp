@@ -76,6 +76,10 @@ public:
 #ifdef NODECPP_USE_IIBMALLOC
 		allocManager.initialize();
 #endif
+		nodecpp::safememory::interceptNewDeleteOperators(true);
+		timeoutManager = &(getTimeout());
+		inmediateQueue = &(getInmediateQueue());
+
 		node = nodecpp::safememory::make_owning<NodeT>();
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
@@ -92,6 +96,11 @@ public:
 			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
 #endif // NODECPP_RECORD_AND_REPLAY
 		node->main();
+
+		timeoutManager = nullptr;
+		inmediateQueue = nullptr;
+		nodecpp::safememory::killAllZombies();
+		nodecpp::safememory::interceptNewDeleteOperators(false);
 	}
 
 	void deinit()
