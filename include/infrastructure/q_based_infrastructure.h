@@ -110,16 +110,13 @@ public:
 
 		return timeoutToUse;
 	}
+
+	template<class NodeT>
+	void runStandardLoop( NodeT& node ) {}
 };
 
 class QueueBasedInfrastructure : public NoLoopInfrastructure
 {
-	template<class InfraT, class Node> 
-	friend class Runnable;
-
-	TimeoutManager timeout;
-	EvQueue inmediateQueue;
-
 public:
 	QueueBasedInfrastructure() {}
 
@@ -183,6 +180,7 @@ auto a_timeout_impl(uint32_t ms) {
 
 //extern thread_local NodeBase* thisThreadNode;
 
+#if 0
 template<class InfraT, class NodeT>
 class Runnable
 {
@@ -190,7 +188,7 @@ class Runnable
 public:
 	using NodeType = NodeT;
 	Runnable() {}
-	void run( bool isMaster, ThreadStartupData* startupData )
+	void run( ThreadStartupData* startupData )
 	{
 		nodecpp::safememory::interceptNewDeleteOperators(true);
 		{
@@ -229,7 +227,7 @@ public:
 //		return infra;
 	}
 };
-
+#endif // 0
 
 template<class NodeT>
 class NodeLoopBase
@@ -281,7 +279,7 @@ public:
 protected:
 	template<class InfraT>
 //	InfraT& run()
-	void run()
+	void run( InfraT& infra)
 	{
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		if ( !initialized )
@@ -301,22 +299,58 @@ protected:
 		nodecpp::logging_impl::instanceId = loopStartupData.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", loopStartupData.threadCommID.slotId );
 
-		Runnable<InfraT, NodeT> r;
+//		Runnable<InfraT, NodeT> r;
 //		return 
-			r.run( false, &loopStartupData );
+//			r.run( &loopStartupData );
+		nodecpp::safememory::interceptNewDeleteOperators(true);
+		{
+			timeoutManager = &infra.getTimeout();
+			inmediateQueue = &infra.getInmediateQueue();
+
+			node = nodecpp::safememory::make_owning<NodeT>();
+#ifdef NODECPP_RECORD_AND_REPLAY
+			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
+				node->binLog.initForRecording( 26 );
+			::nodecpp::threadLocalData.binaryLog = &(node->binLog);
+#endif // NODECPP_RECORD_AND_REPLAY
+			// NOTE!!! 
+			// By coincidence it so happened that both void Node::main() and nodecpp::handler_ret_type Node::main() are currently treated in the same way.
+			// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
+			// http://www.gotw.ca/gotw/071.htm and 
+			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
+#ifdef NODECPP_RECORD_AND_REPLAY
+			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
+				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
+#endif // NODECPP_RECORD_AND_REPLAY
+			node->main();
+			infra.runStandardLoop(*node);
+			////////////////////////////////////////////////////
+		}
+	}
+
+	void exit()
+	{
+		node = nullptr;
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+		nodecpp::safememory::killAllZombies();
+		nodecpp::safememory::interceptNewDeleteOperators(false);
 	}
 };
 
 template<class NodeT>
 class QueueBasedNodeLoop : public NodeLoopBase<NodeT>
 {
+	QueueBasedInfrastructure infra;
 public:
 	QueueBasedNodeLoop() {}
 	QueueBasedNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
 	void run()
 	{
-		NodeLoopBase<NodeT>::template run<QueueBasedInfrastructure>();
+		NodeLoopBase<NodeT>::template run<QueueBasedInfrastructure>(infra);
 	}
 
 	ThreadID getAddress() { return NodeLoopBase<NodeT>::loopStartupData.threadCommID; }
@@ -326,23 +360,20 @@ public:
 template<class NodeT>
 class NoNodeLoop : public NodeLoopBase<NodeT>
 {
-//	InfraT* infra;
+	NoLoopInfrastructure infra;
 public:
 	NoNodeLoop() {}
 	NoNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
 	void run()
 	{
-//		infra = &(NodeLoopBase::run<NoLoopInfrastructure>());
-		NodeLoopBase<NodeT>::template run<NoLoopInfrastructure>();
+		NodeLoopBase<NodeT>::template run<NoLoopInfrastructure>(infra);
 	}
 
-	/*int onInfrastructureMessage()
+	int onInfrastructureMessage( InterThreadMsg* thq, size_t msgCnt )
 	{
-	template<class NodeT>
-	int 
-		infra->processMessagesAndOrTimeout( NodeT& node, InterThreadMsg* thq, size_t msgCnt )
-	}*/
+		return infra->processMessagesAndOrTimeout( *(NodeLoopBase<NodeT>::node), thq, msgCnt );
+	}
 
 //	ThreadID getAddress() { return ThreadID(); }
 };
