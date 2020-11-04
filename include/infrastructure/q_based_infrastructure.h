@@ -47,14 +47,52 @@
 
 #include "timeout_manager.h"
 
+#include "clustering_impl/interthread_comm.h"
+
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
-
-#include "clustering_impl/interthread_comm.h"
-
 extern thread_local TimeoutManager* timeoutManager;
 extern thread_local EvQueue* inmediateQueue;
+
+#ifndef NODECPP_NO_COROUTINES
+inline
+auto a_timeout_impl(uint32_t ms) { 
+
+    struct timeout_awaiter {
+
+        std::experimental::coroutine_handle<> who_is_awaiting;
+		uint32_t duration = 0;
+		nodecpp::Timeout to;
+
+        timeout_awaiter(uint32_t ms) {duration = ms;}
+
+        timeout_awaiter(const timeout_awaiter &) = delete;
+        timeout_awaiter &operator = (const timeout_awaiter &) = delete;
+
+        timeout_awaiter(timeout_awaiter &&) = delete;
+        timeout_awaiter &operator = (timeout_awaiter &&) = delete;
+
+        ~timeout_awaiter() {}
+
+        bool await_ready() {
+            return false;
+        }
+
+        void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+			nodecpp::initCoroData(awaiting);
+            who_is_awaiting = awaiting;
+			to = timeoutManager->appSetTimeout(awaiting, duration, infraGetCurrentTime());
+        }
+
+		auto await_resume() {
+			if ( nodecpp::isCoroException(who_is_awaiting) )
+				throw nodecpp::getCoroException(who_is_awaiting);
+		}
+    };
+    return timeout_awaiter(ms);
+}
+#endif // NODECPP_NO_COROUTINES
 
 template<class NodeT>
 class NoLoopInfrastructure
@@ -194,45 +232,6 @@ public:
 };
 
 
-#ifndef NODECPP_NO_COROUTINES
-inline
-auto a_timeout_impl(uint32_t ms) { 
-
-    struct timeout_awaiter {
-
-        std::experimental::coroutine_handle<> who_is_awaiting;
-		uint32_t duration = 0;
-		nodecpp::Timeout to;
-
-        timeout_awaiter(uint32_t ms) {duration = ms;}
-
-        timeout_awaiter(const timeout_awaiter &) = delete;
-        timeout_awaiter &operator = (const timeout_awaiter &) = delete;
-
-        timeout_awaiter(timeout_awaiter &&) = delete;
-        timeout_awaiter &operator = (timeout_awaiter &&) = delete;
-
-        ~timeout_awaiter() {}
-
-        bool await_ready() {
-            return false;
-        }
-
-        void await_suspend(std::experimental::coroutine_handle<> awaiting) {
-			nodecpp::initCoroData(awaiting);
-            who_is_awaiting = awaiting;
-			to = timeoutManager->appSetTimeout(awaiting, duration, infraGetCurrentTime());
-        }
-
-		auto await_resume() {
-			if ( nodecpp::isCoroException(who_is_awaiting) )
-				throw nodecpp::getCoroException(who_is_awaiting);
-		}
-    };
-    return timeout_awaiter(ms);
-}
-#endif // NODECPP_NO_COROUTINES
-
 template<class NodeT>
 class NodeLoopBase
 {
@@ -265,9 +264,6 @@ public:
 	NodeLoopBase( Initializer i ) { 
 		loopStartupData = i.data;
 		setThisThreadDescriptor( i.data ); 
-/*#ifdef NODECPP_USE_IIBMALLOC
-		g_AllocManager.initialize();
-#endif*/
 		nodecpp::logging_impl::currentLog = i.data.defaultLog;
 		nodecpp::logging_impl::instanceId = i.data.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", i.data.threadCommID.slotId );
@@ -296,54 +292,12 @@ protected:
 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, loopStartupData.threadCommID.slotId != 0 ); 
 		setThisThreadDescriptor( loopStartupData );
-/*#ifdef NODECPP_USE_IIBMALLOC
-		g_AllocManager.initialize();
-#endif*/
 		nodecpp::logging_impl::currentLog = loopStartupData.defaultLog;
 		nodecpp::logging_impl::instanceId = loopStartupData.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", loopStartupData.threadCommID.slotId );
 
-//		Runnable<InfraT, NodeT> r;
-//		return 
-//			r.run( &loopStartupData );
-
-//		nodecpp::safememory::interceptNewDeleteOperators(true);
-		{
-/*			timeoutManager = &infra.getTimeout();
-			inmediateQueue = &infra.getInmediateQueue();
-
-			node = nodecpp::safememory::make_owning<NodeT>();
-#ifdef NODECPP_RECORD_AND_REPLAY
-			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
-				node->binLog.initForRecording( 26 );
-			::nodecpp::threadLocalData.binaryLog = &(node->binLog);
-#endif // NODECPP_RECORD_AND_REPLAY
-			// NOTE!!! 
-			// By coincidence it so happened that both void Node::main() and nodecpp::handler_ret_type Node::main() are currently treated in the same way.
-			// If, for any reason, treatment should be different, to check exactly which one is present, see, for instance
-			// http://www.gotw.ca/gotw/071.htm and 
-			// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
-#ifdef NODECPP_RECORD_AND_REPLAY
-			if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
-				::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
-#endif // NODECPP_RECORD_AND_REPLAY
-			node->main();
-			infra.runStandardLoop(*node);*/
-			infra.run();
-			////////////////////////////////////////////////////
-		}
+		infra.run();
 	}
-
-/*	void exit()
-	{
-		node = nullptr;
-#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
-			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
-#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		nodecpp::safememory::killAllZombies();
-		nodecpp::safememory::interceptNewDeleteOperators(false);
-	}*/
 };
 
 template<class NodeT>
