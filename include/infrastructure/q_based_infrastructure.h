@@ -95,7 +95,7 @@ auto a_timeout_impl(uint32_t ms) {
 #endif // NODECPP_NO_COROUTINES
 
 template<class NodeT>
-class NoLoopInfrastructure
+class NodeProcessor
 {
 	template<class InfraT, class Node> 
 	friend class Runnable;
@@ -108,9 +108,9 @@ class NoLoopInfrastructure
 #endif
 	nodecpp::safememory::owning_ptr<NodeT> node;
 public:
-	NoLoopInfrastructure() { init(); }
+	NodeProcessor() {}
 
-	void init() {
+	int init() {
 #ifdef NODECPP_USE_IIBMALLOC
 		allocManager.initialize();
 #endif
@@ -135,10 +135,16 @@ public:
 #endif // NODECPP_RECORD_AND_REPLAY
 		node->main();
 
+		uint64_t nextTimeoutAt = nextTimeout();
+		uint64_t now = infraGetCurrentTime();
+		int timeoutToUse = getPollTimeout(nextTimeoutAt, now);
+
 		timeoutManager = nullptr;
 		inmediateQueue = nullptr;
 		nodecpp::safememory::killAllZombies();
 		nodecpp::safememory::interceptNewDeleteOperators(false);
+
+		return timeoutToUse;
 	}
 
 	void deinit()
@@ -210,15 +216,20 @@ public:
 };
 
 template<class NodeT>
-class QueueBasedInfrastructure : public NoLoopInfrastructure<NodeT>
+class QueueBasedInfrastructure : public NodeProcessor<NodeT>
 {
 	bool running = true;
+	int timeoutToUse = 0;
 public:
-	QueueBasedInfrastructure() :NoLoopInfrastructure<NodeT>() {}
+	QueueBasedInfrastructure() : NodeProcessor<NodeT>() {}
+
+	void init()
+	{
+		timeoutToUse = NodeProcessor<NodeT>::init();
+	}
 
 	void run()
 	{
-		int timeoutToUse = 0;
 		while (running) // TODO: exit condition
 		{
 			static constexpr size_t maxMsgCnt = 8;
@@ -226,7 +237,7 @@ public:
 			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, maxMsgCnt, timeoutToUse );
 
 			for ( size_t i=0; i<actualFromQueue; ++i )
-				timeoutToUse = NoLoopInfrastructure<NodeT>::processMessagesAndOrTimeout( std::move(thq[i]) );
+				timeoutToUse = NodeProcessor<NodeT>::processMessagesAndOrTimeout( std::move(thq[i]) );
 		}
 	}
 };
@@ -256,9 +267,6 @@ private:
 	bool initialized = false;
 	bool entered = false;
 
-protected:
-//	nodecpp::safememory::owning_ptr<NodeT> node;
-
 public:
 	NodeLoopBase() {}
 	NodeLoopBase( Initializer i ) { 
@@ -279,8 +287,10 @@ public:
 
 protected:
 	template<class InfraT>
-	void run( InfraT& infra)
+	int init( InfraT& infra)
 	{
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !entered ); 
+		entered = true;
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		if ( !initialized )
 		{
@@ -296,8 +306,36 @@ protected:
 		nodecpp::logging_impl::instanceId = loopStartupData.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", loopStartupData.threadCommID.slotId );
 
+		return infra.init();
+	}
+
+	template<class InfraT>
+	void run( InfraT& infra)
+	{
 		infra.run();
 	}
+};
+
+
+template<class NodeT>
+class NoNodeLoop : public NodeLoopBase<NodeT>
+{
+	NodeProcessor<NodeT> infra;
+public:
+	NoNodeLoop() {}
+	NoNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
+	
+	int init()
+	{
+		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra);
+	}
+
+	int onInfrastructureMessage( InterThreadMsg&& thq )
+	{
+		return infra.processMessagesAndOrTimeout( std::move(thq) );
+	}
+
+//	ThreadID getAddress() { return ThreadID(); }
 };
 
 template<class NodeT>
@@ -308,34 +346,17 @@ public:
 	QueueBasedNodeLoop() {}
 	QueueBasedNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
+	int init()
+	{
+		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra);
+	}
+
 	void run()
 	{
 		NodeLoopBase<NodeT>::template run<QueueBasedInfrastructure<NodeT>>(infra);
 	}
 
 	ThreadID getAddress() { return NodeLoopBase<NodeT>::loopStartupData.threadCommID; }
-};
-
-
-template<class NodeT>
-class NoNodeLoop : public NodeLoopBase<NodeT>
-{
-	NoLoopInfrastructure<NodeT> infra;
-public:
-	NoNodeLoop() {}
-	NoNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
-	
-	void run()
-	{
-		NodeLoopBase<NodeT>::template run<NoLoopInfrastructure<NodeT>>(infra);
-	}
-
-	int onInfrastructureMessage( InterThreadMsg&& thq )
-	{
-		return infra.processMessagesAndOrTimeout( std::move(thq) );
-	}
-
-//	ThreadID getAddress() { return ThreadID(); }
 };
 
 #endif // Q_BASED_INFRASTRUCTURE_H

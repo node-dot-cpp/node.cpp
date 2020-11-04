@@ -49,13 +49,13 @@ int main( int argc, char *argv_[] )
 	sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 
 	NoNodeLoop<SampleSimulationNode> loop2;
-	loop2.run();
+	int waitTime = loop2.init();
 	for (;;)
 	{
 		nodecpp::platform::internal_msg::InternalMsg imsg2;
 		imsg.append( "Third message", sizeof("Third message") );
-		loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, ThreadID(), ThreadID() ) );
-		Sleep(500);
+		waitTime = loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, ThreadID(), ThreadID() ) );
+		Sleep( waitTime );
 		imsg.append( "Second message", sizeof("Second message") );
 		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 		Sleep(300);
