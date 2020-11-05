@@ -251,8 +251,8 @@ public:
 	{
 		ThreadStartupData data;
 		friend class NodeLoopBase;
-		void acquire() {
-			preinitThreadStartupData( data );
+		void acquire(InterThreadMessagePosterBase* postman) {
+			preinitThreadStartupData( data, postman );
 		}
 	public:
 		Initializer() {}
@@ -278,23 +278,25 @@ public:
 		initialized = true;
 	}
 
-	static std::pair<Initializer, ThreadID> getInitializer()
+	ThreadID getAddress() { return loopStartupData.threadCommID; }
+
+	static std::pair<Initializer, ThreadID> getInitializer(InterThreadMessagePosterBase* postman)
 	{
 		Initializer i;
-		i.acquire();
+		i.acquire(postman);
 		return std::make_pair(i, i.data.threadCommID);
 	}
 
 protected:
 	template<class InfraT>
-	int init( InfraT& infra)
+	int init( InfraT& infra, InterThreadMessagePosterBase* postman )
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !entered ); 
 		entered = true;
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		if ( !initialized )
 		{
-			preinitThreadStartupData( loopStartupData );
+			preinitThreadStartupData( loopStartupData, postman );
 			initialized = true;
 		}
 		size_t threadIdx = loopStartupData.threadCommID.slotId;
@@ -325,17 +327,15 @@ public:
 	NoNodeLoop() {}
 	NoNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
-	int init()
+	int init(InterThreadMessagePosterBase* postman)
 	{
-		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra);
+		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, postman);
 	}
 
 	int onInfrastructureMessage( InterThreadMsg&& thq )
 	{
 		return infra.processMessagesAndOrTimeout( std::move(thq) );
 	}
-
-//	ThreadID getAddress() { return ThreadID(); }
 };
 
 template<class NodeT>
@@ -355,8 +355,6 @@ public:
 	{
 		NodeLoopBase<NodeT>::template run<QueueBasedInfrastructure<NodeT>>(infra);
 	}
-
-	ThreadID getAddress() { return NodeLoopBase<NodeT>::loopStartupData.threadCommID; }
 };
 
 #endif // Q_BASED_INFRASTRUCTURE_H

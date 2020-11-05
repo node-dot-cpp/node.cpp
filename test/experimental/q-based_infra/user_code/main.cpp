@@ -22,7 +22,7 @@ void nodeThreadMain( void* pdata )
 template<class NodeT>
 ThreadID runNodeInAnotherThread()
 {
-	auto startupDataAndAddr = QueueBasedNodeLoop<NodeT>::getInitializer();
+	auto startupDataAndAddr = QueueBasedNodeLoop<NodeT>::getInitializer(nullptr); // TODO: consider implementing q-based Postman (as lib-defined)
 	using InitializerT = typename QueueBasedNodeLoop<NodeT>::Initializer;
 	InitializerT* startupData = nodecpp::stdalloc<InitializerT>(1);
 	*startupData = startupDataAndAddr.first;
@@ -49,12 +49,26 @@ int main( int argc, char *argv_[] )
 	sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 
 	NoNodeLoop<SampleSimulationNode> loop2;
-	int waitTime = loop2.init();
+	class Postman : public InterThreadMessagePosterBase
+	{
+	public: 
+		Postman() {}
+		void postMessage() override
+		{
+			// TODO: ...
+			printf( "No posting anything... TODO...\n" );
+		}
+	};
+	Postman p;
+	int waitTime = loop2.init(&p);
+	auto addr2 = loop2.getAddress();
 	for (;;)
 	{
 		nodecpp::platform::internal_msg::InternalMsg imsg2;
-		imsg.append( "Third message", sizeof("Third message") );
-		waitTime = loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, ThreadID(), ThreadID() ) );
+//		imsg.append( "Third message", sizeof("Third message") );
+//		waitTime = loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, ThreadID(), ThreadID() ) );
+		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr2 );
+		if ( waitTime > 0 )
 		Sleep( waitTime );
 		imsg.append( "Second message", sizeof("Second message") );
 		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );

@@ -175,13 +175,11 @@ size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint
 	return interThreadCommInitializer.init();
 }*/
 
-void preinitThreadStartupData( ThreadStartupData& startupData )
+void preinitThreadStartupData( ThreadStartupData& startupData, InterThreadMessagePosterBase* postman )
 {
-//	InterThreadCommPair commPair = interThreadCommInitializer.generateHandlePair();
 	for ( size_t slotIdx = 1; slotIdx < MAX_THREADS; ++slotIdx )
 	{
-//		auto ret = threadQueues[slotIdx].acquireForReuse( commPair.writeHandle );
-		auto ret = threadQueues[slotIdx].acquireForReuse( InterThreadCommData::invalid_write_handle );
+		auto ret = threadQueues[slotIdx].acquireForReuse( postman );
 		if ( ret.first )
 		{
 			startupData.threadCommID.reincarnation = ret.second;
@@ -190,25 +188,27 @@ void preinitThreadStartupData( ThreadStartupData& startupData )
 		}
 	}
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, startupData.threadCommID.slotId != ThreadID::InvalidSlotID ); 
-//	startupData.readHandle = commPair.readHandle;
-	startupData.defaultLog = nodecpp::logging_impl::currentLog;/**/
+	startupData.defaultLog = nodecpp::logging_impl::currentLog;
 }
 
 void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, ThreadID targetThreadId )
 {
 	//NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, targetThreadId.slotId < MAX_THREADS, "{} vs. {}", targetThreadId.slotId, MAX_THREADS );
-	auto writingMeans = threadQueues[ targetThreadId.slotId ].getWriteHandleAndReincarnation();
+	auto writingMeans = threadQueues[ targetThreadId.slotId ].getPostmanAndReincarnation();
 	if ( !writingMeans.first )
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "getWriteHandleAndReincarnation() for ID {} failed; handling not implemented", targetThreadId.slotId );
 		// TODO: process error instead
 	}
-	uintptr_t writeHandle = writingMeans.second.second;
-	uint64_t reincarnation = writingMeans.second.first;
+	uint64_t reincarnation = writingMeans.second.second;
+	InterThreadMessagePosterBase* postman = writingMeans.second.first;
 	
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation, "for idx = {}: {} vs. {}", targetThreadId.slotId, reincarnation, targetThreadId.reincarnation ); 
-	threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
+	if ( postman != nullptr )
+		postman->postMessage();
+	else
+		threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
 	/*// write a byte to writeHandle
 	uint8_t singleByte = 0x1;
 	size_t sentSize = 0;

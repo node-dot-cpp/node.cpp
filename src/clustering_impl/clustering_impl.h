@@ -45,7 +45,7 @@ struct ThreadStartupData
 	size_t IdWithinGroup;
 };
 
-void preinitThreadStartupData( ThreadStartupData& startupData );
+void preinitThreadStartupData( ThreadStartupData& startupData, InterThreadMessagePosterBase* postman );
 void decrementThisWorkerLoadCtr();
 
 #endif // NODECPP_ENABLE_CLUSTERING

@@ -234,7 +234,7 @@ public:
 		std::unique_lock<std::mutex> lock(mx);
 		return std::make_pair(status != Status::terminating && status != Status::unused, std::make_pair(reincarnation, writeHandle));
 	}
-	std::pair<bool, std::pair<InterThreadMessagePosterBase*, uint64_t>> getPosterAndReincarnation() {
+	std::pair<bool, std::pair<InterThreadMessagePosterBase*, uint64_t>> getPostmanAndReincarnation() {
 		std::unique_lock<std::mutex> lock(mx);
 		return std::make_pair(status != Status::terminating && status != Status::unused, std::make_pair(postman, reincarnation));
 	}
