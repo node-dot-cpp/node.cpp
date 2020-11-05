@@ -181,7 +181,7 @@ void preinitThreadStartupData( ThreadStartupData& startupData )
 	for ( size_t slotIdx = 1; slotIdx < MAX_THREADS; ++slotIdx )
 	{
 //		auto ret = threadQueues[slotIdx].acquireForReuse( commPair.writeHandle );
-		auto ret = threadQueues[slotIdx].acquireForReuse( 0 );
+		auto ret = threadQueues[slotIdx].acquireForReuse( InterThreadCommData::invalid_write_handle );
 		if ( ret.first )
 		{
 			startupData.threadCommID.reincarnation = ret.second;

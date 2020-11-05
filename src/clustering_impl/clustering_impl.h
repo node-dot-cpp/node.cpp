@@ -40,6 +40,7 @@ struct ThreadStartupData
 {
 	ThreadID threadCommID;
 	uintptr_t readHandle;
+	InterThreadCommData* postman = nullptr;
 	nodecpp::log::Log* defaultLog = nullptr;
 	size_t IdWithinGroup;
 };

@@ -201,12 +201,23 @@ public:
 
 using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<InterThreadMsg, 4>>; // TODO: revise the second param value
 
+class InterThreadMessagePosterBase
+{
+public:
+	InterThreadMessagePosterBase() {};
+	virtual void postMessage() = 0;
+	virtual ~InterThreadMessagePosterBase() {}
+};
+
 class InterThreadCommData
 {
+public:
+	static constexpr uintptr_t invalid_write_handle = (uintptr_t)(-1);
 private:
 	std::mutex mx;
-	uintptr_t writeHandle = (uintptr_t)(-1); // mx-protected
+	uintptr_t writeHandle = invalid_write_handle; // mx-protected
 	uint64_t reincarnation = 0; // mx-protected
+	InterThreadMessagePosterBase* postman = nullptr;
 	enum Status {unused, acquired, running, terminating};
 	Status status = unused;
 
@@ -218,9 +229,14 @@ public:
 	InterThreadCommData& operator = ( InterThreadCommData&& ) = delete;
 
 	MsgQueue queue;
+
 	std::pair<bool, std::pair<uint64_t, uintptr_t>> getWriteHandleAndReincarnation() {
 		std::unique_lock<std::mutex> lock(mx);
 		return std::make_pair(status != Status::terminating && status != Status::unused, std::make_pair(reincarnation, writeHandle));
+	}
+	std::pair<bool, std::pair<InterThreadMessagePosterBase*, uint64_t>> getPosterAndReincarnation() {
+		std::unique_lock<std::mutex> lock(mx);
+		return std::make_pair(status != Status::terminating && status != Status::unused, std::make_pair(postman, reincarnation));
 	}
 	void setTerminating() {
 		std::unique_lock<std::mutex> lock(mx);
@@ -229,14 +245,33 @@ public:
 	}
 	void setUnused( uintptr_t writeHandle_ ) {
 		std::unique_lock<std::mutex> lock(mx);
-		status = Status::running;
+		status = Status::unused;
+		writeHandle = invalid_write_handle;
+		if ( postman ) 
+			delete postman;
+		postman = nullptr;
+		// TODO: what should we do with non-empty queue (or why is it empty)?
 	}
 	std::pair<bool, uint64_t> acquireForReuse( uintptr_t writeHandle_ ) {
 		std::unique_lock<std::mutex> lock(mx);
 		if ( status == Status::unused )
 		{
 			++reincarnation;
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman == nullptr ); 
 			writeHandle = writeHandle_;
+			status = Status::acquired;
+			return std::make_pair( true, reincarnation );
+		}
+		else
+			return std::make_pair( false, (uint64_t)(-1) );
+	}
+	std::pair<bool, uint64_t> acquireForReuse( InterThreadMessagePosterBase* postman_ ) {
+		std::unique_lock<std::mutex> lock(mx);
+		if ( status == Status::unused )
+		{
+			++reincarnation;
+			writeHandle = invalid_write_handle;
+			postman = postman_;
 			status = Status::acquired;
 			return std::make_pair( true, reincarnation );
 		}
@@ -246,10 +281,20 @@ public:
 	void setWriteHandleForFirstUse( uintptr_t writeHandle_ ) {
 		std::unique_lock<std::mutex> lock(mx);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman == nullptr ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeHandle == (uintptr_t)(-1) ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, status == Status::unused ); 
 		status = Status::acquired;
 		writeHandle = writeHandle_;
+	}
+	void setPostmanForFirstUse( InterThreadMessagePosterBase* postman_ ) {
+		std::unique_lock<std::mutex> lock(mx);
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == 0 ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman == nullptr ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeHandle == (uintptr_t)(-1) ); 
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, status == Status::unused ); 
+		status = Status::acquired;
+		postman = postman_;
 	}
 	bool isUnused() {
 		std::unique_lock<std::mutex> lock(mx);
