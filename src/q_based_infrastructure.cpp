@@ -148,6 +148,20 @@ namespace nodecpp {
 } // namespace nodecpp
 
 static InterThreadCommData threadQueues[MAX_THREADS];
+class PostmanToInterthreadQueue : public InterThreadMessagePostmanBase
+{
+public: 
+	PostmanToInterthreadQueue() {}
+	void postMessage( InterThreadMsg&& msg ) override
+	{
+		auto slotId = msg.targetThreadID.slotId;
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, msg.targetThreadID.slotId <= MAX_THREADS, "indeed: {} vs. {}", msg.targetThreadID.slotId, MAX_THREADS ); 
+		threadQueues[ slotId ].queue.push_back( std::move( msg ) );
+	}
+};
+static PostmanToInterthreadQueue qPostman;
+InterThreadMessagePostmanBase* useQueuePostman() {return &qPostman; }
+
 
 static InterThreadCommInitializer interThreadCommInitializer;
 
@@ -175,7 +189,7 @@ size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint
 	return interThreadCommInitializer.init();
 }*/
 
-void preinitThreadStartupData( ThreadStartupData& startupData, InterThreadMessagePosterBase* postman )
+void preinitThreadStartupData( ThreadStartupData& startupData, InterThreadMessagePostmanBase* postman )
 {
 	for ( size_t slotIdx = 1; slotIdx < MAX_THREADS; ++slotIdx )
 	{
@@ -202,13 +216,14 @@ void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 		// TODO: process error instead
 	}
 	uint64_t reincarnation = writingMeans.second.second;
-	InterThreadMessagePosterBase* postman = writingMeans.second.first;
+	InterThreadMessagePostmanBase* postman = writingMeans.second.first;
 	
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation, "for idx = {}: {} vs. {}", targetThreadId.slotId, reincarnation, targetThreadId.reincarnation ); 
-	if ( postman != nullptr )
-		postman->postMessage();
-	else
-		threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman != nullptr ); 
+//	if ( postman != nullptr )
+		postman->postMessage( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
+//	else
+//		threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
 	/*// write a byte to writeHandle
 	uint8_t singleByte = 0x1;
 	size_t sentSize = 0;

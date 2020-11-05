@@ -49,6 +49,8 @@
 
 #include "clustering_impl/interthread_comm.h"
 
+extern InterThreadMessagePostmanBase* useQueuePostman();
+
 int getPollTimeout(uint64_t nextTimeoutAt, uint64_t now);
 uint64_t infraGetCurrentTime();
 
@@ -251,7 +253,7 @@ public:
 	{
 		ThreadStartupData data;
 		friend class NodeLoopBase;
-		void acquire(InterThreadMessagePosterBase* postman) {
+		void acquire(InterThreadMessagePostmanBase* postman) {
 			preinitThreadStartupData( data, postman );
 		}
 	public:
@@ -280,7 +282,7 @@ public:
 
 	ThreadID getAddress() { return loopStartupData.threadCommID; }
 
-	static std::pair<Initializer, ThreadID> getInitializer(InterThreadMessagePosterBase* postman)
+	static std::pair<Initializer, ThreadID> getInitializer(InterThreadMessagePostmanBase* postman)
 	{
 		Initializer i;
 		i.acquire(postman);
@@ -289,13 +291,14 @@ public:
 
 protected:
 	template<class InfraT>
-	int init( InfraT& infra, InterThreadMessagePosterBase* postman )
+	int init( InfraT& infra, InterThreadMessagePostmanBase* postman = nullptr )
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !entered ); 
 		entered = true;
 		// note: startup data must be allocated using std allocator (reason: freeing memory will happen at a new thread)
 		if ( !initialized )
 		{
+			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman != nullptr ); 
 			preinitThreadStartupData( loopStartupData, postman );
 			initialized = true;
 		}
@@ -327,7 +330,7 @@ public:
 	NoNodeLoop() {}
 	NoNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
-	int init(InterThreadMessagePosterBase* postman)
+	int init( InterThreadMessagePostmanBase* postman = nullptr )
 	{
 		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, postman);
 	}
@@ -346,9 +349,9 @@ public:
 	QueueBasedNodeLoop() {}
 	QueueBasedNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
-	int init()
+	int init(InterThreadMessagePostmanBase* postman = nullptr)
 	{
-		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra);
+		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, postman);
 	}
 
 	void run()

@@ -201,13 +201,14 @@ public:
 
 using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<InterThreadMsg, 4>>; // TODO: revise the second param value
 
-class InterThreadMessagePosterBase
+class InterThreadMessagePostmanBase
 {
 public:
-	InterThreadMessagePosterBase() {};
-	virtual void postMessage() = 0;
-	virtual ~InterThreadMessagePosterBase() {}
+	InterThreadMessagePostmanBase() {};
+	virtual void postMessage( InterThreadMsg&& ) = 0;
+	virtual ~InterThreadMessagePostmanBase() {}
 };
+
 
 class InterThreadCommData
 {
@@ -217,7 +218,7 @@ private:
 	std::mutex mx;
 	uintptr_t writeHandle = invalid_write_handle; // mx-protected
 	uint64_t reincarnation = 0; // mx-protected
-	InterThreadMessagePosterBase* postman = nullptr;
+	InterThreadMessagePostmanBase* postman = nullptr;
 	enum Status {unused, acquired, running, terminating};
 	Status status = unused;
 
@@ -234,7 +235,7 @@ public:
 		std::unique_lock<std::mutex> lock(mx);
 		return std::make_pair(status != Status::terminating && status != Status::unused, std::make_pair(reincarnation, writeHandle));
 	}
-	std::pair<bool, std::pair<InterThreadMessagePosterBase*, uint64_t>> getPostmanAndReincarnation() {
+	std::pair<bool, std::pair<InterThreadMessagePostmanBase*, uint64_t>> getPostmanAndReincarnation() {
 		std::unique_lock<std::mutex> lock(mx);
 		return std::make_pair(status != Status::terminating && status != Status::unused, std::make_pair(postman, reincarnation));
 	}
@@ -265,7 +266,7 @@ public:
 		else
 			return std::make_pair( false, (uint64_t)(-1) );
 	}
-	std::pair<bool, uint64_t> acquireForReuse( InterThreadMessagePosterBase* postman_ ) {
+	std::pair<bool, uint64_t> acquireForReuse( InterThreadMessagePostmanBase* postman_ ) {
 		std::unique_lock<std::mutex> lock(mx);
 		if ( status == Status::unused )
 		{
@@ -287,7 +288,7 @@ public:
 		status = Status::acquired;
 		writeHandle = writeHandle_;
 	}
-	void setPostmanForFirstUse( InterThreadMessagePosterBase* postman_ ) {
+	void setPostmanForFirstUse( InterThreadMessagePostmanBase* postman_ ) {
 		std::unique_lock<std::mutex> lock(mx);
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == 0 ); 
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman == nullptr ); 
