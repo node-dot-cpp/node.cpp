@@ -62,7 +62,7 @@ public:
 	{
 		for ( size_t i=0; i< maxUsed; ++i )
 			if ( listeners[i].threadID.slotId != ThreadID::InvalidSlotID )
-				sendInterThreadMsg( std::move( msg ), msgType, listeners[i].threadID );
+				postInterThreadMsg( std::move( msg ), msgType, listeners[i].threadID );
 	}*/
 	std::pair<const ListenerThreadDescriptor*, size_t> getListeners()
 	{

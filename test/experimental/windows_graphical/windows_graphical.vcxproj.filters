@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Nodecpp Sources">
+      <UniqueIdentifier>{cb1bd49b-93cd-42fd-b8a5-2182e15ad16c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -35,47 +38,47 @@
     <ClCompile Include="windows_graphical.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\q_based_infrastructure.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\timeout_manager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\safe_ptr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\internal_msg.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\log.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\nodecpp_assert.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\safe_memory_error.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Nodecpp Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\safe_ptr.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\safe_memory_error.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\q_based_infrastructure.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\nodecpp_assert.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\log.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\internal_msg.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc">
+      <Filter>Nodecpp Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\common.cpp">
+      <Filter>Nodecpp Sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

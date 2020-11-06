@@ -21,7 +21,7 @@ void nodeThreadMain( void* pdata )
 }
 
 template<class NodeT>
-ThreadID runNodeInAnotherThread()
+NodeAddress runNodeInAnotherThread()
 {
 	auto startupDataAndAddr = QueueBasedNodeLoop<NodeT>::getInitializer(useQueuePostman()); // TODO: consider implementing q-based Postman (as lib-defined)
 	using InitializerT = typename QueueBasedNodeLoop<NodeT>::Initializer;
@@ -47,9 +47,8 @@ int main( int argc, char *argv_[] )
 		
 	nodecpp::platform::internal_msg::InternalMsg imsg;
 	imsg.append( "Second message", sizeof("Second message") );
-	sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
+	postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 
-	NoNodeLoop<SampleSimulationNode> loop2;
 	class Postman : public InterThreadMessagePostmanBase
 	{
 		NoNodeLoop<SampleSimulationNode>& loop;
@@ -61,6 +60,7 @@ int main( int argc, char *argv_[] )
 			printf( "Postman: \"%s\"\n", riter.read( riter.availableSize()) );
 		}
 	};
+	NoNodeLoop<SampleSimulationNode> loop2;
 	Postman p( loop2 );
 	int waitTime = loop2.init(&p);
 	auto addr2 = loop2.getAddress();
@@ -68,14 +68,14 @@ int main( int argc, char *argv_[] )
 	{
 		nodecpp::platform::internal_msg::InternalMsg imsg2;
 		imsg.append( "Third message", sizeof("Third message") );
-//		waitTime = loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, ThreadID(), ThreadID() ) );
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr2 );
+//		waitTime = loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, NodeAddress(), NodeAddress() ) );
+		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr2 );
 		imsg.append( "Forth message", sizeof("Forth message") );
-        loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, ThreadID(), ThreadID() ) );
+        loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, NodeAddress(), NodeAddress() ) );
 		if ( waitTime > 0 )
 		Sleep( waitTime );
 		imsg.append( "Second message", sizeof("Second message") );
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
+		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 		Sleep(300);
 	}
 //	

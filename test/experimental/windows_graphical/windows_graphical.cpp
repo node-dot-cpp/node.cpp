@@ -191,7 +191,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		imsg.append( &msgtype, 4 );
 		imsg.append( &x, 4 );
 		imsg.append( &y, 4 );
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, someNodeAddress );
+		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, someNodeAddress );
 		break;
 	}
 	case WM_USER + 4:

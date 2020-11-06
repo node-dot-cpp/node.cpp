@@ -148,7 +148,7 @@ namespace nodecpp
 
 				nodecpp::platform::internal_msg::InternalMsg imsg;
 				imsg.append( &msg, sizeof(msg) );
-				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
+				postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
 			}
 
 			static void sendConnAcceptedEv( ThreadID targetThreadId, size_t internalID, size_t requestID, uintptr_t socket, Ip4& remoteIp, Port& remotePort )
@@ -162,7 +162,7 @@ namespace nodecpp
 
 				nodecpp::platform::internal_msg::InternalMsg imsg;
 				imsg.append( &msg, sizeof(msg) );
-				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
+				postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
 			}
 
 			static void sendServerErrorEv( ThreadID targetThreadId, size_t requestID, Error e )
@@ -173,7 +173,7 @@ namespace nodecpp
 
 				nodecpp::platform::internal_msg::InternalMsg imsg;
 				imsg.append( &msg, sizeof(msg) );
-				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerError, targetThreadId );
+				postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerError, targetThreadId );
 			}
 
 			static void deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter, size_t bodySz ) {
@@ -199,7 +199,7 @@ namespace nodecpp
 
 				nodecpp::platform::internal_msg::InternalMsg imsg;
 				imsg.append( &msg, sizeof(msg) );
-				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
+				postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
 			}
 
 		public:
@@ -271,7 +271,7 @@ namespace nodecpp
 
 			nodecpp::platform::internal_msg::InternalMsg imsg;
 			imsg.append( &msg, sizeof(msg) );
-			sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
+			postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
 		}
 
 		static void serializeAndSendServerCloseRequest( ThreadID targetThreadId, size_t requestID, size_t entryIndex ) {
@@ -283,7 +283,7 @@ namespace nodecpp
 
 			nodecpp::platform::internal_msg::InternalMsg imsg;
 			imsg.append( &msg, sizeof(msg) );
-			sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
+			postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerListening, targetThreadId );
 		}
 
 
@@ -320,7 +320,7 @@ namespace nodecpp
 
 				nodecpp::platform::internal_msg::InternalMsg imsg;
 				imsg.append( &msg, sizeof(msg) );
-				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
+				postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
 				CO_RETURN;
 			}
 
@@ -499,7 +499,7 @@ namespace nodecpp
 nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "sending CreateSharedServerSocket request (for thread id: {}), entryIndex = {:x}, ip = {} port: {}", listeners.first[ i ].threadID.slotId, rq.entryIndex, rq.ip.toStr(), rq.port.toStr() );
 				nodecpp::platform::internal_msg::InternalMsg imsg;
 				imsg.append( &rq, sizeof(rq) );
-				sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::RequestToListeningThread, listeners.first[ i ].threadID );
+				postInterThreadMsg( std::move( imsg ), InterThreadMsgType::RequestToListeningThread, listeners.first[ i ].threadID );
 			}
 			return false;
 		}

@@ -70,7 +70,7 @@ struct InterThreadMsg
 };
 
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, NodeAddress threadId );
+void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, NodeAddress threadId );
 void setThisThreadDescriptor(ThreadStartupData& startupData);
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint64_t timeout );

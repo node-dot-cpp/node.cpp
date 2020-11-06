@@ -54,7 +54,7 @@ private:
 
 		nodecpp::platform::internal_msg::InternalMsg imsg;
 		imsg.append( &msg, sizeof(msg) );
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
+		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
 	}
 
 	static void sendServerErrorEv( ThreadID targetThreadId, Error e )
@@ -65,7 +65,7 @@ private:
 
 		nodecpp::platform::internal_msg::InternalMsg imsg;
 		imsg.append( &msg, sizeof(msg) );
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerError, targetThreadId );
+		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerError, targetThreadId );
 	}
 
 	static void sendServerCloseNotification( ThreadID targetThreadId, size_t entryIdx, bool hasError )
@@ -77,7 +77,7 @@ private:
 
 		nodecpp::platform::internal_msg::InternalMsg imsg;
 		imsg.append( &msg, sizeof(msg) );
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
+		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ServerClosedNotification, targetThreadId );
 	}
 
 	void reportThreadStarted()
@@ -87,7 +87,7 @@ private:
 
 		nodecpp::platform::internal_msg::InternalMsg imsg;
 		imsg.append( &msg, sizeof(msg) );
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
+		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ThreadStarted, ThreadID({0, 0}) );
 	}
 
 	void processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter );

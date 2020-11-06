@@ -61,11 +61,11 @@ public:
 
 		nodecpp::platform::internal_msg::InternalMsg imsg;
 		imsg.append( "First message", sizeof("First message") );
-//		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
+//		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::ConnAccepted, targetThreadId );
 		NodeAddress target;
 		target.slotId = 1;
 		target.reincarnation = 1;
-		sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, target );
+		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, target );
 	}
 
 	void onInfrastructureMessage( NodeAddress requestingThreadId, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
