@@ -30,8 +30,13 @@
 
 #include "clustering_impl.h"
 #include "../../include/nodecpp/cluster.h"
-#include "../infrastructure.h"
-#include "../tcp_socket/tcp_socket.h"
+#ifndef NODECPP_USE_Q_BASED_INFRA
+#include <infrastructure.h>
+#else
+#include <q_based_infrastructure.h>
+#endif // NODECPP_USE_Q_BASED_INFRA
+//#include "../tcp_socket/tcp_socket.h"
+#include "../tcp_socket/tcp_socket_base.h"
 #include <thread>
 
 
@@ -95,7 +100,7 @@ uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
 	return interThreadCommInitializer.init();
 }
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, ThreadID targetThreadId )
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, NodeAddress targetThreadId )
 {
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, targetThreadId.slotId < MAX_THREADS, "{} vs. {}", targetThreadId.slotId, MAX_THREADS );
 	auto writingMeans = threadQueues[ targetThreadId.slotId ].getWriteHandleAndReincarnation();
@@ -191,7 +196,7 @@ namespace nodecpp
 	}
 
 
-	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( NodeAddress requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 	{
 		size_t sz = riter.availableSize();
 		switch ( msgType )

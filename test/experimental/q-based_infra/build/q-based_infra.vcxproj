@@ -609,6 +609,7 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\hashtable.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\string.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\safe_ptr.cpp" />
     <ClCompile Include="..\..\..\..\src\common.cpp" />
     <ClCompile Include="..\..\..\..\src\fs.cpp" />
     <ClCompile Include="..\..\..\..\src\q_based_infrastructure.cpp">

@@ -205,7 +205,7 @@ void preinitThreadStartupData( ThreadStartupData& startupData, InterThreadMessag
 	startupData.defaultLog = nodecpp::logging_impl::currentLog;
 }
 
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, ThreadID targetThreadId )
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, NodeAddress targetThreadId )
 {
 	//NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, targetThreadId.slotId < MAX_THREADS, "{} vs. {}", targetThreadId.slotId, MAX_THREADS );
@@ -221,7 +221,7 @@ void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation, "for idx = {}: {} vs. {}", targetThreadId.slotId, reincarnation, targetThreadId.reincarnation ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman != nullptr ); 
 //	if ( postman != nullptr )
-		postman->postMessage( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
+		postman->postMessage( InterThreadMsg( std::move( msg ), msgType, NodeAddress(thisThreadDescriptor.threadID), targetThreadId ) );
 //	else
 //		threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
 	/*// write a byte to writeHandle

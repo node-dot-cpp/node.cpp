@@ -42,6 +42,12 @@ struct ThreadID
 	uint64_t reincarnation = InvalidReincarnation;
 };
 
+struct NodeAddress : public ThreadID
+{
+	NodeAddress() {}
+	NodeAddress( ThreadID other ) : ThreadID( other ) {}
+};
+
 enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Infrastructural, Undefined };
 
 extern thread_local size_t workerIdxInLoadCollector;
@@ -49,13 +55,13 @@ extern thread_local size_t workerIdxInLoadCollector;
 
 struct InterThreadMsg
 {
-	ThreadID sourceThreadID;
-	ThreadID targetThreadID;
+	NodeAddress sourceThreadID;
+	NodeAddress targetThreadID;
 	InterThreadMsgType msgType = InterThreadMsgType::Undefined;
 	nodecpp::platform::internal_msg::InternalMsg msg;
 
 	InterThreadMsg() {}
-	InterThreadMsg( nodecpp::platform::internal_msg::InternalMsg&& msg_, InterThreadMsgType msgType_, ThreadID sourceThreadID_, ThreadID targetThreadID_ ) : 
+	InterThreadMsg( nodecpp::platform::internal_msg::InternalMsg&& msg_, InterThreadMsgType msgType_, NodeAddress sourceThreadID_, NodeAddress targetThreadID_ ) : 
 		sourceThreadID( sourceThreadID_ ), targetThreadID( targetThreadID_ ), msgType( msgType_ ), msg( std::move(msg_) )  {}
 	InterThreadMsg( const InterThreadMsg& ) = delete;
 	InterThreadMsg& operator = ( const InterThreadMsg& ) = delete;
@@ -64,7 +70,7 @@ struct InterThreadMsg
 };
 
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
-void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, ThreadID threadId );
+void sendInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, NodeAddress threadId );
 void setThisThreadDescriptor(ThreadStartupData& startupData);
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint64_t timeout );
@@ -75,7 +81,7 @@ struct ListenerThreadDescriptor
 };
 std::pair<const ListenerThreadDescriptor*, size_t> getListeners();
 
-size_t addWorkerEntryForLoadTracking( ThreadID id );
+size_t addWorkerEntryForLoadTracking( NodeAddress id );
 void incrementWorkerLoadCtr( size_t idx );
 void decrementWorkerLoadCtr( size_t idx );
 ThreadID getLeastLoadedWorkerAndIncrementLoad();

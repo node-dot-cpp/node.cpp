@@ -280,9 +280,9 @@ public:
 		initialized = true;
 	}
 
-	ThreadID getAddress() { return loopStartupData.threadCommID; }
+	NodeAddress getAddress() { return loopStartupData.threadCommID; }
 
-	static std::pair<Initializer, ThreadID> getInitializer(InterThreadMessagePostmanBase* postman)
+	static std::pair<Initializer, NodeAddress> getInitializer(InterThreadMessagePostmanBase* postman)
 	{
 		Initializer i;
 		i.acquire(postman);
