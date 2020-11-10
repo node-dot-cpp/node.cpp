@@ -25,6 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * -------------------------------------------------------------------------------*/
 
+#ifndef NODECPP_USE_Q_BASED_INFRA
+
 #include "infrastructure.h"
 
 //#include <nodecpp/nls.h>
@@ -307,3 +309,4 @@ void reportTimes( uint64_t currentT)
 }
 #endif // USE_TEMP_PERF_CTRS
 
+#endif // NODECPP_USE_Q_BASED_INFRA

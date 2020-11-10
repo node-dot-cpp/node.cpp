@@ -28,7 +28,11 @@
 #include "tcp_socket.h"
 #include "../../include/nodecpp/common.h"
 #include "../../include/nodecpp/_error.h"
-#include "../infrastructure.h"
+#ifndef NODECPP_USE_Q_BASED_INFRA
+#include <infrastructure.h>
+#else
+#include <q_based_infrastructure.h>
+#endif // NODECPP_USE_Q_BASED_INFRA
 
 
 #ifdef _MSC_VER
@@ -398,6 +402,7 @@ namespace nodecpp
 			{
 				int error = getSockError();
 				nodecpp::log::default_log::fatal( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"accept() on sock {} failed; error {}", sock, error);
+				printf( "accept() on sock %d failed; error %d", sock, error);
 
 				return INVALID_SOCKET;
 			}

@@ -531,6 +531,7 @@
     <ClCompile Include="..\..\..\src\net.cpp" />
     <ClCompile Include="..\..\..\src\tcp_socket\listener_thread.cpp" />
     <ClCompile Include="..\..\..\src\tcp_socket\tcp_socket.cpp" />
+    <ClCompile Include="..\..\..\src\timeout_manager.cpp" />
     <ClCompile Include="..\user_code\HttpServerSample.cpp" />
   </ItemGroup>
   <ItemGroup>
