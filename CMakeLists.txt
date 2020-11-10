@@ -32,16 +32,19 @@ add_subdirectory(safe_memory)
 # we define two libraries, 'nodecpp' and 'nodecpp_no_main'
 
 add_library(nodecpp_no_main STATIC
-   	src/infrastructure.cpp
-  	src/net.cpp
+#   	src/infrastructure.cpp
+#  	src/net.cpp
 #  	src/timers.cpp
-    src/clustering_impl/clustering.cpp
+#    src/clustering_impl/clustering.cpp
 #    src/logging_impl/logging.cpp
-    src/tcp_socket/listener_thread.cpp
-    src/tcp_socket/tcp_socket.cpp
+#    src/tcp_socket/listener_thread.cpp
+#    src/tcp_socket/tcp_socket.cpp
+	src/q_based_infrastructure.cpp
+	src/timeout_manager.cpp
 )
 
-target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
+target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_Q_BASED_INFRA)
+#target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
 #target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
 
 target_include_directories(nodecpp_no_main
