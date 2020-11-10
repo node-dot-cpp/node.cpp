@@ -7,6 +7,9 @@
 #include "windows_graphical.h"
 #include "some_node.h"
 
+// NODECPP-required
+// magic class defining what to do with (how to deliver) msg supplied to postInterThreadMsg()
+// In this particular example we use system call PostMessage to a window defined by hWnd
 class Postman : public InterThreadMessagePostmanBase
 {
 	HWND* hWnd;
@@ -14,9 +17,10 @@ public:
 	Postman( HWND* hWnd_ ) : hWnd( hWnd_ ) {}
 	void postMessage( InterThreadMsg&& msg ) override
 	{
-		uint8_t* msgmem = new uint8_t[sizeof(InterThreadMsg)];
-		InterThreadMsg* interm = new(msgmem)InterThreadMsg(std::move(msg));
-		PostMessage(*hWnd, WM_USER + 4, WPARAM((void*)(interm)), 0 );
+		// create a move-copy in heap, otherwise the msg will be destructed at the end of this call (and, potentially, before it will be received and processed)
+		InterThreadMsg* pmsg = new InterThreadMsg( std::move( msg) );
+		// posting a message with a user-def type (WM_USER + 4)
+		PostMessage(*hWnd, WM_USER + 4, WPARAM((void*)(pmsg)), 0 );
 	}
 };
 
@@ -27,10 +31,12 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
-HWND hMainWnd = 0;
-Postman postman( &hMainWnd );
-NoNodeLoop<SomeNode> someNodeLoop;
-NodeAddress someNodeAddress;
+// NODECPP-required
+// (will be replaced by a right way to do that)
+HWND hMainWnd = 0; // where to post node-related messages
+Postman postman( &hMainWnd ); // see above-mention magic
+NoNodeLoop<SomeNode> someNodeLoop; // KEY THING: consider as a wrapper of Node doing a lot of useful staff
+NodeAddress someNodeAddress; // address to be used to send messages to the Node
 
 
 // Forward declarations of functions included in this code module:
@@ -60,13 +66,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
+	// NODECPP-required
+	// not it's time to initialize our means
 	someNodeLoop.init( &postman );
 	someNodeAddress = someNodeLoop.getAddress();
-	/*nodecpp::platform::internal_msg::InternalMsg imsg;
+
+	// NODECPP-sample
+	// post some message...
+	nodecpp::platform::internal_msg::InternalMsg imsg;
 	uint32_t msgtype = SomeNode::MsgTypes::set_wnd;
 	imsg.append( &msgtype, 4 );
-	imsg.append( &hMainWnd, 4 );
-	sendInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, someNodeAddress );*/
+	imsg.append( &hMainWnd, sizeof(hMainWnd) );
+	postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, someNodeAddress );
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSGRAPHICAL));
 
@@ -186,6 +197,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		unsigned int x = lParam & 0xFFFF;
 		unsigned int y = lParam >> 16;
+		// NODECPP-required
+		// prepare and post message
 		nodecpp::platform::internal_msg::InternalMsg imsg;
 		uint32_t msgtype = SomeNode::MsgTypes::input_point;
 		imsg.append( &msgtype, 4 );
@@ -196,10 +209,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_USER + 4:
 	{
-		InterThreadMsg msg = std::move(*(InterThreadMsg*)(wParam));
+		// NODECPP-required
+		// complimentary part to what's done by Postman: message is delivered, now feed it to Node wrapper
+		InterThreadMsg* pmsg = (InterThreadMsg*)(wParam);
+		InterThreadMsg msg = std::move(*pmsg);
+		delete pmsg;
 		someNodeLoop.onInfrastructureMessage( std::move( msg ) );
-		((InterThreadMsg*)(wParam))->~InterThreadMsg();
-		delete [] (uint8_t*)(wParam);
 		break;
 	}
     case WM_DESTROY:
