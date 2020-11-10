@@ -18,9 +18,7 @@ public:
 	void postMessage( InterThreadMsg&& msg ) override
 	{
 		// create a move-copy in heap, otherwise the msg will be destructed at the end of this call (and, potentially, before it will be received and processed)
-		InterThreadMsg* pmsg = new InterThreadMsg( std::move( msg) );
-		// posting a message with a user-def type (WM_USER + 4)
-		PostMessage(*hWnd, WM_USER + 4, WPARAM((void*)(pmsg)), 0 );
+		PostMessage(*hWnd, WM_USER + 4, WPARAM((void*)(msg.convertToPointer())), 0 );
 	}
 };
 
@@ -211,9 +209,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		// NODECPP-required
 		// complimentary part to what's done by Postman: message is delivered, now feed it to Node wrapper
-		InterThreadMsg* pmsg = (InterThreadMsg*)(wParam);
-		InterThreadMsg msg = std::move(*pmsg);
-		delete pmsg;
+		nodecpp::platform::internal_msg::InternalMsg* pmsg = (nodecpp::platform::internal_msg::InternalMsg*)(wParam);
+		InterThreadMsg msg;
+		msg.restoreFromPointer( pmsg );
 		someNodeLoop.onInfrastructureMessage( std::move( msg ) );
 		break;
 	}

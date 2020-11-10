@@ -67,6 +67,22 @@ struct InterThreadMsg
 	InterThreadMsg& operator = ( const InterThreadMsg& ) = delete;
 	InterThreadMsg( InterThreadMsg&& other ) = default; 
 	InterThreadMsg& operator = ( InterThreadMsg&& other ) = default;
+
+	nodecpp::platform::internal_msg::InternalMsg* convertToPointer()
+	{
+		msg.appWriteData( &sourceThreadID, 0, sizeof( sourceThreadID ) );
+		msg.appWriteData( &targetThreadID, sizeof( sourceThreadID ), sizeof( targetThreadID ) );
+		msg.appWriteData( &msgType, sizeof( sourceThreadID ) + sizeof( targetThreadID ), sizeof( msgType ) );
+		return msg.convertToPointer();
+	}
+
+	void restoreFromPointer( nodecpp::platform::internal_msg::InternalMsg* ptr )
+	{
+		msg.restoreFromPointer( ptr );
+		msg.appReadData( &sourceThreadID, 0, sizeof( sourceThreadID ) );
+		msg.appReadData( &targetThreadID, sizeof( sourceThreadID ), sizeof( targetThreadID ) );
+		msg.appReadData( &msgType, sizeof( sourceThreadID ) + sizeof( targetThreadID ), sizeof( msgType ) );
+	}
 };
 
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();

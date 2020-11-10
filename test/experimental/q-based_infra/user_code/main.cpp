@@ -68,14 +68,19 @@ int main( int argc, char *argv_[] )
 	{
 		nodecpp::platform::internal_msg::InternalMsg imsg2;
 		imsg.append( "Third message", sizeof("Third message") );
+
+		auto ptr = imsg.convertToPointer();
+		nodecpp::platform::internal_msg::InternalMsg imsg3;
+		imsg3.restoreFromPointer( ptr );
+
 //		waitTime = loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, NodeAddress(), NodeAddress() ) );
-		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr2 );
-		imsg.append( "Forth message", sizeof("Forth message") );
-        loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, NodeAddress(), NodeAddress() ) );
+		postInterThreadMsg( std::move( imsg3 ), InterThreadMsgType::Infrastructural, addr2 );
+		imsg3.append( "Forth message", sizeof("Forth message") );
+        loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg3 ), InterThreadMsgType::Infrastructural, NodeAddress(), NodeAddress() ) );
 		if ( waitTime > 0 )
 		Sleep( waitTime );
-		imsg.append( "Second message", sizeof("Second message") );
-		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
+		imsg3.append( "Second message", sizeof("Second message") );
+		postInterThreadMsg( std::move( imsg3 ), InterThreadMsgType::Infrastructural, addr );
 		Sleep(300);
 	}
 //	
