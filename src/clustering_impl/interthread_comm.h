@@ -52,6 +52,16 @@ enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, Ser
 
 extern thread_local size_t workerIdxInLoadCollector;
 
+struct InterThreadMsg;
+class InterThreadMsgPtr
+{
+	friend struct InterThreadMsg;
+	nodecpp::platform::internal_msg::InternalMsg* ptr;
+	InterThreadMsgPtr(nodecpp::platform::internal_msg::InternalMsg* val) { ptr = val; }
+public:
+	operator uintptr_t () const { return (uintptr_t)(ptr); }
+	InterThreadMsgPtr(uintptr_t val) { ptr = (nodecpp::platform::internal_msg::InternalMsg*)val; }
+};
 
 struct InterThreadMsg
 {
@@ -61,6 +71,13 @@ struct InterThreadMsg
 	nodecpp::platform::internal_msg::InternalMsg msg;
 
 	InterThreadMsg() {}
+	InterThreadMsg( InterThreadMsgPtr ptr )
+	{
+		msg.restoreFromPointer( ptr.ptr );
+		msg.appReadData( &sourceThreadID, 0, sizeof( sourceThreadID ) );
+		msg.appReadData( &targetThreadID, sizeof( sourceThreadID ), sizeof( targetThreadID ) );
+		msg.appReadData( &msgType, sizeof( sourceThreadID ) + sizeof( targetThreadID ), sizeof( msgType ) );
+	}
 	InterThreadMsg( nodecpp::platform::internal_msg::InternalMsg&& msg_, InterThreadMsgType msgType_, NodeAddress sourceThreadID_, NodeAddress targetThreadID_ ) : 
 		sourceThreadID( sourceThreadID_ ), targetThreadID( targetThreadID_ ), msgType( msgType_ ), msg( std::move(msg_) )  {}
 	InterThreadMsg( const InterThreadMsg& ) = delete;
@@ -68,21 +85,15 @@ struct InterThreadMsg
 	InterThreadMsg( InterThreadMsg&& other ) = default; 
 	InterThreadMsg& operator = ( InterThreadMsg&& other ) = default;
 
-	nodecpp::platform::internal_msg::InternalMsg* convertToPointer()
+	InterThreadMsgPtr convertToPointer()
 	{
 		msg.appWriteData( &sourceThreadID, 0, sizeof( sourceThreadID ) );
 		msg.appWriteData( &targetThreadID, sizeof( sourceThreadID ), sizeof( targetThreadID ) );
 		msg.appWriteData( &msgType, sizeof( sourceThreadID ) + sizeof( targetThreadID ), sizeof( msgType ) );
-		return msg.convertToPointer();
+		return InterThreadMsgPtr( msg.convertToPointer() );
 	}
 
-	void restoreFromPointer( nodecpp::platform::internal_msg::InternalMsg* ptr )
-	{
-		msg.restoreFromPointer( ptr );
-		msg.appReadData( &sourceThreadID, 0, sizeof( sourceThreadID ) );
-		msg.appReadData( &targetThreadID, sizeof( sourceThreadID ), sizeof( targetThreadID ) );
-		msg.appReadData( &msgType, sizeof( sourceThreadID ) + sizeof( targetThreadID ), sizeof( msgType ) );
-	}
+//	void restoreFromPointer( InterThreadMsgPtr ptr )
 };
 
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
