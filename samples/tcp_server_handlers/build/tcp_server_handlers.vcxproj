@@ -71,71 +71,71 @@
     <ProjectGuid>{2016F6D0-BDAC-42A1-A543-D732D98DE406}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>templatesockettest</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dbg_with_clustering|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release_with_clustering|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dbg_with_clustering|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'" Label="Configuration">
@@ -147,20 +147,20 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release_with_clustering|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -174,7 +174,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -250,19 +250,23 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dbg_with_clustering|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -282,19 +286,23 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release_with_clustering|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release-clang|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../include/nodecpp;../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../safe_memory/library/include;../../../safe_memory/library/src/iibmalloc/src;../../../safe_memory/library/src;../../../include;../../../src;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Label="LLVM" Condition="'$(Configuration)|$(Platform)'=='release-clang|x64'">
     <ClangClAdditionalOptions>
@@ -612,14 +620,18 @@
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\nodecpp_assert.cpp" />
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp" />
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\safe_memory_error.cpp" />
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info.cpp" />
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp" />
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp" />
     <ClCompile Include="..\..\..\src\clustering_impl\clustering.cpp" />
+    <ClCompile Include="..\..\..\src\fs.cpp" />
     <ClCompile Include="..\..\..\src\infrastructure.cpp" />
     <ClCompile Include="..\..\..\src\infra_main.cpp" />
     <ClCompile Include="..\..\..\src\net.cpp" />
+    <ClCompile Include="..\..\..\src\tcp_socket\listener_thread.cpp" />
     <ClCompile Include="..\..\..\src\tcp_socket\tcp_socket.cpp" />
+    <ClCompile Include="..\..\..\src\timeout_manager.cpp" />
     <ClCompile Include="..\user_code\TcpServerWithHandlersSample.cpp" />
   </ItemGroup>
   <ItemGroup>

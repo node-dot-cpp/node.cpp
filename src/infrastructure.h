@@ -189,13 +189,7 @@ if ( pollRetMax < retval )
 							size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock );
 							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
 							for ( size_t i=0; i<actualFromQueue; ++i )
-								if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
-								{
-									nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
-									node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
-								}
-								else
-									getCluster().onInterthreadMessage( thq[i] );
+								getCluster().onInterthreadMessage( thq[i] );
 						}
 						else
 						{
@@ -219,13 +213,7 @@ if ( pollRetMax < retval )
 							size_t actualFromQueue = popFrontFromThisThreadQueue( thq, actaulFromSock );
 							NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, actualFromQueue == actaulFromSock, "{} vs. {}", actualFromQueue, actaulFromSock );
 							for ( size_t i=0; i<actualFromQueue; ++i )
-								if ( thq[i].msgType == InterThreadMsgType::Infrastructural )
-								{
-									nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq[i].msg.getReadIter();
-									node.onInfrastructureMessage( thq[i].sourceThreadID, riter );
-								}
-								else
-									getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
+								getCluster().slaveProcessor.onInterthreadMessage( thq[i] );
 						}
 						else
 						{

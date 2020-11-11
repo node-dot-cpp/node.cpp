@@ -109,7 +109,7 @@ struct ListenerThreadDescriptor
 };
 std::pair<const ListenerThreadDescriptor*, size_t> getListeners();
 
-size_t addWorkerEntryForLoadTracking( NodeAddress id );
+size_t addWorkerEntryForLoadTracking( ThreadID id );
 void incrementWorkerLoadCtr( size_t idx );
 void decrementWorkerLoadCtr( size_t idx );
 ThreadID getLeastLoadedWorkerAndIncrementLoad();

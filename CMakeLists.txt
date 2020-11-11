@@ -39,21 +39,29 @@ add_library(nodecpp_no_main STATIC
 #    src/logging_impl/logging.cpp
     src/tcp_socket/listener_thread.cpp
     src/tcp_socket/tcp_socket.cpp
+    src/timeout_manager.cpp
+    src/fs.cpp
 )
 
 target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
 #target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
 
+target_include_directories(nodecpp_no_main
+  PUBLIC include
+  PUBLIC src
+)
+
 add_library(nodecpp_no_main_q_based_infra STATIC
 	src/q_based_infrastructure.cpp
 	src/timeout_manager.cpp
 	src/common.cpp
+	src/fs.cpp
 )
 
 target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC NODECPP_USE_Q_BASED_INFRA)
 #target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
 
-target_include_directories(nodecpp_no_main
+target_include_directories(nodecpp_no_main_q_based_infra
   PUBLIC include
   PUBLIC src
 )
@@ -70,6 +78,7 @@ target_link_libraries(nodecpp nodecpp_no_main)
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 		target_compile_options(nodecpp_no_main PUBLIC /await)
+		target_compile_options(nodecpp_no_main_q_based_infra PUBLIC /await)
 	endif()
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 

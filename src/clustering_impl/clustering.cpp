@@ -196,7 +196,7 @@ namespace nodecpp
 	}
 
 
-	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( NodeAddress requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 	{
 		size_t sz = riter.availableSize();
 		switch ( msgType )

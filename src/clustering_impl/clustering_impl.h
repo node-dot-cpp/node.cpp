@@ -46,7 +46,13 @@ struct ThreadStartupData
 };
 
 class InterThreadMessagePostmanBase;
+#if (defined NODECPP_ENABLE_CLUSTERING)
+void preinitThreadStartupData( ThreadStartupData& startupData );
+#elif (defined NODECPP_USE_Q_BASED_INFRA)
 void preinitThreadStartupData( ThreadStartupData& startupData, InterThreadMessagePostmanBase* postman );
+#else
+#error unexpected
+#endif
 void decrementThisWorkerLoadCtr();
 
 #endif // NODECPP_ENABLE_CLUSTERING

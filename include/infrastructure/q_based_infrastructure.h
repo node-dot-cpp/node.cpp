@@ -29,9 +29,9 @@
 #ifndef Q_BASED_INFRASTRUCTURE_H
 #define Q_BASED_INFRASTRUCTURE_H
 
-#include <clustering_impl/clustering_impl.h>
-#include <clustering_impl/interthread_comm.h>
-#include <clustering_impl/interthread_comm_impl.h>
+#include "../../src/clustering_impl/clustering_impl.h"
+#include "../../src/clustering_impl/interthread_comm.h"
+#include "../../src/clustering_impl/interthread_comm_impl.h"
 
 #include "../include/nodecpp/common.h"
 #include "../include/nodecpp/nls.h"
