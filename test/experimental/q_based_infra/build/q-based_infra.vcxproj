@@ -621,9 +621,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\user_code\SimulationNode.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../../../include\nodecpp\awaitable.h" />

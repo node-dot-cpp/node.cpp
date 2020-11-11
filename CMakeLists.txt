@@ -42,7 +42,7 @@ add_library(nodecpp_no_main STATIC
 )
 
 target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
-#target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
+#target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
 
 add_library(nodecpp_no_main_q_based_infra STATIC
 	src/q_based_infrastructure.cpp
@@ -134,7 +134,7 @@ add_executable(TcpServerWithHandlersSample
 target_link_libraries(TcpServerWithHandlersSample nodecpp)
 
 add_executable(QBasedInfraSample
-	experimental/q_based_infra/user_code/main.cpp
+	test/experimental/q_based_infra/user_code/main.cpp
 )
 
 target_link_libraries(QBasedInfraSample nodecpp_no_main_q_based_infra)
