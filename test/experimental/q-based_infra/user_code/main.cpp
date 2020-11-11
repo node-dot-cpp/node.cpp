@@ -1,8 +1,10 @@
 // User-defined sample code
 ///////////////////////////
 
-#include <common.h>
+#include <nodecpp/common.h>
 #include <infrastructure/q_based_infrastructure.h>
+#include <chrono>
+#include <thread>
 #include "SimulationNode.h"
 
 // NOTE: next two calls can be viewed as helper functions in case a loop is to be run in a separate thread with QueueBasedNodeLoop
@@ -37,7 +39,6 @@ NodeAddress runNodeInAnotherThread()
 	return startupDataAndAddr.second;
 }
 
-#include <Windows.h>
 int main( int argc, char *argv_[] )
 {
 	for ( int i=0; i<argc; ++i )
@@ -78,10 +79,10 @@ int main( int argc, char *argv_[] )
 		imsg3.append( "Forth message", sizeof("Forth message") );
         loop2.onInfrastructureMessage( InterThreadMsg( std::move( imsg3 ), InterThreadMsgType::Infrastructural, NodeAddress(), NodeAddress() ) );
 		if ( waitTime > 0 )
-		Sleep( waitTime );
+		std::this_thread::sleep_for(std::chrono::milliseconds( waitTime ));
 		imsg3.append( "Second message", sizeof("Second message") );
 		postInterThreadMsg( std::move( imsg3 ), InterThreadMsgType::Infrastructural, addr );
-		Sleep(300);
+		std::this_thread::sleep_for(std::chrono::milliseconds(300));
 	}
 //	
 

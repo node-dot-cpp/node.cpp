@@ -328,7 +328,7 @@ class NoNodeLoop : public NodeLoopBase<NodeT>
 	NodeProcessor<NodeT> infra;
 public:
 	NoNodeLoop() {}
-	NoNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
+	NoNodeLoop( typename NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
 	int init( InterThreadMessagePostmanBase* postman = nullptr )
 	{
@@ -347,7 +347,7 @@ class QueueBasedNodeLoop : public NodeLoopBase<NodeT>
 	QueueBasedInfrastructure<NodeT> infra;
 public:
 	QueueBasedNodeLoop() {}
-	QueueBasedNodeLoop( NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
+	QueueBasedNodeLoop( typename NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 	
 	int init(InterThreadMessagePostmanBase* postman = nullptr)
 	{
