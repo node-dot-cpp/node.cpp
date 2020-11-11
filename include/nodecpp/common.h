@@ -137,7 +137,7 @@ public:
 	virtual ~NodeBase() {}
 };
 
-#ifdef NODECPP_ENABLE_CLUSTERING
+#if (defined NODECPP_ENABLE_CLUSTERING) || (defined NODECPP_USE_Q_BASED_INFRA)
 struct ThreadStartupData; // forward declaration
 #endif
 

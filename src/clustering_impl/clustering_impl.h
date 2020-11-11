@@ -29,7 +29,7 @@
 #ifndef CLUSTERING_COMMON_H
 #define CLUSTERING_COMMON_H
 
-#ifdef NODECPP_ENABLE_CLUSTERING
+#if (defined NODECPP_ENABLE_CLUSTERING) || (defined NODECPP_USE_Q_BASED_INFRA)
 
 
 #include "../../include/nodecpp/common.h"

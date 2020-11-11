@@ -27,7 +27,8 @@
 
 #ifndef INTERTHREAD_COMM_H
 #define INTERTHREAD_COMM_H
-#ifdef NODECPP_ENABLE_CLUSTERING
+
+#if (defined NODECPP_ENABLE_CLUSTERING) || (defined NODECPP_USE_Q_BASED_INFRA)
 
 #include <internal_msg.h>
 
