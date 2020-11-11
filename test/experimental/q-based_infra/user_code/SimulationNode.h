@@ -47,7 +47,7 @@ public:
 
 		setHelloOrExit();
 
-		string_literal path( "../user_code/SimulationNode.cpp" );
+		string_literal path( "../user_code/main.cpp" );
 		auto file = fs::openSync( path, std::optional<string>(), std::optional<string>() );
 		Buffer b;
 		size_t sz = fs::readSync( file, b, 0, 50, std::optional<size_t>(3) );
