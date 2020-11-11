@@ -29,22 +29,28 @@ endif()
 add_subdirectory(safe_memory)
 
 # just in case some project needs a different main
-# we define two libraries, 'nodecpp' and 'nodecpp_no_main'
+# we define three libraries, 'nodecpp', 'nodecpp_no_main', and 'nodecpp_no_main_q_based_infra'
 
 add_library(nodecpp_no_main STATIC
-#   	src/infrastructure.cpp
-#  	src/net.cpp
+   	src/infrastructure.cpp
+  	src/net.cpp
 #  	src/timers.cpp
-#    src/clustering_impl/clustering.cpp
+    src/clustering_impl/clustering.cpp
 #    src/logging_impl/logging.cpp
-#    src/tcp_socket/listener_thread.cpp
-#    src/tcp_socket/tcp_socket.cpp
+    src/tcp_socket/listener_thread.cpp
+    src/tcp_socket/tcp_socket.cpp
+)
+
+target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
+#target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
+
+add_library(nodecpp_no_main_q_based_infra STATIC
 	src/q_based_infrastructure.cpp
 	src/timeout_manager.cpp
+	src/common.cpp
 )
 
 target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_Q_BASED_INFRA)
-#target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
 #target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
 
 target_include_directories(nodecpp_no_main
@@ -58,6 +64,7 @@ add_library(nodecpp STATIC
 
 
 target_link_libraries(nodecpp_no_main safe_memory)
+target_link_libraries(nodecpp_no_main_q_based_infra safe_memory)
 target_link_libraries(nodecpp nodecpp_no_main)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -125,6 +132,12 @@ add_executable(TcpServerWithHandlersSample
 )
 
 target_link_libraries(TcpServerWithHandlersSample nodecpp)
+
+add_executable(QBasedInfraSample
+	experimental/q_based_infra/user_code/main.cpp
+)
+
+target_link_libraries(QBasedInfraSample nodecpp_no_main_q_based_infra)
 
 
 
