@@ -112,6 +112,8 @@ class NodeProcessor
 public:
 	NodeProcessor() {}
 
+	nodecpp::safememory::soft_ptr<NodeT> getNode() { return node; }
+
 	int init() {
 #ifdef NODECPP_USE_IIBMALLOC
 		allocManager.initialize();
@@ -329,6 +331,8 @@ class NoNodeLoop : public NodeLoopBase<NodeT>
 public:
 	NoNodeLoop() {}
 	NoNodeLoop( typename NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
+
+	nodecpp::safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
 	
 	int init( InterThreadMessagePostmanBase* postman = nullptr )
 	{
@@ -348,6 +352,8 @@ class QueueBasedNodeLoop : public NodeLoopBase<NodeT>
 public:
 	QueueBasedNodeLoop() {}
 	QueueBasedNodeLoop( typename NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
+
+	nodecpp::safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
 	
 	int init(InterThreadMessagePostmanBase* postman = nullptr)
 	{

@@ -68,14 +68,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// not it's time to initialize our means
 	someNodeLoop.init( &postman );
 	someNodeAddress = someNodeLoop.getAddress();
-
-	// NODECPP-sample
-	// post some message...
-	nodecpp::platform::internal_msg::InternalMsg imsg;
-	uint32_t msgtype = SomeNode::MsgTypes::set_wnd;
-	imsg.append( &msgtype, 4 );
-	imsg.append( &hMainWnd, sizeof(hMainWnd) );
-	postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, someNodeAddress );
+	someNodeLoop.getNode()->hWnd = hMainWnd;
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSGRAPHICAL));
 

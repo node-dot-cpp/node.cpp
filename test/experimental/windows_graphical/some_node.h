@@ -13,10 +13,12 @@ using namespace nodecpp;
 class SomeNode : public NodeBase
 {
 	log::Log log;
+
+public:
 	HWND hWnd = 0;
 
 public:
-	enum MsgTypes { set_wnd, input_point, input_point3d };
+	enum MsgTypes { input_point, input_point3d };
 
 public:
 	handler_ret_type main()
@@ -34,9 +36,6 @@ public:
 		uint32_t msgID = *(uint32_t*)(riter.read( 4 ) );
 		switch ( msgID )
 		{
-			case set_wnd:
-				hWnd = *(HWND*)(riter.read( sizeof( HWND ) ) );
-				break;
 			case input_point:
 			{
 				uint32_t x = *(uint32_t*)(riter.read( 4 ) );
