@@ -34,6 +34,7 @@
 #include "../../src/clustering_impl/interthread_comm_impl.h"
 
 #include "../include/nodecpp/common.h"
+#include "../include/nodecpp/common_structs.h"
 #include "../include/nodecpp/nls.h"
 
 #include "ev_queue.h"
@@ -193,7 +194,11 @@ public:
 			if ( thq.msgType == InterThreadMsgType::Infrastructural )
 			{
 				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq.msg.getReadIter();
-				node->onInfrastructureMessage( thq.sourceThreadID, riter );
+				// TODO: revise this temporary stub
+				nodecpp::Message msg;
+				while( riter.availableSize() )
+					msg.append( riter.read( riter.availableSize() ), riter.availableSize() );
+				node->onInfrastructureMessage( thq.sourceThreadID, msg );
 			}
 			else
 			{

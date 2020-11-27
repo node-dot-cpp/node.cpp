@@ -190,12 +190,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		unsigned int y = (unsigned int)(lParam >> 16);
 		// NODECPP-required
 		// prepare and post message
-		nodecpp::platform::internal_msg::InternalMsg imsg;
-		uint32_t msgtype = SomeNode::MsgTypes::input_point;
-		imsg.append( &msgtype, 4 );
-		imsg.append( &x, 4 );
-		imsg.append( &y, 4 );
-		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, someNodeAddress );
+		Message msg;
+		m::infrastructural::composeMessage<m::infrastructural::ScreenPoint>( msg, m::x = x, m::y = y );
+		postInfrastructuralMsg( std::move( msg ), InterThreadMsgType::Infrastructural, someNodeAddress );
 		break;
 	}
 	case WM_USER + 4:

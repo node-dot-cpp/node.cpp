@@ -211,6 +211,8 @@ namespace nodecpp {
 		}
 	};
 
+	using Message = Buffer; // TEMPORARY STUB TODO: remove!
+
 	template <class ItemT>
 	class MultiOwner
 	{

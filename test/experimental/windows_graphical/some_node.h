@@ -6,6 +6,7 @@
 #include <nodecpp/common.h>
 #include <log.h>
 #include <nodecpp/fs.h>
+#include "marshalling/wg_marshalling.h"
 
 using namespace nodecpp;
 
@@ -13,12 +14,21 @@ using namespace nodecpp;
 class SomeNode : public NodeBase
 {
 	log::Log log;
+	struct Point
+	{
+		int x;
+		int y;
+	};
+	Point pt;
+
+	void processPoint( Point pt )
+	{
+		auto f = fmt::format( "x = {}\ny = {}", pt.x, pt.y );
+		MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+	}
 
 public:
 	HWND hWnd = 0;
-
-public:
-	enum MsgTypes { input_point, input_point3d };
 
 public:
 	handler_ret_type main()
@@ -30,36 +40,15 @@ public:
 		CO_RETURN;
 	}
 
-	void onInfrastructureMessage( NodeAddress requestingThreadId, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+	void onInfrastructureMessage( NodeAddress requestingThreadId, Message& msg )
 	{
-		// TODO: regular parsing
-		uint32_t msgID = *(uint32_t*)(riter.read( 4 ) );
-		switch ( msgID )
-		{
-			case input_point:
-			{
-				uint32_t x = *(uint32_t*)(riter.read( 4 ) );
-				uint32_t y = *(uint32_t*)(riter.read( 4 ) );
-				auto f = fmt::format( "x = {}\ny = {}", x, y );
-				MessageBox( hWnd, f.c_str(), "Point", MB_OK );
-				break;
-			}
-			case input_point3d:
-			{
-				uint32_t x = *(uint32_t*)(riter.read( 4 ) );
-				uint32_t y = *(uint32_t*)(riter.read( 4 ) );
-				uint32_t z = *(uint32_t*)(riter.read( 4 ) );
-				auto f = fmt::format( "x = {}\ny = {}\nz = {}", x, y, z );
-				MessageBox( hWnd, f.c_str(), "Point", MB_OK );
-				break;
-			}
-			default:
-			{
-				auto f = fmt::format( "msgId = {}, remaining size = {}", msgID, riter.availableSize() );
-				MessageBox( 0, f.c_str(), "--???--", MB_OK );
-				break;
-			}
-		}
+		m::infrastructural::handleMessage( msg,
+			m::makeMessageHandler<m::infrastructural::ScreenPoint>([&](auto& parser){ 
+				m::STRUCT_ScreenPoint_parse( parser, m::x = &(pt.x), m::y = &(pt.y) );
+				processPoint( pt );
+			}),
+			m::makeDefaultMessageHandler([&](auto& parser, uint64_t msgID){ fmt::print( "Unhandled message {}\n", msgID ); })
+		);
 	}
 };
 

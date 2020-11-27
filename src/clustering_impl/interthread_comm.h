@@ -99,6 +99,8 @@ struct InterThreadMsg
 
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
 void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, NodeAddress threadId );
+#include "../../include/nodecpp/common_structs.h"
+void postInfrastructuralMsg(nodecpp::Message&& msg, InterThreadMsgType msgType, NodeAddress threadId );
 void setThisThreadDescriptor(ThreadStartupData& startupData);
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint64_t timeout );

@@ -232,6 +232,14 @@ void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sentSize == 1 ); */
 }
 
+#include "../../include/nodecpp/common_structs.h"
+void postInfrastructuralMsg(nodecpp::Message&& msg, InterThreadMsgType msgType, NodeAddress threadId )
+{
+	nodecpp::platform::internal_msg::InternalMsg imsg;
+	imsg.append( msg.begin(), msg.size() );
+	postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, threadId );
+}
+
 #ifndef NODECPP_NO_COROUTINES
 nodecpp::handler_ret_type nodecpp::a_timeout(uint32_t ms)
 {
