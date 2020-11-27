@@ -33,6 +33,9 @@
     <ClInclude Include="some_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="marshalling\marshalling.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="windows_graphical.cpp">
