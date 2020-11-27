@@ -1,3 +1,6 @@
 [submodule "safe_memory"]
 	path = safe_memory
 	url = https://github.com/node-dot-cpp/safe-memory.git
+[submodule "global-mq"]
+	path = global-mq
+	url = https://github.com/node-dot-cpp/global-mq
