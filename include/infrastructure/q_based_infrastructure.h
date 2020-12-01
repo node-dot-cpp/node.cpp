@@ -194,11 +194,7 @@ public:
 			if ( thq.msgType == InterThreadMsgType::Infrastructural )
 			{
 				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq.msg.getReadIter();
-				// TODO: revise this temporary stub
-				nodecpp::Message msg;
-				while( riter.availableSize() )
-					msg.append( riter.read( riter.availableSize() ), riter.availableSize() );
-				node->onInfrastructureMessage( thq.sourceThreadID, msg );
+				node->onInfrastructureMessage( thq.sourceThreadID, thq.msg );
 			}
 			else
 			{

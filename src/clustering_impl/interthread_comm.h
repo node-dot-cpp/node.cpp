@@ -35,6 +35,10 @@
 #define MAX_THREADS 128
 
 
+namespace nodecpp {
+	using Message = platform::internal_msg::InternalMsg;
+}
+
 struct ThreadID
 {
 	static constexpr size_t InvalidSlotID = (size_t)(-1);
