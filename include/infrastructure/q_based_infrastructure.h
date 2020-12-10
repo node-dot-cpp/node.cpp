@@ -194,7 +194,7 @@ public:
 			if ( thq.msgType == InterThreadMsgType::Infrastructural )
 			{
 				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq.msg.getReadIter();
-				node->onInfrastructureMessage( thq.sourceThreadID, thq.msg );
+				node->onInfrastructureMessage( thq.sourceThreadID, riter );
 			}
 			else
 			{
@@ -289,7 +289,7 @@ public:
 	{
 		Initializer i;
 		i.acquire(postman);
-		return std::make_pair(i, i.data.threadCommID);
+		return nodecpp::make_pair(i, i.data.threadCommID);
 	}
 
 protected:
