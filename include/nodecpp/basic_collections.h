@@ -73,16 +73,7 @@ namespace nodecpp
 		return eastl::make_pair(std::forward<T1>(t1), std::forward<T2>(t2));
 	}
 
-
-
-	template<class T>
-	using less = eastl::less<T>;
-	template<class T>
-	using hash = eastl::hash<T>;
-	template<class T>
-	using equal_to = eastl::equal_to<T>;
-
-	template<class Key, class T, class Hash = nodecpp::hash<Key>>
+	template<class Key, class T, class Hash = safe_memory::hash<Key>>
 	using map = ::safe_memory::unordered_map<Key, T, Hash>;
 
 	using string = ::safe_memory::string;
@@ -130,6 +121,9 @@ namespace nodecpp
 	};
 
 #endif // NODECPP_USE_SAFE_MEMORY_CONTAINERS
+
+	inline string_literal operator"" _s(const char* str, size_t len) EA_NOEXCEPT { return {str}; }
+
 
 	template <typename... Args>
 	inline nodecpp::string format(

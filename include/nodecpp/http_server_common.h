@@ -395,7 +395,7 @@ namespace nodecpp {
 
 			void parseContentLength()
 			{
-				auto cl = header.find( nodecpp::string(nodecpp::string_literal("content-length")) );
+				auto cl = header.find( nodecpp::string_literal("content-length") );
 				if ( cl != header.end() )
 					contentLength = ::atol( cl->second.c_str() ); // quick and dirty; TODO: revise
 				contentLength = 0;
@@ -403,12 +403,12 @@ namespace nodecpp {
 
 			void parseConnStatus()
 			{
-				auto cs = header.find( nodecpp::string(nodecpp::string_literal("connection")) );
+				auto cs = header.find( nodecpp::string_literal("connection") );
 				if ( cs != header.end() )
 				{
 					nodecpp::string val = cs->second;
 					val = makeLower( val );
-					if ( val == nodecpp::string_literal("keep alive") )
+					if ( val == "keep alive"_s )
 						connStatus = ConnStatus::keep_alive;
 					else if ( val == nodecpp::string_literal("close") )
 						connStatus = ConnStatus::close;
