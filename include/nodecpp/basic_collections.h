@@ -65,20 +65,47 @@ namespace nodecpp
 	template<class T>
 	using vector = ::safe_memory::vector<T>;
 
-	template<class Key, class T, class Hash = ::safe_memory::hash<Key>>
+	template<class T1, class T2>
+	using pair = eastl::pair<T1, T2>;
+
+	template< class T1, class T2 >
+	auto make_pair( T1&& t1, T2&& t2 ) {
+		return eastl::make_pair(std::forward<T1>(t1), std::forward<T2>(t2));
+	}
+
+
+
+	template<class T>
+	using less = eastl::less<T>;
+	template<class T>
+	using hash = eastl::hash<T>;
+	template<class T>
+	using equal_to = eastl::equal_to<T>;
+
+	template<class Key, class T, class Hash = nodecpp::hash<Key>>
 	using map = ::safe_memory::unordered_map<Key, T, Hash>;
 
 	using string = ::safe_memory::string;
 
 	using string_literal = ::safe_memory::string_literal;
 
+
 #else
 
 	template<class T>
 	using vector = ::std::vector<T, ::nodecpp::safememory::iiballocator<T>>;
 
-	template<class Key, class T>
-	using map = ::std::map<Key, T, std::less<Key>, ::nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
+	template<class T1, class T2>
+	using pair = std::pair<T1, T2>;
+
+	template< class T1, class T2 >
+	auto make_pair( T1&& t1, T2&& t2 ) {
+		return std::make_pair(std::forward<T1>(t1), std::forward<T2>(t2));
+	}
+
+	template<class Key, class T, class Less = std::less<Key>>
+	using map = ::std::map<Key, T, Less, ::nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
+
 
 	using string = ::std::basic_string<char, std::char_traits<char>, ::nodecpp::safememory::iiballocator<char>>;
 

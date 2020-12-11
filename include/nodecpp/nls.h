@@ -49,7 +49,7 @@ namespace nodecpp {
 
 		class JSModuleMap
 		{
-			using MapType = ::nodecpp::map<std::type_index, nodecpp::owning_ptr<js::JSModule>>;
+			using MapType = ::nodecpp::map<std::type_index, nodecpp::owning_ptr<js::JSModule>, std::hash<std::type_index>>;
 	#ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			MapType _classModuleMap;
 			MapType& classModuleMap() { return _classModuleMap; }

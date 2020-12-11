@@ -84,7 +84,7 @@ namespace nodecpp {
 			{
 				UrlQueryItem it;
 				it.add( val );
-				auto ins = parsed.insert( std::make_pair( key, std::move( it ) ) );
+				auto ins = parsed.insert( nodecpp::make_pair( key, std::move( it ) ) );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ins.second );
 			}
 		}
@@ -113,7 +113,7 @@ namespace nodecpp {
 				size_t endEq = url.find_first_of( "=", start );
 				if ( endEq == nodecpp::string::npos )
 				{
-					q.add( url.substr( start, endEq-start ), "" );
+					q.add( url.substr( start, endEq-start ), nodecpp::string(nodecpp::string_literal("")) );
 					break;
 				}
 				size_t endAmp = url.find_first_of( "&", endEq+ 1  );
@@ -143,7 +143,7 @@ namespace nodecpp {
 				size_t endEq = url.find_first_of( "=", start );
 				if ( endEq == nodecpp::string::npos )
 				{
-					q.add( url.substr( start, endEq-start ), "" );
+					q.add( url.substr( start, endEq-start ), nodecpp::string(nodecpp::string_literal("")) );
 					break;
 				}
 				size_t endAmp = url.find_first_of( "&", endEq+ 1  );

@@ -34,13 +34,13 @@ public:
 
 	handler_ret_type processRequest( safememory::soft_ptr<ServerType> srv, safememory::soft_ptr<net::IncomingHttpMessageAtServer> request, safememory::soft_ptr<net::HttpServerResponse> response )
 	{
-			if ( request->getMethod() == "GET" || request->getMethod() == "HEAD" ) {
+			if ( request->getMethod() == nodecpp::string_literal("GET") || request->getMethod() == nodecpp::string_literal("HEAD") ) {
 				response->writeHead(200, {{"Content-Type", "text/xml"}});
 				auto queryValues = Url::parseUrlQueryString( request->getUrl() );
-				auto& value = queryValues["value"];
-				if (value.toStr() == ""){
+				auto& value = queryValues[nodecpp::string("value")];
+				if (value.toStr() == nodecpp::string_literal("")){
 					co_await response->end("no value specified");
-				} else if (value.toStr() == "close") {
+				} else if (value.toStr() == nodecpp::string_literal("close")) {
 					srv->close();
 					co_await response->end("closing server...");
 				} else {

@@ -289,7 +289,7 @@ public:
 	{
 		Initializer i;
 		i.acquire(postman);
-		return nodecpp::make_pair(i, i.data.threadCommID);
+		return std::make_pair(i, i.data.threadCommID);
 	}
 
 protected:

@@ -500,7 +500,7 @@ namespace nodecpp {
 		template<class UserHandlerType>
 		class UserHandlerClassPatterns
 		{
-			using MapType = nodecpp::map<std::type_index, std::pair<UserHandlerType, bool>>; 
+			using MapType = nodecpp::map<std::type_index, std::pair<UserHandlerType, bool>, std::hash<std::type_index>>; 
 #ifndef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			MapType _patterns;
 			MapType& patterns() { return _patterns; }
@@ -515,7 +515,7 @@ namespace nodecpp {
 					return pattern->second;
 				else
 				{
-					auto ins = patterns().insert( make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
+					auto ins = patterns().insert( nodecpp::make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
 					return ins.first->second;
 				}
 			}
