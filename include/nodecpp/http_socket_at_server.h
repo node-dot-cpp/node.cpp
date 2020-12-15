@@ -548,7 +548,7 @@ namespace nodecpp {
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: sanitize
-				if ( key != nodecpp::string_literal("Content-Length") )
+				if ( key != "Content-Length" )
 					header.insert( nodecpp::make_pair( key, value ) );
 			}
 

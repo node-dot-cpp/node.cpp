@@ -408,9 +408,9 @@ namespace nodecpp {
 				{
 					nodecpp::string val = cs->second;
 					val = makeLower( val );
-					if ( val == "keep alive"_s )
+					if ( val == "keep alive" )
 						connStatus = ConnStatus::keep_alive;
-					else if ( val == nodecpp::string_literal("close") )
+					else if ( val == "close" )
 						connStatus = ConnStatus::close;
 				}
 				else

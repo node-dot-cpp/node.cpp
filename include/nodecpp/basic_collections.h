@@ -122,7 +122,7 @@ namespace nodecpp
 
 #endif // NODECPP_USE_SAFE_MEMORY_CONTAINERS
 
-	inline string_literal operator"" _s(const char* str, size_t len) EA_NOEXCEPT { return {str}; }
+	inline string_literal operator"" _s(const char* str, size_t len) noexcept { return {str}; }
 
 
 	template <typename... Args>

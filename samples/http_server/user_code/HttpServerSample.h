@@ -17,13 +17,13 @@ public:
 	void main()
 	{
 		srv = net::createHttpServer<ServerType>( [this](net::IncomingHttpMessageAtServer& request, net::HttpServerResponse& response){
-			if ( request.getMethod() == nodecpp::string_literal("GET") || request.getMethod() == nodecpp::string_literal("HEAD") ) {
+			if ( request.getMethod() == "GET" || request.getMethod() == "HEAD" ) {
 				response.writeHead(200, {{"Content-Type", "text/xml"}});
 				auto queryValues = Url::parseUrlQueryString( request.getUrl() );
 				auto& value = queryValues[nodecpp::string("value")];
-				if (value.toStr() == nodecpp::string_literal("")){
+				if (value.toStr() == ""){
 					response.end("no value specified");
-				} else if (value.toStr() == nodecpp::string_literal("close")){
+				} else if (value.toStr() == "close"){
 					srv->close();
 					response.end("closing server...");
 				} else {
