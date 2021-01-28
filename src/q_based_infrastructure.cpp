@@ -219,7 +219,7 @@ void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation, "for idx = {}: {} vs. {}", targetThreadId.slotId, reincarnation, targetThreadId.reincarnation ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman != nullptr ); 
 //	if ( postman != nullptr )
-		postman->postMessage( InterThreadMsg( std::move( msg ), msgType, NodeAddress(thisThreadDescriptor.threadID), targetThreadId ) );
+		postman->postMessage( InterThreadMsg( std::move( msg ), msgType, NodeAddress(thisThreadDescriptor.threadID, 0 /*TODO: we need means to supply nodeID, if applicable*/), targetThreadId ) );
 //	else
 //		threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
 	/*// write a byte to writeHandle

@@ -45,12 +45,19 @@ struct ThreadID
 	static constexpr size_t InvalidReincarnation = (uint64_t)(-1);
 	size_t slotId = InvalidSlotID;
 	uint64_t reincarnation = InvalidReincarnation;
+	constexpr ThreadID() {}
+	constexpr ThreadID( size_t slotId_, uint64_t reincarnation_ ) : slotId( slotId_ ), reincarnation( reincarnation_ ) {}
 };
 
 struct NodeAddress : public ThreadID
 {
-	NodeAddress() {}
-	NodeAddress( ThreadID other ) : ThreadID( other ) {}
+	uint64_t nodeID = 0; // temporary solution; further elaboration is possible
+	constexpr NodeAddress() {}
+	constexpr NodeAddress( ThreadID other, uint64_t nodeID_ ) : ThreadID( other ), nodeID( nodeID_ ) {}
+	NodeAddress( const NodeAddress& other ) = default;
+	NodeAddress& operator = ( const NodeAddress& other ) = default;
+	NodeAddress( NodeAddress&& other ) = default;
+	NodeAddress& operator = ( NodeAddress&& other ) = default;
 };
 
 enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Infrastructural, Undefined };

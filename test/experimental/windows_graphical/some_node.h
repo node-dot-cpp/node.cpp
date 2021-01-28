@@ -21,10 +21,11 @@ class SomeNode : public NodeBase
 	};
 	Point pt;
 
-	void processPoint( Point pt )
+	void processPoint( NodeAddress requestingThreadId, Point pt )
 	{
-		auto f = fmt::format( "x = {}\ny = {}", pt.x, pt.y );
-		MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+		Message msg;
+		m::infrastructural::composeMessage<m::infrastructural::ScreenPoint>( msg, m::x = pt.y, m::y = pt.x ); // just swap the coords
+		postInfrastructuralMsg( std::move( msg ), InterThreadMsgType::Infrastructural, requestingThreadId );
 	}
 
 public:
@@ -45,7 +46,7 @@ public:
 		m::infrastructural::handleMessage( msg,
 			m::makeMessageHandler<m::infrastructural::ScreenPoint>([&](auto& parser){ 
 				m::STRUCT_ScreenPoint_parse( parser, m::x = &(pt.x), m::y = &(pt.y) );
-				processPoint( pt );
+				processPoint( requestingThreadId, pt );
 			}),
 			m::makeDefaultMessageHandler([&](auto& parser, uint64_t msgID){ fmt::print( "Unhandled message {}\n", msgID ); })
 		);

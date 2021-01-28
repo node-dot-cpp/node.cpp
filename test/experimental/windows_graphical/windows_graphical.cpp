@@ -7,6 +7,8 @@
 #include "windows_graphical.h"
 #include "some_node.h"
 
+static constexpr uint64_t someNodeID = 4; // NODECPP-required; for nodes keep distinct and non-zero
+
 // NODECPP-required
 // magic class defining what to do with (how to deliver) msg supplied to postInterThreadMsg()
 // In this particular example we use system call PostMessage to a window defined by hWnd
@@ -18,7 +20,7 @@ public:
 	void postMessage( InterThreadMsg&& msg ) override
 	{
 		// create a move-copy in heap, otherwise the msg will be destructed at the end of this call (and, potentially, before it will be received and processed)
-		PostMessage(*hWnd, WM_USER + 4, WPARAM(msg.convertToPointer()), 0 );
+		PostMessage(*hWnd, WM_USER + msg.targetThreadID.nodeID, WPARAM(msg.convertToPointer()), 0 );
 	}
 };
 
@@ -66,7 +68,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// NODECPP-required
 	// not it's time to initialize our means
-	someNodeLoop.init( &postman );
+	someNodeLoop.init( someNodeID, &postman );
 	someNodeAddress = someNodeLoop.getAddress();
 	someNodeLoop.getNode()->hWnd = hMainWnd;
 
@@ -195,7 +197,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		postInfrastructuralMsg( std::move( msg ), InterThreadMsgType::Infrastructural, someNodeAddress );
 		break;
 	}
-	case WM_USER + 4:
+	case WM_USER:
+	{
+		InterThreadMsgPtr iptr( wParam );
+		InterThreadMsg msg( iptr );
+		m::infrastructural::handleMessage( msg.msg,
+			m::makeMessageHandler<m::infrastructural::ScreenPoint>([&](auto& parser){ 
+				int x;
+				int y;
+				m::STRUCT_ScreenPoint_parse( parser, m::x = &(x), m::y = &(y) );
+				auto f = fmt::format( "x = {}\ny = {}", x, y );
+				MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+			}),
+			m::makeDefaultMessageHandler([&](auto& parser, uint64_t msgID){ 
+				auto f = fmt::format( "Unhandled message {}\n", msgID ); 
+				MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+			})
+		);
+		break;
+	}
+	case WM_USER + someNodeID: // NODECPP-required: here we define for which node we have a message
 	{
 		// NODECPP-required
 		// complimentary part to what's done by Postman: message is delivered, now feed it to Node wrapper

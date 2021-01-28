@@ -283,7 +283,7 @@ public:
 		initialized = true;
 	}
 
-	NodeAddress getAddress() { return loopStartupData.threadCommID; }
+	NodeAddress getAddress() { return NodeAddress( loopStartupData.threadCommID, loopStartupData.IdWithinGroup ); } // TODO: details of addressing
 
 	static std::pair<Initializer, NodeAddress> getInitializer(InterThreadMessagePostmanBase* postman)
 	{
@@ -294,7 +294,7 @@ public:
 
 protected:
 	template<class InfraT>
-	int init( InfraT& infra, InterThreadMessagePostmanBase* postman = nullptr )
+	int init( InfraT& infra, uint64_t nodeID, InterThreadMessagePostmanBase* postman = nullptr )
 	{
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, !entered ); 
 		entered = true;
@@ -303,6 +303,7 @@ protected:
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman != nullptr ); 
 			preinitThreadStartupData( loopStartupData, postman );
+			loopStartupData.IdWithinGroup = nodeID;
 			initialized = true;
 		}
 		size_t threadIdx = loopStartupData.threadCommID.slotId;
@@ -335,9 +336,9 @@ public:
 
 	nodecpp::safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
 	
-	int init( InterThreadMessagePostmanBase* postman = nullptr )
+	int init( uint64_t nodeID, InterThreadMessagePostmanBase* postman = nullptr )
 	{
-		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, postman);
+		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, nodeID, postman);
 	}
 
 	int onInfrastructureMessage( InterThreadMsg&& thq )
@@ -356,9 +357,9 @@ public:
 
 	nodecpp::safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
 	
-	int init(InterThreadMessagePostmanBase* postman = nullptr)
+	int init( uint64_t nodeID, InterThreadMessagePostmanBase* postman = nullptr )
 	{
-		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, postman);
+		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, nodeID, postman);
 	}
 
 	void run()
