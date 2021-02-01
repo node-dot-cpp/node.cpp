@@ -58,12 +58,12 @@ int main( int argc, char *argv_[] )
 		void postMessage( InterThreadMsg&& msg ) override
 		{
 			auto riter = msg.msg.getReadIter();
-			printf( "Postman: \"%s\"\n", riter.read( riter.availableSize()) );
+			printf( "Postman: \"%s\"\n", riter.directRead( riter.directlyAvailableSize()) );
 		}
 	};
 	NoNodeLoop<SampleSimulationNode> loop2;
 	Postman p( loop2 );
-	int waitTime = loop2.init(&p);
+	int waitTime = loop2.init(1, &p);
 	auto addr2 = loop2.getAddress();
 	for (;;)
 	{

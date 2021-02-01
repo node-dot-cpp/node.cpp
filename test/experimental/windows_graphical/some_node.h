@@ -29,9 +29,6 @@ class SomeNode : public NodeBase
 	}
 
 public:
-	HWND hWnd = 0;
-
-public:
 	handler_ret_type main()
 	{
 		log.level = log::LogLevel::info;

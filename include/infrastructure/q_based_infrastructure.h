@@ -112,6 +112,7 @@ class NodeProcessor
 	nodecpp::safememory::owning_ptr<NodeT> node;
 public:
 	NodeProcessor() {}
+	~NodeProcessor() { deinit(); }
 
 	nodecpp::safememory::soft_ptr<NodeT> getNode() { return node; }
 
@@ -154,10 +155,11 @@ public:
 
 	void deinit()
 	{
+		nodecpp::safememory::interceptNewDeleteOperators(true);
 		node = nullptr;
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
-			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+		nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
+		nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		nodecpp::safememory::killAllZombies();
 		nodecpp::safememory::interceptNewDeleteOperators(false);
@@ -193,7 +195,6 @@ public:
 
 			if ( thq.msgType == InterThreadMsgType::Infrastructural )
 			{
-				nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = thq.msg.getReadIter();
 				node->onInfrastructureMessage( thq.sourceThreadID, thq.msg );
 			}
 			else
@@ -289,7 +290,7 @@ public:
 	{
 		Initializer i;
 		i.acquire(postman);
-		return std::make_pair(i, i.data.threadCommID);
+		return std::make_pair(i, NodeAddress(i.data.threadCommID, 0));
 	}
 
 protected:
@@ -360,6 +361,11 @@ public:
 	int init( uint64_t nodeID, InterThreadMessagePostmanBase* postman = nullptr )
 	{
 		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, nodeID, postman);
+	}
+	
+	int init( InterThreadMessagePostmanBase* postman = nullptr )
+	{
+		return NodeLoopBase<NodeT>::template init<NodeProcessor<NodeT>>(infra, (uint64_t)(-1), postman);
 	}
 
 	void run()

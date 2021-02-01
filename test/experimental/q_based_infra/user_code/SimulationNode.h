@@ -68,9 +68,10 @@ public:
 		postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, target );
 	}
 
-	void onInfrastructureMessage( NodeAddress requestingThreadId, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
+	void onInfrastructureMessage( NodeAddress requestingThreadId, nodecpp::platform::internal_msg::InternalMsg& msg )
 	{
-		printf( "Got it!\n%s\n", riter.read( riter.availableSize() ) );
+		nodecpp::platform::internal_msg::InternalMsg::ReadIter riter = msg.getReadIter();
+		printf( "Got it!\n%s\n", riter.directRead( riter.directlyAvailableSize() ) );
 	}
 };
 
