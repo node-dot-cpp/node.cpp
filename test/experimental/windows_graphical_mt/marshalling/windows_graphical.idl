@@ -1,0 +1,8 @@
+SCOPE infrastructural PROTO = GMQ;
+
+MESSAGE infrastructural:ScreenPoint=1 = STRUCT ScreenPoint;
+
+STRUCT NONEXTENDABLE ScreenPoint {
+  INTEGER x;
+  INTEGER y;
+};

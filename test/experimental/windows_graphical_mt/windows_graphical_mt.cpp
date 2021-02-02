@@ -4,25 +4,57 @@
 #include <common.h>
 #include <infrastructure/q_based_infrastructure.h>
 #include "framework.h"
-#include "windows_graphical.h"
+#include "windows_graphical_mt.h"
 #include "some_node.h"
-
-static constexpr uint64_t someNodeID = 4; // NODECPP-required; for nodes keep distinct and non-zero
 
 // NODECPP-required
 // magic class defining what to do with (how to deliver) msg supplied to postInterThreadMsg()
 // In this particular example we use system call PostMessage to a window defined by hWnd
-class Postman : public InterThreadMessagePostmanBase
+class WorkerThreadPostman : public InterThreadMessagePostmanBase
 {
 	HWND* hWnd;
 public: 
-	Postman( HWND* hWnd_ ) : hWnd( hWnd_ ) {}
+	WorkerThreadPostman( HWND* hWnd_ ) : hWnd( hWnd_ ) {}
 	void postMessage( InterThreadMsg&& msg ) override
 	{
 		// create a move-copy in heap, otherwise the msg will be destructed at the end of this call (and, potentially, before it will be received and processed)
 		PostMessage(*hWnd, WM_USER + msg.targetThreadID.nodeID, WPARAM(msg.convertToPointer()), 0 );
 	}
 };
+
+// NOTE: main thread Postman is given by a call to useQueuePostman()
+
+// WORKER THREAD CREATION STAFF
+template<class NodeT, class ThreadStartupDataT>
+void nodeThreadMain( void* pdata )
+{
+	ThreadStartupDataT* sd = reinterpret_cast<ThreadStartupDataT*>(pdata);
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
+	ThreadStartupDataT startupData = *sd;
+	nodecpp::stddealloc( sd, 1 );
+	QueueBasedNodeLoop<NodeT> r( startupData );
+	r.init();
+	r.run();
+}
+
+template<class NodeT, class PostmanT>
+NodeAddress runNodeInAnotherThread( PostmanT* postman )
+{
+	auto startupDataAndAddr = QueueBasedNodeLoop<NodeT>::getInitializer(postman); // TODO: consider implementing q-based Postman (as lib-defined)
+	using InitializerT = typename QueueBasedNodeLoop<NodeT>::Initializer;
+	InitializerT* startupData = nodecpp::stdalloc<InitializerT>(1);
+	*startupData = startupDataAndAddr.first;
+	size_t threadIdx = startupDataAndAddr.second.slotId;
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
+	std::thread t1( nodeThreadMain<NodeT, InitializerT>, (void*)(startupData) );
+	// startupData is no longer valid
+	startupData = nullptr;
+	t1.detach();
+	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
+	return startupDataAndAddr.second;
+}
+
+
 
 // Forward declarations of functions included in this code module:
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -38,12 +70,10 @@ class MainWindow
 	// NODECPP-required
 	// (will be replaced by a right way to do that)
 	HWND hMainWnd = 0; // where to post node-related messages
-	Postman postman; // see above-mention magic
-	owning_ptr<NoNodeLoop<SomeNode>> someNodeLoop; // KEY THING: consider as a wrapper of Node doing a lot of useful staff
 	NodeAddress someNodeAddress; // address to be used to send messages to the Node
 
 public:
-	MainWindow() : postman( &hMainWnd ), someNodeLoop( make_owning<NoNodeLoop<SomeNode>>() ) {};
+	MainWindow() {};
 
 	int main(_In_ HINSTANCE hInstance,
 						 _In_opt_ HINSTANCE hPrevInstance,
@@ -68,8 +98,11 @@ public:
 
 		// NODECPP-required
 		// not it's time to initialize our means
-		someNodeLoop->init( someNodeID, &postman );
-		someNodeAddress = someNodeLoop->getAddress();
+		ThreadStartupData data;
+		WorkerThreadPostman postman( &hMainWnd ); // see above-mention magic
+		preinitThreadStartupData( data, &postman );
+		setThisThreadDescriptor( data);
+		someNodeAddress = runNodeInAnotherThread<SomeNode>( useQueuePostman() );
 
 		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSGRAPHICAL));
 
@@ -216,18 +249,8 @@ public:
 			);
 			break;
 		}
-		case WM_USER + someNodeID: // NODECPP-required: here we define for which node we have a message
-		{
-			// NODECPP-required
-			// complimentary part to what's done by Postman: message is delivered, now feed it to Node wrapper
-			InterThreadMsgPtr iptr( wParam );
-			InterThreadMsg msg( iptr );
-			someNodeLoop->onInfrastructureMessage( std::move( msg ) );
-			break;
-		}
 		case WM_DESTROY:
 			PostQuitMessage(0);
-			someNodeLoop = nullptr;
 			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
