@@ -1158,7 +1158,7 @@ namespace nodecpp::js {
 			}
 			else
 			{
-				auto insret = keyValuePairs.insert( std::make_pair( s, JSVarOrOwn() ) );
+				auto insret = keyValuePairs.insert( nodecpp::make_pair( s, JSVarOrOwn() ) );
 				return insret.first->second;
 			}
 		}

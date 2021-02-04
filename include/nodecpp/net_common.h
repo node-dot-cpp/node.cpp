@@ -515,7 +515,7 @@ namespace nodecpp {
 					return pattern->second;
 				else
 				{
-					auto ins = patterns().insert( make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
+					auto ins = patterns().insert( nodecpp::make_pair( idx, std::make_pair(UserHandlerType(), false) ) );
 					return ins.first->second;
 				}
 			}

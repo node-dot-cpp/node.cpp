@@ -37,7 +37,7 @@ public:
 			if ( request->getMethod() == "GET" || request->getMethod() == "HEAD" ) {
 				response->writeHead(200, {{"Content-Type", "text/xml"}});
 				auto queryValues = Url::parseUrlQueryString( request->getUrl() );
-				auto& value = queryValues["value"];
+				auto& value = queryValues[nodecpp::string("value")];
 				if (value.toStr() == ""){
 					co_await response->end("no value specified");
 				} else if (value.toStr() == "close") {

@@ -50,7 +50,11 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 #define CLOSE_SOCKET( x ) closesocket( x )
+
+#ifndef _SSIZE_T_DEFINED
+//EABase will define ssize_t for non windows platforms
 typedef int ssize_t;
+#endif
 
 #else // _MSC_VER
 

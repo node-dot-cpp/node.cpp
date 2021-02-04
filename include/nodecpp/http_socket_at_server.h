@@ -363,7 +363,7 @@ namespace nodecpp {
 					return false;
 				size_t valStart = line.find_first_not_of( " \t", idx + 1 );
 				nodecpp::string key = line.substr( start, idx-start );
-				header.insert( std::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
+				header.insert( nodecpp::make_pair( makeLower( key ), line.substr( valStart, end - valStart + 1 ) ));
 				return true;
 			}
 
@@ -391,7 +391,7 @@ namespace nodecpp {
 
 		private:
 			nodecpp::soft_ptr<IncomingHttpMessageAtServer> myRequest;
-			typedef std::map<nodecpp::string, nodecpp::string> header_t;
+			typedef nodecpp::map<nodecpp::string, nodecpp::string> header_t;
 			header_t header;
 			size_t contentLength = 0;
 			nodecpp::Buffer body;
@@ -466,7 +466,7 @@ namespace nodecpp {
 			}
 
 			template< class Str1, class Str2, size_t N>
-			void writeHead( size_t statusCode, Str1 statusMessage, std::pair<nodecpp::string, nodecpp::string> headers[N] )
+			void writeHead( size_t statusCode, Str1 statusMessage, nodecpp::pair<nodecpp::string, nodecpp::string> headers[N] )
 			{
 				replyStatus = statusCode;
 				setStatus( nodecpp::format( "{} {} {}", myRequest->getHttpVersion(), statusCode, statusMessage ) ); 
@@ -549,7 +549,7 @@ namespace nodecpp {
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
 				// TODO: sanitize
 				if ( key != "Content-Length" )
-					header.insert( std::make_pair( key, value ) );
+					header.insert( nodecpp::make_pair( key, value ) );
 			}
 
 			void setStatus( nodecpp::string status ) // temporary stub; TODO: ...
@@ -611,7 +611,7 @@ namespace nodecpp {
 				if ( writeStatus != WriteStatus::in_body )
 				{
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, writeStatus == WriteStatus::notyet ); 
-					header.insert( std::make_pair( "Content-Length", format( "{}", b.size() ) ) );
+					header.insert( nodecpp::make_pair( nodecpp::string("Content-Length"), format( "{}", b.size() ) ) );
 				}
 //dbgTrace();
 				co_await writeBodyPart(b);

@@ -84,7 +84,7 @@ namespace nodecpp {
 			{
 				UrlQueryItem it;
 				it.add( val );
-				auto ins = parsed.insert( std::make_pair( key, std::move( it ) ) );
+				auto ins = parsed.insert( nodecpp::make_pair( key, std::move( it ) ) );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ins.second );
 			}
 		}
