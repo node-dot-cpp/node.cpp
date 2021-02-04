@@ -200,13 +200,13 @@ void createListenerThread()
 
 void ListenerThreadWorker::processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 {
-	size_t sz = riter.directlyAvailableSize();
+	size_t sz = riter.availableSize();
 	switch ( msgType )
 	{
 		case InterThreadMsgType::RequestToListeningThread:
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( RequestToListenerThread ) <= sz, "{} vs. {}", sizeof( RequestToListenerThread ), sz ); 
-			const RequestToListenerThread* msg = reinterpret_cast<const RequestToListenerThread*>( riter.directRead( sizeof( RequestToListenerThread ) ) );
+			const RequestToListenerThread* msg = reinterpret_cast<const RequestToListenerThread*>( riter.read( sizeof( RequestToListenerThread ) ) );
 			switch ( msg->type )
 			{
 				case RequestToListenerThread::Type::AddServerSocket:
@@ -228,14 +228,14 @@ nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_
 		case InterThreadMsgType::ServerError:
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerErrorEvMsg ) <= sz, "{} vs. {}", sizeof( ServerErrorEvMsg ), sz ); 
-			const ServerErrorEvMsg* msg = reinterpret_cast<const ServerErrorEvMsg*>( riter.directRead( sizeof( ServerErrorEvMsg ) ) );
+			const ServerErrorEvMsg* msg = reinterpret_cast<const ServerErrorEvMsg*>( riter.read( sizeof( ServerErrorEvMsg ) ) );
 			// TODO: ...
 			break;
 		}
 		case InterThreadMsgType::ServerCloseRequest:
 		{
 			NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerCloseRequest ) <= sz, "{} vs. {}", sizeof( ServerCloseRequest ), sz ); 
-			const ServerCloseRequest* msg = reinterpret_cast<const ServerCloseRequest*>( riter.directRead( sizeof( ServerCloseRequest ) ) );
+			const ServerCloseRequest* msg = reinterpret_cast<const ServerCloseRequest*>( riter.read( sizeof( ServerCloseRequest ) ) );
 			nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(msgType), requestingThreadId.slotId, msg->entryIdx );
 			// TODO: ...
 			break;

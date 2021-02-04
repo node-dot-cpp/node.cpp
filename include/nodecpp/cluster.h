@@ -178,9 +178,9 @@ namespace nodecpp
 
 			static void deserializeListeningRequestBody( nodecpp::net::Address& addr, int& backlog, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter, size_t bodySz ) {
 				//nodecpp::Buffer& b, size_t offset, size_t sz
-				size_t sz = riter.directlyAvailableSize();
+				size_t sz = riter.availableSize();
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz >= bodySz );
-				const uint8_t* buff = riter.directRead( bodySz );
+				const uint8_t* buff = riter.read( bodySz );
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sz > 4 + 2 + sizeof(int) );
 				addr.ip = Ip4::fromNetwork( *reinterpret_cast<const uint32_t*>(buff) );
 				addr.port = *reinterpret_cast<const uint16_t*>(buff + 4);
@@ -208,7 +208,7 @@ namespace nodecpp
 
 		nodecpp::handler_ret_type processInterthreadRequest( ThreadID requestingThreadId, InterThreadMsgType msgtype, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 		{
-			size_t sz = riter.directlyAvailableSize();
+			size_t sz = riter.availableSize();
 			switch ( msgtype )
 			{
 				case InterThreadMsgType::ThreadStarted:
@@ -221,7 +221,7 @@ namespace nodecpp
 				case InterThreadMsgType::ServerListening:
 				{
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ListeningRequestMsg ) <= sz, "{} vs. {}", sizeof( ListeningRequestMsg ), sz ); 
-					const ListeningRequestMsg* msg = reinterpret_cast<const ListeningRequestMsg*>( riter.directRead( sizeof( ListeningRequestMsg ) ) );
+					const ListeningRequestMsg* msg = reinterpret_cast<const ListeningRequestMsg*>( riter.read( sizeof( ListeningRequestMsg ) ) );
 
 					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerListening({}) request (for thread id: {}). Addr = {}:{}, backlog = {}, entryIndex = {:x}", (size_t)(msgtype), requestingThreadId.slotId, msg->ip.toStr(), msg->port, msg->backlog, msg->entryIndex );
 					nodecpp::net::Address addr;
@@ -236,7 +236,7 @@ namespace nodecpp
 				case InterThreadMsgType::ServerCloseRequest:
 				{
 					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerCloseRequest ) <= sz, "{} vs. {}", sizeof( ServerCloseRequest ), sz ); 
-					const ServerCloseRequest* msg = reinterpret_cast<const ServerCloseRequest*>( riter.directRead( sizeof( ServerCloseRequest ) ) );
+					const ServerCloseRequest* msg = reinterpret_cast<const ServerCloseRequest*>( riter.read( sizeof( ServerCloseRequest ) ) );
 					nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "MasterSocket: processing ServerCloseRequest({}) request (for thread id: {}), entryIndex = {:x}", (size_t)(msgtype), requestingThreadId.slotId, msg->entryIdx );
 					processRequestForServerCloseAtMaster( requestingThreadId, *msg );
 					break;

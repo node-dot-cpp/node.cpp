@@ -70,7 +70,7 @@ public:
 
 	void onInfrastructureMessage( NodeAddress requestingThreadId, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 	{
-		printf( "Got it!\n%s\n", riter.directRead( riter.directlyAvailableSize() ) );
+		printf( "Got it!\n%s\n", riter.read( riter.availableSize() ) );
 	}
 };
 

@@ -198,7 +198,7 @@ namespace nodecpp
 
 	nodecpp::handler_ret_type Cluster::SlaveProcessor::processResponse( ThreadID requestingThreadId, InterThreadMsgType msgType, nodecpp::platform::internal_msg::InternalMsg::ReadIter& riter )
 	{
-		size_t sz = riter.directlyAvailableSize();
+		size_t sz = riter.availableSize();
 		switch ( msgType )
 		{
 			case InterThreadMsgType::ServerListening:
@@ -209,7 +209,7 @@ namespace nodecpp
 			case InterThreadMsgType::ConnAccepted:
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ConnAcceptedEvMsg ) <= sz, "{} vs. {}", sizeof( ConnAcceptedEvMsg ), sz ); 
-				const ConnAcceptedEvMsg* msg = reinterpret_cast<const ConnAcceptedEvMsg*>( riter.directRead( sizeof( ConnAcceptedEvMsg ) ) );
+				const ConnAcceptedEvMsg* msg = reinterpret_cast<const ConnAcceptedEvMsg*>( riter.read( sizeof( ConnAcceptedEvMsg ) ) );
 //nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "conn accepted from threadID = {}...", requestingThreadId.slotId );
 				netServerManagerBase->addAcceptedSocket( msg->serverIdx, (SOCKET)(msg->socket), msg->ip, msg->uport );
 				break;
@@ -217,14 +217,14 @@ namespace nodecpp
 			case InterThreadMsgType::ServerError:
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerErrorEvMsg ) <= sz, "{} vs. {}", sizeof( ServerErrorEvMsg ), sz ); 
-				const ServerErrorEvMsg* msg = reinterpret_cast<const ServerErrorEvMsg*>( riter.directRead( sizeof( ServerErrorEvMsg ) ) );
+				const ServerErrorEvMsg* msg = reinterpret_cast<const ServerErrorEvMsg*>( riter.read( sizeof( ServerErrorEvMsg ) ) );
 				// TODO: ...
 				break;
 			}
 			case InterThreadMsgType::ServerClosedNotification:
 			{
 				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sizeof( ServerCloseNotificationMsg ) <= sz, "{} vs. {}", sizeof( ServerCloseNotificationMsg ), sz ); 
-				const ServerCloseNotificationMsg* msg = reinterpret_cast<const ServerCloseNotificationMsg*>( riter.directRead( sizeof( ServerCloseNotificationMsg ) ) );
+				const ServerCloseNotificationMsg* msg = reinterpret_cast<const ServerCloseNotificationMsg*>( riter.read( sizeof( ServerCloseNotificationMsg ) ) );
 				NetSocketEntry& entry = netServerManagerBase->appGetSlaveServerEntry( msg->entryIdx );
 				entry.getServerSocket()->closeByWorkingCluster(); // TODO: revise
 				break;

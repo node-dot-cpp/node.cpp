@@ -58,7 +58,7 @@ int main( int argc, char *argv_[] )
 		void postMessage( InterThreadMsg&& msg ) override
 		{
 			auto riter = msg.msg.getReadIter();
-			printf( "Postman: \"%s\"\n", riter.directRead( riter.directlyAvailableSize()) );
+			printf( "Postman: \"%s\"\n", riter.read( riter.availableSize()) );
 		}
 	};
 	NoNodeLoop<SampleSimulationNode> loop2;
