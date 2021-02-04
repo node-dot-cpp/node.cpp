@@ -148,8 +148,8 @@ add_executable(TcpServerWithHandlersSample
 
 target_link_libraries(TcpServerWithHandlersSample nodecpp)
 
-# add_executable(QBasedInfraSample test/experimental/q_based_infra/user_code/main.cpp)
-# target_link_libraries(QBasedInfraSample nodecpp_no_main_q_based_infra)
+add_executable(QBasedInfraSample test/experimental/q_based_infra/user_code/main.cpp)
+target_link_libraries(QBasedInfraSample nodecpp_no_main_q_based_infra)
 
 
 
