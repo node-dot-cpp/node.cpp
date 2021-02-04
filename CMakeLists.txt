@@ -35,7 +35,7 @@ add_library(nodecpp_no_main STATIC
    	src/infrastructure.cpp
   	src/net.cpp
 #  	src/timers.cpp
-    src/clustering_impl/clustering.cpp
+#    src/clustering_impl/clustering.cpp
 #    src/logging_impl/logging.cpp
     src/tcp_socket/listener_thread.cpp
     src/tcp_socket/tcp_socket.cpp
@@ -43,7 +43,7 @@ add_library(nodecpp_no_main STATIC
     src/fs.cpp
 )
 
-target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
+# target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
 
 if(TARGET EASTL)
 	target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
@@ -148,11 +148,8 @@ add_executable(TcpServerWithHandlersSample
 
 target_link_libraries(TcpServerWithHandlersSample nodecpp)
 
-add_executable(QBasedInfraSample
-	test/experimental/q_based_infra/user_code/main.cpp
-)
-
-target_link_libraries(QBasedInfraSample nodecpp_no_main_q_based_infra)
+# add_executable(QBasedInfraSample test/experimental/q_based_infra/user_code/main.cpp)
+# target_link_libraries(QBasedInfraSample nodecpp_no_main_q_based_infra)
 
 
 
@@ -182,7 +179,8 @@ set(DZ_INCLUDES
     -isystem ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-set(DZ_DEFINES -DNDEBUG -DNODECPP_ENABLE_CLUSTERING)
+# set(DZ_DEFINES -DNDEBUG -DNODECPP_ENABLE_CLUSTERING)
+set(DZ_DEFINES -DNDEBUG)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	set(DZ_FLAGS -std=c++17 -fcoroutines-ts)
