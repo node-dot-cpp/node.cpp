@@ -26,7 +26,9 @@ endif()
 
 
 
+add_subdirectory(global-mq)
 add_subdirectory(safe_memory)
+
 
 # just in case some project needs a different main
 # we define three libraries, 'nodecpp', 'nodecpp_no_main', and 'nodecpp_no_main_q_based_infra'
