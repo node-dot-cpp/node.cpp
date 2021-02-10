@@ -607,8 +607,6 @@
     <ClCompile Include="../../../../src\tcp_socket\tcp_socket.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\hashtable.cpp" />
-    <ClCompile Include="..\..\..\..\safe_memory\library\src\EASTL\string.cpp" />
     <ClCompile Include="..\..\..\..\safe_memory\library\src\safe_ptr.cpp" />
     <ClCompile Include="..\..\..\..\src\common.cpp" />
     <ClCompile Include="..\..\..\..\src\fs.cpp" />

@@ -1,9 +1,42 @@
-#ifndef _test_marshalling_h_guard
-#define _test_marshalling_h_guard
+#ifndef wg_marshalling_h_b4533258_guard
+#define wg_marshalling_h_b4533258_guard
 
 #include <marshalling.h>
-
+#include <publishable_impl.h>
+using namespace globalmq::marshalling;
 namespace m {
+
+#ifdef METASCOPE_m_ALREADY_DEFINED
+#error metascope must reside in a single idl file
+#endif
+#define METASCOPE_m_ALREADY_DEFINED
+
+// Useful aliases:
+//     (note: since clang apparently too often requires providing template arguments for aliased type ctors we use wrappers instead of type aliasing)
+using Buffer = globalmq::marshalling::Buffer;
+using FileReadBuffer = globalmq::marshalling::FileReadBuffer;
+template<class BufferT>
+class GmqComposer : public globalmq::marshalling::GmqComposer<BufferT> { public: GmqComposer( BufferT& buff_ ) : globalmq::marshalling::GmqComposer<BufferT>( buff_ ) {} };
+template<class BufferT>
+class GmqParser : public globalmq::marshalling::GmqParser<BufferT> { public: GmqParser( BufferT& buff_ ) : globalmq::marshalling::GmqParser<BufferT>( buff_ ) {} GmqParser( const GmqParser<BufferT>& other ) : globalmq::marshalling::GmqParser<BufferT>( other ) {} GmqParser& operator = ( const GmqParser<BufferT>& other ) { globalmq::marshalling::GmqParser<BufferT>::operator = ( other ); return *this; }};
+template<class BufferT>
+class JsonComposer : public globalmq::marshalling::JsonComposer<BufferT> { public: JsonComposer( BufferT& buff_ ) : globalmq::marshalling::JsonComposer<BufferT>( buff_ ) {} };
+template<class BufferT>
+class JsonParser : public globalmq::marshalling::JsonParser<BufferT> { public: JsonParser( BufferT& buff_ ) : globalmq::marshalling::JsonParser<BufferT>( buff_ ) {} JsonParser( const JsonParser<BufferT>& other ) : globalmq::marshalling::JsonParser<BufferT>( other ) {} JsonParser& operator = ( const JsonParser<BufferT>& other ) { globalmq::marshalling::JsonParser<BufferT>::operator = ( other ); return *this; } };
+template<class T>
+class SimpleTypeCollectionWrapper : public globalmq::marshalling::SimpleTypeCollectionWrapper<T> { public: SimpleTypeCollectionWrapper( T& coll ) : globalmq::marshalling::SimpleTypeCollectionWrapper<T>( coll ) {} };
+template<class LambdaSize, class LambdaNext>
+class CollectionWrapperForComposing : public globalmq::marshalling::CollectionWrapperForComposing<LambdaSize, LambdaNext> { public: CollectionWrapperForComposing(LambdaSize &&lsize, LambdaNext &&lnext) : globalmq::marshalling::CollectionWrapperForComposing<LambdaSize, LambdaNext>(std::forward<LambdaSize>(lsize), std::forward<LambdaNext>(lnext)) {} };
+template<class LambdaCompose>
+class MessageWrapperForComposing : public globalmq::marshalling::MessageWrapperForComposing<LambdaCompose> { public: MessageWrapperForComposing(LambdaCompose &&lcompose) : globalmq::marshalling::MessageWrapperForComposing<LambdaCompose>( std::forward<LambdaCompose>(lcompose) ) {} };
+template<class LambdaSize, class LambdaNext>
+class CollectionWrapperForParsing : public globalmq::marshalling::CollectionWrapperForParsing<LambdaSize, LambdaNext> { public: CollectionWrapperForParsing(LambdaSize &&lsizeHint, LambdaNext &&lnext) : globalmq::marshalling::CollectionWrapperForParsing<LambdaSize, LambdaNext>(std::forward<LambdaSize>(lsizeHint), std::forward<LambdaNext>(lnext)) {} };
+template<class LambdaParse>
+class MessageWrapperForParsing : public globalmq::marshalling::MessageWrapperForParsing<LambdaParse> { public: MessageWrapperForParsing(LambdaParse &&lparse) : globalmq::marshalling::MessageWrapperForParsing<LambdaParse>(std::forward<LambdaParse>(lparse)) {} };
+template<typename msgID_, class LambdaHandler>
+MessageHandler<msgID_, LambdaHandler> makeMessageHandler( LambdaHandler &&lhandler ) { return globalmq::marshalling::makeMessageHandler<msgID_, LambdaHandler>(std::forward<LambdaHandler>(lhandler)); }
+template<class LambdaHandler>
+DefaultMessageHandler<LambdaHandler> makeDefaultMessageHandler( LambdaHandler &&lhandler ) { return globalmq::marshalling::makeDefaultMessageHandler<LambdaHandler>(std::forward<LambdaHandler>(lhandler)); }
 
 //////////////////////////////////////////////////////////////
 //
@@ -21,6 +54,14 @@ using y_Type = NamedParameter<struct y_Struct>;
 
 constexpr x_Type::TypeConverter x;
 constexpr y_Type::TypeConverter y;
+
+
+// member name presence checkers
+
+
+// member update notifier presence checks
+using index_type_for_array_notifiers = size_t&;
+
 
 namespace infrastructural {
 
@@ -64,7 +105,7 @@ template<typename msgID, class BufferT, typename ... Args>
 void composeMessage( BufferT& buffer, Args&& ... args )
 {
 	static_assert( std::is_base_of<impl::MessageNameBase, msgID>::value );
-	m::GmqComposer composer( buffer );
+	globalmq::marshalling::GmqComposer composer( buffer );
 	impl::composeUnsignedInteger( composer, msgID::id );
 	if constexpr ( msgID::id == ScreenPoint::id )
 		MESSAGE_ScreenPoint_compose( composer, std::forward<Args>( args )... );
@@ -124,4 +165,4 @@ void STRUCT_ScreenPoint_parse(ParserT& p, Args&& ... args)
 
 } // namespace m
 
-#endif // _test_marshalling_h_guard
+#endif // wg_marshalling_h_b4533258_guard
