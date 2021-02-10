@@ -182,7 +182,7 @@ public:
 		return immediateEvQueue.empty() ? timeout.infraNextTimeout() : 0;
 	}
 
-	int processMessagesAndOrTimeout( InterThreadMsg&& thq )
+	int processMessagesAndOrTimeout( InterThreadMsg* thq )
 	{
 		nodecpp::safememory::interceptNewDeleteOperators(true);
 		timeoutManager = &(getTimeout());
@@ -193,15 +193,18 @@ public:
 		timeout.infraTimeoutEvents(now, queue);
 		queue.emit();
 
-			if ( thq.msgType == InterThreadMsgType::Infrastructural )
+		if ( thq )
+		{
+			if ( thq->msgType == InterThreadMsgType::Infrastructural )
 			{
-				node->onInfrastructureMessage( thq.sourceThreadID, thq.msg );
+				node->onInfrastructureMessage( thq->sourceThreadID, thq->msg );
 			}
 			else
 			{
 				// TODO: ...
 				;
 			}
+		}
 
 		emitInmediates();
 
@@ -242,8 +245,11 @@ public:
 			InterThreadMsg thq[maxMsgCnt];
 			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, maxMsgCnt, timeoutToUse );
 
-			for ( size_t i=0; i<actualFromQueue; ++i )
-				timeoutToUse = NodeProcessor<NodeT>::processMessagesAndOrTimeout( std::move(thq[i]) );
+			if ( actualFromQueue )
+				for ( size_t i=0; i<actualFromQueue; ++i )
+					timeoutToUse = NodeProcessor<NodeT>::processMessagesAndOrTimeout( thq + i );
+			else
+				timeoutToUse = NodeProcessor<NodeT>::processMessagesAndOrTimeout( nullptr );
 		}
 	}
 };
@@ -344,7 +350,12 @@ public:
 
 	int onInfrastructureMessage( InterThreadMsg&& thq )
 	{
-		return infra.processMessagesAndOrTimeout( std::move(thq) );
+		return infra.processMessagesAndOrTimeout( &thq );
+	}
+
+	int onTimeout()
+	{
+		return infra.processMessagesAndOrTimeout( nullptr );
 	}
 };
 

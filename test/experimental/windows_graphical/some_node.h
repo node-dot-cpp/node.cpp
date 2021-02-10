@@ -26,6 +26,11 @@ class SomeNode : public NodeBase
 		Message msg;
 		m::infrastructural::composeMessage<m::infrastructural::ScreenPoint>( msg, m::x = pt.y, m::y = pt.x ); // just swap the coords
 		postInfrastructuralMsg( std::move( msg ), InterThreadMsgType::Infrastructural, requestingThreadId );
+		setTimeout( [pt, requestingThreadId]() { 
+			Message msg;
+			m::infrastructural::composeMessage<m::infrastructural::ScreenPoint>( msg, m::x = pt.x, m::y = pt.y ); // just swap the coords
+			postInfrastructuralMsg( std::move( msg ), InterThreadMsgType::Infrastructural, requestingThreadId );
+		}, 1000 );
 	}
 
 public:

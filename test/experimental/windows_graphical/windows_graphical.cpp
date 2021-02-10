@@ -41,6 +41,7 @@ class MainWindow
 	Postman postman; // see above-mention magic
 	owning_ptr<NoNodeLoop<SomeNode>> someNodeLoop; // KEY THING: consider as a wrapper of Node doing a lot of useful staff
 	NodeAddress someNodeAddress; // address to be used to send messages to the Node
+	static constexpr int NodeTimerID = 0;
 
 public:
 	MainWindow() : postman( &hMainWnd ), someNodeLoop( make_owning<NoNodeLoop<SomeNode>>() ) {};
@@ -207,11 +208,11 @@ public:
 					int y;
 					m::STRUCT_ScreenPoint_parse( parser, m::x = &(x), m::y = &(y) );
 					auto f = fmt::format( "x = {}\ny = {}", x, y );
-					MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+					MessageBox( hMainWnd, f.c_str(), "Point", MB_OK );
 				}),
 				m::makeDefaultMessageHandler([&](auto& parser, uint64_t msgID){ 
 					auto f = fmt::format( "Unhandled message {}\n", msgID ); 
-					MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+					MessageBox( hMainWnd, f.c_str(), "Point", MB_OK );
 				})
 			);
 			break;
@@ -222,9 +223,17 @@ public:
 			// complimentary part to what's done by Postman: message is delivered, now feed it to Node wrapper
 			InterThreadMsgPtr iptr( wParam );
 			InterThreadMsg msg( iptr );
-			someNodeLoop->onInfrastructureMessage( std::move( msg ) );
+			int timeout = someNodeLoop->onInfrastructureMessage( std::move( msg ) );
+			SetTimer( hMainWnd, NodeTimerID, timeout, nullptr );
 			break;
 		}
+		case WM_TIMER:
+			if (wParam == NodeTimerID)
+			{
+				int timeout = someNodeLoop->onTimeout();
+				SetTimer( hMainWnd, NodeTimerID, timeout, nullptr );
+			}
+			break;
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			someNodeLoop = nullptr;
