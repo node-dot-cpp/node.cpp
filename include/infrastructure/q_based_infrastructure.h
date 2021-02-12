@@ -107,24 +107,24 @@ class NodeProcessor
 	EvQueue immediateEvQueue;
 
 #ifdef NODECPP_USE_IIBMALLOC
-		ThreadLocalAllocatorT allocManager;
+		nodecpp::iibmalloc::ThreadLocalAllocatorT allocManager;
 #endif
-	nodecpp::safememory::owning_ptr<NodeT> node;
+	safememory::owning_ptr<NodeT> node;
 public:
 	NodeProcessor() {}
 	~NodeProcessor() { deinit(); }
 
-	nodecpp::safememory::soft_ptr<NodeT> getNode() { return node; }
+	safememory::soft_ptr<NodeT> getNode() { return node; }
 
 	int init() {
 #ifdef NODECPP_USE_IIBMALLOC
 		allocManager.initialize();
 #endif
-		nodecpp::safememory::interceptNewDeleteOperators(true);
+		safememory::detail::interceptNewDeleteOperators(true);
 		timeoutManager = &(getTimeout());
 		inmediateQueue = &(getInmediateQueue());
 
-		node = nodecpp::safememory::make_owning<NodeT>();
+		node = safememory::make_owning<NodeT>();
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
 			node->binLog.initForRecording( 26 );
@@ -147,22 +147,22 @@ public:
 
 		timeoutManager = nullptr;
 		inmediateQueue = nullptr;
-		nodecpp::safememory::killAllZombies();
-		nodecpp::safememory::interceptNewDeleteOperators(false);
+		safememory::detail::killAllZombies();
+		safememory::detail::interceptNewDeleteOperators(false);
 
 		return timeoutToUse;
 	}
 
 	void deinit()
 	{
-		nodecpp::safememory::interceptNewDeleteOperators(true);
+		safememory::detail::interceptNewDeleteOperators(true);
 		node = nullptr;
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 		nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
-		nodecpp::safememory::killAllZombies();
-		nodecpp::safememory::interceptNewDeleteOperators(false);
+		safememory::detail::killAllZombies();
+		safememory::detail::interceptNewDeleteOperators(false);
 	}
 
 public:
@@ -184,7 +184,7 @@ public:
 
 	int processMessagesAndOrTimeout( InterThreadMsg* thq )
 	{
-		nodecpp::safememory::interceptNewDeleteOperators(true);
+		safememory::detail::interceptNewDeleteOperators(true);
 		timeoutManager = &(getTimeout());
 		inmediateQueue = &(getInmediateQueue());
 
@@ -215,8 +215,8 @@ public:
 
 		timeoutManager = nullptr;
 		inmediateQueue = nullptr;
-		nodecpp::safememory::killAllZombies();
-		nodecpp::safememory::interceptNewDeleteOperators(false);
+		safememory::detail::killAllZombies();
+		safememory::detail::interceptNewDeleteOperators(false);
 
 		return timeoutToUse;
 	}
@@ -341,7 +341,7 @@ public:
 	NoNodeLoop() {}
 	NoNodeLoop( typename NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 
-	nodecpp::safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
+	safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
 	
 	int init( uint64_t nodeID, InterThreadMessagePostmanBase* postman = nullptr )
 	{
@@ -367,7 +367,7 @@ public:
 	QueueBasedNodeLoop() {}
 	QueueBasedNodeLoop( typename NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
 
-	nodecpp::safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
+	safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
 	
 	int init( uint64_t nodeID, InterThreadMessagePostmanBase* postman = nullptr )
 	{

@@ -491,7 +491,7 @@ namespace nodecpp {
 					emitAccepted();
 					if (dataForCommandProcessing.isAcceptedEventHandler())
 					{
-						nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+						soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
 						dataForCommandProcessing.handleAcceptedEvent(sockSoftPtr);
 					}
 				}
@@ -519,7 +519,7 @@ namespace nodecpp {
 				emitEnd();
 				if (dataForCommandProcessing.isEndEventHandler())
 				{
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+					soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
 					dataForCommandProcessing.handleEndEvent(sockSoftPtr);
 				}
 			}
@@ -539,7 +539,7 @@ namespace nodecpp {
 				emitData( recvBuffer );
 				if (dataForCommandProcessing.isDataEventHandler())
 				{
-					nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+					soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
 					dataForCommandProcessing.handleDataEvent(sockSoftPtr, recvBuffer);
 				}
 			}
@@ -588,7 +588,7 @@ namespace nodecpp {
 					emitConnect();
 					if (dataForCommandProcessing.isConnectEventHandler())
 					{
-						nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+						soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
 						dataForCommandProcessing.handleConnectEvent(sockSoftPtr);
 					}
 				}
@@ -624,7 +624,7 @@ namespace nodecpp {
 					emitDrain();
 					if (dataForCommandProcessing.isDrainEventHandler())
 					{
-						nodecpp::safememory::soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
+						soft_ptr<net::SocketBase> sockSoftPtr = myThis.getSoftPtr<net::SocketBase>(this);
 						dataForCommandProcessing.handleDrainEvent(sockSoftPtr);
 					}
 				}

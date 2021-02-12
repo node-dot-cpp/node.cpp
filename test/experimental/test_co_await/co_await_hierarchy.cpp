@@ -646,7 +646,7 @@ nodecpp::awaitable<void> processing_loop_core_5(P& p)
 void processing_loop()
 { 
 	printf( "sizeof(srd::string) = %zd\n", sizeof(std::string) );
-//	nodecpp::safememory::interceptNewDeleteOperators(true);
+//	safememory::detail::interceptNewDeleteOperators(true);
 	{
 		Processors p;
 //		/*auto core =*/ processing_loop_core_3(p);
@@ -695,5 +695,5 @@ void processing_loop()
 			}
 		}
 	}
-//	nodecpp::safememory::interceptNewDeleteOperators(false);
+//	safememory::detail::interceptNewDeleteOperators(false);
 }

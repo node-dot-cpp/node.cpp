@@ -18,7 +18,7 @@
     </Expand>
   </Type>
 
-  <Type Name="nodecpp::safememory::owning_ptr_impl&lt;*&gt;">
+  <Type Name="safememory::detail::owning_ptr_impl&lt;*&gt;">
     <DisplayString>{{owning_ptr}}</DisplayString>
     <Expand>
       <ExpandedItem >($T1*)(*(uint64_t*)(&amp;t) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
@@ -26,7 +26,7 @@
     </Expand>
   </Type>
 
-  <Type Name="nodecpp::safememory::soft_ptr_impl&lt;*&gt;">
+  <Type Name="safememory::detail::soft_ptr_impl&lt;*&gt;">
     <DisplayString>{{soft_ptr}}</DisplayString>
     <Expand>
       <ExpandedItem >($T1*)(*(uint64_t*)(&amp;pointers) &amp; 0xFFFFFFFFFFFC)</ExpandedItem>
@@ -34,14 +34,14 @@
     </Expand>
   </Type>
 
-  <Type Name="nodecpp::safememory::owning_ptr_no_checks&lt;*&gt;">
+  <Type Name="safememory::detail::owning_ptr_no_checks&lt;*&gt;">
     <DisplayString>{{owning_ptr}}</DisplayString>
     <Expand>
       <ExpandedItem >($T1*)(t)</ExpandedItem>
     </Expand>
   </Type>
 
-  <Type Name="nodecpp::safememory::soft_ptr_no_checks&lt;*&gt;">
+  <Type Name="safememory::detail::soft_ptr_no_checks&lt;*&gt;">
     <DisplayString>{{soft_ptr}}</DisplayString>
     <Expand>
       <ExpandedItem >($T1*)(t)</ExpandedItem>
@@ -71,7 +71,7 @@
     <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::fn10">function (10 args)</DisplayString>
     <DisplayString Condition="type == nodecpp::js::JSVarBase::Type::softptr">{{object}}</DisplayString>
     <Expand>
-      <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::softptr">(nodecpp::safememory::soft_ptr_impl&lt;nodecpp::js::JSObject&gt;*)(basemem)</ExpandedItem>
+      <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::softptr">(safememory::detail::soft_ptr_impl&lt;nodecpp::js::JSObject&gt;*)(basemem)</ExpandedItem>
       <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::num">(double*)(basemem)</ExpandedItem>
       <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::boolean">(bool*)(basemem)</ExpandedItem>
       <ExpandedItem Condition="type == nodecpp::js::JSVarBase::Type::string">((nodecpp::js::JSString*)(basemem))->str_</ExpandedItem>

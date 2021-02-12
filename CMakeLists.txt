@@ -79,8 +79,8 @@ add_library(nodecpp STATIC
 )
 
 
-target_link_libraries(nodecpp_no_main safe_memory)
-target_link_libraries(nodecpp_no_main_q_based_infra safe_memory)
+target_link_libraries(nodecpp_no_main safememory)
+target_link_libraries(nodecpp_no_main_q_based_infra safememory)
 target_link_libraries(nodecpp nodecpp_no_main)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")

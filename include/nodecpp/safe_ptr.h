@@ -28,19 +28,27 @@
 #ifndef NODECPP_SAFE_PTR_H
 #define NODECPP_SAFE_PTR_H
 
-#include <safe_memory/safe_ptr.h>
+#include <safememory/safe_ptr.h>
 
 
 namespace nodecpp
 {
-	using ::safe_memory::owning_ptr;
-	using ::safe_memory::soft_ptr;
-	using ::safe_memory::soft_this_ptr;
-	using ::safe_memory::nullable_ptr;
+	using ::safememory::safeness_declarator;
+	using ::safememory::memory_safety;
 
-	using ::safe_memory::make_owning;
-	using ::safe_memory::soft_ptr_static_cast;
-	using ::safe_memory::soft_ptr_reinterpret_cast;
+	using ::safememory::owning_ptr;
+	using ::safememory::soft_ptr;
+	using ::safememory::soft_this_ptr;
+	using ::safememory::soft_this_ptr2;
+	using ::safememory::nullable_ptr;
+
+	using ::safememory::make_owning;
+	using ::safememory::make_owning_2;
+	using ::safememory::soft_ptr_in_constructor;
+	using ::safememory::soft_ptr_static_cast;
+	using ::safememory::soft_ptr_reinterpret_cast;
+	using ::safememory::nullable_cast;
+
 } // nodecpp
 
 

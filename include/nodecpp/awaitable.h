@@ -109,8 +109,8 @@ struct promise_type_struct_base {
 		return std::experimental::suspend_never{};
     }
 
-	void* operator new  ( std::size_t count ) { return ::nodecpp::safememory::allocate(count); }
-	void operator delete ( void* ptr ) { ::nodecpp::safememory::deallocate(ptr); }
+	void* operator new  ( std::size_t count ) { return safememory::detail::allocate(count); }
+	void operator delete ( void* ptr ) { safememory::detail::deallocate(ptr); }
 };
 
 template<typename T> struct awaitable; // forward declaration

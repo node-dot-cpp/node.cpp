@@ -180,7 +180,7 @@ namespace nodecpp {
 
 					if ( status == CoroStandardOutcomes::ok ) // the most likely outcome
 					{
-						nodecpp::safememory::soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
+						soft_ptr_static_cast<HttpServerBase>(myServerSocket)->onNewRequest( rrPair.request, rrPair.response );
 						if ( rrQueue.canPush() )
 							continue;
 						auto cg = a_continueGetting();

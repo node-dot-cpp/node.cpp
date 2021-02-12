@@ -501,7 +501,7 @@ public:
 	template<class Node>
 	static void run()
 	{
-		nodecpp::safememory::interceptNewDeleteOperators(true);
+		safememory::detail::interceptNewDeleteOperators(true);
 		{
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.init();
@@ -565,8 +565,8 @@ public:
 			nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		}
-		nodecpp::safememory::killAllZombies();
-		nodecpp::safememory::interceptNewDeleteOperators(false);
+		safememory::detail::killAllZombies();
+		safememory::detail::interceptNewDeleteOperators(false);
 	}
 };
 

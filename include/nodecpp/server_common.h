@@ -368,7 +368,7 @@ namespace nodecpp {
 					emitListening(idx, dataForCommandProcessing.localAddress);
 					if (dataForCommandProcessing.isListenEventHandler() )
 					{
-						nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = myThis.getSoftPtr<net::ServerBase>(this);
+						soft_ptr<net::ServerBase> serverSoftPtr = myThis.getSoftPtr<net::ServerBase>(this);
 						dataForCommandProcessing.handleListenEvent(serverSoftPtr, idx, dataForCommandProcessing.localAddress);
 					}
 				}
@@ -424,7 +424,7 @@ namespace nodecpp {
 					emitClose( isError );
 					if (dataForCommandProcessing.isCloseEventHandler())
 					{
-						nodecpp::safememory::soft_ptr<net::ServerBase> serverSoftPtr = myThis.getSoftPtr<net::ServerBase>(this);
+						soft_ptr<net::ServerBase> serverSoftPtr = myThis.getSoftPtr<net::ServerBase>(this);
 						dataForCommandProcessing.handleCloseEvent(serverSoftPtr, isError);
 					}
 					// TODO: what should we do with this event, if, at present, nobody is willing to process it?
@@ -587,7 +587,7 @@ namespace nodecpp {
 			}
 
 			template<class SocketT>
-			::nodecpp::awaitable<::nodecpp::CoroStandardOutcomes> a_connection(nodecpp::safememory::soft_ptr<SocketT>& socket, uint32_t period) { 
+			::nodecpp::awaitable<::nodecpp::CoroStandardOutcomes> a_connection(soft_ptr<SocketT>& socket, uint32_t period) { 
 
 				struct connection_awaiter {
 					std::experimental::coroutine_handle<> myawaiting = nullptr;
@@ -637,7 +637,7 @@ namespace nodecpp {
 							if constexpr ( std::is_same<SocketT, SocketBase>::value )
 								socket = server.dataForCommandProcessing.ahd_connection.sock;
 							else
-								socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+								socket = soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 							CO_RETURN CoroStandardOutcomes::ok;
 						}
 						else if ( threadLocalData.binaryLog != nullptr && threadLocalData.binaryLog->mode() == record_and_replay_impl::BinaryLog::Mode::replaying )
@@ -657,7 +657,7 @@ namespace nodecpp {
 								if constexpr ( std::is_same<SocketT, SocketBase>::value )
 									socket = server.dataForCommandProcessing.ahd_connection.sock;
 								else
-									socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+									socket = soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 								CO_RETURN CoroStandardOutcomes::ok;
 							}
 							else
@@ -680,7 +680,7 @@ namespace nodecpp {
 							if constexpr ( std::is_same<SocketT, SocketBase>::value )
 								socket = server.dataForCommandProcessing.ahd_connection.sock;
 							else
-								socket = nodecpp::safememory::soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
+								socket = soft_ptr_reinterpret_cast<SocketT>(server.dataForCommandProcessing.ahd_connection.sock);
 							CO_RETURN CoroStandardOutcomes::ok;
 						}
 					}

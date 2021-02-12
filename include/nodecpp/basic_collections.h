@@ -42,12 +42,12 @@
 //#define NODECPP_USE_SAFE_MEMORY_CONTAINERS
 
 #ifdef NODECPP_USE_SAFE_MEMORY_CONTAINERS
-#include <safe_memory/safe_ptr.h>
-#include <safe_memory/vector.h>
-#include <safe_memory/unordered_map.h>
-#include <safe_memory/string.h>
-#include <safe_memory/string_literal.h>
-#include <safe_memory/string_format.h>
+#include <safememory/safe_ptr.h>
+#include <safememory/vector.h>
+#include <safememory/unordered_map.h>
+#include <safememory/string.h>
+#include <safememory/string_literal.h>
+#include <safememory/string_format.h>
 #endif // NODECPP_USE_SAFE_MEMORY_CONTAINERS
 
 namespace nodecpp
@@ -63,7 +63,7 @@ namespace nodecpp
 #ifdef NODECPP_USE_SAFE_MEMORY_CONTAINERS
 
 	template<class T>
-	using vector = ::safe_memory::vector<T>;
+	using vector = ::safememory::vector<T>;
 
 	template<class T1, class T2>
 	using pair = eastl::pair<T1, T2>;
@@ -73,18 +73,18 @@ namespace nodecpp
 		return eastl::make_pair(std::forward<T1>(t1), std::forward<T2>(t2));
 	}
 
-	template<class Key, class T, class Hash = safe_memory::hash<Key>, class Predicate = safe_memory::equal_to<Key>>
-	using map = ::safe_memory::unordered_map<Key, T, Hash, Predicate>;
+	template<class Key, class T, class Hash = safememory::hash<Key>, class Predicate = safememory::equal_to<Key>>
+	using map = ::safememory::unordered_map<Key, T, Hash, Predicate>;
 
-	using string = ::safe_memory::string;
+	using string = ::safememory::string;
 
-	using string_literal = ::safe_memory::string_literal;
+	using string_literal = ::safememory::string_literal;
 
 
 #else
 
 	template<class T>
-	using vector = ::std::vector<T, ::nodecpp::safememory::iiballocator<T>>;
+	using vector = ::std::vector<T, safememory::detail::iiballocator<T>>;
 
 	template<class T1, class T2>
 	using pair = std::pair<T1, T2>;
@@ -95,10 +95,10 @@ namespace nodecpp
 	}
 
 	template<class Key, class T, class Less = std::less<Key>>
-	using map = ::std::map<Key, T, Less, ::nodecpp::safememory::iiballocator<std::pair<const Key,T>>>;
+	using map = ::std::map<Key, T, Less, safememory::detail::iiballocator<std::pair<const Key,T>>>;
 
 
-	using string = ::std::basic_string<char, std::char_traits<char>, ::nodecpp::safememory::iiballocator<char>>;
+	using string = ::std::basic_string<char, std::char_traits<char>, safememory::detail::iiballocator<char>>;
 
 	class string_literal
 	{
@@ -151,7 +151,7 @@ namespace nodecpp
 
 	template<class T>
 	T* alloc( size_t count ) {
-		::nodecpp::safememory::iiballocator<T> iiball;
+		safememory::detail::iiballocator<T> iiball;
 		T* ret = iiball.allocate( count );
 		for ( size_t i=0; i<count; ++i )
 			new (ret + i) T();
@@ -162,7 +162,7 @@ namespace nodecpp
 	void dealloc( T* ptr, size_t count ) {
 		for ( size_t i=0; i<count; ++i )
 			(ptr + i)->~T();
-		::nodecpp::safememory::iiballocator<T> iiball;
+		safememory::detail::iiballocator<T> iiball;
 		iiball.deallocate( ptr, count );
 	}
 
