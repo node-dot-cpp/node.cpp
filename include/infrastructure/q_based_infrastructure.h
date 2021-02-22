@@ -195,14 +195,16 @@ public:
 
 		if ( thq )
 		{
-			if ( thq->msgType == InterThreadMsgType::Infrastructural )
+			switch( thq->msgType )
 			{
-				node->onInfrastructureMessage( thq->sourceThreadID, thq->msg );
-			}
-			else
-			{
-				// TODO: ...
-				;
+				case InterThreadMsgType::Infrastructural:
+					node->onInfrastructureMessage( thq->sourceThreadID, thq->msg );
+					break;
+				case InterThreadMsgType::GlobalMQ:
+					node->onGlobalMQMessage( thq->sourceThreadID, thq->msg );
+					break;
+				default:
+					throw std::exception(); // unexpected
 			}
 		}
 

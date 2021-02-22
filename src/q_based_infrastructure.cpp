@@ -230,9 +230,14 @@ void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sentSize == 1 ); */
 }
 
-void postInfrastructuralMsg(nodecpp::Message&& msg, InterThreadMsgType msgType, NodeAddress threadId )
+void postInfrastructuralMsg(nodecpp::Message&& msg, NodeAddress threadId )
 {
 	postInterThreadMsg( std::move( msg ), InterThreadMsgType::Infrastructural, threadId );
+}
+
+void internalPostlGlobalMQ(nodecpp::Message&& msg, NodeAddress threadId )
+{
+	postInterThreadMsg( std::move( msg ), InterThreadMsgType::GlobalMQ, threadId );
 }
 
 #ifndef NODECPP_NO_COROUTINES

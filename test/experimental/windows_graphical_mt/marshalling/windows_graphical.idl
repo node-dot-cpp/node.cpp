@@ -1,5 +1,9 @@
 SCOPE infrastructural PROTO = GMQ;
 
+PUBLISHABLE publishable_sample {
+	STRUCT NONEXTENDABLE ScreenPoint screenPoint;
+};
+
 MESSAGE infrastructural:ScreenPoint=1 = STRUCT ScreenPoint;
 
 STRUCT NONEXTENDABLE ScreenPoint {

@@ -60,7 +60,7 @@ struct NodeAddress : public ThreadID
 	NodeAddress& operator = ( NodeAddress&& other ) = default;
 };
 
-enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Infrastructural, Undefined };
+enum class InterThreadMsgType { UserDefined, ThreadStarted, ThreadTerminate, ServerListening, ConnAccepted, ServerError, ServerCloseRequest, ServerClosedNotification, RequestToListeningThread, Infrastructural, GlobalMQ, Undefined };
 
 extern thread_local size_t workerIdxInLoadCollector;
 
@@ -111,7 +111,7 @@ struct InterThreadMsg
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
 void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, NodeAddress threadId );
 #include "../../include/nodecpp/common_structs.h"
-void postInfrastructuralMsg(nodecpp::Message&& msg, InterThreadMsgType msgType, NodeAddress threadId );
+void postInfrastructuralMsg(nodecpp::Message&& msg, NodeAddress threadId );
 void setThisThreadDescriptor(ThreadStartupData& startupData);
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
 size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint64_t timeout );

@@ -6,6 +6,7 @@
 #include <nodecpp/common.h>
 #include <log.h>
 #include <nodecpp/fs.h>
+#include "nodecpp_publish_subscribe_support.h"
 #include "marshalling/wg_marshalling.h"
 
 using namespace nodecpp;
@@ -13,22 +14,37 @@ using namespace nodecpp;
 
 class SomeNode : public NodeBase
 {
-	log::Log log;
+	PoolForWorkerThreadT mqPool;
 	struct Point
 	{
 		int x;
 		int y;
 	};
+	struct MyPublishingState
+	{
+		Point screenPoint;
+	};
+	mtest::publishable_sample_NodecppWrapperForPublisher<MyPublishingState, PoolForWorkerThreadT> myPublishingStateWrapper;
+
+	log::Log log;
 	Point pt;
 
 	void processPoint( NodeAddress requestingThreadId, Point pt )
 	{
 		Message msg;
-		m::infrastructural::composeMessage<m::infrastructural::ScreenPoint>( msg, m::x = pt.y, m::y = pt.x ); // just swap the coords
-		postInfrastructuralMsg( std::move( msg ), InterThreadMsgType::Infrastructural, requestingThreadId );
+		mtest::infrastructural::composeMessage<mtest::infrastructural::ScreenPoint>( msg, mtest::x = pt.y, mtest::y = pt.x ); // just swap the coords
+		postInfrastructuralMsg( std::move( msg ), requestingThreadId );
+	}
+
+	void processPointAsPublishedObject( Point pt )
+	{
+		myPublishingStateWrapper.get4set_screenPoint().set_x( pt.x );
+		myPublishingStateWrapper.get4set_screenPoint().set_y( pt.y );
 	}
 
 public:
+	SomeNode() : myPublishingStateWrapper( mqPool ) {}
+
 	handler_ret_type main()
 	{
 		log.level = log::LogLevel::info;
@@ -40,13 +56,24 @@ public:
 
 	void onInfrastructureMessage( NodeAddress requestingThreadId, Message& msg )
 	{
-		m::infrastructural::handleMessage( msg,
-			m::makeMessageHandler<m::infrastructural::ScreenPoint>([&](auto& parser){ 
-				m::STRUCT_ScreenPoint_parse( parser, m::x = &(pt.x), m::y = &(pt.y) );
-				processPoint( requestingThreadId, pt );
+		mtest::infrastructural::handleMessage( msg,
+			mtest::makeMessageHandler<mtest::infrastructural::ScreenPoint>([&](auto& parser){ 
+				mtest::STRUCT_ScreenPoint_parse( parser, mtest::x = &(pt.x), mtest::y = &(pt.y) );
+//				processPoint( requestingThreadId, pt );
+				processPointAsPublishedObject( pt );
 			}),
-			m::makeDefaultMessageHandler([&](auto& parser, uint64_t msgID){ fmt::print( "Unhandled message {}\n", msgID ); })
+			mtest::makeDefaultMessageHandler([&](auto& parser, uint64_t msgID){ fmt::print( "Unhandled message {}\n", msgID ); })
 		);
+
+		// GlobalMQ: at the end of each handler cause pools to post all updates
+		mqPool.postAllUpdates();
+	}
+
+	void onGlobalMQMessage( NodeAddress requestingThreadId, Message& msg )
+	{
+		mqPool.onMessage( msg, requestingThreadId );
+		// GlobalMQ: at the end of each handler cause pools to post all updates
+		mqPool.postAllUpdates();
 	}
 };
 

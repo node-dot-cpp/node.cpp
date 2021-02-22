@@ -154,6 +154,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="marshalling\marshalling.h" />
     <ClInclude Include="marshalling\wg_marshalling.h" />
+    <ClInclude Include="nodecpp_publish_subscribe_support.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="some_node.h" />
     <ClInclude Include="targetver.h" />

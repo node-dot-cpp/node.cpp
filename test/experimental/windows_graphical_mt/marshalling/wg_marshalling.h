@@ -1,15 +1,15 @@
-#ifndef wg_marshalling_h_b4533258_guard
-#define wg_marshalling_h_b4533258_guard
+#ifndef wg_marshalling_h_f5294e6a_guard
+#define wg_marshalling_h_f5294e6a_guard
 
 #include <marshalling.h>
 #include <publishable_impl.h>
 using namespace globalmq::marshalling;
-namespace m {
+namespace mtest {
 
-#ifdef METASCOPE_m_ALREADY_DEFINED
+#ifdef METASCOPE_mtest_ALREADY_DEFINED
 #error metascope must reside in a single idl file
 #endif
-#define METASCOPE_m_ALREADY_DEFINED
+#define METASCOPE_mtest_ALREADY_DEFINED
 
 // Useful aliases:
 //     (note: since clang apparently too often requires providing template arguments for aliased type ctors we use wrappers instead of type aliasing)
@@ -57,11 +57,172 @@ constexpr y_Type::TypeConverter y;
 
 
 // member name presence checkers
+template<typename T> concept has_screenPoint_member = requires { { T::screenPoint }; };
+template<typename T> concept has_x_member = requires { { T::x }; };
+template<typename T> concept has_y_member = requires { { T::y }; };
 
 
 // member update notifier presence checks
 using index_type_for_array_notifiers = size_t&;
+template<typename T> concept has_full_update_notifier_call = requires(T t) { { t.notifyFullyUpdated() }; };
+template<typename T> concept has_void_update_notifier_call_for_screenPoint = requires(T t) { { t.notifyUpdated_screenPoint() }; };
+template<typename StateT, typename MemberT> concept has_update_notifier_call_for_screenPoint = requires { { std::declval<StateT>().notifyUpdated_screenPoint(std::declval<MemberT>()) }; };
+template<typename T> concept has_void_update_notifier_call_for_x = requires(T t) { { t.notifyUpdated_x() }; };
+template<typename StateT, typename MemberT> concept has_update_notifier_call_for_x = requires { { std::declval<StateT>().notifyUpdated_x(std::declval<MemberT>()) }; };
+template<typename T> concept has_void_update_notifier_call_for_y = requires(T t) { { t.notifyUpdated_y() }; };
+template<typename StateT, typename MemberT> concept has_update_notifier_call_for_y = requires { { std::declval<StateT>().notifyUpdated_y(std::declval<MemberT>()) }; };
 
+struct publishable_STRUCT_ScreenPoint;
+template<class T> class ScreenPoint_RefWrapper;
+template<class T, class RootT> class ScreenPoint_RefWrapper4Set;
+
+
+struct publishable_STRUCT_ScreenPoint : public impl::StructType
+{
+	template<class ComposerT, class T>
+	static
+	void compose( ComposerT& composer, const T& t )
+	{
+		globalmq::marshalling::impl::publishableStructComposeInteger( composer, t.x, "x", true );
+
+		globalmq::marshalling::impl::publishableStructComposeInteger( composer, t.y, "y", false );
+
+	}
+
+	template<class ParserT, class T, class RetT = void>
+	static
+	RetT parse( ParserT& parser, T& t )
+	{
+		static_assert( std::is_same<RetT, bool>::value || std::is_same<RetT, void>::value );
+		constexpr bool reportChanges = std::is_same<RetT, bool>::value;
+		bool changed = false;
+		static constexpr bool has_void_update_notifier_for_x = has_void_update_notifier_call_for_x<T>;
+		static constexpr bool has_update_notifier_for_x = has_update_notifier_call_for_x<T, decltype(T::x)>;
+		static constexpr bool has_any_notifier_for_x = has_void_update_notifier_for_x || has_update_notifier_for_x;
+		static constexpr bool has_void_update_notifier_for_y = has_void_update_notifier_call_for_y<T>;
+		static constexpr bool has_update_notifier_for_y = has_update_notifier_call_for_y<T, decltype(T::y)>;
+		static constexpr bool has_any_notifier_for_y = has_void_update_notifier_for_y || has_update_notifier_for_y;
+		static constexpr bool has_full_update_notifier = has_full_update_notifier_call<T>;
+					if constexpr( has_any_notifier_for_x || reportChanges )
+					{
+						decltype(T::x) oldVal = t.x;
+						globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::x)>( parser, &(t.x), "x" );
+						bool currentChanged = oldVal != t.x;
+						if ( currentChanged )
+						{
+							if constexpr ( reportChanges )
+								changed = true;
+							if constexpr ( has_void_update_notifier_for_x )
+								t.notifyUpdated_x();
+							if constexpr ( has_update_notifier_for_x )
+								t.notifyUpdated_x( oldVal );
+						}
+					}
+					else
+						globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::x)>( parser, &(t.x), "x" );
+
+					if constexpr( has_any_notifier_for_y || reportChanges )
+					{
+						decltype(T::y) oldVal = t.y;
+						globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::y)>( parser, &(t.y), "y" );
+						bool currentChanged = oldVal != t.y;
+						if ( currentChanged )
+						{
+							if constexpr ( reportChanges )
+								changed = true;
+							if constexpr ( has_void_update_notifier_for_y )
+								t.notifyUpdated_y();
+							if constexpr ( has_update_notifier_for_y )
+								t.notifyUpdated_y( oldVal );
+						}
+					}
+					else
+						globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::y)>( parser, &(t.y), "y" );
+
+
+		if constexpr ( reportChanges )
+			return changed;
+	}
+
+	template<class ParserT, class T, class RetT = void>
+	static
+	RetT parse( ParserT& parser, T& t, GMQ_COLL vector<size_t>& addr, size_t offset )
+	{
+		static_assert( std::is_same<RetT, bool>::value || std::is_same<RetT, void>::value );
+		constexpr bool reportChanges = std::is_same<RetT, bool>::value;
+		bool changed = false;
+		static constexpr bool has_void_update_notifier_for_x = has_void_update_notifier_call_for_x<T>;
+		static constexpr bool has_update_notifier_for_x = has_update_notifier_call_for_x<T, decltype(T::x)>;
+		static constexpr bool has_any_notifier_for_x = has_void_update_notifier_for_x || has_update_notifier_for_x;
+		static constexpr bool has_void_update_notifier_for_y = has_void_update_notifier_call_for_y<T>;
+		static constexpr bool has_update_notifier_for_y = has_update_notifier_call_for_y<T, decltype(T::y)>;
+		static constexpr bool has_any_notifier_for_y = has_void_update_notifier_for_y || has_update_notifier_for_y;
+		static constexpr bool has_full_update_notifier = has_full_update_notifier_call<T>;
+		GMQ_ASSERT( addr.size() );
+		switch ( addr[offset] )
+		{
+			case 0:
+					if ( addr.size() > offset + 1 )
+						throw std::exception(); // bad format, TODO: ...
+					if constexpr( has_any_notifier_for_x || reportChanges )
+					{
+						decltype(T::x) oldVal = t.x;
+						globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::x)>( parser, &(t.x) );
+						bool currentChanged = oldVal != t.x;
+						if ( currentChanged )
+						{
+							if constexpr ( reportChanges )
+								changed = true;
+							if constexpr ( has_void_update_notifier_for_x )
+								t.notifyUpdated_x();
+							if constexpr ( has_update_notifier_for_x )
+								t.notifyUpdated_x( oldVal );
+						}
+					}
+					else
+						globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::x)>( parser, &(t.x) );
+				break;
+			case 1:
+					if ( addr.size() > offset + 1 )
+						throw std::exception(); // bad format, TODO: ...
+					if constexpr( has_any_notifier_for_y || reportChanges )
+					{
+						decltype(T::y) oldVal = t.y;
+						globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::y)>( parser, &(t.y) );
+						bool currentChanged = oldVal != t.y;
+						if ( currentChanged )
+						{
+							if constexpr ( reportChanges )
+								changed = true;
+							if constexpr ( has_void_update_notifier_for_y )
+								t.notifyUpdated_y();
+							if constexpr ( has_update_notifier_for_y )
+								t.notifyUpdated_y( oldVal );
+						}
+					}
+					else
+						globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::y)>( parser, &(t.y) );
+				break;
+			default:
+				throw std::exception(); // unexpected
+		}
+		if constexpr ( reportChanges )
+			return changed;
+	}
+
+	template<typename UserT>
+	static void copy(const UserT& src, UserT& dst) {
+		dst.x = src.x;
+		dst.y = src.y;
+	}
+
+	template<typename UserT>
+	static bool isSame(const UserT& s1, const UserT& s2) {
+		if ( s1.x != s2.x ) return false;
+		if ( s1.y != s2.y ) return false;
+		return true;
+	}
+};
 
 namespace infrastructural {
 
@@ -116,6 +277,288 @@ void composeMessage( BufferT& buffer, Args&& ... args )
 } // namespace infrastructural 
 
 //**********************************************************************
+// PUBLISHABLE publishable_sample (1 parameters)
+// 1. STRUCT NONEXTENDABLE ScreenPoint screenPoint
+//**********************************************************************
+
+template<class T, class ComposerT>
+class publishable_sample_WrapperForPublisher : public globalmq::marshalling::PublisherBase<ComposerT>
+{
+	T t;
+	using BufferT = typename ComposerT::BufferType;
+	BufferT buffer;
+	ComposerT composer;
+	static constexpr bool has_screenPoint = has_screenPoint_member<T>;
+	static_assert( has_screenPoint, "type T must have member T::screenPoint of a type corresponding to IDL type STRUCT ScreenPoint" );
+
+
+public:
+	template<class ... ArgsT>
+	publishable_sample_WrapperForPublisher( ArgsT ... args ) : t( std::forward<ArgsT>( args )... ), composer( buffer ) {}
+	const T& getState() { return t; }
+	ComposerT& getComposer() { return composer; }
+	void startTick( BufferT&& buff ) { buffer = std::move( buff ); composer.reset(); globalmq::marshalling::impl::composeStateUpdateMessageBegin<ComposerT>( composer );}
+	BufferT&& endTick() { globalmq::marshalling::impl::composeStateUpdateMessageEnd( composer ); return std::move( buffer ); }
+	const char* name() {
+		return "publishable_sample";
+	}
+	const auto& get_screenPoint() { return t.screenPoint; }
+	void set_screenPoint( decltype(T::screenPoint) val) { 
+		t.screenPoint = val; 
+		globalmq::marshalling::impl::composeAddressInPublishable( composer, GMQ_COLL vector<size_t>(), 0 );
+		globalmq::marshalling::impl::publishableComposeLeafeStructBegin( composer );
+		publishable_STRUCT_ScreenPoint::compose( composer, t.screenPoint );
+		globalmq::marshalling::impl::publishableComposeLeafeStructEnd( composer );
+	}
+	auto get4set_screenPoint() { return ScreenPoint_RefWrapper4Set<decltype(T::screenPoint), publishable_sample_WrapperForPublisher>(t.screenPoint, *this, GMQ_COLL vector<size_t>(), 0); }
+
+	template<class ComposerT>
+	void compose( ComposerT& composer )
+	{
+		globalmq::marshalling::impl::composeStructBegin( composer );
+
+		globalmq::marshalling::impl::composePublishableStructBegin( composer, "screenPoint" );
+		publishable_STRUCT_ScreenPoint::compose( composer, t.screenPoint );
+		globalmq::marshalling::impl::composePublishableStructEnd( composer, false );
+
+
+		globalmq::marshalling::impl::composeStructEnd( composer );
+	}
+};
+
+template<class T, class RegistrarT>
+class publishable_sample_NodecppWrapperForPublisher : public publishable_sample_WrapperForPublisher<T, typename PublisherSubscriberInfo::ComposerT>
+{
+	using ComposerT = typename PublisherSubscriberInfo::ComposerT;
+	RegistrarT& registrar;
+public:
+	using BufferT = typename PublisherSubscriberInfo::ComposerT::BufferType;
+	template<class ... ArgsT>
+	publishable_sample_NodecppWrapperForPublisher( RegistrarT& registrar_, ArgsT ... args ) : publishable_sample_WrapperForPublisher<T, typename PublisherSubscriberInfo::ComposerT>( std::forward<ArgsT>( args )... ), registrar( registrar_ )
+	{ 
+		registrar.add( this );
+	}
+
+	virtual ~publishable_sample_NodecppWrapperForPublisher()
+	{ 
+		registrar.remove( this );
+	}
+
+	virtual void startTick( BufferT&& buff ) { publishable_sample_WrapperForPublisher<T, ComposerT>::startTick( std::move( buff ) ); }
+	virtual BufferT&& endTick() { return  publishable_sample_WrapperForPublisher<T, ComposerT>::endTick(); }
+	virtual void generateStateSyncMessage(ComposerT& composer) { publishable_sample_WrapperForPublisher<T, ComposerT>::compose(composer); }
+	virtual const char* name() { return publishable_sample_WrapperForPublisher<T, ComposerT>::name(); }
+};
+
+template<class T, class BufferT>
+class publishable_sample_WrapperForSubscriber : public globalmq::marshalling::SubscriberBase<BufferT>
+{
+	T t;
+	static constexpr bool has_screenPoint = has_screenPoint_member<T>;
+	static_assert( has_screenPoint, "type T must have member T::screenPoint of a type corresponding to IDL type STRUCT ScreenPoint" );
+
+	static constexpr bool has_void_update_notifier_for_screenPoint = has_void_update_notifier_call_for_screenPoint<T>;
+	static constexpr bool has_update_notifier_for_screenPoint = has_update_notifier_call_for_screenPoint<T, decltype(T::screenPoint)>;
+	static constexpr bool has_any_notifier_for_screenPoint = has_void_update_notifier_for_screenPoint || has_update_notifier_for_screenPoint;
+	static constexpr bool has_full_update_notifier = has_full_update_notifier_call<T>;
+
+public:
+	template<class ... ArgsT>
+	publishable_sample_WrapperForSubscriber( ArgsT ... args ) : t( std::forward<ArgsT>( args )... ) {}
+	const T& getState() { return t; }
+	virtual void applyGmqMessageWithUpdates( globalmq::marshalling::GmqParser<BufferT>& parser ) { applyMessageWithUpdates(parser); }
+	virtual void applyJsonMessageWithUpdates( globalmq::marshalling::JsonParser<BufferT>& parser ) { applyMessageWithUpdates(parser); }
+	virtual const char* name() { return "publishable_sample"; }
+
+	template<typename ParserT>
+	void applyMessageWithUpdates(ParserT& parser)
+	{
+		globalmq::marshalling::impl::parseStateUpdateMessageBegin( parser );
+		GMQ_COLL vector<size_t> addr;
+		while( impl::parseAddressInPublishable<ParserT, GMQ_COLL vector<size_t>>( parser, addr ) )
+		{
+			GMQ_ASSERT( addr.size() );
+			switch ( addr[0] )
+			{
+				case 0:
+				{
+					if ( addr.size() == 1 ) // we have to parse and apply changes of this child
+					{
+						globalmq::marshalling::impl::publishableParseLeafeStructBegin( parser );
+
+						if constexpr( has_update_notifier_for_screenPoint )
+						{
+							decltype(T::screenPoint) temp_screenPoint;
+							publishable_STRUCT_ScreenPoint::copy<decltype(T::screenPoint)>( t.screenPoint, temp_screenPoint );
+							bool changedCurrent = publishable_STRUCT_ScreenPoint::parse<ParserT, decltype(T::screenPoint), bool>( parser, t.screenPoint );
+							if ( changedCurrent )
+							{
+								if constexpr( has_void_update_notifier_for_screenPoint )
+									t.notifyUpdated_screenPoint();
+								t.notifyUpdated_screenPoint( temp_screenPoint );
+							}
+						}
+						else if constexpr( has_void_update_notifier_for_screenPoint )
+						{
+							bool changedCurrent = publishable_STRUCT_ScreenPoint::parse<ParserT, decltype(T::screenPoint), bool>( parser, t.screenPoint );
+							if ( changedCurrent )
+							{
+								t.notifyUpdated_screenPoint();
+							}
+						}
+
+						else
+						{
+							publishable_STRUCT_ScreenPoint::parse( parser, t.screenPoint );
+						}
+
+						globalmq::marshalling::impl::publishableParseLeafeStructEnd( parser );
+					}
+					else // let child continue parsing
+					{
+						if constexpr( has_update_notifier_for_screenPoint )
+						{
+							decltype(T::screenPoint) temp_screenPoint;
+							publishable_STRUCT_ScreenPoint::copy<decltype(T::screenPoint)>( t.screenPoint, temp_screenPoint );
+							bool changedCurrent = publishable_STRUCT_ScreenPoint::parse<ParserT, decltype(T::screenPoint), bool>( parser, t.screenPoint, addr, 1 );
+							if ( changedCurrent )
+							{
+								if constexpr( has_void_update_notifier_for_screenPoint )
+									t.notifyUpdated_screenPoint();
+								t.notifyUpdated_screenPoint( temp_screenPoint );
+							}
+						}
+						else if constexpr( has_void_update_notifier_for_screenPoint )
+						{
+							bool changedCurrent = publishable_STRUCT_ScreenPoint::parse<ParserT, decltype(T::Size), bool>( parser, t.screenPoint, addr, 1 );
+							if ( changedCurrent )
+							{
+								t.notifyUpdated_screenPoint();
+							}
+						}
+						else
+							publishable_STRUCT_ScreenPoint::parse( parser, t.screenPoint, addr, 1 );
+					}
+					break;
+				}
+				default:
+					throw std::exception(); // bad format, TODO: ...
+			}
+			addr.clear();
+		}
+	}
+
+
+	template<class ParserT>
+	void parse( ParserT& parser )
+	{
+		globalmq::marshalling::impl::parseStructBegin( parser );
+
+		globalmq::marshalling::impl::parsePublishableStructBegin( parser, "screenPoint" );
+		publishable_STRUCT_ScreenPoint::parse( parser, t.screenPoint );
+		globalmq::marshalling::impl::parsePublishableStructEnd( parser );
+
+		globalmq::marshalling::impl::parseStructEnd( parser );
+
+		if constexpr ( has_full_update_notifier )
+			t.notifyFullyUpdated();
+	}
+	const auto& get_screenPoint() { return t.screenPoint; }
+};
+
+template<class T, class RegistrarT>
+class publishable_sample_NodecppWrapperForSubscriber : public publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>
+{
+	RegistrarT& registrar;
+public:
+	template<class ... ArgsT>
+	publishable_sample_NodecppWrapperForSubscriber( RegistrarT& registrar_, ArgsT ... args ) : publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>( std::forward<ArgsT>( args )... ), registrar( registrar_ )
+	{ 
+		registrar.add( this );
+	}
+
+	virtual ~publishable_sample_NodecppWrapperForSubscriber()
+	{ 
+		registrar.remove( this );
+	}
+
+	virtual void applyGmqMessageWithUpdates( globalmq::marshalling::GmqParser<typename PublisherSubscriberInfo::BufferT>& parser ) 
+	{
+		publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::applyMessageWithUpdates(parser);
+	}
+
+	virtual void applyJsonMessageWithUpdates( globalmq::marshalling::JsonParser<typename PublisherSubscriberInfo::BufferT>& parser )
+	{
+		publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::applyMessageWithUpdates(parser);
+	}
+
+	virtual void applyGmqStateSyncMessage( globalmq::marshalling::GmqParser<typename PublisherSubscriberInfo::BufferT>& parser ) 
+	{
+		publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::parse(parser);
+	}
+
+	virtual void applyJsonStateSyncMessage( globalmq::marshalling::JsonParser<typename PublisherSubscriberInfo::BufferT>& parser )
+	{
+		publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::parse(parser);
+	}
+	virtual const char* name()
+	{
+		return publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::name();
+	}
+	void subscribe()
+	{
+		registrar.subscribe( this );
+	}
+};
+
+template<class T>
+class ScreenPoint_RefWrapper
+{
+	T& t;
+	static constexpr bool has_x = has_x_member<T>;
+	static_assert( has_x, "type T must have member T::x of a type corresponding to IDL type INTEGER" );
+	static constexpr bool has_y = has_y_member<T>;
+	static_assert( has_y, "type T must have member T::y of a type corresponding to IDL type INTEGER" );
+
+
+public:
+	ScreenPoint_RefWrapper( T& actual ) : t( actual ) {}
+	auto get_x() { return t.x; }
+	auto get_y() { return t.y; }
+};
+
+template<class T, class RootT>
+class ScreenPoint_RefWrapper4Set
+{
+	T& t;
+	RootT& root;
+	GMQ_COLL vector<size_t> address;
+	static constexpr bool has_x = has_x_member<T>;
+	static_assert( has_x, "type T must have member T::x of a type corresponding to IDL type INTEGER" );
+	static constexpr bool has_y = has_y_member<T>;
+	static_assert( has_y, "type T must have member T::y of a type corresponding to IDL type INTEGER" );
+
+
+public:
+	ScreenPoint_RefWrapper4Set( T& actual, RootT& root_, const GMQ_COLL vector<size_t> address_, size_t idx ) : t( actual ), root( root_ ) {
+		address = address_;
+		address.push_back (idx );
+	}
+	auto get_x() { return t.x; }
+	void set_x( decltype(T::x) val) { 
+		t.x = val; 
+		globalmq::marshalling::impl::composeAddressInPublishable( root.getComposer(), address, 0 );
+		globalmq::marshalling::impl::publishableComposeLeafeInteger( root.getComposer(), t.x );
+	}
+	auto get_y() { return t.y; }
+	void set_y( decltype(T::y) val) { 
+		t.y = val; 
+		globalmq::marshalling::impl::composeAddressInPublishable( root.getComposer(), address, 1 );
+		globalmq::marshalling::impl::publishableComposeLeafeInteger( root.getComposer(), t.y );
+	}
+};
+
+//**********************************************************************
 // STRUCT "ScreenPoint" NONEXTENDABLE Targets: GMQ (2 parameters)
 // 1. INTEGER x (REQUIRED)
 // 2. INTEGER y (REQUIRED)
@@ -163,6 +606,6 @@ void STRUCT_ScreenPoint_parse(ParserT& p, Args&& ... args)
 }
 
 
-} // namespace m
+} // namespace mtest
 
-#endif // wg_marshalling_h_b4533258_guard
+#endif // wg_marshalling_h_f5294e6a_guard

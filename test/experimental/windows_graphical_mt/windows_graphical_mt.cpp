@@ -22,6 +22,7 @@ public:
 	}
 };
 
+
 // NOTE: main thread Postman is given by a call to useQueuePostman()
 
 // WORKER THREAD CREATION STAFF
@@ -72,8 +73,30 @@ class MainWindow
 	HWND hMainWnd = 0; // where to post node-related messages
 	NodeAddress someNodeAddress; // address to be used to send messages to the Node
 
+	PoolForMainThreadT mqPool;
+
+	struct SubscriptionState
+	{
+		MainWindow* mainWnd;
+
+		struct Point
+		{
+			int x;
+			int y;
+			void notifyUpdated_x( int oldX ) { MessageBeep( 0xFFFFFFFF ); }
+			void notifyUpdated_y( int oldY ) { MessageBeep( 0xFFFFFFFF ); }
+		};
+		Point screenPoint;
+		void notifyUpdated_screenPoint( const Point& oldVal ) const { 
+			auto f = fmt::format( "Old ScreenPoint: x = {}, y = {}\nNew ScreenPoint: x = {}, y = {}", oldVal.x, oldVal.y, screenPoint.x, screenPoint.y );
+//			MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+			MessageBox( 0, f.c_str(), "Point", MB_OK );
+		}
+	};
+	mtest::publishable_sample_NodecppWrapperForSubscriber<SubscriptionState, PoolForMainThreadT> mySubscriberStateWrapper;
+
 public:
-	MainWindow() {};
+	MainWindow() : mySubscriberStateWrapper( mqPool ) {};
 
 	int main(_In_ HINSTANCE hInstance,
 						 _In_opt_ HINSTANCE hPrevInstance,
@@ -103,6 +126,7 @@ public:
 		preinitThreadStartupData( data, &postman );
 		setThisThreadDescriptor( data);
 		someNodeAddress = runNodeInAnotherThread<SomeNode>( useQueuePostman() );
+		mySubscriberStateWrapper.subscribe();
 
 		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSGRAPHICAL));
 
@@ -226,27 +250,39 @@ public:
 			// NODECPP-required
 			// prepare and post message
 			Message msg;
-			m::infrastructural::composeMessage<m::infrastructural::ScreenPoint>( msg, m::x = x, m::y = y );
-			postInfrastructuralMsg( std::move( msg ), InterThreadMsgType::Infrastructural, someNodeAddress );
+			mtest::infrastructural::composeMessage<mtest::infrastructural::ScreenPoint>( msg, mtest::x = x, mtest::y = y );
+			postInfrastructuralMsg( std::move( msg ), someNodeAddress );
 			break;
 		}
 		case WM_USER:
 		{
 			InterThreadMsgPtr iptr( wParam );
 			InterThreadMsg msg( iptr );
-			m::infrastructural::handleMessage( msg.msg,
-				m::makeMessageHandler<m::infrastructural::ScreenPoint>([&](auto& parser){ 
-					int x;
-					int y;
-					m::STRUCT_ScreenPoint_parse( parser, m::x = &(x), m::y = &(y) );
-					auto f = fmt::format( "x = {}\ny = {}", x, y );
-					MessageBox( hWnd, f.c_str(), "Point", MB_OK );
-				}),
-				m::makeDefaultMessageHandler([&](auto& parser, uint64_t msgID){ 
-					auto f = fmt::format( "Unhandled message {}\n", msgID ); 
-					MessageBox( hWnd, f.c_str(), "Point", MB_OK );
-				})
-			);
+			switch ( msg.msgType )
+			{
+				case InterThreadMsgType::Infrastructural:
+				{
+					mtest::infrastructural::handleMessage( msg.msg,
+						mtest::makeMessageHandler<mtest::infrastructural::ScreenPoint>([&](auto& parser){ 
+							int x;
+							int y;
+							mtest::STRUCT_ScreenPoint_parse( parser, mtest::x = &(x), mtest::y = &(y) );
+							auto f = fmt::format( "x = {}\ny = {}", x, y );
+							MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+						}),
+						mtest::makeDefaultMessageHandler([&](auto& parser, uint64_t msgID){ 
+							auto f = fmt::format( "Unhandled message {}\n", msgID ); 
+							MessageBox( hWnd, f.c_str(), "Point", MB_OK );
+						})
+					);
+					break;
+				}
+				case InterThreadMsgType::GlobalMQ:
+				{
+					mqPool.onMessage( msg.msg, msg.sourceThreadID );
+					break;
+				}
+			}
 			break;
 		}
 		case WM_DESTROY:

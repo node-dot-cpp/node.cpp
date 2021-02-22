@@ -324,6 +324,8 @@ public:
 	InterThreadCommPair generateHandlePair();
 };
 
+void internalPostlGlobalMQ(nodecpp::Message&& msg, NodeAddress threadId );
+
 #endif // NODECPP_ENABLE_CLUSTERING
 
 #endif // INTERTHREAD_COMM_IMPL_H
