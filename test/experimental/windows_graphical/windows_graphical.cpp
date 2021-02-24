@@ -195,7 +195,7 @@ public:
 			// prepare and post message
 			Message msg;
 			m::infrastructural::composeMessage<m::infrastructural::ScreenPoint>( msg, m::x = x, m::y = y );
-			postInfrastructuralMsg( std::move( msg ), InterThreadMsgType::Infrastructural, someNodeAddress );
+			postInfrastructuralMsg( std::move( msg ), someNodeAddress );
 			break;
 		}
 		case WM_USER:

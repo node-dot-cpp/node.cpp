@@ -97,12 +97,18 @@ auto a_timeout_impl(uint32_t ms) {
 }
 #endif // NODECPP_NO_COROUTINES
 
+template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_global_mq_message_handler_call = requires { { std::declval<NodeT>().onGlobalMQMessage(std::declval<NodeAddressT>(),std::declval<MessageT&>()) }; };
+template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_infrastructure_message_handler_call = requires { { std::declval<NodeT>().onInfrastructureMessage(std::declval<NodeAddressT>(),std::declval<MessageT&>()) }; };
+
 template<class NodeT>
 class NodeProcessor
 {
 	template<class InfraT, class Node> 
 	friend class Runnable;
 
+	static constexpr bool has_global_mq_message_handler = has_global_mq_message_handler_call<NodeT, NodeAddress, nodecpp::platform::internal_msg::InternalMsg>;
+	static constexpr bool has_infrastructure_message_handler = has_infrastructure_message_handler_call<NodeT, NodeAddress, nodecpp::platform::internal_msg::InternalMsg>;
+	
 	TimeoutManager timeout;
 	EvQueue immediateEvQueue;
 
@@ -198,11 +204,21 @@ public:
 			switch( thq->msgType )
 			{
 				case InterThreadMsgType::Infrastructural:
-					node->onInfrastructureMessage( thq->sourceThreadID, thq->msg );
+				{
+					if constexpr ( has_infrastructure_message_handler )
+						node->onInfrastructureMessage( thq->sourceThreadID, thq->msg );
+					else
+						throw std::exception(); // unexpected / unhandled message type
 					break;
+				}
 				case InterThreadMsgType::GlobalMQ:
-					node->onGlobalMQMessage( thq->sourceThreadID, thq->msg );
+				{
+					if constexpr ( has_global_mq_message_handler )
+						node->onGlobalMQMessage( thq->sourceThreadID, thq->msg );
+					else
+						throw std::exception(); // unexpected / unhandled message type
 					break;
+				}
 				default:
 					throw std::exception(); // unexpected
 			}
