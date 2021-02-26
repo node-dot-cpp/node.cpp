@@ -1,5 +1,5 @@
-#ifndef wg_marshalling_h_f5294e6a_guard
-#define wg_marshalling_h_f5294e6a_guard
+#ifndef wg_marshalling_h_72444dce_guard
+#define wg_marshalling_h_72444dce_guard
 
 #include <marshalling.h>
 #include <publishable_impl.h>
@@ -77,15 +77,15 @@ template<class T> class ScreenPoint_RefWrapper;
 template<class T, class RootT> class ScreenPoint_RefWrapper4Set;
 
 
-struct publishable_STRUCT_ScreenPoint : public impl::StructType
+struct publishable_STRUCT_ScreenPoint : public ::globalmq::marshalling::impl::StructType
 {
 	template<class ComposerT, class T>
 	static
 	void compose( ComposerT& composer, const T& t )
 	{
-		globalmq::marshalling::impl::publishableStructComposeInteger( composer, t.x, "x", true );
+		::globalmq::marshalling::impl::publishableStructComposeInteger( composer, t.x, "x", true );
 
-		globalmq::marshalling::impl::publishableStructComposeInteger( composer, t.y, "y", false );
+		::globalmq::marshalling::impl::publishableStructComposeInteger( composer, t.y, "y", false );
 
 	}
 
@@ -106,7 +106,7 @@ struct publishable_STRUCT_ScreenPoint : public impl::StructType
 					if constexpr( has_any_notifier_for_x || reportChanges )
 					{
 						decltype(T::x) oldVal = t.x;
-						globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::x)>( parser, &(t.x), "x" );
+						::globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::x)>( parser, &(t.x), "x" );
 						bool currentChanged = oldVal != t.x;
 						if ( currentChanged )
 						{
@@ -119,12 +119,12 @@ struct publishable_STRUCT_ScreenPoint : public impl::StructType
 						}
 					}
 					else
-						globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::x)>( parser, &(t.x), "x" );
+						::globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::x)>( parser, &(t.x), "x" );
 
 					if constexpr( has_any_notifier_for_y || reportChanges )
 					{
 						decltype(T::y) oldVal = t.y;
-						globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::y)>( parser, &(t.y), "y" );
+						::globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::y)>( parser, &(t.y), "y" );
 						bool currentChanged = oldVal != t.y;
 						if ( currentChanged )
 						{
@@ -137,11 +137,21 @@ struct publishable_STRUCT_ScreenPoint : public impl::StructType
 						}
 					}
 					else
-						globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::y)>( parser, &(t.y), "y" );
+						::globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::y)>( parser, &(t.y), "y" );
 
 
 		if constexpr ( reportChanges )
 			return changed;
+	}
+
+	template<class ParserT, class T, class RetT = void>
+	static
+	RetT parseForStateSync( ParserT& parser, T& t )
+	{
+		::globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::x)>( parser, &(t.x), "x" );
+
+		::globalmq::marshalling::impl::publishableParseInteger<ParserT, decltype(T::y)>( parser, &(t.y), "y" );
+
 	}
 
 	template<class ParserT, class T, class RetT = void>
@@ -167,7 +177,7 @@ struct publishable_STRUCT_ScreenPoint : public impl::StructType
 					if constexpr( has_any_notifier_for_x || reportChanges )
 					{
 						decltype(T::x) oldVal = t.x;
-						globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::x)>( parser, &(t.x) );
+						::globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::x)>( parser, &(t.x) );
 						bool currentChanged = oldVal != t.x;
 						if ( currentChanged )
 						{
@@ -180,7 +190,7 @@ struct publishable_STRUCT_ScreenPoint : public impl::StructType
 						}
 					}
 					else
-						globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::x)>( parser, &(t.x) );
+						::globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::x)>( parser, &(t.x) );
 				break;
 			case 1:
 					if ( addr.size() > offset + 1 )
@@ -188,7 +198,7 @@ struct publishable_STRUCT_ScreenPoint : public impl::StructType
 					if constexpr( has_any_notifier_for_y || reportChanges )
 					{
 						decltype(T::y) oldVal = t.y;
-						globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::y)>( parser, &(t.y) );
+						::globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::y)>( parser, &(t.y) );
 						bool currentChanged = oldVal != t.y;
 						if ( currentChanged )
 						{
@@ -201,7 +211,7 @@ struct publishable_STRUCT_ScreenPoint : public impl::StructType
 						}
 					}
 					else
-						globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::y)>( parser, &(t.y) );
+						::globalmq::marshalling::impl::publishableParseLeafeInteger<ParserT, decltype(T::y)>( parser, &(t.y) );
 				break;
 			default:
 				throw std::exception(); // unexpected
@@ -226,7 +236,7 @@ struct publishable_STRUCT_ScreenPoint : public impl::StructType
 
 namespace infrastructural {
 
-using ScreenPoint = impl::MessageName<1>;
+using ScreenPoint = ::globalmq::marshalling::impl::MessageName<1>;
 
 template<class BufferT, class ... HandlersT >
 void handleMessage( BufferT& buffer, HandlersT ... handlers )
@@ -237,7 +247,7 @@ void handleMessage( BufferT& buffer, HandlersT ... handlers )
 	parser.parseUnsignedInteger( &msgID );
 	switch ( msgID )
 	{
-		case ScreenPoint::id: impl::implHandleMessage<ScreenPoint>( parser, handlers... ); break;
+		case ScreenPoint::id: ::globalmq::marshalling::impl::implHandleMessage<ScreenPoint>( parser, handlers... ); break;
 	}
 
 }
@@ -265,13 +275,13 @@ void MESSAGE_ScreenPoint_parse(ParserT& p, Args&& ... args)
 template<typename msgID, class BufferT, typename ... Args>
 void composeMessage( BufferT& buffer, Args&& ... args )
 {
-	static_assert( std::is_base_of<impl::MessageNameBase, msgID>::value );
+	static_assert( std::is_base_of<::globalmq::marshalling::impl::MessageNameBase, msgID>::value );
 	globalmq::marshalling::GmqComposer composer( buffer );
-	impl::composeUnsignedInteger( composer, msgID::id );
+	::globalmq::marshalling::impl::composeUnsignedInteger( composer, msgID::id );
 	if constexpr ( msgID::id == ScreenPoint::id )
 		MESSAGE_ScreenPoint_compose( composer, std::forward<Args>( args )... );
 	else
-		static_assert( std::is_same<impl::MessageNameBase, msgID>::value, "unexpected value of msgID" ); // note: should be just static_assert(false,"..."); but it seems that in this case clang asserts yet before looking at constexpr conditions
+		static_assert( std::is_same<::globalmq::marshalling::impl::MessageNameBase, msgID>::value, "unexpected value of msgID" ); // note: should be just static_assert(false,"..."); but it seems that in this case clang asserts yet before looking at constexpr conditions
 }
 
 } // namespace infrastructural 
@@ -297,32 +307,32 @@ public:
 	publishable_sample_WrapperForPublisher( ArgsT ... args ) : t( std::forward<ArgsT>( args )... ), composer( buffer ) {}
 	const T& getState() { return t; }
 	ComposerT& getComposer() { return composer; }
-	void startTick( BufferT&& buff ) { buffer = std::move( buff ); composer.reset(); globalmq::marshalling::impl::composeStateUpdateMessageBegin<ComposerT>( composer );}
-	BufferT&& endTick() { globalmq::marshalling::impl::composeStateUpdateMessageEnd( composer ); return std::move( buffer ); }
+	void startTick( BufferT&& buff ) { buffer = std::move( buff ); composer.reset(); ::globalmq::marshalling::impl::composeStateUpdateMessageBegin<ComposerT>( composer );}
+	BufferT&& endTick() { ::globalmq::marshalling::impl::composeStateUpdateMessageEnd( composer ); return std::move( buffer ); }
 	const char* name() {
 		return "publishable_sample";
 	}
 	const auto& get_screenPoint() { return t.screenPoint; }
 	void set_screenPoint( decltype(T::screenPoint) val) { 
 		t.screenPoint = val; 
-		globalmq::marshalling::impl::composeAddressInPublishable( composer, GMQ_COLL vector<size_t>(), 0 );
-		globalmq::marshalling::impl::publishableComposeLeafeStructBegin( composer );
+		::globalmq::marshalling::impl::composeAddressInPublishable( composer, GMQ_COLL vector<size_t>(), 0 );
+		::globalmq::marshalling::impl::publishableComposeLeafeStructBegin( composer );
 		publishable_STRUCT_ScreenPoint::compose( composer, t.screenPoint );
-		globalmq::marshalling::impl::publishableComposeLeafeStructEnd( composer );
+		::globalmq::marshalling::impl::publishableComposeLeafeStructEnd( composer );
 	}
 	auto get4set_screenPoint() { return ScreenPoint_RefWrapper4Set<decltype(T::screenPoint), publishable_sample_WrapperForPublisher>(t.screenPoint, *this, GMQ_COLL vector<size_t>(), 0); }
 
 	template<class ComposerT>
 	void compose( ComposerT& composer )
 	{
-		globalmq::marshalling::impl::composeStructBegin( composer );
+		::globalmq::marshalling::impl::composeStructBegin( composer );
 
-		globalmq::marshalling::impl::composePublishableStructBegin( composer, "screenPoint" );
+		::globalmq::marshalling::impl::composePublishableStructBegin( composer, "screenPoint" );
 		publishable_STRUCT_ScreenPoint::compose( composer, t.screenPoint );
-		globalmq::marshalling::impl::composePublishableStructEnd( composer, false );
+		::globalmq::marshalling::impl::composePublishableStructEnd( composer, false );
 
 
-		globalmq::marshalling::impl::composeStructEnd( composer );
+		::globalmq::marshalling::impl::composeStructEnd( composer );
 	}
 };
 
@@ -373,9 +383,9 @@ public:
 	template<typename ParserT>
 	void applyMessageWithUpdates(ParserT& parser)
 	{
-		globalmq::marshalling::impl::parseStateUpdateMessageBegin( parser );
+		::globalmq::marshalling::impl::parseStateUpdateMessageBegin( parser );
 		GMQ_COLL vector<size_t> addr;
-		while( impl::parseAddressInPublishable<ParserT, GMQ_COLL vector<size_t>>( parser, addr ) )
+		while( ::globalmq::marshalling::impl::parseAddressInPublishable<ParserT, GMQ_COLL vector<size_t>>( parser, addr ) )
 		{
 			GMQ_ASSERT( addr.size() );
 			switch ( addr[0] )
@@ -384,7 +394,7 @@ public:
 				{
 					if ( addr.size() == 1 ) // we have to parse and apply changes of this child
 					{
-						globalmq::marshalling::impl::publishableParseLeafeStructBegin( parser );
+						::globalmq::marshalling::impl::publishableParseLeafeStructBegin( parser );
 
 						if constexpr( has_update_notifier_for_screenPoint )
 						{
@@ -412,7 +422,7 @@ public:
 							publishable_STRUCT_ScreenPoint::parse( parser, t.screenPoint );
 						}
 
-						globalmq::marshalling::impl::publishableParseLeafeStructEnd( parser );
+						::globalmq::marshalling::impl::publishableParseLeafeStructEnd( parser );
 					}
 					else // let child continue parsing
 					{
@@ -452,13 +462,13 @@ public:
 	template<class ParserT>
 	void parse( ParserT& parser )
 	{
-		globalmq::marshalling::impl::parseStructBegin( parser );
+		::globalmq::marshalling::impl::parseStructBegin( parser );
 
-		globalmq::marshalling::impl::parsePublishableStructBegin( parser, "screenPoint" );
+		::globalmq::marshalling::impl::parsePublishableStructBegin( parser, "screenPoint" );
 		publishable_STRUCT_ScreenPoint::parse( parser, t.screenPoint );
-		globalmq::marshalling::impl::parsePublishableStructEnd( parser );
+		::globalmq::marshalling::impl::parsePublishableStructEnd( parser );
 
-		globalmq::marshalling::impl::parseStructEnd( parser );
+		::globalmq::marshalling::impl::parseStructEnd( parser );
 
 		if constexpr ( has_full_update_notifier )
 			t.notifyFullyUpdated();
@@ -547,14 +557,14 @@ public:
 	auto get_x() { return t.x; }
 	void set_x( decltype(T::x) val) { 
 		t.x = val; 
-		globalmq::marshalling::impl::composeAddressInPublishable( root.getComposer(), address, 0 );
-		globalmq::marshalling::impl::publishableComposeLeafeInteger( root.getComposer(), t.x );
+		::globalmq::marshalling::impl::composeAddressInPublishable( root.getComposer(), address, 0 );
+		::globalmq::marshalling::impl::publishableComposeLeafeInteger( root.getComposer(), t.x );
 	}
 	auto get_y() { return t.y; }
 	void set_y( decltype(T::y) val) { 
 		t.y = val; 
-		globalmq::marshalling::impl::composeAddressInPublishable( root.getComposer(), address, 1 );
-		globalmq::marshalling::impl::publishableComposeLeafeInteger( root.getComposer(), t.y );
+		::globalmq::marshalling::impl::composeAddressInPublishable( root.getComposer(), address, 1 );
+		::globalmq::marshalling::impl::publishableComposeLeafeInteger( root.getComposer(), t.y );
 	}
 };
 
@@ -570,8 +580,8 @@ void STRUCT_ScreenPoint_compose(ComposerT& composer, Args&& ... args)
 {
 	static_assert( std::is_base_of<ComposerBase, ComposerT>::value, "Composer must be one of GmqComposer<> or JsonComposer<>" );
 
-	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
-	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
+	using arg_1_type = NamedParameterWithType<::globalmq::marshalling::impl::SignedIntegralType, x_Type::Name>;
+	using arg_2_type = NamedParameterWithType<::globalmq::marshalling::impl::SignedIntegralType, y_Type::Name>;
 
 	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
 		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
@@ -581,8 +591,8 @@ void STRUCT_ScreenPoint_compose(ComposerT& composer, Args&& ... args)
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
 	static_assert( ComposerT::proto == Proto::GMQ, "this STRUCT assumes only GMQ protocol" );
-	impl::gmq::composeParamToGmq<ComposerT, arg_1_type, true, int64_t, int64_t, (int64_t)(0)>(composer, arg_1_type::nameAndTypeID, args...);
-	impl::gmq::composeParamToGmq<ComposerT, arg_2_type, true, int64_t, int64_t, (int64_t)(0)>(composer, arg_2_type::nameAndTypeID, args...);
+	::globalmq::marshalling::impl::gmq::composeParamToGmq<ComposerT, arg_1_type, true, int64_t, int64_t, (int64_t)(0)>(composer, arg_1_type::nameAndTypeID, args...);
+	::globalmq::marshalling::impl::gmq::composeParamToGmq<ComposerT, arg_2_type, true, int64_t, int64_t, (int64_t)(0)>(composer, arg_2_type::nameAndTypeID, args...);
 }
 
 template<class ParserT, typename ... Args>
@@ -590,8 +600,8 @@ void STRUCT_ScreenPoint_parse(ParserT& p, Args&& ... args)
 {
 	static_assert( std::is_base_of<ParserBase, ParserT>::value, "Parser must be one of GmqParser<> or JsonParser<>" );
 
-	using arg_1_type = NamedParameterWithType<impl::SignedIntegralType, x_Type::Name>;
-	using arg_2_type = NamedParameterWithType<impl::SignedIntegralType, y_Type::Name>;
+	using arg_1_type = NamedParameterWithType<::globalmq::marshalling::impl::SignedIntegralType, x_Type::Name>;
+	using arg_2_type = NamedParameterWithType<::globalmq::marshalling::impl::SignedIntegralType, y_Type::Name>;
 
 	constexpr size_t matchCount = isMatched(arg_1_type::nameAndTypeID, Args::nameAndTypeID...) + 
 		isMatched(arg_2_type::nameAndTypeID, Args::nameAndTypeID...);
@@ -601,11 +611,11 @@ void STRUCT_ScreenPoint_parse(ParserT& p, Args&& ... args)
 	static_assert( argCount == matchCount, "unexpected arguments found" );
 
 	static_assert( ParserT::proto == Proto::GMQ, "this STRUCT assumes only GMQ protocol" );
-	impl::gmq::parseGmqParam<ParserT, arg_1_type, false>(p, arg_1_type::nameAndTypeID, args...);
-	impl::gmq::parseGmqParam<ParserT, arg_2_type, false>(p, arg_2_type::nameAndTypeID, args...);
+	::globalmq::marshalling::impl::gmq::parseGmqParam<ParserT, arg_1_type, false>(p, arg_1_type::nameAndTypeID, args...);
+	::globalmq::marshalling::impl::gmq::parseGmqParam<ParserT, arg_2_type, false>(p, arg_2_type::nameAndTypeID, args...);
 }
 
 
 } // namespace mtest
 
-#endif // wg_marshalling_h_f5294e6a_guard
+#endif // wg_marshalling_h_72444dce_guard
