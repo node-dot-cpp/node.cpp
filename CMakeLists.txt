@@ -2,21 +2,16 @@
 # Copyright (c) 2020, OLogN Technologies AG
 #-------------------------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.12.4)
 project(NodeDotCpp CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 include(CTest)
 
 set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src/foundation/tools")
 include(CommonCppFlags)
 
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    # first thing so it applies to all dependencies
-	if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        string( REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
-    endif()
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         # coroutine needs libc++ at this time
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
@@ -65,9 +60,7 @@ add_library(nodecpp_no_main_q_based_infra STATIC
 
 target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC NODECPP_USE_Q_BASED_INFRA)
 
-if(TARGET EASTL)
-	target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
-endif()
+#target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
 
 target_include_directories(nodecpp_no_main_q_based_infra
   PUBLIC include
@@ -83,6 +76,8 @@ target_link_libraries(nodecpp_no_main safememory)
 target_link_libraries(nodecpp_no_main_q_based_infra safememory)
 target_link_libraries(nodecpp nodecpp_no_main)
 
+target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 		target_compile_options(nodecpp_no_main PUBLIC /await)
@@ -90,21 +85,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	endif()
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
-	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
-
 	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-		target_compile_definitions(nodecpp PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
-		target_compile_options(nodecpp_no_main PUBLIC -Wno-unknown-attributes -Wno-c++17-extensions)
 		target_compile_options(nodecpp_no_main PUBLIC -fcoroutines-ts)
 #        set_target_properties(foundation PROPERTIES LINK_OPTIONS -lc++)
-	endif()
-
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-
-	target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)
-	if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-		target_compile_definitions(nodecpp PUBLIC NODECPP_NO_STACK_INFO_IN_EXCEPTIONS)
-		target_compile_options(nodecpp_no_main PUBLIC -Wno-unknown-attributes -Wno-c++17-extensions)
 	endif()
 endif()
 
@@ -112,47 +95,52 @@ endif()
 #-------------------------------------------------------------------------------------------
 # Tests and samples
 #-------------------------------------------------------------------------------------------
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set(NODECPP_TEST ON CACHE BOOL "Enable NodeDotCpp tests")
+else()
+  set(NODECPP_TEST OFF CACHE BOOL "Enable NodeDotCpp tests")
+endif()
 
+if(NODECPP_TEST)
+	add_executable(HttpServerSample
+		samples/http_server/user_code/HttpServerSample.cpp
+	)
 
-add_executable(HttpServerSample
-	samples/http_server/user_code/HttpServerSample.cpp
-)
+	target_link_libraries(HttpServerSample nodecpp)
 
-target_link_libraries(HttpServerSample nodecpp)
+	add_executable(HttpServerWithHandlersSample
+		samples/http_server_handlers/user_code/HttpServerWithHandlersSample.cpp
+	)
 
-add_executable(HttpServerWithHandlersSample
-	samples/http_server_handlers/user_code/HttpServerWithHandlersSample.cpp
-)
+	target_link_libraries(HttpServerWithHandlersSample nodecpp)
 
-target_link_libraries(HttpServerWithHandlersSample nodecpp)
+	add_executable(TcpClientSample
+		samples/tcp_client/user_code/TcpClientSample.cpp
+	)
 
-add_executable(TcpClientSample
-	samples/tcp_client/user_code/TcpClientSample.cpp
-)
+	target_link_libraries(TcpClientSample nodecpp)
 
-target_link_libraries(TcpClientSample nodecpp)
+	add_executable(TcpClientWithHandlersSample
+		samples/tcp_client_handlers/user_code/TcpClientWithHandlersSample.cpp
+	)
 
-add_executable(TcpClientWithHandlersSample
-	samples/tcp_client_handlers/user_code/TcpClientWithHandlersSample.cpp
-)
+	target_link_libraries(TcpClientWithHandlersSample nodecpp)
 
-target_link_libraries(TcpClientWithHandlersSample nodecpp)
+	add_executable(TcpServerSample
+		samples/tcp_server/user_code/TcpServerSample.cpp
+	)
 
-add_executable(TcpServerSample
-	samples/tcp_server/user_code/TcpServerSample.cpp
-)
+	target_link_libraries(TcpServerSample nodecpp)
 
-target_link_libraries(TcpServerSample nodecpp)
+	add_executable(TcpServerWithHandlersSample
+		samples/tcp_server_handlers/user_code/TcpServerWithHandlersSample.cpp
+	)
 
-add_executable(TcpServerWithHandlersSample
-	samples/tcp_server_handlers/user_code/TcpServerWithHandlersSample.cpp
-)
+	target_link_libraries(TcpServerWithHandlersSample nodecpp)
 
-target_link_libraries(TcpServerWithHandlersSample nodecpp)
-
-add_executable(QBasedInfraSample test/experimental/q_based_infra/user_code/main.cpp)
-target_link_libraries(QBasedInfraSample nodecpp_no_main_q_based_infra)
-
+	add_executable(QBasedInfraSample test/experimental/q_based_infra/user_code/main.cpp)
+	target_link_libraries(QBasedInfraSample nodecpp_no_main_q_based_infra)
+endif()
 
 
 # -----------------------------------------------------------------------------
@@ -229,7 +217,7 @@ endfunction()
 
 option(NODECPP_CHECK_AND_DZ_SAMPLES "Check and Dezombiefy samples" OFF)
 
-if(NODECPP_CHECK_AND_DZ_SAMPLES)
+if(NODECPP_TEST AND NODECPP_CHECK_AND_DZ_SAMPLES)
 	dz_add_executable(HttpServerSample)
 	dz_add_executable(HttpServerWithHandlersSample)
 	dz_add_executable(TcpServerSample)
