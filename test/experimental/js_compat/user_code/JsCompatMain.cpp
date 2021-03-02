@@ -18,7 +18,7 @@ int main( int argc, char *argv_[] )
 		argv.push_back( argv_[i] );
 
 #ifdef NODECPP_USE_IIBMALLOC
-	g_AllocManager.initialize();
+	nodecpp::iibmalloc::g_AllocManager.initialize();
 #endif
 	// so far we will used old good printf()
 	nodecpp::log::Log log;
