@@ -35,6 +35,7 @@
 
 namespace nodecpp {
 
+//#ifdef NODECPP_ENABLE_JS_COMPATIBILITY_LAYER
 	namespace js {
 		class JSModule
 		{
@@ -127,12 +128,15 @@ namespace nodecpp {
 		};
 
 	} // namespace js
+//#endif // NODECPP_ENABLE_JS_COMPATIBILITY_LAYER
 
 	struct NLS
 	{
 #ifdef NODECPP_RECORD_AND_REPLAY
 		record_and_replay_impl::BinaryLog* binaryLog = nullptr;
 #endif // NODECPP_RECORD_AND_REPLAY
+
+//#ifdef NODECPP_ENABLE_JS_COMPATIBILITY_LAYER
 		js::JSModuleMap jsModuleMap;
 		nodecpp::soft_ptr<nodecpp::js::JSArray> currentArgs;
 		js::LCG rng;
@@ -146,7 +150,16 @@ namespace nodecpp {
 		{
 			jsModuleMap.destroy();
 		}
-#endif
+#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+
+/*#else // NODECPP_ENABLE_JS_COMPATIBILITY_LAYER
+
+#ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+		void init() {}
+		void destroy() {}
+#endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
+
+#endif // NODECPP_ENABLE_JS_COMPATIBILITY_LAYER*/
 	};
 
 	extern thread_local NLS threadLocalData;
