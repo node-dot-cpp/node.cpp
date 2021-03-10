@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------------
-* Copyright (c) 2018, OLogN Technologies AG
+* Copyright (c) 2018-2021, OLogN Technologies AG
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -100,41 +100,50 @@ auto a_timeout_impl(uint32_t ms) {
 template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_global_mq_message_handler_call = requires { { std::declval<NodeT>().onGlobalMQMessage(std::declval<NodeAddressT>(),std::declval<MessageT&>()) }; };
 template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_infrastructure_message_handler_call = requires { { std::declval<NodeT>().onInfrastructureMessage(std::declval<NodeAddressT>(),std::declval<MessageT&>()) }; };
 
-template<class NodeT>
-class NodeProcessor
+template<class Node>
+struct InfraNodeWrapper
 {
-	template<class InfraT, class Node> 
-	friend class Runnable;
-
+	using NlsT = nodecpp::NLS;
+	using NodeT = Node;
 	static constexpr bool has_global_mq_message_handler = has_global_mq_message_handler_call<NodeT, NodeAddress, nodecpp::platform::internal_msg::InternalMsg>;
 	static constexpr bool has_infrastructure_message_handler = has_infrastructure_message_handler_call<NodeT, NodeAddress, nodecpp::platform::internal_msg::InternalMsg>;
-	
-	TimeoutManager timeout;
-	EvQueue immediateEvQueue;
-
+	NlsT nls;
 #ifdef NODECPP_USE_IIBMALLOC
 		nodecpp::iibmalloc::ThreadLocalAllocatorT allocManager;
 #endif
 	safememory::owning_ptr<NodeT> node;
+};
+
+template<class UserNodeT>
+class NodeProcessor
+{
+	using NodeT = InfraNodeWrapper<UserNodeT>;
+	template<class InfraT, class Node> 
+	friend class Runnable;
+	
+	TimeoutManager timeout;
+	EvQueue immediateEvQueue;
+
+	NodeT node;
 public:
 	NodeProcessor() {}
 	~NodeProcessor() { deinit(); }
 
-	safememory::soft_ptr<NodeT> getNode() { return node; }
+	safememory::soft_ptr<UserNodeT> getNode() { return node.node; }
 
 	int init() {
 #ifdef NODECPP_USE_IIBMALLOC
-		allocManager.initialize();
+		node.allocManager.initialize();
 #endif
 		safememory::detail::interceptNewDeleteOperators(true);
 		timeoutManager = &(getTimeout());
 		inmediateQueue = &(getInmediateQueue());
 
-		node = safememory::make_owning<NodeT>();
+		node.node = safememory::make_owning<typename NodeT::NodeT>();
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
-			node->binLog.initForRecording( 26 );
-		::nodecpp::threadLocalData.binaryLog = &(node->binLog);
+			node.node->binLog.initForRecording( 26 );
+		::nodecpp::threadLocalData.binaryLog = &(node.node->binLog);
 #endif // NODECPP_RECORD_AND_REPLAY
 		// NOTE!!! 
 		// By coincidence it so happened that both void Node::main() and nodecpp::handler_ret_type Node::main() are currently treated in the same way.
@@ -145,7 +154,7 @@ public:
 		if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
 			::nodecpp::threadLocalData.binaryLog->addFrame( record_and_replay_impl::BinaryLog::FrameType::node_main_call, nullptr, 0 );
 #endif // NODECPP_RECORD_AND_REPLAY
-		node->main();
+		node.node->main();
 
 		uint64_t nextTimeoutAt = nextTimeout();
 		uint64_t now = infraGetCurrentTime();
@@ -162,7 +171,7 @@ public:
 	void deinit()
 	{
 		safememory::detail::interceptNewDeleteOperators(true);
-		node = nullptr;
+		node.node = nullptr;
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 		nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
@@ -190,6 +199,8 @@ public:
 
 	int processMessagesAndOrTimeout( InterThreadMsg* thq )
 	{
+		nodecpp::nodeLocalData = &(node.nls);
+
 		safememory::detail::interceptNewDeleteOperators(true);
 		timeoutManager = &(getTimeout());
 		inmediateQueue = &(getInmediateQueue());
@@ -205,16 +216,16 @@ public:
 			{
 				case InterThreadMsgType::Infrastructural:
 				{
-					if constexpr ( has_infrastructure_message_handler )
-						node->onInfrastructureMessage( thq->sourceThreadID, thq->msg );
+					if constexpr ( NodeT::has_infrastructure_message_handler )
+						node.node->onInfrastructureMessage( thq->sourceThreadID, thq->msg );
 					else
 						throw std::exception(); // unexpected / unhandled message type
 					break;
 				}
 				case InterThreadMsgType::GlobalMQ:
 				{
-					if constexpr ( has_global_mq_message_handler )
-						node->onGlobalMQMessage( thq->sourceThreadID, thq->msg );
+					if constexpr ( NodeT::has_global_mq_message_handler )
+						node.node->onGlobalMQMessage( thq->sourceThreadID, thq->msg );
 					else
 						throw std::exception(); // unexpected / unhandled message type
 					break;
@@ -235,6 +246,8 @@ public:
 		inmediateQueue = nullptr;
 		safememory::detail::killAllZombies();
 		safememory::detail::interceptNewDeleteOperators(false);
+
+		nodecpp::nodeLocalData = nullptr;
 
 		return timeoutToUse;
 	}

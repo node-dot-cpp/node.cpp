@@ -162,7 +162,8 @@ namespace nodecpp {
 #endif // NODECPP_ENABLE_JS_COMPATIBILITY_LAYER
 	};
 
-	extern thread_local NLS threadLocalData;
+//	extern thread_local NLS threadLocalData;
+	extern thread_local void* nodeLocalData;
 
 } // namespace nodecpp
 

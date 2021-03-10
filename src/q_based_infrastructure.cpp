@@ -59,8 +59,8 @@
 
 namespace nodecpp {
 
-thread_local NLS threadLocalData;
-
+//thread_local NLS threadLocalData;
+	thread_local void* nodeLocalData;
 } // namespace nodecpp
 
 thread_local MsgQueue interThreadMessageQueues[1000]; // TODO:  way to customize
