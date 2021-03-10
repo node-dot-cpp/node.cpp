@@ -134,8 +134,8 @@ public:
 	int init() {
 #ifdef NODECPP_USE_IIBMALLOC
 		node.allocManager.initialize();
+		::nodecpp::iibmalloc::ThreadLocalAllocatorT* formerAlloc = ::nodecpp::iibmalloc::setCurrneAllocator( &(node.allocManager) );
 #endif
-		safememory::detail::interceptNewDeleteOperators(true);
 		timeoutManager = &(getTimeout());
 		inmediateQueue = &(getInmediateQueue());
 
@@ -163,21 +163,27 @@ public:
 		timeoutManager = nullptr;
 		inmediateQueue = nullptr;
 		safememory::detail::killAllZombies();
-		safememory::detail::interceptNewDeleteOperators(false);
 
+#ifdef NODECPP_USE_IIBMALLOC
+		::nodecpp::iibmalloc::setCurrneAllocator( formerAlloc );
+#endif
 		return timeoutToUse;
 	}
 
 	void deinit()
 	{
-		safememory::detail::interceptNewDeleteOperators(true);
+#ifdef NODECPP_USE_IIBMALLOC
+		::nodecpp::iibmalloc::ThreadLocalAllocatorT* formerAlloc = ::nodecpp::iibmalloc::setCurrneAllocator( &(node.allocManager) );
+#endif
 		node.node = nullptr;
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 		nodecpp::net::ServerBase::DataForCommandProcessing::userHandlerClassPattern.destroy();
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		safememory::detail::killAllZombies();
-		safememory::detail::interceptNewDeleteOperators(false);
+#ifdef NODECPP_USE_IIBMALLOC
+		::nodecpp::iibmalloc::setCurrneAllocator( formerAlloc );
+#endif
 	}
 
 public:
@@ -201,7 +207,9 @@ public:
 	{
 		nodecpp::nodeLocalData = &(node.nls);
 
-		safememory::detail::interceptNewDeleteOperators(true);
+#ifdef NODECPP_USE_IIBMALLOC
+		::nodecpp::iibmalloc::ThreadLocalAllocatorT* formerAlloc = ::nodecpp::iibmalloc::setCurrneAllocator( &(node.allocManager) );
+#endif
 		timeoutManager = &(getTimeout());
 		inmediateQueue = &(getInmediateQueue());
 
@@ -245,7 +253,9 @@ public:
 		timeoutManager = nullptr;
 		inmediateQueue = nullptr;
 		safememory::detail::killAllZombies();
-		safememory::detail::interceptNewDeleteOperators(false);
+#ifdef NODECPP_USE_IIBMALLOC
+		::nodecpp::iibmalloc::setCurrneAllocator( formerAlloc );
+#endif
 
 		nodecpp::nodeLocalData = nullptr;
 

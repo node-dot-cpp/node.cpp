@@ -37,7 +37,9 @@
 
 class EvQueue
 {
-	nodecpp::vector<std::function<void()>> evQueue;
+	template<class _Ty>
+	using thisallocator = ::nodecpp::selective_allocator<::nodecpp::StdRawAllocator, _Ty>; // revise to use current node allocator
+	std::vector<std::function<void()>, thisallocator<std::function<void()>>> evQueue;
 
 	static constexpr bool DBG_SYNC = false;//for easier debug only
 public:
