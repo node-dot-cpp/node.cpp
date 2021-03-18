@@ -109,8 +109,21 @@ struct promise_type_struct_base {
 		return std::experimental::suspend_never{};
     }
 
+#if (defined NODECPP_MEMORY_SAFETY) && (NODECPP_MEMORY_SAFETY == 0)
+	void* operator new  ( std::size_t count ) { 
+		uint8_t* ret = reinterpret_cast<uint8_t*>( safememory::detail::allocate(count + NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW) );
+		*reinterpret_cast<uint16_t*>( ret ) = nodecpp::iibmalloc::g_CurrentAllocManager ? nodecpp::iibmalloc::g_CurrentAllocManager->allocatorID() : 0;
+		return ret + NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW;
+	}
+	void operator delete ( void* ptr ) { 
+		uint8_t* delptr = reinterpret_cast<uint8_t*>( ptr ) - NODECPP_MAX_SUPPORTED_ALIGNMENT_FOR_NEW;
+		uint16_t allocatorID = *reinterpret_cast<uint16_t*>( delptr );
+		safememory::detail::deallocate( delptr, allocatorID );
+	}
+#else
 	void* operator new  ( std::size_t count ) { return safememory::detail::allocate(count); }
 	void operator delete ( void* ptr ) { safememory::detail::deallocate(ptr); }
+#endif
 };
 
 template<typename T> struct awaitable; // forward declaration
