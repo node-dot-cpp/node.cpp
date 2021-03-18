@@ -18,7 +18,9 @@ int main( int argc, char *argv_[] )
 		argv.push_back( argv_[i] );
 
 #ifdef NODECPP_USE_IIBMALLOC
-	nodecpp::iibmalloc::g_AllocManager.initialize();
+	::nodecpp::iibmalloc::ThreadLocalAllocatorT allocManager;
+	allocManager.initialize();
+	::nodecpp::iibmalloc::ThreadLocalAllocatorT* formerAlloc = ::nodecpp::iibmalloc::setCurrneAllocator( &allocManager );
 #endif
 	// so far we will used old good printf()
 	nodecpp::log::Log log;
