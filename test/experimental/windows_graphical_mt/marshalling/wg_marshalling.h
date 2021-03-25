@@ -292,7 +292,7 @@ void composeMessage( BufferT& buffer, Args&& ... args )
 //**********************************************************************
 
 template<class T, class ComposerT>
-class publishable_sample_WrapperForPublisher : public globalmq::marshalling::PublisherBase<ComposerT>
+class publishable_sample_WrapperForPublisher : public globalmq::marshalling::StatePublisherBase<ComposerT>
 {
 	T t;
 	using BufferT = typename ComposerT::BufferType;
@@ -361,7 +361,7 @@ public:
 };
 
 template<class T, class BufferT>
-class publishable_sample_WrapperForSubscriber : public globalmq::marshalling::SubscriberBase<BufferT>
+class publishable_sample_WrapperForSubscriber : public globalmq::marshalling::StateSubscriberBase<BufferT>
 {
 	T t;
 	static constexpr bool has_screenPoint = has_screenPoint_member<T>;
