@@ -117,14 +117,14 @@ struct InfraNodeWrapper
 template<class UserNodeT>
 class NodeProcessor
 {
-	using NodeT = InfraNodeWrapper<UserNodeT>;
+	using NodeType = InfraNodeWrapper<UserNodeT>;
 	template<class InfraT, class Node> 
 	friend class Runnable;
 	
 	TimeoutManager timeout;
 	EvQueue immediateEvQueue;
 
-	NodeT node;
+	NodeType node;
 public:
 	NodeProcessor() {}
 	~NodeProcessor() { deinit(); }
@@ -139,7 +139,7 @@ public:
 		timeoutManager = &(getTimeout());
 		inmediateQueue = &(getInmediateQueue());
 
-		node.node = safememory::make_owning<typename NodeT::NodeT>();
+		node.node = safememory::make_owning<typename NodeType::NodeT>();
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
 			node.node->binLog.initForRecording( 26 );
@@ -224,7 +224,7 @@ public:
 			{
 				case InterThreadMsgType::Infrastructural:
 				{
-					if constexpr ( NodeT::has_infrastructure_message_handler )
+					if constexpr ( NodeType::has_infrastructure_message_handler )
 						node.node->onInfrastructureMessage( thq->sourceThreadID, thq->msg );
 					else
 						throw std::exception(); // unexpected / unhandled message type
@@ -232,7 +232,7 @@ public:
 				}
 				case InterThreadMsgType::GlobalMQ:
 				{
-					if constexpr ( NodeT::has_global_mq_message_handler )
+					if constexpr ( NodeType::has_global_mq_message_handler )
 						node.node->onGlobalMQMessage( thq->sourceThreadID, thq->msg );
 					else
 						throw std::exception(); // unexpected / unhandled message type
