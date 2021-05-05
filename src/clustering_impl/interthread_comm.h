@@ -108,13 +108,35 @@ struct InterThreadMsg
 //	void restoreFromPointer( InterThreadMsgPtr ptr )
 };
 
+struct ThreadQueueItem
+{
+	static constexpr uint64_t invalidRecipientID = (uint64_t)(-1);
+	InterThreadMsg msg;
+	uint64_t recipientID = invalidRecipientID;
+	ThreadQueueItem() {}
+	ThreadQueueItem( InterThreadMsg&& msg_, uint64_t recipientID_ ) : msg( std::move( msg_ ) ), recipientID( recipientID_ ) {}
+	ThreadQueueItem( const ThreadQueueItem& other ) = delete;
+	ThreadQueueItem& operator = ( const ThreadQueueItem& other ) = delete;
+	ThreadQueueItem( ThreadQueueItem&& other ) {
+		msg = std::move( other.msg );
+		recipientID = other.recipientID;
+		other.recipientID = invalidRecipientID;
+	}
+	ThreadQueueItem& operator = ( ThreadQueueItem&& other ) {
+		msg = std::move( other.msg );
+		recipientID = other.recipientID;
+		other.recipientID = invalidRecipientID;
+		return *this;
+	}
+};
+
 uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread();
 void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, InterThreadMsgType msgType, NodeAddress threadId );
 #include "../../include/nodecpp/common_structs.h"
 void postInfrastructuralMsg(nodecpp::Message&& msg, NodeAddress threadId );
 void setThisThreadDescriptor(ThreadStartupData& startupData);
-size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count );
-size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint64_t timeout );
+size_t popFrontFromThisThreadQueue( ThreadQueueItem* messages, size_t count );
+size_t popFrontFromThisThreadQueue( ThreadQueueItem* messages, size_t count, uint64_t timeout );
 
 struct ListenerThreadDescriptor
 {

@@ -283,12 +283,15 @@ public:
 		while (running) // TODO: exit condition
 		{
 			static constexpr size_t maxMsgCnt = 8;
-			InterThreadMsg thq[maxMsgCnt];
+			ThreadQueueItem thq[maxMsgCnt];
 			size_t actualFromQueue = popFrontFromThisThreadQueue( thq, maxMsgCnt, timeoutToUse );
 
 			if ( actualFromQueue )
 				for ( size_t i=0; i<actualFromQueue; ++i )
-					timeoutToUse = NodeProcessor<NodeT>::processMessagesAndOrTimeout( thq + i );
+				{
+					NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, thq[i].invalidRecipientID == 0 ); // current version limitation: just a single node per thread
+					timeoutToUse = NodeProcessor<NodeT>::processMessagesAndOrTimeout( &(thq[i].msg) );
+				}
 			else
 				timeoutToUse = NodeProcessor<NodeT>::processMessagesAndOrTimeout( nullptr );
 		}

@@ -158,6 +158,15 @@ namespace nodecpp
 		return ret;
 	}
 
+	template<class T, class ... Args>
+	T* alloc( size_t count,  Args&& ... args ) {
+		safememory::detail::iiballocator<T> iiball;
+		T* ret = iiball.allocate( count );
+		for ( size_t i=0; i<count; ++i )
+			new (ret + i) T( std::forward<Args>( args )...);
+		return ret;
+	}
+
 	template<class T>
 	void dealloc( T* ptr, size_t count ) {
 		for ( size_t i=0; i<count; ++i )
@@ -172,6 +181,15 @@ namespace nodecpp
 		T* ret = stdall.allocate( count );
 		for ( size_t i=0; i<count; ++i )
 			new (ret + i) T();
+		return ret;
+	}
+
+	template<class T, class ... Args>
+	T* stdalloc( size_t count,  Args&& ... args) {
+		nodecpp::stdallocator<T> stdall;
+		T* ret = stdall.allocate( count );
+		for ( size_t i=0; i<count; ++i )
+			new (ret + i) T( std::forward<Args>( args )...);
 		return ret;
 	}
 

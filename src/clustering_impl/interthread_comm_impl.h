@@ -199,7 +199,7 @@ public:
 	}
 };
 
-using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<InterThreadMsg, 4>>; // TODO: revise the second param value
+using MsgQueue = MWSRFixedSizeQueueWithFlowControl<CircularBuffer<ThreadQueueItem, 4>>; // TODO: revise the second param value
 
 class InterThreadMessagePostmanBase
 {

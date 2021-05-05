@@ -148,16 +148,18 @@ namespace nodecpp {
 static InterThreadCommData threadQueues[MAX_THREADS];
 class PostmanToInterthreadQueue : public InterThreadMessagePostmanBase
 {
+	uint64_t recipientID = ThreadQueueItem::invalidRecipientID;
+
 public: 
-	PostmanToInterthreadQueue() {}
+	PostmanToInterthreadQueue( uint64_t recipientID_ ) : recipientID( recipientID_ ) {}
 	void postMessage( InterThreadMsg&& msg ) override
 	{
 		auto slotId = msg.targetThreadID.slotId;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, msg.targetThreadID.slotId <= MAX_THREADS, "indeed: {} vs. {}", msg.targetThreadID.slotId, MAX_THREADS ); 
-		threadQueues[ slotId ].queue.push_back( std::move( msg ) );
+		threadQueues[ slotId ].queue.push_back( ThreadQueueItem( std::move( msg ), recipientID ) );
 	}
 };
-static PostmanToInterthreadQueue qPostman;
+static PostmanToInterthreadQueue qPostman( 0 ); // does not support distinguishing nodes
 InterThreadMessagePostmanBase* useQueuePostman() {return &qPostman; }
 
 
@@ -172,14 +174,14 @@ void setThisThreadDescriptor(ThreadStartupData& startupData) { thisThreadDescrip
 
 //thread_local NodeBase* thisThreadNode = nullptr;
 
-size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
+size_t popFrontFromThisThreadQueue( ThreadQueueItem* items, size_t count )
 {
-	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count );
+	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( items, count );
 }
 
-size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint64_t timeout )
+size_t popFrontFromThisThreadQueue( ThreadQueueItem* items, size_t count, uint64_t timeout )
 {
-	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count, timeout );
+	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( items, count, timeout );
 }
 
 /*uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
