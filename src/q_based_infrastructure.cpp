@@ -145,21 +145,19 @@ namespace nodecpp {
 
 } // namespace nodecpp
 
-static InterThreadCommData threadQueues[MAX_THREADS];
+InterThreadCommData threadQueues[MAX_THREADS];
 class PostmanToInterthreadQueue : public InterThreadMessagePostmanBase
 {
-	uint64_t recipientID = ThreadQueueItem::invalidRecipientID;
-
 public: 
-	PostmanToInterthreadQueue( uint64_t recipientID_ ) : recipientID( recipientID_ ) {}
+	PostmanToInterthreadQueue() {}
 	void postMessage( InterThreadMsg&& msg ) override
 	{
 		auto slotId = msg.targetThreadID.slotId;
 		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, msg.targetThreadID.slotId <= MAX_THREADS, "indeed: {} vs. {}", msg.targetThreadID.slotId, MAX_THREADS ); 
-		threadQueues[ slotId ].queue.push_back( ThreadQueueItem( std::move( msg ), recipientID ) );
+		threadQueues[ slotId ].queue.push_back( std::move( msg ) );
 	}
 };
-static PostmanToInterthreadQueue qPostman( 0 ); // does not support distinguishing nodes
+static PostmanToInterthreadQueue qPostman; // does not support distinguishing nodes
 InterThreadMessagePostmanBase* useQueuePostman() {return &qPostman; }
 
 
@@ -174,14 +172,14 @@ void setThisThreadDescriptor(ThreadStartupData& startupData) { thisThreadDescrip
 
 //thread_local NodeBase* thisThreadNode = nullptr;
 
-size_t popFrontFromThisThreadQueue( ThreadQueueItem* items, size_t count )
+size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count )
 {
-	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( items, count );
+	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count );
 }
 
-size_t popFrontFromThisThreadQueue( ThreadQueueItem* items, size_t count, uint64_t timeout )
+size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint64_t timeout )
 {
-	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( items, count, timeout );
+	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count, timeout );
 }
 
 /*uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
@@ -230,6 +228,13 @@ void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 	auto ret = nodecpp::internal_usage_only::internal_send_packet( &singleByte, 1, writeHandle, sentSize );
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == COMMLAYER_RET_OK ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sentSize == 1 ); */
+}
+
+void postGmqMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t recipientID, size_t slotId )
+{
+	//NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" ); 
+	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, slotId < MAX_THREADS, "{} vs. {}", slotId, MAX_THREADS );
+	threadQueues[ slotId ].queue.push_back( InterThreadMsg( std::move( msg ), InterThreadMsgType::GlobalMQ, NodeAddress(thisThreadDescriptor.threadID, 0), NodeAddress(), recipientID ) );
 }
 
 void postInfrastructuralMsg(nodecpp::Message&& msg, NodeAddress threadId )
