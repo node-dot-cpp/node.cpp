@@ -31,6 +31,9 @@
 #include "common.h"
 #include <typeinfo>
 #include <typeindex>
+#ifdef NODECPP_USE_GMQUEUE
+#include <gmqueue.h>
+#endif
 #include <nodecpp/record_and_replay.h>
 
 namespace nodecpp {
@@ -135,6 +138,10 @@ namespace nodecpp {
 #ifdef NODECPP_RECORD_AND_REPLAY
 		record_and_replay_impl::BinaryLog* binaryLog = nullptr;
 #endif // NODECPP_RECORD_AND_REPLAY
+
+#ifdef NODECPP_USE_GMQUEUE
+	globalmq::marshalling::GMQTransportBase<GMQueueStatePublisherSubscriberTypeInfo>* transport;
+#endif
 
 #ifdef NODECPP_ENABLE_JS_COMPATIBILITY_LAYER
 		js::JSModuleMap jsModuleMap;

@@ -42,6 +42,10 @@
 #include "../include/nodecpp/timers.h"
 #include <functional>
 
+#ifdef NODECPP_USE_GMQUEUE
+#include <gmqueue.h>
+#endif
+
 #ifdef NODECPP_RECORD_AND_REPLAY
 #include "tcp_socket/tcp_socket_replaying_loop.h"
 #endif // NODECPP_RECORD_AND_REPLAY
@@ -112,6 +116,15 @@ struct InfraNodeWrapper
 		nodecpp::iibmalloc::ThreadLocalAllocatorT allocManager;
 #endif
 	safememory::owning_ptr<NodeT> node;
+
+#ifdef NODECPP_USE_GMQUEUE
+	globalmq::marshalling::GMQTransportBase<GMQueueStatePublisherSubscriberTypeInfo> transport;
+	InfraNodeWrapper() : transport( gmqueue ) {
+		nls.transport = &transport;
+	}
+#else
+	InfraNodeWrapper() {}
+#endif
 };
 
 template<class UserNodeT>
@@ -125,13 +138,19 @@ class NodeProcessor
 	EvQueue immediateEvQueue;
 
 	NodeType node;
+
 public:
 	NodeProcessor() {}
 	~NodeProcessor() { deinit(); }
 
 	safememory::soft_ptr<UserNodeT> getNode() { return node.node; }
 
+#ifdef NODECPP_USE_GMQUEUE
+	int init( const globalmq::marshalling::InProcTransferrable& tdata ) {
+		node.transport.restore( tdata, gmqueue );
+#else
 	int init() {
+#endif
 #ifdef NODECPP_USE_IIBMALLOC
 		node.allocManager.initialize();
 		::nodecpp::iibmalloc::ThreadLocalAllocatorT* formerAlloc = ::nodecpp::iibmalloc::setCurrneAllocator( &(node.allocManager) );
@@ -140,6 +159,7 @@ public:
 		inmediateQueue = &(getInmediateQueue());
 
 		node.node = safememory::make_owning<typename NodeType::NodeT>();
+
 #ifdef NODECPP_RECORD_AND_REPLAY
 		if ( replayMode == nodecpp::record_and_replay_impl::BinaryLog::Mode::recording )
 			node.node->binLog.initForRecording( 26 );
@@ -311,6 +331,9 @@ public:
 			preinitThreadStartupData( data, postman );
 		}
 	public:
+#ifdef NODECPP_USE_GMQUEUE
+		globalmq::marshalling::InProcTransferrable transportData;
+#endif
 		Initializer() {}
 		Initializer( const Initializer& ) = default;
 		Initializer& operator = ( const Initializer& ) = default;
@@ -320,6 +343,9 @@ public:
 
 private:
 	ThreadStartupData loopStartupData;
+#ifdef NODECPP_USE_GMQUEUE
+	globalmq::marshalling::InProcTransferrable transportData;
+#endif
 	bool initialized = false;
 	bool entered = false;
 
@@ -327,6 +353,9 @@ public:
 	NodeLoopBase() {}
 	NodeLoopBase( Initializer i ) { 
 		loopStartupData = i.data;
+#ifdef NODECPP_USE_GMQUEUE
+		transportData = i.transportData;
+#endif
 		setThisThreadDescriptor( i.data ); 
 		nodecpp::logging_impl::currentLog = i.data.defaultLog;
 		nodecpp::logging_impl::instanceId = i.data.threadCommID.slotId;
@@ -366,7 +395,11 @@ protected:
 		nodecpp::logging_impl::instanceId = loopStartupData.threadCommID.slotId;
 		nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id), "starting Node thread with threadID = {}", loopStartupData.threadCommID.slotId );
 
+#ifdef NODECPP_USE_GMQUEUE
+		return infra.init( transportData );
+#else
 		return infra.init();
+#endif
 	}
 
 	template<class InfraT>
@@ -409,7 +442,8 @@ class QueueBasedNodeLoop : public NodeLoopBase<NodeT>
 	QueueBasedInfrastructure<NodeT> infra;
 public:
 	QueueBasedNodeLoop() {}
-	QueueBasedNodeLoop( typename NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {}
+	QueueBasedNodeLoop( typename NodeLoopBase<NodeT>::Initializer i ) : NodeLoopBase<NodeT>( i ) {
+	}
 
 	safememory::soft_ptr<NodeT> getNode() { return infra.getNode(); }
 	
