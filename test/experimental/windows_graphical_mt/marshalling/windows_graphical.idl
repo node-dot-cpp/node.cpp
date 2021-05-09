@@ -1,6 +1,6 @@
 SCOPE infrastructural PROTO = GMQ;
 
-PUBLISHABLE publishable_sample {
+PUBLISHABLE publishable_sample=1 {
 	STRUCT NONEXTENDABLE ScreenPoint screenPoint;
 };
 

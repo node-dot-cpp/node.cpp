@@ -187,6 +187,13 @@ size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint
 	return interThreadCommInitializer.init();
 }*/
 
+#ifdef NODECPP_USE_GMQUEUE
+globalmq::marshalling::GMQTransportBase<GMQueueStatePublisherSubscriberTypeInfo>* getTransport() {
+	return ((nodecpp::NLS*)(nodecpp::nodeLocalData))->transport;
+}
+#endif
+
+
 void preinitThreadStartupData( ThreadStartupData& startupData, InterThreadMessagePostmanBase* postman )
 {
 	for ( size_t slotIdx = 1; slotIdx < MAX_THREADS; ++slotIdx )

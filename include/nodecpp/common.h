@@ -137,6 +137,11 @@ public:
 	virtual ~NodeBase() {}
 };
 
+#ifdef NODECPP_USE_GMQUEUE
+#include <gmqueue.h>
+globalmq::marshalling::GMQTransportBase<GMQueueStatePublisherSubscriberTypeInfo>* getTransport();
+#endif
+
 #if (defined NODECPP_ENABLE_CLUSTERING) || (defined NODECPP_USE_Q_BASED_INFRA)
 struct ThreadStartupData; // forward declaration
 #endif

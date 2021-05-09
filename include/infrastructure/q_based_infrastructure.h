@@ -151,6 +151,8 @@ public:
 #else
 	int init() {
 #endif
+		nodecpp::nodeLocalData = &(node.nls);
+
 #ifdef NODECPP_USE_IIBMALLOC
 		node.allocManager.initialize();
 		::nodecpp::iibmalloc::ThreadLocalAllocatorT* formerAlloc = ::nodecpp::iibmalloc::setCurrneAllocator( &(node.allocManager) );
@@ -187,6 +189,9 @@ public:
 #ifdef NODECPP_USE_IIBMALLOC
 		::nodecpp::iibmalloc::setCurrneAllocator( formerAlloc );
 #endif
+
+		nodecpp::nodeLocalData = nullptr;
+
 		return timeoutToUse;
 	}
 
