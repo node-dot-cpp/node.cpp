@@ -61,6 +61,9 @@ uint64_t infraGetCurrentTime();
 
 extern thread_local TimeoutManager* timeoutManager;
 extern thread_local EvQueue* inmediateQueue;
+#ifdef NODECPP_USE_GMQUEUE
+extern globalmq::marshalling::GMQueue<GMQueueStatePublisherSubscriberTypeInfo> gmqueue;
+#endif
 
 #ifndef NODECPP_NO_COROUTINES
 inline

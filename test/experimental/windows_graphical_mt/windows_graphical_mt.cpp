@@ -126,7 +126,7 @@ public:
 		preinitThreadStartupData( data, &postman );
 		setThisThreadDescriptor( data);
 		someNodeAddress = runNodeInAnotherThread<SomeNode>( useQueuePostman() );
-		mySubscriberStateWrapper.subscribe();
+		mySubscriberStateWrapper.subscribe( SomeNodeName );
 
 		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSGRAPHICAL));
 
@@ -279,7 +279,7 @@ public:
 				}
 				case InterThreadMsgType::GlobalMQ:
 				{
-					mqPool.onMessage( msg.msg, msg.sourceThreadID );
+					mqPool.onMessage( msg.msg/*, msg.sourceThreadID*/ );
 					break;
 				}
 			}
@@ -328,5 +328,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ LPWSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
+#ifdef NODECPP_USE_GMQUEUE
+	using BufferT = GMQueueStatePublisherSubscriberTypeInfo::BufferT;
+	using ComposerT = GMQueueStatePublisherSubscriberTypeInfo::ComposerT;
+	using ParserT = GMQueueStatePublisherSubscriberTypeInfo::ParserT;
+
+	// Init GMGueue
+	gmqueue.template initStateConcentratorFactory<mtest::StateConcentratorFactory<BufferT, ComposerT>>();
+	gmqueue.setAuthority( "" );
+#endif
+
 	return mainWindow.main( hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 }

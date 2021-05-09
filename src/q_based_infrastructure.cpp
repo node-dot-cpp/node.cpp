@@ -188,6 +188,8 @@ size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint
 }*/
 
 #ifdef NODECPP_USE_GMQUEUE
+globalmq::marshalling::GMQueue<GMQueueStatePublisherSubscriberTypeInfo> gmqueue;
+
 globalmq::marshalling::GMQTransportBase<GMQueueStatePublisherSubscriberTypeInfo>* getTransport() {
 	return ((nodecpp::NLS*)(nodecpp::nodeLocalData))->transport;
 }
@@ -253,6 +255,7 @@ void internalPostlGlobalMQ(nodecpp::Message&& msg, NodeAddress threadId )
 {
 	postInterThreadMsg( std::move( msg ), InterThreadMsgType::GlobalMQ, threadId );
 }
+
 
 #ifndef NODECPP_NO_COROUTINES
 nodecpp::handler_ret_type nodecpp::a_timeout(uint32_t ms)

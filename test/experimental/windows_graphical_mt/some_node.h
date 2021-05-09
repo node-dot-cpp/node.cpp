@@ -11,7 +11,7 @@
 
 using namespace nodecpp;
 
-
+constexpr const char* SomeNodeName = "SomeNode";
 class SomeNode : public NodeBase
 {
 	PoolForWorkerThreadT mqPool;
@@ -71,7 +71,7 @@ public:
 
 	void onGlobalMQMessage( NodeAddress srcNodeAddress, Message& msg )
 	{
-		mqPool.onMessage( msg, srcNodeAddress );
+		mqPool.onMessage( msg/*, srcNodeAddress*/ );
 		// GlobalMQ: at the end of each handler cause pools to post all updates
 		mqPool.postAllUpdates();
 	}

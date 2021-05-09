@@ -1,5 +1,5 @@
-#ifndef wg_marshalling_h_72444dce_guard
-#define wg_marshalling_h_72444dce_guard
+#ifndef wg_marshalling_h_738d4ed8_guard
+#define wg_marshalling_h_738d4ed8_guard
 
 #include <marshalling.h>
 #include <publishable_impl.h>
@@ -303,15 +303,17 @@ class publishable_sample_WrapperForPublisher : public globalmq::marshalling::Sta
 
 
 public:
+	static constexpr uint64_t numTypeID = 1;
+	static constexpr const char* stringTypeID = "publishable_sample";
+
 	template<class ... ArgsT>
-	publishable_sample_WrapperForPublisher( ArgsT ... args ) : t( std::forward<ArgsT>( args )... ), composer( buffer ) {}
+	publishable_sample_WrapperForPublisher( ArgsT&& ... args ) : t( std::forward<ArgsT>( args )... ), composer( buffer ) {}
 	const T& getState() { return t; }
 	ComposerT& getComposer() { return composer; }
 	void startTick( BufferT&& buff ) { buffer = std::move( buff ); composer.reset(); ::globalmq::marshalling::impl::composeStateUpdateMessageBegin<ComposerT>( composer );}
 	BufferT&& endTick() { ::globalmq::marshalling::impl::composeStateUpdateMessageEnd( composer ); return std::move( buffer ); }
-	const char* name() {
-		return "publishable_sample";
-	}
+	const char* name() { return stringTypeID; }
+	virtual uint64_t stateTypeID() { return numTypeID; }
 	const auto& get_screenPoint() { return t.screenPoint; }
 	void set_screenPoint( decltype(T::screenPoint) val) { 
 		t.screenPoint = val; 
@@ -344,7 +346,7 @@ class publishable_sample_NodecppWrapperForPublisher : public publishable_sample_
 public:
 	using BufferT = typename PublisherSubscriberInfo::ComposerT::BufferType;
 	template<class ... ArgsT>
-	publishable_sample_NodecppWrapperForPublisher( RegistrarT& registrar_, ArgsT ... args ) : publishable_sample_WrapperForPublisher<T, typename PublisherSubscriberInfo::ComposerT>( std::forward<ArgsT>( args )... ), registrar( registrar_ )
+	publishable_sample_NodecppWrapperForPublisher( RegistrarT& registrar_, ArgsT&& ... args ) : publishable_sample_WrapperForPublisher<T, typename PublisherSubscriberInfo::ComposerT>( std::forward<ArgsT>( args )... ), registrar( registrar_ )
 	{ 
 		registrar.add( this );
 	}
@@ -373,12 +375,16 @@ class publishable_sample_WrapperForSubscriber : public globalmq::marshalling::St
 	static constexpr bool has_full_update_notifier = has_full_update_notifier_call<T>;
 
 public:
+	static constexpr uint64_t numTypeID = 1;
+	static constexpr const char* stringTypeID = "publishable_sample";
+
 	template<class ... ArgsT>
-	publishable_sample_WrapperForSubscriber( ArgsT ... args ) : t( std::forward<ArgsT>( args )... ) {}
+	publishable_sample_WrapperForSubscriber( ArgsT&& ... args ) : t( std::forward<ArgsT>( args )... ) {}
 	const T& getState() { return t; }
 	virtual void applyGmqMessageWithUpdates( globalmq::marshalling::GmqParser<BufferT>& parser ) { applyMessageWithUpdates(parser); }
 	virtual void applyJsonMessageWithUpdates( globalmq::marshalling::JsonParser<BufferT>& parser ) { applyMessageWithUpdates(parser); }
-	virtual const char* name() { return "publishable_sample"; }
+	virtual const char* name() { return stringTypeID; }
+	virtual uint64_t stateTypeID() { return numTypeID; }
 
 	template<typename ParserT>
 	void applyMessageWithUpdates(ParserT& parser)
@@ -440,7 +446,7 @@ public:
 						}
 						else if constexpr( has_void_update_notifier_for_screenPoint )
 						{
-							bool changedCurrent = publishable_STRUCT_ScreenPoint::parse<ParserT, decltype(T::Size), bool>( parser, t.screenPoint, addr, 1 );
+							bool changedCurrent = publishable_STRUCT_ScreenPoint::parse<ParserT, decltype(T::screenPoint), bool>( parser, t.screenPoint, addr, 1 );
 							if ( changedCurrent )
 							{
 								t.notifyUpdated_screenPoint();
@@ -460,7 +466,7 @@ public:
 
 
 	template<class ParserT>
-	void parse( ParserT& parser )
+	void parseStateSyncMessage( ParserT& parser )
 	{
 		::globalmq::marshalling::impl::parseStructBegin( parser );
 
@@ -482,7 +488,7 @@ class publishable_sample_NodecppWrapperForSubscriber : public publishable_sample
 	RegistrarT& registrar;
 public:
 	template<class ... ArgsT>
-	publishable_sample_NodecppWrapperForSubscriber( RegistrarT& registrar_, ArgsT ... args ) : publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>( std::forward<ArgsT>( args )... ), registrar( registrar_ )
+	publishable_sample_NodecppWrapperForSubscriber( RegistrarT& registrar_, ArgsT&& ... args ) : publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>( std::forward<ArgsT>( args )... ), registrar( registrar_ )
 	{ 
 		registrar.add( this );
 	}
@@ -504,22 +510,140 @@ public:
 
 	virtual void applyGmqStateSyncMessage( globalmq::marshalling::GmqParser<typename PublisherSubscriberInfo::BufferT>& parser ) 
 	{
-		publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::parse(parser);
+		publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::parseStateSyncMessage(parser);
 	}
 
 	virtual void applyJsonStateSyncMessage( globalmq::marshalling::JsonParser<typename PublisherSubscriberInfo::BufferT>& parser )
 	{
-		publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::parse(parser);
+		publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::parseStateSyncMessage(parser);
 	}
 	virtual const char* name()
 	{
 		return publishable_sample_WrapperForSubscriber<T, typename PublisherSubscriberInfo::BufferT>::name();
 	}
-	void subscribe()
+	void subscribe(GMQ_COLL string path)
 	{
-		registrar.subscribe( this );
+		registrar.subscribe( this, path );
 	}
 };
+
+template<class T, class InputBufferT, class ComposerT>
+class publishable_sample_WrapperForConcentrator : public globalmq::marshalling::StateConcentratorBase<InputBufferT, ComposerT>
+{
+	T t;
+	using BufferT = typename ComposerT::BufferType;
+	static constexpr bool has_screenPoint = has_screenPoint_member<T>;
+	static_assert( has_screenPoint, "type T must have member T::screenPoint of a type corresponding to IDL type STRUCT ScreenPoint" );
+
+
+public:
+	static constexpr uint64_t numTypeID = 1;
+
+	publishable_sample_WrapperForConcentrator() {}
+	const char* name() {return "publishable_sample";}
+	
+	// Acting as publisher
+	virtual void generateStateSyncMessage( ComposerT& composer ) { compose(composer); }
+	template<class ComposerT>
+	void compose( ComposerT& composer )
+	{
+		::globalmq::marshalling::impl::composeStructBegin( composer );
+
+		::globalmq::marshalling::impl::composePublishableStructBegin( composer, "screenPoint" );
+		publishable_STRUCT_ScreenPoint::compose( composer, t.screenPoint );
+		::globalmq::marshalling::impl::composePublishableStructEnd( composer, false );
+
+
+		::globalmq::marshalling::impl::composeStructEnd( composer );
+	}
+
+	// Acting as subscriber
+	virtual void applyGmqMessageWithUpdates( globalmq::marshalling::GmqParser<BufferT>& parser ) { applyMessageWithUpdates(parser); }
+	virtual void applyJsonMessageWithUpdates( globalmq::marshalling::JsonParser<BufferT>& parser ) { applyMessageWithUpdates(parser); }
+	virtual void applyGmqStateSyncMessage( globalmq::marshalling::GmqParser<BufferT>& parser ) { parseStateSyncMessage(parser); }
+	virtual void applyJsonStateSyncMessage( globalmq::marshalling::JsonParser<BufferT>& parser ) { parseStateSyncMessage(parser); }
+
+	template<typename ParserT>
+	void applyMessageWithUpdates(ParserT& parser)
+	{
+		::globalmq::marshalling::impl::parseStateUpdateMessageBegin( parser );
+		GMQ_COLL vector<size_t> addr;
+		while( ::globalmq::marshalling::impl::parseAddressInPublishable<ParserT, GMQ_COLL vector<size_t>>( parser, addr ) )
+		{
+			GMQ_ASSERT( addr.size() );
+			switch ( addr[0] )
+			{
+				case 0:
+				{
+					if ( addr.size() == 1 ) // we have to parse and apply changes of this child
+					{
+						::globalmq::marshalling::impl::publishableParseLeafeStructBegin( parser );
+
+						publishable_STRUCT_ScreenPoint::parse( parser, t.screenPoint );
+
+						::globalmq::marshalling::impl::publishableParseLeafeStructEnd( parser );
+					}
+					else // let child continue parsing
+					{
+						publishable_STRUCT_ScreenPoint::parse( parser, t.screenPoint, addr, 1 );
+					}
+					break;
+				}
+				default:
+					throw std::exception(); // bad format, TODO: ...
+			}
+			addr.clear();
+		}
+	}
+
+	template<class ParserT>
+	void parseStateSyncMessage( ParserT& parser )
+	{
+		::globalmq::marshalling::impl::parseStructBegin( parser );
+
+		::globalmq::marshalling::impl::parsePublishableStructBegin( parser, "screenPoint" );
+		publishable_STRUCT_ScreenPoint::parse( parser, t.screenPoint );
+		::globalmq::marshalling::impl::parsePublishableStructEnd( parser );
+
+		::globalmq::marshalling::impl::parseStructEnd( parser );
+	}
+};
+
+//===============================================================================
+// Publishable c-structures
+// Use them as-is or copy and edit member types as necessary
+
+struct ScreenPoint
+{
+	int64_t x;
+	int64_t y;
+};
+
+struct publishable_sample
+{
+	ScreenPoint screenPoint;
+};
+
+
+//===============================================================================
+
+template<class InputBufferT, class ComposerT>
+class StateConcentratorFactory : public ::globalmq::marshalling::StateConcentratorFactoryBase<InputBufferT, ComposerT>
+{
+public:
+	virtual StateConcentratorBase<InputBufferT, ComposerT>* createConcentrator( uint64_t typeID )
+	{
+		switch( typeID )
+		{
+			case 1:
+				return new publishable_sample_WrapperForConcentrator<publishable_sample, InputBufferT, ComposerT>;
+			default:
+				return nullptr;
+		}
+	}
+};
+
+//===============================================================================
 
 template<class T>
 class ScreenPoint_RefWrapper
@@ -618,4 +742,4 @@ void STRUCT_ScreenPoint_parse(ParserT& p, Args&& ... args)
 
 } // namespace mtest
 
-#endif // wg_marshalling_h_72444dce_guard
+#endif // wg_marshalling_h_738d4ed8_guard
