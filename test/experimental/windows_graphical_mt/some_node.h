@@ -51,6 +51,8 @@ public:
 		log.add( stdout );
 		logging_impl::currentLog = &log;
 
+		mqPool.setTransport( getTransport() );
+
 		CO_RETURN;
 	}
 

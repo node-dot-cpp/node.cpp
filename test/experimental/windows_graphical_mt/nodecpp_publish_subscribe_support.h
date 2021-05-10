@@ -67,7 +67,7 @@ public:
 	}
 };
 
-using PoolForWorkerThreadT = globalmq::marshalling::MetaPool<PublisherSubscriberPoolInfoForWorkerThread>;
-using PoolForMainThreadT = globalmq::marshalling::MetaPool<PublisherSubscriberPoolInfoForMainThread>;
+using PoolForWorkerThreadT = globalmq::marshalling::MetaPool<GMQueueStatePublisherSubscriberTypeInfo>;
+using PoolForMainThreadT = globalmq::marshalling::MetaPool<GMQueueStatePublisherSubscriberTypeInfo>;
 
 #endif // NODECPP_PUBLISH_SUBSCRIBE_SUPPORT_H

@@ -1,8 +1,13 @@
 // windows_graphical.cpp : Defines the entry point for the application.
 //
 
+#ifdef NODECPP_USE_GMQUEUE
+#include <infrastructure/inproc_queue.h>
+#endif
+
 #include <common.h>
 #include <infrastructure/q_based_infrastructure.h>
+#include <platforms/hwnd_queue.h>
 #include "framework.h"
 #include "windows_graphical_mt.h"
 #include "some_node.h"
@@ -39,13 +44,22 @@ void nodeThreadMain( void* pdata )
 }
 
 template<class NodeT, class PostmanT>
+#ifdef NODECPP_USE_GMQUEUE
+NodeAddress runNodeInAnotherThread( PostmanT* postman, const char* nodeName )
+#else
 NodeAddress runNodeInAnotherThread( PostmanT* postman )
+#endif
 {
 	auto startupDataAndAddr = QueueBasedNodeLoop<NodeT>::getInitializer(postman); // TODO: consider implementing q-based Postman (as lib-defined)
 	using InitializerT = typename QueueBasedNodeLoop<NodeT>::Initializer;
 	InitializerT* startupData = nodecpp::stdalloc<InitializerT>(1);
 	*startupData = startupDataAndAddr.first;
 	size_t threadIdx = startupDataAndAddr.second.slotId;
+#ifdef NODECPP_USE_GMQUEUE
+	extern InterThreadCommData threadQueues[MAX_THREADS];
+	nodecpp::GMQThreadQueueTransport<GMQueueStatePublisherSubscriberTypeInfo> transport4node( gmqueue, nodeName, threadQueues[threadIdx].queue, 0 ); // NOTE: recipientID = 0 is by default; TODO: revise
+	startupData->transportData = transport4node.makeTransferrable();
+#endif
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
 	std::thread t1( nodeThreadMain<NodeT, InitializerT>, (void*)(startupData) );
 	// startupData is no longer valid
@@ -106,6 +120,7 @@ public:
 		UNREFERENCED_PARAMETER(hPrevInstance);
 		UNREFERENCED_PARAMETER(lpCmdLine);
 
+
 		// TODO: Place code here.
 
 		// Initialize global strings
@@ -119,14 +134,24 @@ public:
 			return FALSE;
 		}
 
+		GMQHwndTransport<GMQueueStatePublisherSubscriberTypeInfo> transport( gmqueue, hMainWnd, 0 ); // just WM_USER
+		mqPool.setTransport( &transport );
+
 		// NODECPP-required
 		// not it's time to initialize our means
 		ThreadStartupData data;
 		WorkerThreadPostman postman( &hMainWnd ); // see above-mention magic
 		preinitThreadStartupData( data, &postman );
 		setThisThreadDescriptor( data);
-		someNodeAddress = runNodeInAnotherThread<SomeNode>( useQueuePostman() );
-		mySubscriberStateWrapper.subscribe( SomeNodeName );
+		someNodeAddress = runNodeInAnotherThread<SomeNode>( useQueuePostman(), SomeNodeName );
+
+		globalmq::marshalling::GmqPathHelper::PathComponents pc;
+		pc.authority = "";
+		pc.nodeName = SomeNodeName;
+		pc.statePublisherName = mtest::publishable_sample_NodecppWrapperForSubscriber<SubscriptionState, PoolForMainThreadT>::stringTypeID;
+		GMQ_COLL string path = globalmq::marshalling::GmqPathHelper::compose( pc );
+
+		mySubscriberStateWrapper.subscribe( path );
 
 		HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSGRAPHICAL));
 
