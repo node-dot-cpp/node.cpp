@@ -134,7 +134,7 @@ public:
 			return FALSE;
 		}
 
-		GMQHwndTransport<GMQueueStatePublisherSubscriberTypeInfo> transport( gmqueue, hMainWnd, 0 ); // just WM_USER
+		GMQHwndTransport<GMQueueStatePublisherSubscriberTypeInfo> transport( gmqueue, hMainWnd, WM_USER + 1 );
 		mqPool.setTransport( &transport );
 
 		// NODECPP-required
@@ -304,10 +304,17 @@ public:
 				}
 				case InterThreadMsgType::GlobalMQ:
 				{
-					mqPool.onMessage( msg.msg/*, msg.sourceThreadID*/ );
+					assert( false ); // unexpected
 					break;
 				}
 			}
+			break;
+		}
+		case WM_USER + 1:
+		{
+			nodecpp::platform::internal_msg::InternalMsg msg;
+			msg.restoreFromPointer( reinterpret_cast<nodecpp::platform::internal_msg::InternalMsg*>( wParam ) );
+			mqPool.onMessage( msg );
 			break;
 		}
 		case WM_DESTROY:
