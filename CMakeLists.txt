@@ -59,6 +59,8 @@ add_library(nodecpp_no_main_q_based_infra STATIC
 )
 
 target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC NODECPP_USE_Q_BASED_INFRA)
+target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC NODECPP_USE_GMQUEUE)
+target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h")
 
 #target_compile_definitions(nodecpp_no_main_q_based_infra PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
 
@@ -164,6 +166,7 @@ set(DZ_INCLUDES
     -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src/iibmalloc/src 
     -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/include
     -isystem ${CMAKE_CURRENT_SOURCE_DIR}/safe_memory/library/src
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/global-mq/library/include
     -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include/nodecpp
     -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include
     -isystem ${CMAKE_CURRENT_SOURCE_DIR}/src
