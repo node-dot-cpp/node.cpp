@@ -151,6 +151,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\include\infrastructure\inproc_queue.h" />
+    <ClInclude Include="..\..\..\include\infrastructure\nodecpp_gmqueue_customized_types.h" />
+    <ClInclude Include="..\..\..\include\infrastructure\q_based_infrastructure.h" />
+    <ClInclude Include="..\..\..\include\nodecpp\common.h" />
+    <ClInclude Include="..\..\..\include\nodecpp\nls.h" />
+    <ClInclude Include="..\..\..\src\clustering_impl\interthread_comm.h" />
+    <ClInclude Include="..\..\..\src\clustering_impl\interthread_comm_impl.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="marshalling\marshalling.h" />
     <ClInclude Include="marshalling\wg_marshalling.h" />

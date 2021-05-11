@@ -11,6 +11,7 @@
 #include "framework.h"
 #include "windows_graphical_mt.h"
 #include "some_node.h"
+#include <infrastructure/node_thread_creation.h> // WORKER THREAD CREATION STAFF
 
 // NODECPP-required
 // magic class defining what to do with (how to deliver) msg supplied to postInterThreadMsg()
@@ -30,44 +31,7 @@ public:
 
 // NOTE: main thread Postman is given by a call to useQueuePostman()
 
-// WORKER THREAD CREATION STAFF
-template<class NodeT, class ThreadStartupDataT>
-void nodeThreadMain( void* pdata )
-{
-	ThreadStartupDataT* sd = reinterpret_cast<ThreadStartupDataT*>(pdata);
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
-	ThreadStartupDataT startupData = *sd;
-	nodecpp::stddealloc( sd, 1 );
-	QueueBasedNodeLoop<NodeT> r( startupData );
-	r.init();
-	r.run();
-}
 
-template<class NodeT, class PostmanT>
-#ifdef NODECPP_USE_GMQUEUE
-NodeAddress runNodeInAnotherThread( PostmanT* postman, const char* nodeName )
-#else
-NodeAddress runNodeInAnotherThread( PostmanT* postman )
-#endif
-{
-	auto startupDataAndAddr = QueueBasedNodeLoop<NodeT>::getInitializer(postman); // TODO: consider implementing q-based Postman (as lib-defined)
-	using InitializerT = typename QueueBasedNodeLoop<NodeT>::Initializer;
-	InitializerT* startupData = nodecpp::stdalloc<InitializerT>(1);
-	*startupData = startupDataAndAddr.first;
-	size_t threadIdx = startupDataAndAddr.second.slotId;
-#ifdef NODECPP_USE_GMQUEUE
-	extern InterThreadCommData threadQueues[MAX_THREADS];
-	nodecpp::GMQThreadQueueTransport<GMQueueStatePublisherSubscriberTypeInfo> transport4node( gmqueue, nodeName, threadQueues[threadIdx].queue, 0 ); // NOTE: recipientID = 0 is by default; TODO: revise
-	startupData->transportData = transport4node.makeTransferrable();
-#endif
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
-	std::thread t1( nodeThreadMain<NodeT, InitializerT>, (void*)(startupData) );
-	// startupData is no longer valid
-	startupData = nullptr;
-	t1.detach();
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
-	return startupDataAndAddr.second;
-}
 
 
 
@@ -143,7 +107,7 @@ public:
 		WorkerThreadPostman postman( &hMainWnd ); // see above-mention magic
 		preinitThreadStartupData( data, &postman );
 		setThisThreadDescriptor( data);
-		someNodeAddress = runNodeInAnotherThread<SomeNode>( useQueuePostman(), SomeNodeName );
+		someNodeAddress = nodecpp::runNodeInAnotherThread<SomeNode>( useQueuePostman(), SomeNodeName );
 
 		globalmq::marshalling::GmqPathHelper::PathComponents pc;
 		pc.authority = "";
