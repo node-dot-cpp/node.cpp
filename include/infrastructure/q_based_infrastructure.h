@@ -104,7 +104,7 @@ auto a_timeout_impl(uint32_t ms) {
 }
 #endif // NODECPP_NO_COROUTINES
 
-template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_global_mq_message_handler_call = requires { { std::declval<NodeT>().onGlobalMQMessage(std::declval<NodeAddressT>(),std::declval<MessageT&>()) }; };
+template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_global_mq_message_handler_call = requires { { std::declval<NodeT>().onGlobalMQMessage(std::declval<MessageT&>()) }; };
 template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_infrastructure_message_handler_call = requires { { std::declval<NodeT>().onInfrastructureMessage(std::declval<NodeAddressT>(),std::declval<MessageT&>()) }; };
 
 template<class Node>
@@ -261,7 +261,7 @@ public:
 				case InterThreadMsgType::GlobalMQ:
 				{
 					if constexpr ( NodeType::has_global_mq_message_handler )
-						node.node->onGlobalMQMessage( thq->sourceThreadID, thq->msg );
+						node.node->onGlobalMQMessage( thq->msg );
 					else
 						throw std::exception(); // unexpected / unhandled message type
 					break;

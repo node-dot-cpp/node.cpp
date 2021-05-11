@@ -49,7 +49,7 @@ void nodeThreadMain( void* pdata )
 
 template<class NodeT, class PostmanT>
 #ifdef NODECPP_USE_GMQUEUE
-NodeAddress runNodeInAnotherThread( PostmanT* postman, const char* nodeName )
+NodeAddress runNodeInAnotherThread( PostmanT* postman, const char* nodeName = nullptr )
 #else
 NodeAddress runNodeInAnotherThread( PostmanT* postman )
 #endif
@@ -60,8 +60,16 @@ NodeAddress runNodeInAnotherThread( PostmanT* postman )
 	*startupData = startupDataAndAddr.first;
 	size_t threadIdx = startupDataAndAddr.second.slotId;
 #ifdef NODECPP_USE_GMQUEUE
-	nodecpp::GMQThreadQueueTransport<GMQueueStatePublisherSubscriberTypeInfo> transport4node( gmqueue, nodeName, threadQueues[threadIdx].queue, 0 ); // NOTE: recipientID = 0 is by default; TODO: revise
-	startupData->transportData = transport4node.makeTransferrable();
+	if ( nodeName != nullptr && nodeName != "" )
+	{
+		nodecpp::GMQThreadQueueTransport<GMQueueStatePublisherSubscriberTypeInfo> transport4node( gmqueue, nodeName, threadQueues[threadIdx].queue, 0 ); // NOTE: recipientID = 0 is by default; TODO: revise
+		startupData->transportData = transport4node.makeTransferrable();
+	}
+	else
+	{
+		nodecpp::GMQThreadQueueTransport<GMQueueStatePublisherSubscriberTypeInfo> transport4node( gmqueue, threadQueues[threadIdx].queue, 0 ); // NOTE: recipientID = 0 is by default; TODO: revise
+		startupData->transportData = transport4node.makeTransferrable();
+	}
 #endif
 	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
 	std::thread t1( nodeThreadMain<NodeT, InitializerT>, (void*)(startupData) );
