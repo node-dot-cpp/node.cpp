@@ -71,9 +71,9 @@ public:
 		mqPool.postAllUpdates();
 	}
 
-	void onGlobalMQMessage( NodeAddress srcNodeAddress, Message& msg )
+	void onGlobalMQMessage( Message& msg )
 	{
-		mqPool.onMessage( msg/*, srcNodeAddress*/ );
+		mqPool.onMessage( msg );
 		// GlobalMQ: at the end of each handler cause pools to post all updates
 		mqPool.postAllUpdates();
 	}
