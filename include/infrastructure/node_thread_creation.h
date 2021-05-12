@@ -29,7 +29,8 @@
 #define NODE_THREAD_CREATION_H
 
 #include <common.h>
-#include <infrastructure/q_based_infrastructure.h>
+#include "q_based_infrastructure.h"
+#include "inproc_queue.h"
 
 extern InterThreadCommData threadQueues[MAX_THREADS];
 

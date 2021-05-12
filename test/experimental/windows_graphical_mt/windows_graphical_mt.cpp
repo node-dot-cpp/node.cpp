@@ -327,7 +327,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #ifdef NODECPP_USE_GMQUEUE
 	using BufferT = GMQueueStatePublisherSubscriberTypeInfo::BufferT;
 	using ComposerT = GMQueueStatePublisherSubscriberTypeInfo::ComposerT;
-	using ParserT = GMQueueStatePublisherSubscriberTypeInfo::ParserT;
 
 	// Init GMGueue
 	gmqueue.template initStateConcentratorFactory<mtest::StateConcentratorFactory<BufferT, ComposerT>>();

@@ -104,7 +104,7 @@ auto a_timeout_impl(uint32_t ms) {
 }
 #endif // NODECPP_NO_COROUTINES
 
-template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_global_mq_message_handler_call = requires { { std::declval<NodeT>().onGlobalMQMessage(std::declval<MessageT&>()) }; };
+template<typename NodeT, typename MessageT> concept has_global_mq_message_handler_call = requires { { std::declval<NodeT>().onGlobalMQMessage(std::declval<MessageT&>()) }; };
 template<typename NodeT, typename NodeAddressT, typename MessageT> concept has_infrastructure_message_handler_call = requires { { std::declval<NodeT>().onInfrastructureMessage(std::declval<NodeAddressT>(),std::declval<MessageT&>()) }; };
 
 template<class Node>
@@ -112,7 +112,7 @@ struct InfraNodeWrapper
 {
 	using NlsT = nodecpp::NLS;
 	using NodeT = Node;
-	static constexpr bool has_global_mq_message_handler = has_global_mq_message_handler_call<NodeT, NodeAddress, nodecpp::platform::internal_msg::InternalMsg>;
+	static constexpr bool has_global_mq_message_handler = has_global_mq_message_handler_call<NodeT, nodecpp::platform::internal_msg::InternalMsg>;
 	static constexpr bool has_infrastructure_message_handler = has_infrastructure_message_handler_call<NodeT, NodeAddress, nodecpp::platform::internal_msg::InternalMsg>;
 	NlsT nls;
 #ifdef NODECPP_USE_IIBMALLOC
