@@ -5,63 +5,57 @@
 #include <infrastructure/q_based_infrastructure.h>
 #include <chrono>
 #include <thread>
-#include "SimulationNode.h"
+#include "PublisherNode.h"
+#include "SubscriberNode.h"
+#include <infrastructure/node_thread_creation.h>
 
-// NOTE: next two calls can be viewed as helper functions in case a loop is to be run in a separate thread with QueueBasedNodeLoop
-//       Unless further customization is required they can be used as-is with desired Node type (see main() for caling code sample
-
-template<class NodeT, class ThreadStartupDataT>
-void nodeThreadMain( void* pdata )
-{
-	ThreadStartupDataT* sd = reinterpret_cast<ThreadStartupDataT*>(pdata);
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, pdata != nullptr ); 
-	ThreadStartupDataT startupData = *sd;
-	nodecpp::stddealloc( sd, 1 );
-	QueueBasedNodeLoop<NodeT> r( startupData );
-	r.init();
-	r.run();
-}
-
-template<class NodeT>
-NodeAddress runNodeInAnotherThread()
-{
-	auto startupDataAndAddr = QueueBasedNodeLoop<NodeT>::getInitializer(useQueuePostman()); // TODO: consider implementing q-based Postman (as lib-defined)
-	using InitializerT = typename QueueBasedNodeLoop<NodeT>::Initializer;
-	InitializerT* startupData = nodecpp::stdalloc<InitializerT>(1);
-	*startupData = startupDataAndAddr.first;
-	size_t threadIdx = startupDataAndAddr.second.slotId;
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"about to start Listener thread with threadID = {}...", threadIdx );
-	std::thread t1( nodeThreadMain<NodeT, InitializerT>, (void*)(startupData) );
-	// startupData is no longer valid
-	startupData = nullptr;
-	t1.detach();
-	nodecpp::log::default_log::info( nodecpp::log::ModuleID(nodecpp::nodecpp_module_id),"...starting Listener thread with threadID = {} completed at Master thread side", threadIdx );
-	return startupDataAndAddr.second;
-}
 
 int main( int argc, char *argv_[] )
 {
+#ifdef NODECPP_USE_GMQUEUE
+	using BufferT = GMQueueStatePublisherSubscriberTypeInfo::BufferT;
+	using ComposerT = GMQueueStatePublisherSubscriberTypeInfo::ComposerT;
+
+	// Init GMGueue
+	gmqueue.template initStateConcentratorFactory<mtest::StateConcentratorFactory<BufferT, ComposerT>>();
+	gmqueue.setAuthority( "" );
+#endif
+
 	for ( int i=0; i<argc; ++i )
 		argv.push_back( argv_[i] );
 
-	auto addr = runNodeInAnotherThread<SampleSimulationNode>();
+	auto addr = runNodeInAnotherThread<PublisherNode>( useQueuePostman(), PublisherNodeName );
 		
-	nodecpp::platform::internal_msg::InternalMsg imsg;
+	auto startupDataAndAddr = QueueBasedNodeLoop<SubscriberNode>::getInitializer(useQueuePostman()); // TODO: consider implementing q-based Postman (as lib-defined)
+	using InitializerT = typename QueueBasedNodeLoop<SubscriberNode>::Initializer;
+	InitializerT startupData;
+	startupData = startupDataAndAddr.first;
+	size_t threadIdx = startupDataAndAddr.second.slotId;
+#ifdef NODECPP_USE_GMQUEUE
+	nodecpp::GMQThreadQueueTransport<GMQueueStatePublisherSubscriberTypeInfo> transport4node( gmqueue, threadQueues[threadIdx].queue, 0 ); // NOTE: recipientID = 0 is by default; TODO: revise
+	startupData.transportData = transport4node.makeTransferrable();
+#endif
+	QueueBasedNodeLoop<SubscriberNode> r( startupData );
+	r.init();
+	r.run();
+
+
+	/*nodecpp::platform::internal_msg::InternalMsg imsg;
 	imsg.append( "Second message", sizeof("Second message") );
 	postInterThreadMsg( std::move( imsg ), InterThreadMsgType::Infrastructural, addr );
 
 	class Postman : public InterThreadMessagePostmanBase
 	{
-		NoNodeLoop<SampleSimulationNode>& loop;
+		NoNodeLoop<PublisherNode>& loop;
 	public: 
-		Postman( NoNodeLoop<SampleSimulationNode>& loop_ ) : loop( loop_ ) {}
+		Postman( NoNodeLoop<PublisherNode>& loop_ ) : loop( loop_ ) {}
 		void postMessage( InterThreadMsg&& msg ) override
 		{
 			auto riter = msg.msg.getReadIter();
 			printf( "Postman: \"%s\"\n", riter.directRead( riter.directlyAvailableSize()) );
 		}
 	};
-	NoNodeLoop<SampleSimulationNode> loop2;
+	NoNodeLoop<PublisherNode> loop2;
 	Postman p( loop2 );
 	int waitTime = loop2.init(1, &p);
 	auto addr2 = loop2.getAddress();
@@ -83,7 +77,7 @@ int main( int argc, char *argv_[] )
 		imsg3.append( "Second message", sizeof("Second message") );
 		postInterThreadMsg( std::move( imsg3 ), InterThreadMsgType::Infrastructural, addr );
 		std::this_thread::sleep_for(std::chrono::milliseconds(300));
-	}
+	}*/
 //	
 
 	return 0;

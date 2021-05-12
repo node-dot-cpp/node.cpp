@@ -254,27 +254,27 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_no_mem_safety|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -286,11 +286,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
+    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -400,7 +400,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -417,7 +417,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";NODECPP_MEMORY_SAFETY=NONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";NODECPP_MEMORY_SAFETY=NONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -434,7 +434,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_ENABLE_CLUSTERING;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_ENABLE_CLUSTERING;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -451,7 +451,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_USE_Q_BASED_INFRA;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_USE_Q_BASED_INFRA;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -468,7 +468,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -485,7 +485,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AUTOMATED_TESTING_ONLY;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;AUTOMATED_TESTING_ONLY;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -546,7 +546,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NODECPP_USE_Q_BASED_INFRA;_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";NODECPP_USE_Q_BASED_INFRA;_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -567,7 +567,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AUTOMATED_TESTING_ONLY;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;AUTOMATED_TESTING_ONLY;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -645,7 +645,8 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\common_structs.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\fs.h" />
     <ClInclude Include="..\..\..\..\src\timeout_manager.h" />
-    <ClInclude Include="..\user_code\SimulationNode.h" />
+    <ClInclude Include="..\user_code\PublisherNode.h" />
+    <ClInclude Include="..\user_code\SubscriberNode.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
