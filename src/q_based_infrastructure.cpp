@@ -182,11 +182,6 @@ size_t popFrontFromThisThreadQueue( InterThreadMsg* messages, size_t count, uint
 	return threadQueues[thisThreadDescriptor.threadID.slotId].queue.pop_front( messages, count, timeout );
 }
 
-/*uintptr_t initInterThreadCommSystemAndGetReadHandleForMainThread()
-{
-	return interThreadCommInitializer.init();
-}*/
-
 #ifdef NODECPP_USE_GMQUEUE
 globalmq::marshalling::GMQueue<GMQueueStatePublisherSubscriberTypeInfo> gmqueue;
 
@@ -227,21 +222,11 @@ void postInterThreadMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, Inte
 	
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, reincarnation == targetThreadId.reincarnation, "for idx = {}: {} vs. {}", targetThreadId.slotId, reincarnation, targetThreadId.reincarnation ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, postman != nullptr ); 
-//	if ( postman != nullptr )
-		postman->postMessage( InterThreadMsg( std::move( msg ), msgType, NodeAddress(thisThreadDescriptor.threadID, 0 /*TODO: we need means to supply nodeID, if applicable*/), targetThreadId ) );
-//	else
-//		threadQueues[ targetThreadId.slotId ].queue.push_back( InterThreadMsg( std::move( msg ), msgType, thisThreadDescriptor.threadID, targetThreadId ) );
-	/*// write a byte to writeHandle
-	uint8_t singleByte = 0x1;
-	size_t sentSize = 0;
-	auto ret = nodecpp::internal_usage_only::internal_send_packet( &singleByte, 1, writeHandle, sentSize );
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, ret == COMMLAYER_RET_OK ); 
-	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, sentSize == 1 ); */
+	postman->postMessage( InterThreadMsg( std::move( msg ), msgType, NodeAddress(thisThreadDescriptor.threadID, 0 /*TODO: we need means to supply nodeID, if applicable*/), targetThreadId ) );
 }
 
 void postGmqMsg(nodecpp::platform::internal_msg::InternalMsg&& msg, size_t recipientID, size_t slotId )
 {
-	//NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, false, "not implemented" ); 
 	NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, slotId < MAX_THREADS, "{} vs. {}", slotId, MAX_THREADS );
 	threadQueues[ slotId ].queue.push_back( InterThreadMsg( std::move( msg ), InterThreadMsgType::GlobalMQ, NodeAddress(thisThreadDescriptor.threadID, 0), NodeAddress(), recipientID ) );
 }
