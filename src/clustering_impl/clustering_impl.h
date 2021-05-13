@@ -26,8 +26,8 @@
 * -------------------------------------------------------------------------------*/
 
 
-#ifndef CLUSTERING_COMMON_H
-#define CLUSTERING_COMMON_H
+#ifndef CLUSTERING_IMPL_H
+#define CLUSTERING_IMPL_H
 
 #if (defined NODECPP_ENABLE_CLUSTERING) || (defined NODECPP_USE_Q_BASED_INFRA)
 
@@ -57,4 +57,4 @@ void decrementThisWorkerLoadCtr();
 
 #endif // NODECPP_ENABLE_CLUSTERING
 
-#endif // CLUSTERING_COMMON_H
+#endif // CLUSTERING_IMPL_H

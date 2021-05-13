@@ -29,13 +29,13 @@
 #ifndef Q_BASED_INFRASTRUCTURE_H
 #define Q_BASED_INFRASTRUCTURE_H
 
-#include "../../src/clustering_impl/clustering_impl.h"
-#include "../../src/clustering_impl/interthread_comm.h"
-#include "../../src/clustering_impl/interthread_comm_impl.h"
-
 #include "../include/nodecpp/common.h"
 #include "../include/nodecpp/common_structs.h"
 #include "../include/nodecpp/nls.h"
+
+#include "../../src/clustering_impl/clustering_impl.h"
+#include "../../src/clustering_impl/interthread_comm.h"
+#include "../../src/clustering_impl/interthread_comm_impl.h"
 
 #include "ev_queue.h"
 
@@ -51,8 +51,6 @@
 #endif // NODECPP_RECORD_AND_REPLAY
 
 #include "timeout_manager.h"
-
-#include "clustering_impl/interthread_comm.h"
 
 extern InterThreadMessagePostmanBase* useQueuePostman();
 
