@@ -28,7 +28,7 @@
 #ifndef NODE_THREAD_CREATION_H
 #define NODE_THREAD_CREATION_H
 
-#include <common.h>
+#include "../nodecpp/common.h"
 #include "q_based_infrastructure.h"
 #include "inproc_queue.h"
 
