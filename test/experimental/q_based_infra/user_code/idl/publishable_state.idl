@@ -1,0 +1,5 @@
+
+PUBLISHABLE publishable_sample=11 {
+	INTEGER id;
+	CHARACTER-STRING text;
+};
