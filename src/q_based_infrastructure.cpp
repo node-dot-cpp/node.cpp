@@ -63,8 +63,6 @@ namespace nodecpp {
 	thread_local void* nodeLocalData;
 } // namespace nodecpp
 
-thread_local MsgQueue interThreadMessageQueues[1000]; // TODO:  way to customize
-
 thread_local TimeoutManager* timeoutManager;
 
 
@@ -146,6 +144,7 @@ namespace nodecpp {
 } // namespace nodecpp
 
 InterThreadCommData threadQueues[MAX_THREADS];
+
 class PostmanToInterthreadQueue : public InterThreadMessagePostmanBase
 {
 public: 

@@ -33,22 +33,6 @@
       <Configuration>dbg_q_based_infra</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="dbg_with_clustering|Win32">
-      <Configuration>dbg_with_clustering</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="dbg_with_clustering|x64">
-      <Configuration>dbg_with_clustering</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="debug-clang|Win32">
-      <Configuration>debug-clang</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="debug-clang|x64">
-      <Configuration>debug-clang</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -86,19 +70,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -136,22 +108,10 @@
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>llvm</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|x64'" Label="Configuration">
@@ -185,13 +145,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='dbg_no_mem_safety|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|Win32'" Label="PropertySheets">
@@ -209,13 +163,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='dbg_no_mem_safety|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='automated_testing_debug|x64'" Label="PropertySheets">
@@ -236,15 +184,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -260,15 +200,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>../../../../include/nodecpp;../../../../safe_memory/library/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/include;../../../../safe_memory/library/src/iibmalloc/src/foundation/3rdparty/fmt/include;../../../../safe_memory/library/src/iibmalloc/src;../../../../safe_memory/library/src;../../../../global-mq/library/include;../../../../include;../../../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -326,41 +258,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalOptions>/await %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalOptions>/await %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -400,7 +298,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODECPP_USE_Q_BASED_INFRA;NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -428,23 +326,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;NODECPP_ENABLE_CLUSTERING;NODECPP_DEFAULT_LOG_MODULE="NODE";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalOptions>/await %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -456,23 +337,6 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalOptions>/await %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug-clang|x64'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NODECPP_USE_GMQUEUE;GMQUEUE_CUSTOMIZED_Q_TYPES="../../../include/infrastructure/nodecpp_gmqueue_customized_types.h";_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalOptions>-Xclang -fcoroutines-ts -stdlib=libc++ -lc++experimental %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -591,56 +455,29 @@
     <ClCompile Include="../../../../safe_memory\library\src\iibmalloc\src\foundation\src\std_error.cpp" />
     <ClCompile Include="../../../../safe_memory\library\src\iibmalloc\src\foundation\src\tagged_ptr_impl.cpp" />
     <ClCompile Include="../../../../safe_memory\library\src\iibmalloc\src\iibmalloc.cpp" />
-    <ClCompile Include="../../../../src\clustering_impl\clustering.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="../../../../src\infrastructure.cpp" />
-    <ClCompile Include="../../../../src\infra_main.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="../../../../src\net.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="../../../../src\tcp_socket\listener_thread.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="../../../../src\tcp_socket\tcp_socket.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\safe_memory\library\src\safe_ptr.cpp" />
     <ClCompile Include="..\..\..\..\src\common.cpp" />
     <ClCompile Include="..\..\..\..\src\fs.cpp" />
     <ClCompile Include="..\..\..\..\src\q_based_infrastructure.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\timeout_manager.cpp" />
     <ClCompile Include="..\user_code\main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_q_based_infra|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='dbg_with_clustering|x64'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../../../include\nodecpp\awaitable.h" />
-    <ClInclude Include="../../../../include\nodecpp\cluster.h" />
     <ClInclude Include="../../../../include\nodecpp\common.h" />
     <ClInclude Include="../../../../include\nodecpp\error.h" />
     <ClInclude Include="../../../../include\nodecpp\event.h" />
-    <ClInclude Include="../../../../include\nodecpp\http_socket_at_server.h" />
     <ClInclude Include="../../../../include\nodecpp\ip_and_port.h" />
     <ClInclude Include="../../../../include\nodecpp\logging.h" />
     <ClInclude Include="../../../../include\nodecpp\mallocator.h" />
-    <ClInclude Include="../../../../include\nodecpp\net_common.h" />
-    <ClInclude Include="../../../../include\nodecpp\server_common.h" />
-    <ClInclude Include="../../../../include\nodecpp\socket_common.h" />
     <ClInclude Include="../../../../include\nodecpp\timers.h" />
-    <ClInclude Include="../../../../src\clustering_impl\clustering_common.h" />
     <ClInclude Include="../../../../src\clustering_impl\interthread_comm.h" />
     <ClInclude Include="../../../../src\clustering_impl\interthread_comm_impl.h" />
     <ClInclude Include="../../../../src\ev_queue.h" />
-    <ClInclude Include="../../../../src\infrastructure.h" />
-    <ClInclude Include="../../../../src\tcp_socket\tcp_socket.h" />
-    <ClInclude Include="../../../../src\tcp_socket\tcp_socket_base.h" />
     <ClInclude Include="..\..\..\..\include\infrastructure\q_based_infrastructure.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\common_structs.h" />
     <ClInclude Include="..\..\..\..\include\nodecpp\fs.h" />
