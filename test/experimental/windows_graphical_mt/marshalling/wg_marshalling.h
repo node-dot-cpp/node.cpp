@@ -1,5 +1,5 @@
-#ifndef wg_marshalling_h_738d4ed8_guard
-#define wg_marshalling_h_738d4ed8_guard
+#ifndef wg_marshalling_h_ec194e3c_guard
+#define wg_marshalling_h_ec194e3c_guard
 
 #include <marshalling.h>
 #include <publishable_impl.h>
@@ -18,11 +18,11 @@ using FileReadBuffer = globalmq::marshalling::FileReadBuffer;
 template<class BufferT>
 class GmqComposer : public globalmq::marshalling::GmqComposer<BufferT> { public: GmqComposer( BufferT& buff_ ) : globalmq::marshalling::GmqComposer<BufferT>( buff_ ) {} };
 template<class BufferT>
-class GmqParser : public globalmq::marshalling::GmqParser<BufferT> { public: GmqParser( BufferT& buff_ ) : globalmq::marshalling::GmqParser<BufferT>( buff_ ) {} GmqParser( const GmqParser<BufferT>& other ) : globalmq::marshalling::GmqParser<BufferT>( other ) {} GmqParser& operator = ( const GmqParser<BufferT>& other ) { globalmq::marshalling::GmqParser<BufferT>::operator = ( other ); return *this; }};
+class GmqParser : public globalmq::marshalling::GmqParser<BufferT> { public: /*GmqParser( BufferT& buff_ ) : globalmq::marshalling::GmqParser<BufferT>( buff_ ) {}*/ GmqParser( typename BufferT::ReadIteratorT& iter ) : globalmq::marshalling::GmqParser<BufferT>( iter ) {} GmqParser( const GmqParser<BufferT>& other ) : globalmq::marshalling::GmqParser<BufferT>( other ) {} GmqParser& operator = ( const GmqParser<BufferT>& other ) { globalmq::marshalling::GmqParser<BufferT>::operator = ( other ); return *this; }};
 template<class BufferT>
 class JsonComposer : public globalmq::marshalling::JsonComposer<BufferT> { public: JsonComposer( BufferT& buff_ ) : globalmq::marshalling::JsonComposer<BufferT>( buff_ ) {} };
 template<class BufferT>
-class JsonParser : public globalmq::marshalling::JsonParser<BufferT> { public: JsonParser( BufferT& buff_ ) : globalmq::marshalling::JsonParser<BufferT>( buff_ ) {} JsonParser( const JsonParser<BufferT>& other ) : globalmq::marshalling::JsonParser<BufferT>( other ) {} JsonParser& operator = ( const JsonParser<BufferT>& other ) { globalmq::marshalling::JsonParser<BufferT>::operator = ( other ); return *this; } };
+class JsonParser : public globalmq::marshalling::JsonParser<BufferT> { public: /*JsonParser( BufferT& buff_ ) : globalmq::marshalling::JsonParser<BufferT>( buff_ ) {}*/ JsonParser( typename BufferT::ReadIteratorT& iter ) : globalmq::marshalling::JsonParser<BufferT>( iter ) {} JsonParser( const JsonParser<BufferT>& other ) : globalmq::marshalling::JsonParser<BufferT>( other ) {} JsonParser& operator = ( const JsonParser<BufferT>& other ) { globalmq::marshalling::JsonParser<BufferT>::operator = ( other ); return *this; } };
 template<class T>
 class SimpleTypeCollectionWrapper : public globalmq::marshalling::SimpleTypeCollectionWrapper<T> { public: SimpleTypeCollectionWrapper( T& coll ) : globalmq::marshalling::SimpleTypeCollectionWrapper<T>( coll ) {} };
 template<class LambdaSize, class LambdaNext>
@@ -238,18 +238,33 @@ namespace infrastructural {
 
 using ScreenPoint = ::globalmq::marshalling::impl::MessageName<1>;
 
-template<class BufferT, class ... HandlersT >
-void handleMessage( BufferT& buffer, HandlersT ... handlers )
+template<class ParserT, class ... HandlersT >
+void implHandleMessage( ParserT& parser, HandlersT ... handlers )
 {
 	uint64_t msgID;
 
-	GmqParser parser( buffer );
+	static_assert( ParserT::proto == Proto::GMQ, "According to IDL GMQ parser is expected" );
 	parser.parseUnsignedInteger( &msgID );
 	switch ( msgID )
 	{
 		case ScreenPoint::id: ::globalmq::marshalling::impl::implHandleMessage<ScreenPoint>( parser, handlers... ); break;
 	}
 
+}
+
+template<class BufferT, class ... HandlersT >
+void handleMessage( BufferT& buffer, HandlersT ... handlers )
+{
+	auto riter = buffer.getReadIter();
+	GmqParser<BufferT> parser( riter );
+	implHandleMessage( parser, handlers... );
+}
+
+template<class ReadIteratorT, class ... HandlersT >
+void handleMessage2( ReadIteratorT& riter, HandlersT ... handlers )
+{
+	GmqParser<typename ReadIteratorT::BufferT> parser( riter );
+	implHandleMessage( parser, handlers... );
 }
 
 template<typename msgID, class BufferT, typename ... Args>
@@ -324,8 +339,8 @@ public:
 	}
 	auto get4set_screenPoint() { return ScreenPoint_RefWrapper4Set<decltype(T::screenPoint), publishable_sample_WrapperForPublisher>(t.screenPoint, *this, GMQ_COLL vector<size_t>(), 0); }
 
-	template<class ComposerT>
-	void compose( ComposerT& composer )
+	template<class ComposerType>
+	void compose( ComposerType& composer )
 	{
 		::globalmq::marshalling::impl::composeStructBegin( composer );
 
@@ -544,8 +559,8 @@ public:
 	
 	// Acting as publisher
 	virtual void generateStateSyncMessage( ComposerT& composer ) { compose(composer); }
-	template<class ComposerT>
-	void compose( ComposerT& composer )
+	template<class ComposerType>
+	void compose( ComposerType& composer )
 	{
 		::globalmq::marshalling::impl::composeStructBegin( composer );
 
@@ -742,4 +757,4 @@ void STRUCT_ScreenPoint_parse(ParserT& p, Args&& ... args)
 
 } // namespace mtest
 
-#endif // wg_marshalling_h_738d4ed8_guard
+#endif // wg_marshalling_h_ec194e3c_guard

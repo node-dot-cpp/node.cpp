@@ -112,8 +112,8 @@ public:
 		globalmq::marshalling::GmqPathHelper::PathComponents pc;
 		pc.authority = "";
 		pc.nodeName = SomeNodeName;
-		pc.statePublisherName = mtest::publishable_sample_NodecppWrapperForSubscriber<SubscriptionState, PoolForMainThreadT>::stringTypeID;
-		GMQ_COLL string path = globalmq::marshalling::GmqPathHelper::compose( pc );
+		pc.statePublisherOrConnPeerName = mtest::publishable_sample_NodecppWrapperForSubscriber<SubscriptionState, PoolForMainThreadT>::stringTypeID;
+		GMQ_COLL string path = globalmq::marshalling::GmqPathHelper::compose( globalmq::marshalling::GmqPathHelper::Type::subscriptionRequest, pc );
 
 		mySubscriberStateWrapper.subscribe( path );
 
