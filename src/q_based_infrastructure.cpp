@@ -115,6 +115,12 @@ namespace nodecpp {
 		return timeoutManager->appClearTimeout(to.getId());
 	}
 
+	Timeout::~Timeout()
+	{
+		if ( id != 0 )
+			timeoutManager->appTimeoutDestructor(id);
+	}
+
 	void setInmediate(std::function<void()> cb)
 	{
 		inmediateQueue->add(std::move(cb));

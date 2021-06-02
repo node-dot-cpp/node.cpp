@@ -46,11 +46,9 @@ namespace nodecpp
 		Timeout(Timeout&& other) :id(other.id) { other.id = 0; }
 		Timeout& operator=(Timeout&& other) { std::swap(this->id, other.id); return *this; };
 
-		~Timeout() {}
+		~Timeout();
 
 		uint64_t getId() const { return id; }
-
-//		void refresh();
 	};
 
 
@@ -60,7 +58,7 @@ namespace nodecpp
 #endif // NODECPP_NO_COROUTINES
 
 	void clearTimeout(const Timeout& to);
-	void refreshTimeout(Timeout& to);
+	void refreshTimeout(Timeout& to); 
 
 	namespace time
 	{
