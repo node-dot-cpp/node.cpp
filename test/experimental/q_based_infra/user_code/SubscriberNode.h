@@ -39,9 +39,10 @@ public:
 		mqPool.setTransport( getTransport() );
 
 		globalmq::marshalling::GmqPathHelper::PathComponents pc;
+		pc.type = PublishableStateMessageHeader::MsgType::subscriptionRequest;
 		pc.authority = "";
 		pc.nodeName = "PublisherNode";
-		pc.statePublisherName = mtest::publishable_sample_NodecppWrapperForSubscriber<SubscriptionState, PoolType>::stringTypeID;
+		pc.statePublisherOrConnectionType = mtest::publishable_sample_NodecppWrapperForSubscriber<SubscriptionState, PoolType>::stringTypeID;
 		GMQ_COLL string path = globalmq::marshalling::GmqPathHelper::compose( pc );
 
 		subscribedStateWrapper.subscribe( path );
