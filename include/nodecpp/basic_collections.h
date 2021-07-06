@@ -100,25 +100,83 @@ namespace nodecpp
 
 	using string = ::std::basic_string<char, std::char_traits<char>, safememory::detail::iiballocator<char>>;
 
-	class string_literal
+	template<typename T>
+	class basic_string_literal
 	{
-		const char* str;
 	public:
-		string_literal() : str( nullptr ) {}
-		string_literal( const char* str_) : str( str_ ) {}
-		string_literal( const string_literal& other ) : str( other.str ) {}
-		string_literal& operator = ( const string_literal& other ) {str = other.str; return *this;}
-		string_literal( string_literal&& other ) : str( other.str ) {}
-		string_literal& operator = ( string_literal&& other ) {str = other.str; return *this;}
+		typedef T                                                         value_type;
+		typedef const T&                                                  const_reference;
+		typedef std::size_t                                               size_type;
 
-		bool operator == ( const string_literal& other ) const { return strcmp( str, other.str ) == 0; }
-		bool operator != ( const string_literal& other ) const { return strcmp( str, other.str ) != 0; }
+	private:
+		const value_type* str = nullptr;
+		size_type sz = 0;
 
-//		bool operator == ( const char* other ) const { return strcmp( str, other.str ) == 0; }
-//		bool operator != ( const char* other ) const { return strcmp( str, other.str ) != 0; }
+	public:
+		basic_string_literal() {}
+		
+		template<size_type N>
+		basic_string_literal(const value_type (&ptr)[N]) : str(ptr), sz(N - 1) {
+			static_assert(N >= 1);
+			static_assert(N < std::numeric_limits<size_type>::max());
+		}
 
-		const char* c_str() const { return str; }
+		basic_string_literal(const basic_string_literal& other) = default;
+		basic_string_literal& operator=(const basic_string_literal& other) = default;
+		basic_string_literal(basic_string_literal&& other) = default;
+		basic_string_literal& operator=(basic_string_literal&& other) = default;
+
+		~basic_string_literal() = default; // string literals have infinite lifetime, no need to zero pointers
+
+		constexpr bool empty() const noexcept { return sz == 0; }
+		constexpr size_type size() const noexcept { return sz; }
+
+		constexpr const T* c_str() const noexcept { return str; }
+		constexpr const T* data() const noexcept { return str; }
+
+		std::basic_string_view<T> to_string_view_unsafe() const {
+			return std::basic_string_view<T>(data(), size());
+		}
 	};
+
+	typedef basic_string_literal<char>    string_literal;
+	typedef basic_string_literal<wchar_t> wstring_literal;
+
+	/// string8 / string16 / string32
+	// typedef basic_string_literal<char8_t>  u8string_literal;
+	typedef basic_string_literal<char16_t> u16string_literal;
+	typedef basic_string_literal<char32_t> u32string_literal;
+
+
+	template<class T>
+	bool operator==( const basic_string_literal<T>& a, const basic_string_literal<T>& b ) {
+		return std::operator==(a.to_string_view_unsafe(), b.to_string_view_unsafe());
+	}
+
+	template<class T>
+	bool operator!=( const basic_string_literal<T>& a, const basic_string_literal<T>& b ) {
+		return std::operator!=(a.to_string_view_unsafe(), b.to_string_view_unsafe());
+	}
+
+	template<class T>
+	bool operator<( const basic_string_literal<T>& a, const basic_string_literal<T>& b ) {
+		return std::operator<(a.to_string_view_unsafe(), b.to_string_view_unsafe());
+	}
+
+	template<class T>
+	bool operator<=( const basic_string_literal<T>& a, const basic_string_literal<T>& b ) {
+		return std::operator<=(a.to_string_view_unsafe(), b.to_string_view_unsafe());
+	}
+
+	template<class T>
+	bool operator>( const basic_string_literal<T>& a, const basic_string_literal<T>& b ) {
+		return std::operator>(a.to_string_view_unsafe(), b.to_string_view_unsafe());
+	}
+
+	template<class T>
+	bool operator>=( const basic_string_literal<T>& a, const basic_string_literal<T>& b ) {
+		return std::operator>=(a.to_string_view_unsafe(), b.to_string_view_unsafe());
+	}
 
 #endif // NODECPP_USE_SAFE_MEMORY_CONTAINERS
 

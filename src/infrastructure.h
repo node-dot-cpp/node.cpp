@@ -469,7 +469,7 @@ class Runnable : public RunnableBase
 	void internalRun()
 #endif
 	{
-		safememory::detail::interceptNewDeleteOperators(true);
+		// safememory::detail::interceptNewDeleteOperators(true);
 		{
 #ifdef NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 			nodecpp::net::SocketBase::DataForCommandProcessing::userHandlerClassPattern.init();
@@ -537,7 +537,7 @@ class Runnable : public RunnableBase
 #endif // NODECPP_THREADLOCAL_INIT_BUG_GCC_60702
 		}
 		safememory::detail::killAllZombies();
-		safememory::detail::interceptNewDeleteOperators(false);
+		// safememory::detail::interceptNewDeleteOperators(false);
 	}
 
 public:

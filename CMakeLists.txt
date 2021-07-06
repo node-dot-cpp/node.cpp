@@ -42,9 +42,9 @@ add_library(nodecpp_no_main STATIC
 
 # target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_ENABLE_CLUSTERING)
 
-if(TARGET EASTL)
-	target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
-endif()
+#if(TARGET EASTL)
+#	target_compile_definitions(nodecpp_no_main PUBLIC NODECPP_USE_SAFE_MEMORY_CONTAINERS)
+#endif()
 
 target_include_directories(nodecpp_no_main
   PUBLIC include
@@ -75,7 +75,7 @@ add_library(nodecpp STATIC
 
 
 target_link_libraries(nodecpp_no_main safememory)
-target_link_libraries(nodecpp_no_main_q_based_infra safememory)
+target_link_libraries(nodecpp_no_main_q_based_infra safememory global-mq)
 target_link_libraries(nodecpp nodecpp_no_main)
 
 target_compile_definitions(nodecpp_no_main PUBLIC USING_T_SOCKETS)

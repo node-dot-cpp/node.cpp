@@ -329,7 +329,7 @@ namespace nodecpp {
 
 			EventEmitter<event::HttpRequest> eHttpRequest;
 			void on(nodecpp::string_literal name, event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS) {
-				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == event::HttpRequest::name);
+				NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::critical, name == string_literal(event::HttpRequest::name));
 				eHttpRequest.on(std::move(cb));
 			}
 
@@ -340,11 +340,11 @@ namespace nodecpp {
 		{
 		public:
 			using DataParentType = DataParentT;
-			HttpServer<DataParentT>() {};
+			HttpServer() {};
 			HttpServer(event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS) : HttpServerBase(std::move(cb)) {}
-			HttpServer<DataParentT>(DataParentT* dataParent ) : HttpServerBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
-			HttpServer<DataParentT>(DataParentT* dataParent, event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS ) : HttpServerBase(std::move(cb)), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
-			virtual ~HttpServer<DataParentT>() {}
+			HttpServer(DataParentT* dataParent ) : HttpServerBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			HttpServer(DataParentT* dataParent, event::HttpRequest::callback cb NODECPP_MAY_EXTEND_TO_THIS ) : HttpServerBase(std::move(cb)), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~HttpServer() {}
 		};
 
 		template<>

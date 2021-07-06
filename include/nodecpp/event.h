@@ -45,49 +45,49 @@ namespace nodecpp
 		struct Close
 		{
 			using callback = std::function<void(bool)>;
-			static constexpr const char* name = "close";
+			static constexpr const char name[] = "close";
 		};
 		static constexpr Close close = Close();
 
 		struct Connect
 		{
 			using callback = std::function<void()>;
-			static constexpr const char* name = "connect";
+			static constexpr const char name[] = "connect";
 		};
 		static constexpr Connect connect = Connect();
 
 		struct Data
 		{
 			using callback = std::function<void(const Buffer&)>;
-			static constexpr const char* name = "data";
+			static constexpr const char name[] = "data";
 		};
 		static constexpr Data data = Data();
 
 		struct Drain
 		{
 			using callback = std::function<void()>;
-			static constexpr const char* name = "drain";
+			static constexpr const char name[] = "drain";
 		};
 		static constexpr Drain drain = Drain();
 
 		struct End
 		{
 			using callback = std::function<void()>;
-			static constexpr const char* name = "end";
+			static constexpr const char name[] = "end";
 		};
 		static constexpr End end = End();
 
 		struct Accepted
 		{
 			using callback = std::function<void()>;
-			static constexpr const char* name = "accepted";
+			static constexpr const char name[] = "accepted";
 		};
 		static constexpr Accepted accepted = Accepted();
 
 		struct Error
 		{
 			using callback = std::function<void(nodecpp::Error&)>;
-			static constexpr const char* name = "error";
+			static constexpr const char name[] = "error";
 		};
 		static constexpr Error error = Error();
 
@@ -95,21 +95,21 @@ namespace nodecpp
 		struct Connection
 		{
 			using callback = std::function<void(soft_ptr<net::SocketBase>)>;
-			static constexpr const char* name = "connection";
+			static constexpr const char name[] = "connection";
 		};
 		static constexpr Connection connection = Connection();
 
 		struct Listening
 		{
 			using callback = std::function<void(size_t, net::Address)>;
-			static constexpr const char* name = "listening";
+			static constexpr const char name[] = "listening";
 		};
 		static constexpr Listening listening = Listening();
 
 		struct HttpRequest
 		{
 			using callback = std::function<void(nodecpp::net::IncomingHttpMessageAtServer&, nodecpp::net::HttpServerResponse&)>;
-			static constexpr const char* name = "HttpRequest";
+			static constexpr const char name[] = "HttpRequest";
 		};
 		static constexpr HttpRequest httpRequest = HttpRequest();
 

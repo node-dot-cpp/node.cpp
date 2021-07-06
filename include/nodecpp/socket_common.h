@@ -1579,9 +1579,9 @@ namespace nodecpp {
 		{
 		public:
 			using DataParentType = DataParentT;
-			Socket<DataParentT>() {};
-			Socket<DataParentT>(DataParentT* dataParent ) : SocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
-			virtual ~Socket<DataParentT>() {}
+			Socket() {};
+			Socket(DataParentT* dataParent ) : SocketBase(), ::nodecpp::DataParent<DataParentT>( dataParent ) {};
+			virtual ~Socket() {}
 		};
 
 		template<>

@@ -88,8 +88,8 @@ int main( int argc, char *argv_[] )
 		argv.push_back( argv_[i] );
 
 #ifdef NODECPP_USE_IIBMALLOC
-	using nodecpp::iibmalloc::g_AllocManager;
-	g_AllocManager.initialize();
+	nodecpp::iibmalloc::ThreadLocalAllocatorT allocManager;
+	auto formerAlloc = nodecpp::iibmalloc::setCurrneAllocator( &allocManager );
 #endif
 	nodecpp::log::Log log;
 	log.level = nodecpp::log::LogLevel::info;
@@ -117,6 +117,10 @@ int main( int argc, char *argv_[] )
 #endif // NODECPP_RECORD_AND_REPLAY
 
 	nodecpp::logging_impl::currentLog = nullptr; // TODO: this is thread-unsafe. Revise and make sure all other threads using nodecpp::logging_impl::currentLog has already exited
+
+#ifdef NODECPP_USE_IIBMALLOC
+	nodecpp::iibmalloc::setCurrneAllocator(formerAlloc);
+#endif
 
 	return 0;
 }
