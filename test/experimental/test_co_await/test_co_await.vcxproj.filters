@@ -27,9 +27,6 @@
     <ClCompile Include="..\..\..\safe_memory\library\src\safe_ptr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\page_allocator_windows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\3rdparty\fmt\src\format.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,12 +48,27 @@
     <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\iibmalloc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\internal_msg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\nodecpp_assert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\nodecpp\awaitable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

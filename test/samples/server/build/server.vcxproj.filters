@@ -43,6 +43,10 @@
     <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\page_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\internal_msg.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info.cpp" />
+    <ClCompile Include="..\..\..\..\src\timeout_manager.cpp" />
+    <ClCompile Include="..\..\..\..\safe_memory\library\src\safe_ptr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\nodecpp\common.h">
@@ -99,6 +103,7 @@
     <ClInclude Include="..\..\..\..\include\nodecpp\awaitable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\safe_memory\library\src\iibmalloc\src\foundation\src\stack_info_impl.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

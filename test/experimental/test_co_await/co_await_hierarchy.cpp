@@ -93,13 +93,13 @@ public:
 
 			void await_suspend(std::experimental::coroutine_handle<> awaiting) {
 				ah = awaiting;
-				nodecpp::setNoException(awaiting);
+				nodecpp::initCoroData(awaiting);
 				set_read_awaiting_handle( myIdx, awaiting );
 			}
 
 			auto await_resume() {
-				if ( ah != nullptr && nodecpp::isException(ah) )
-					throw nodecpp::getException(ah);
+				if ( ah != nullptr && nodecpp::isCoroException(ah) )
+					throw nodecpp::getCoroException(ah);
 				return;
 			}
 		};
@@ -130,15 +130,15 @@ public:
 				ah = awaiting;
 //				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(awaiting.address());
 //				h.promise().edata.is_exception = false;
-				nodecpp::setNoException(awaiting);
+				nodecpp::initCoroData(awaiting);
 				set_read_awaiting_handle( myIdx, awaiting );
 			}
 
 			auto await_resume() {
 //				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(ah.address());
 				read_result r = read_data(myIdx);
-				if ( ah != nullptr && nodecpp::isException(ah) )
-					throw nodecpp::getException(ah);
+				if ( ah != nullptr && nodecpp::isCoroException(ah) )
+					throw nodecpp::getCoroException(ah);
 				return r.data;
 			}
 		};
@@ -552,7 +552,7 @@ void processing_loop_2()
 			{
 				auto tmp = g_callbacks[ch - 'a'].awaiting;
 				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(tmp.address());
-				nodecpp::setException(tmp, std::exception());
+				nodecpp::setCoroException(tmp, std::exception());
 				g_callbacks[ch - 'a'].awaiting = nullptr;
 				tmp();
 			}
@@ -681,7 +681,7 @@ void processing_loop()
 				{
 					auto tmp = g_callbacks[ch - 'a'].awaiting;
 					std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(tmp.address());
-					nodecpp::setException(tmp, std::exception());
+					nodecpp::setCoroException(tmp, std::exception());
 					g_callbacks[ch - 'a'].awaiting = nullptr;
 					tmp();
 				}

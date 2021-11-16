@@ -6,7 +6,7 @@
 
 int main()
 {
-	nodecpp::log::init_log();
+//	nodecpp::log::init_log();
 	processing_loop();
 
 	return 0;
