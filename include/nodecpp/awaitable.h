@@ -73,6 +73,10 @@ struct awaitable_base {
 	std::exception_ptr e_pending = nullptr;
 	bool is_value = false;
 
+#ifdef NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
+	bool immediatelyReadyOrAwaited = false;
+#endif // NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
+
 	awaitable_base() {}
 	awaitable_base(const awaitable_base &) = delete;
 	awaitable_base &operator = (const awaitable_base &) = delete;
@@ -214,8 +218,6 @@ struct awaitable : public awaitable_base  {
 	bool coroDestroyed = false;
 	using value_type = T;
 
-	bool dbgValueAvailable = false;
-
 	awaitable()  {}
 	awaitable(handle_type h) : coro(h) { 
 		coro.promise().myRetObject = this;
@@ -234,12 +236,12 @@ struct awaitable : public awaitable_base  {
 	}   
 	
 	~awaitable() {
-		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, dbgValueAvailable, "awaitable object may not be co_await\'ed as it should be (see stack for details)" ); 
+#ifdef NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, immediatelyReadyOrAwaited, "awaitable object may not be co_await\'ed as it should be (see stack for details)" ); 
+#endif // NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
 		if ( !coroDestroyed )
 			coro.promise().myRetObject = nullptr;
 	}
-
-	void dbgAwaitingNotPlannedReturnedValueOfNoInterest() { dbgValueAvailable = true; }
 
 	typename void_type_converter<T>::type& getValue() {
 		if constexpr ( std::is_same<void, T>::value )
@@ -294,7 +296,9 @@ auto promise_type_struct<T>::return_value(T v) {
 	{
 		myRetObject->getValue() = v;
 		myRetObject->is_value = true;
-		myRetObject->dbgValueAvailable = true;
+#ifdef NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
+		myRetObject->immediatelyReadyOrAwaited = true;
+#endif // NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
 	}
     return std::experimental::suspend_never{};
 }
@@ -304,7 +308,9 @@ auto promise_type_struct<void>::return_void(void) {
 	if ( myRetObject != nullptr )
 	{
 		myRetObject->is_value = true;
-		myRetObject->dbgValueAvailable = true;
+#ifdef NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
+		myRetObject->immediatelyReadyOrAwaited = true;
+#endif // NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
 	}
 	return std::experimental::suspend_never{};
 }
@@ -320,6 +326,23 @@ void promise_type_struct<void>::unhandled_exception() {
 	if ( myRetObject != nullptr )
 		myRetObject->e_pending = std::current_exception();
 }
+
+
+#ifdef NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
+template<class T>
+void dbg_awaitingNotPlannedReturnedValueOfNoInterest( awaitable<T>& p ) { 
+	p.immediatelyReadyOrAwaited = true;
+}
+
+inline
+void dbg_awaitingNotPlannedReturnedValueOfNoInterest( awaitable<void>& p ) { 
+	p.immediatelyReadyOrAwaited = true;
+}
+#else
+template<class T> void dbg_awaitingNotPlannedReturnedValueOfNoInterest( awaitable<T>& p ) {}
+inline void dbg_awaitingNotPlannedReturnedValueOfNoInterest( awaitable<void>& p ) {}
+#endif // NODECPP_ENABLE_CHECKING_COROUTINES_AWAITED
+
 
 
 template<class ... T>

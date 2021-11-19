@@ -641,7 +641,7 @@ public:
 	nodecpp::awaitable<void> coro_run_no_await_admissible()
 	{
 		auto ar = complete_page_void();
-		ar.dbgAwaitingNotPlannedReturnedValueOfNoInterest();
+		dbg_awaitingNotPlannedReturnedValueOfNoInterest(ar);
 		fmt::print( "if we're here immediately, it could, in general, be wrong, but we don't care about it\n" );
 		co_return;
 	}
@@ -760,11 +760,11 @@ template<class P>
 nodecpp::awaitable<void> processing_loop_core_4_void(P& p)
 {
 	auto r1 = p.preader_0->runVoid();
-	r1.dbgAwaitingNotPlannedReturnedValueOfNoInterest();
+	dbg_awaitingNotPlannedReturnedValueOfNoInterest(r1);
 	auto r2 = p.preader_1->run2Void();
-	r2.dbgAwaitingNotPlannedReturnedValueOfNoInterest();
+	dbg_awaitingNotPlannedReturnedValueOfNoInterest(r2);
 	auto r3 = p.preader_2->run1Void(1);
-	r3.dbgAwaitingNotPlannedReturnedValueOfNoInterest();
+	dbg_awaitingNotPlannedReturnedValueOfNoInterest(r3);
 	co_return;
 }
 
