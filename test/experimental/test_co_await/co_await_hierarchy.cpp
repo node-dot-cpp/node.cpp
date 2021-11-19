@@ -572,6 +572,137 @@ void processing_loop_2()
 	}
 }
 
+class page_processor_alt
+{
+	data_reader reader;
+
+	nodecpp::awaitable<void> complete_block_void()
+	{
+		size_t accumulated = 0;
+		while ( accumulated < 6 ) // jus some sample condition
+		{
+			try
+			{
+				co_await reader.read_data_or_wait_void();
+				accumulated++;
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception caught at complete_block_1(): %s\n", e.what());
+				throw;
+			}
+		}
+		co_return;
+	}
+
+protected:
+	nodecpp::awaitable<void> complete_page_void()
+	{
+		size_t accumulated = 0;
+		while ( accumulated < 2 ) // an artificial sample condition
+		{
+			co_await complete_block_void();
+			accumulated++;
+		}
+		co_return;
+	}
+
+public:
+	page_processor_alt() {}
+	virtual ~page_processor_alt() {}
+
+	nodecpp::awaitable<void> coro_run()
+	{
+		co_await complete_page_void();
+		fmt::print( "everything is done\n" );
+		co_return;
+	}
+
+	void just_void_run()
+	{
+		complete_page_void();
+		fmt::print( "if we're here immediately, something went wrong\n" );
+	}
+
+	nodecpp::awaitable<void> coro_run_no_await()
+	{
+		auto ar = complete_page_void();
+		fmt::print( "if we're here immediately, something went wrong\n" );
+		co_return;
+	}
+
+	nodecpp::awaitable<void> coro_run_no_await2()
+	{
+		complete_page_void();
+		fmt::print( "if we're here immediately, something went wrong\n" );
+		co_return;
+	}
+
+	nodecpp::awaitable<void> coro_run_no_await_admissible()
+	{
+		auto ar = complete_page_void();
+		ar.dbgAwaitingNotPlannedReturnedValueOfNoInterest();
+		fmt::print( "if we're here immediately, it could, in general, be wrong, but we don't care about it\n" );
+		co_return;
+	}
+};
+
+void test_coro_presence()
+{
+	page_processor_alt p;
+//	nodecpp::awaitable<void> ar = p.just_void_run();
+//	nodecpp::awaitable<void> ar = p.coro_run_no_await();
+	nodecpp::awaitable<void> ar = p.coro_run_no_await_admissible();
+//	nodecpp::awaitable<void> ar = p.coro_run();
+
+	for (;;)
+	{
+		char ch = getchar();
+		static_assert( max_h_count < 10 );
+		static constexpr char max_cnt = (char)max_h_count;
+		if ( ch > '0' && ch <= '0' + max_cnt )
+		{
+			getchar(); // take '\n' out of stream
+			printf( "   --> got \'%c\' (continuing)\n", ch );
+			g_callbacks[ch - '1'].data.push_back( ch );
+			if ( g_callbacks[ch - '1'].awaiting != nullptr )
+			{
+				auto tmp = g_callbacks[ch - '1'].awaiting;
+				g_callbacks[ch - '1'].awaiting = nullptr;
+				tmp();
+			}
+			else
+				printf("   --> ... just saving (nothing to resume)\n");
+		}
+		else if ( ch >= 'a' && ch < 'a' + max_cnt )
+		{
+			getchar(); // take '\n' out of stream
+			printf( "   --> got \'%c\' (continuing)\n", ch );
+			if ( g_callbacks[ch - 'a'].awaiting != nullptr )
+			{
+				auto tmp = g_callbacks[ch - 'a'].awaiting;
+				std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>> h = std::experimental::coroutine_handle<nodecpp::promise_type_struct<void>>::from_address(tmp.address());
+				nodecpp::setCoroException(tmp, std::exception());
+				g_callbacks[ch - 'a'].awaiting = nullptr;
+				tmp();
+			}
+			else
+				printf("   --> ... just saving (nothing to resume)\n");
+		}
+		else
+		{
+			getchar(); // take '\n' out of stream
+			printf( "   --> got \'%c\' (terminating)\n", ch );
+			break;
+			for ( size_t i=0; i<max_h_count; ++i )
+			{
+				if ( g_callbacks[i].awaiting )
+					g_callbacks[i].awaiting.destroy();
+			}
+		}
+	}
+}
+
 struct Processors
 {
 	page_processor_A* preader_0;
@@ -628,9 +759,12 @@ nodecpp::awaitable<void> processing_loop_core_4(P& p)
 template<class P>
 nodecpp::awaitable<void> processing_loop_core_4_void(P& p)
 {
-	p.preader_0->runVoid();
-	p.preader_1->run2Void();
-	p.preader_2->run1Void(1);
+	auto r1 = p.preader_0->runVoid();
+	r1.dbgAwaitingNotPlannedReturnedValueOfNoInterest();
+	auto r2 = p.preader_1->run2Void();
+	r2.dbgAwaitingNotPlannedReturnedValueOfNoInterest();
+	auto r3 = p.preader_2->run1Void(1);
+	r3.dbgAwaitingNotPlannedReturnedValueOfNoInterest();
 	co_return;
 }
 

@@ -214,6 +214,8 @@ struct awaitable : public awaitable_base  {
 	bool coroDestroyed = false;
 	using value_type = T;
 
+	bool dbgValueAvailable = false;
+
 	awaitable()  {}
 	awaitable(handle_type h) : coro(h) { 
 		coro.promise().myRetObject = this;
@@ -232,9 +234,12 @@ struct awaitable : public awaitable_base  {
 	}   
 	
 	~awaitable() {
+		NODECPP_ASSERT( nodecpp::module_id, ::nodecpp::assert::AssertLevel::pedantic, dbgValueAvailable, "awaitable object may not be co_await\'ed as it should be (see stack for details)" ); 
 		if ( !coroDestroyed )
 			coro.promise().myRetObject = nullptr;
 	}
+
+	void dbgAwaitingNotPlannedReturnedValueOfNoInterest() { dbgValueAvailable = true; }
 
 	typename void_type_converter<T>::type& getValue() {
 		if constexpr ( std::is_same<void, T>::value )
@@ -289,6 +294,7 @@ auto promise_type_struct<T>::return_value(T v) {
 	{
 		myRetObject->getValue() = v;
 		myRetObject->is_value = true;
+		myRetObject->dbgValueAvailable = true;
 	}
     return std::experimental::suspend_never{};
 }
@@ -296,7 +302,10 @@ auto promise_type_struct<T>::return_value(T v) {
 inline
 auto promise_type_struct<void>::return_void(void) {
 	if ( myRetObject != nullptr )
+	{
 		myRetObject->is_value = true;
+		myRetObject->dbgValueAvailable = true;
+	}
 	return std::experimental::suspend_never{};
 }
 

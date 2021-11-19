@@ -6,7 +6,8 @@
 
 int main()
 {
-//	nodecpp::log::init_log();
+	test_coro_presence();
+	fmt::print( "\n-----------------\n" );
 	processing_loop();
 
 	return 0;
